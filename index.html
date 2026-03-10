@@ -9,10 +9,19 @@
     <title>CENTYR | Gestión</title>
     <style>
         :root { 
-            --primary: #252850; --accent: #27ae60; --bg: #f0f2f5; 
-            --blue: #252850; --danger: #e74c3c; --admin: #252850; 
-            --docente: #1a6fa8; --alumno: #16a085;
-            --gray: #7f8c8d; --white: #ffffff; --shadow: 0 4px 20px rgba(0,0,0,0.08);
+            --primary:  #1B2A4A;   /* azul marino profundo */
+            --accent:   #2ECC71;   /* verde esmeralda */
+            --blue:     #1B2A4A;
+            --bg:       #F4F6FB;
+            --danger:   #E53935;
+            --admin:    #6C3FC5;   /* violeta */
+            --docente:  #0288D1;   /* azul cielo */
+            --alumno:   #00897B;   /* teal */
+            --warning:  #F59E0B;   /* ámbar */
+            --gray:     #64748B;
+            --white:    #ffffff;
+            --shadow:   0 4px 24px rgba(27,42,74,0.10);
+            --radius:   12px;
         }
         body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); margin: 0; color: #333; }
         
@@ -579,7 +588,7 @@
 
 <script>
     const CONFIG = {
-        webAppUrl: 'https://script.google.com/macros/s/AKfycbwwCuZkauJjyxTE5kKS33zAqZLqMnWXqTjrh4sKqFRjqbv_wU4cAv3YEImXp7fnl8PUJQ/exec'
+        webAppUrl: 'https://script.google.com/macros/s/AKfycbwAjrAHFs_JtcOH9hnaCUPuhyV5seJaFx5HqeMkfyZ5HgOx37S1HB3C6bRIzHqWUCluSQ/exec'
     };
 
     // Elimina prefijos redundantes "CTMP" del valor almacenado
@@ -1143,9 +1152,13 @@ DOCENTE: ${docenteInfo}
             // Estado de aprobación
             const estadoAprobacion = s.estado_aprobacion || 'aprobado';
             const esPendiente = estadoAprobacion === 'pendiente';
-            const badgeAprobacion = esPendiente 
-                ? `<span style="background:#f39c12;color:white;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:bold;">⏳ PENDIENTE</span>`
-                : `<span style="background:#27ae60;color:white;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:bold;">✅ APROBADO</span>`;
+            const notaAprob   = s.nota_aprobacion !== undefined && s.nota_aprobacion !== '' ? parseFloat(s.nota_aprobacion) : null;
+            const notaAprobBadge = notaAprob !== null
+                ? `<span style="background:#1B2A4A;color:white;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:bold;margin-left:4px;">⭐ ${notaAprob}/20</span>`
+                : '';
+            const badgeAprobacion = esPendiente
+                ? `<span style="background:#F59E0B;color:white;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:bold;">⏳ PENDIENTE</span>`
+                : `<span style="background:#2ECC71;color:white;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:bold;">✅ APROBADO</span>${notaAprobBadge}`;
             
             // Botón aprobar solo para docente y admin
             const puedeAprobar = currentUser && (currentUser.rol === 'docente' || currentUser.rol === 'admin');
@@ -1371,8 +1384,11 @@ PLAN DE INTERVENCIÓN:
 
         // Limpiar campos
         document.getElementById('nota-paciente-select').innerHTML = '<option value="">-- Selecciona un paciente --</option>';
-        document.getElementById('nota-docente-texto').value = '';
+        document.getElementById('nota-calificacion').value = '';
+        document.getElementById('nota-porcentaje').value = '';
         document.getElementById('nota-info-alumno').style.display = 'none';
+        actualizarColorNota(document.getElementById('nota-calificacion'));
+        actualizarPorcentajeBadge(document.getElementById('nota-porcentaje'));
 
         document.getElementById('modalNotaDocente').style.display = 'block';
     }
@@ -1671,53 +1687,50 @@ PLAN DE INTERVENCIÓN:
             alert('⚠️ No tienes permiso para aprobar sesiones');
             return;
         }
-        
-        if(!confirm('¿Aprobar esta sesión/evaluación?\n\nSe registrará tu nombre y colegiatura como docente aprobador.')) return;
-        
+
+        // Pedir nota vigesimal al momento de aprobar
+        const notaStr = prompt('📋 APROBACIÓN DE SESIÓN\n\nIngresa la nota vigesimal (0–20):\n(Deja vacío para aprobar sin nota)', '');
+        if(notaStr === null) return; // cancelado
+
+        const nota = notaStr.trim() === '' ? null : parseFloat(notaStr.trim());
+        if(nota !== null && (isNaN(nota) || nota < 0 || nota > 20)) {
+            alert('⚠️ Nota inválida. Debe ser un número entre 0 y 20.');
+            return;
+        }
+
         showLoad(true, 'Aprobando...');
-        
+
         const payload = {
-            action: 'approve_session',
-            id: id,
+            action:       'approve_session',
+            id:           id,
             aprobado_por: currentUser.nombre_completo,
-            colegiatura: currentUser.colegiatura || ''
+            colegiatura:  currentUser.colegiatura || '',
+            nota_aprobacion: nota !== null ? nota : ''
         };
-        
+
         try {
             const response = await fetch(CONFIG.webAppUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify(payload)
             });
-            const result = await response.json();
+            await response.json();
+        } catch(e) { /* continuar localmente */ }
 
-            // Actualizar localmente con datos del aprobador
-            const sesion = db.pacientes.find(p => String(p.id) === String(id));
-            if(sesion) {
-                sesion.estado_aprobacion       = 'aprobado';
-                sesion.aprobado_por            = currentUser.nombre_completo;
-                sesion.colegiatura_aprobador   = currentUser.colegiatura || '';
-            }
-            
-            verHistorial(selectedDni);
-            // Refrescar pop-up de pendientes
-            verificarPendientesDocente();
-            showLoad(false);
-            mostrarNotificacion('✅ Aprobado por ' + currentUser.nombre_completo);
-            setTimeout(() => cargarDatos(false), 800);
-
-        } catch (error) {
-            const sesion = db.pacientes.find(p => String(p.id) === String(id));
-            if(sesion) {
-                sesion.estado_aprobacion       = 'aprobado';
-                sesion.aprobado_por            = currentUser.nombre_completo;
-                sesion.colegiatura_aprobador   = currentUser.colegiatura || '';
-            }
-            verHistorial(selectedDni);
-            verificarPendientesDocente();
-            showLoad(false);
-            mostrarNotificacion('✅ Aprobado por ' + currentUser.nombre_completo);
+        const sesion = db.pacientes.find(p => String(p.id) === String(id));
+        if(sesion) {
+            sesion.estado_aprobacion     = 'aprobado';
+            sesion.aprobado_por          = currentUser.nombre_completo;
+            sesion.colegiatura_aprobador = currentUser.colegiatura || '';
+            if(nota !== null) sesion.nota_aprobacion = nota;
         }
+
+        verHistorial(selectedDni);
+        verificarPendientesDocente();
+        showLoad(false);
+        const notaLabel = nota !== null ? ` · Nota: ${nota}/20` : '';
+        mostrarNotificacion(`✅ Aprobado por ${currentUser.nombre_completo}${notaLabel}`);
+        setTimeout(() => cargarDatos(false), 800);
     }
 
     // ============================================
@@ -2284,43 +2297,79 @@ PLAN DE INTERVENCIÓN:
         mostrarNotificacion(`✅ Notas de ${curso} guardadas`);
     }
 
-    function exportarNotasCurso(curso) {
+    async function exportarNotasCurso(curso) {
         guardarNotasCurso(curso);
         const est  = (db.estructuras_cursos||[]).find(e => e.curso === curso);
         const pacs = db.notas_cursos && db.notas_cursos[curso] ? db.notas_cursos[curso] : [];
         if(!est || !pacs.length) { alert('⚠️ Sin datos para exportar'); return; }
 
-        const rows = [
+        // ── Construir filas para CSV y para GS ──
+        const rowsGS  = [];  // para Sheets: alumno, curso, paciente, notas..., promedio
+        const rowsCSV = [
             [`NOTAS DEL CURSO: ${curso}`, '', '', ''],
             [`Generado: ${new Date().toLocaleDateString('es-PE')}`, '', '', ''],
             ['']
         ];
 
         // Header dinámico
-        const header = ['Paciente'];
+        const header = ['Alumno / Paciente'];
         est.grupos.forEach(g => {
             for(let n=1; n<=parseInt(g.cantidad); n++) header.push(`${g.nombre} - N${n}`);
             header.push(`Prom. ${g.nombre} (${g.peso}%)`);
         });
         header.push('NOTA FINAL');
-        rows.push(header);
+        rowsCSV.push(header);
+
+        // Header para GS (simplificado)
+        const headerGS = ['Alumno','Curso','Paciente'];
+        est.grupos.forEach(g => {
+            for(let n=1; n<=parseInt(g.cantidad); n++) headerGS.push(`${g.nombre}-N${n}`);
+            headerGS.push(`Prom.${g.nombre}`);
+        });
+        headerGS.push('Nota Final');
+        rowsGS.push(headerGS);
 
         pacs.forEach((pac, pi) => {
-            const row = [pac.paciente || `Paciente ${pi+1}`];
+            // nombre del alumno: si el campo viene de pac.alumno o pac.paciente genérico
+            const nombreAlumno = pac.alumno_nombre || (pac.paciente && !pac.paciente.startsWith('Paciente') ? '' : '');
+            const nombrePac    = pac.paciente || `Paciente ${pi+1}`;
+            const rowCSV = [nombrePac];
+            const rowGS  = [nombreAlumno, curso, nombrePac];
             let notaFinal = 0, pesoTotal = 0;
+
             est.grupos.forEach((g, gi) => {
                 const notasGrupo = pac.notas[g.id] || [];
-                const vals = notasGrupo.filter(v => v !== '' && !isNaN(parseFloat(v))).map(v => parseFloat(v));
-                notasGrupo.forEach(v => row.push(v));
-                const prom = vals.length ? vals.reduce((s,v)=>s+v,0)/vals.length : '';
-                row.push(prom !== '' ? prom.toFixed(2) : '—');
-                if(prom !== '') { notaFinal += prom * (parseFloat(g.peso)||0)/100; pesoTotal += parseFloat(g.peso)||0; }
+                const vals = notasGrupo.map(v => parseFloat(v)).filter(v => !isNaN(v));
+                notasGrupo.forEach(v => { rowCSV.push(v); rowGS.push(v); });
+                const prom = vals.length ? vals.reduce((s,v)=>s+v,0)/vals.length : null;
+                const promStr = prom !== null ? prom.toFixed(2) : '—';
+                rowCSV.push(promStr); rowGS.push(promStr);
+                if(prom !== null) { notaFinal += prom*(parseFloat(g.peso)||0)/100; pesoTotal+=parseFloat(g.peso)||0; }
             });
-            row.push(pesoTotal > 0 ? notaFinal.toFixed(2) : '—');
-            rows.push(row);
+            const final = pesoTotal > 0 ? notaFinal.toFixed(2) : '—';
+            rowCSV.push(final); rowGS.push(final);
+            rowsCSV.push(rowCSV);
+            rowsGS.push(rowGS);
         });
 
-        descargarCSV(`CENTYR_Notas_${curso.replace(/ /g,'_')}_${new Date().toISOString().slice(0,10)}.csv`, rows);
+        // ── Enviar a Google Sheets ──
+        showLoad(true, 'Exportando al Sheets...');
+        try {
+            await fetch(CONFIG.webAppUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action: 'save_notas_curso',
+                    curso:  curso,
+                    rows:   rowsGS
+                })
+            });
+        } catch(e) { /* continuar con CSV de todas formas */ }
+        showLoad(false);
+
+        // ── Descargar CSV ──
+        descargarCSV(`CENTYR_Notas_${curso.replace(/ /g,'_')}_${new Date().toISOString().slice(0,10)}.csv`, rowsCSV);
+        mostrarNotificacion(`📤 Notas de ${curso} exportadas al Sheets y descargadas en CSV`);
     }
 
     function calcularNotasFinalCurso() {
