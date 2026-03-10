@@ -445,7 +445,7 @@
 
 <script>
     const CONFIG = {
-        webAppUrl: 'https://script.google.com/macros/s/AKfycbyGY4veRuh5w3SGf9QsIJ6yFH5gMaL19DDTeXKxW6PIZIJNwEsh4Cbe12BEViP2nuEaHA/exec'
+        webAppUrl: 'https://script.google.com/macros/s/AKfycbwn3aGXD3c_eS7Y3k2g8y9lpsAwISbAsC7HcYEU2byFIq4FmXKam7lXwZKdpFRY-8Ar/exec'
     };
     
     let db = { pacientes: [], usuarios: [], citas: [] };
@@ -537,46 +537,59 @@ DOCENTE: ${docenteInfo}
     }
 
     async function cargarDatos(mostrarCarga = true) {
+        if (mostrarCarga) showLoad(true, 'Cargando sistema...');
+
+        // Timeout de 12 segundos — si no responde el servidor, mostramos login igual
+        const timeout = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Tiempo de espera agotado. Verifica la URL del Web App.')), 12000)
+        );
+
         try {
-            if (mostrarCarga) {
-                showLoad(true, 'Cargando sistema...');
-            }
-            
-            const url = `${CONFIG.webAppUrl}?action=loadData`;
-            const response = await fetch(url);
-            
-            if (!response.ok) throw new Error('Error al conectar');
-            
+            const fetchPromise = fetch(`${CONFIG.webAppUrl}?action=loadData`);
+            const response = await Promise.race([fetchPromise, timeout]);
+
+            if (!response.ok) throw new Error(`Error HTTP ${response.status}`);
+
             const data = await response.json();
             if (data.error) throw new Error(data.error);
-            
-            // Procesar pacientes asegurando que DNI siempre sea String
+
             db.pacientes = (data.pacientes || []).map(p => ({
                 ...p,
                 dni: String(p.dni || ''),
-                id: String(p.id || '')
+                id:  String(p.id  || '')
             }));
-            
-            // Procesar usuarios
             db.usuarios = data.usuarios || [];
-            
-            // Procesar citas
-            db.citas = data.citas || [];
-            
+            db.citas    = data.citas    || [];
+
             if (mostrarCarga) {
                 showLoad(false);
-                document.getElementById('login-screen').style.display = 'flex';
+                mostrarLoginScreen();
             } else {
-                // Recarga en background: refrescar pendientes si es docente
-                if(currentUser) {
+                if (currentUser) {
                     renderLista();
                     verificarPendientesDocente();
                 }
             }
+
         } catch (error) {
-            if (mostrarCarga) showLoad(false);
-            alert('❌ Error al cargar datos: ' + error.message);
+            console.error('cargarDatos error:', error);
+            if (mostrarCarga) {
+                showLoad(false);
+                mostrarLoginScreen();
+                // Aviso suave sin bloquear el login
+                const aviso = document.createElement('div');
+                aviso.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#e74c3c;color:white;padding:10px 22px;border-radius:8px;z-index:99999;font-size:0.9rem;box-shadow:0 4px 12px rgba(0,0,0,0.2);';
+                aviso.innerHTML = `⚠️ Sin conexión al servidor — modo sin datos<br><small>${error.message}</small>`;
+                document.body.appendChild(aviso);
+                setTimeout(() => aviso.remove(), 6000);
+            }
         }
+    }
+
+    function mostrarLoginScreen() {
+        document.getElementById('loading').style.display      = 'none';
+        document.getElementById('login-screen').style.display = 'flex';
+        document.getElementById('main-app').style.display     = 'none';
     }
 
     function login() {
@@ -589,7 +602,8 @@ DOCENTE: ${docenteInfo}
             currentUser = user;
             
             document.getElementById('login-screen').style.display = 'none';
-            document.getElementById('main-app').style.display = 'grid';
+            // main-app usa grid en desktop, block en móvil
+            document.getElementById('main-app').style.display = window.innerWidth >= 1024 ? 'grid' : 'block';
             
             // Etiqueta de rol
             const rolLabel = { admin: '👑 Administrador', docente: '🎓 Docente', alumno: '📚 Alumno', profesional: '👤 Profesional' };
@@ -1178,15 +1192,14 @@ PLAN DE INTERVENCIÓN:
         if(confirm('¿Cerrar sesión?')) {
             currentUser = null;
             selectedDni = "";
-            document.getElementById('main-app').style.display = 'none';
-            document.getElementById('login-screen').style.display = 'flex';
-            document.getElementById('userInput').value = "";
-            document.getElementById('passInput').value = "";
-            // Resetear botones de roles al cerrar sesión
-            document.getElementById('btnAdmin').style.display = 'none';
+            document.getElementById('btnAdmin').style.display         = 'none';
             document.getElementById('btn-estadisticas').style.display = 'none';
             document.getElementById('btn-nota-docente').style.display = 'none';
-            document.getElementById('admin-panel').style.display = 'none';
+            document.getElementById('admin-panel').style.display      = 'none';
+            document.getElementById('popup-pendientes').style.display = 'none';
+            document.getElementById('userInput').value = "";
+            document.getElementById('passInput').value = "";
+            mostrarLoginScreen();
         }
     }
 
