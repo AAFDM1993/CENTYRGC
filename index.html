@@ -547,7 +547,7 @@
                     <input type="hidden" id="nota-categoria" value="Traumatología">
                 </div>
                 <!-- Nota vigesimal -->
-                <div style="margin-bottom:15px;">
+                <div style="margin-bottom:20px;">
                     <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:8px;">🔢 Nota (Sistema Vigesimal 0–20):</label>
                     <div style="display:flex; align-items:center; gap:16px;">
                         <input type="number" id="nota-calificacion" min="0" max="20" step="0.5"
@@ -562,22 +562,6 @@
                         0–10: Desaprobado &nbsp;|&nbsp; 11–13: Regular &nbsp;|&nbsp; 14–16: Bueno &nbsp;|&nbsp; 17–20: Excelente
                     </small>
                 </div>
-                <!-- Porcentaje de ponderación -->
-                <div style="margin-bottom:20px;">
-                    <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:8px;">⚖️ Porcentaje de ponderación (%):</label>
-                    <div style="display:flex; align-items:center; gap:16px;">
-                        <input type="number" id="nota-porcentaje" min="1" max="100" step="1"
-                               placeholder="ej: 30"
-                               style="width:120px; font-size:1.4rem; font-weight:bold; text-align:center; border:2px solid #f39c12; border-radius:8px; padding:10px;"
-                               oninput="actualizarPorcentajeBadge(this)">
-                        <div id="nota-pct-badge" style="padding:8px 18px; border-radius:20px; font-weight:bold; font-size:1rem; background:#eee; color:#666;">
-                            Ingresa el %
-                        </div>
-                    </div>
-                    <small style="color:var(--gray); margin-top:6px; display:block;">
-                        Indica cuánto pondera esta nota en el promedio final del alumno.
-                    </small>
-                </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                     <button onclick="guardarNotaDocente()" style="padding:14px; background:var(--docente); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:1rem;">💾 GUARDAR NOTA</button>
                     <button onclick="generarNotaDocentePDF()" style="padding:14px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:1rem;">📄 GENERAR REPORTE</button>
@@ -588,7 +572,7 @@
 
 <script>
     const CONFIG = {
-        webAppUrl: 'https://script.google.com/macros/s/AKfycbwAjrAHFs_JtcOH9hnaCUPuhyV5seJaFx5HqeMkfyZ5HgOx37S1HB3C6bRIzHqWUCluSQ/exec'
+        webAppUrl: 'https://script.google.com/macros/s/AKfycbxYDyraAk5BwH_QAD-FFSVarcqm7GeG0IKFkzRPIt_3eZlLTD5-yNxmJ04GYnChNJAXPQ/exec'
     };
 
     // Elimina prefijos redundantes "CTMP" del valor almacenado
@@ -707,8 +691,13 @@ DOCENTE: ${docenteInfo}
                 dni: String(p.dni || ''),
                 id:  String(p.id  || '')
             }));
-            db.usuarios = data.usuarios || [];
-            db.citas    = data.citas    || [];
+            db.usuarios       = data.usuarios       || [];
+            db.citas          = data.citas          || [];
+            db.notas_docentes = (data.notas_docentes || []).map(n => ({
+                ...n,
+                calificacion: parseFloat(n.calificacion) || 0,
+                id:           String(n.id || '')
+            }));
 
             if (mostrarCarga) {
                 showLoad(false);
@@ -1385,10 +1374,8 @@ PLAN DE INTERVENCIÓN:
         // Limpiar campos
         document.getElementById('nota-paciente-select').innerHTML = '<option value="">-- Selecciona un paciente --</option>';
         document.getElementById('nota-calificacion').value = '';
-        document.getElementById('nota-porcentaje').value = '';
         document.getElementById('nota-info-alumno').style.display = 'none';
         actualizarColorNota(document.getElementById('nota-calificacion'));
-        actualizarPorcentajeBadge(document.getElementById('nota-porcentaje'));
 
         document.getElementById('modalNotaDocente').style.display = 'block';
     }
@@ -1460,7 +1447,6 @@ PLAN DE INTERVENCIÓN:
         const pacienteDni    = document.getElementById('nota-paciente-select').value;
         const categoria      = document.getElementById('nota-categoria').value;
         const calificacion   = document.getElementById('nota-calificacion').value;
-        const porcentaje     = document.getElementById('nota-porcentaje').value;
 
         if(!alumnoUsuario || !pacienteDni) {
             alert('⚠️ Selecciona alumno y paciente'); return;
@@ -1471,18 +1457,13 @@ PLAN DE INTERVENCIÓN:
         const nota = parseFloat(calificacion);
         if(nota < 0 || nota > 20) { alert('⚠️ La nota debe estar entre 0 y 20'); return; }
 
-        const pct = parseFloat(porcentaje);
-        if(!porcentaje || isNaN(pct) || pct <= 0 || pct > 100) {
-            alert('⚠️ Ingresa un porcentaje válido (1–100)'); return;
-        }
-
         const alumnoObj   = db.usuarios.find(u => u.usuario === alumnoUsuario);
         const pacienteRec = db.pacientes.find(p => String(p.dni) === pacienteDni);
         if(!alumnoObj || !pacienteRec) { alert('⚠️ No se encontró el alumno o paciente'); return; }
 
         showLoad(true, 'Guardando nota...');
         const ahora    = new Date();
-        const fechaFmt = `${String(ahora.getDate()).padStart(2,'0')}/${String(ahora.getMonth()+1).padStart(2,'0')}/${String(ahora.getFullYear()).slice(-2)}`;
+        const fechaFmt = `${String(ahora.getDate()).padStart(2,'0')}/${String(ahora.getMonth()+1).padStart(2,'0')}/${ahora.getFullYear()}`;
 
         const payload = {
             action:          'save_nota_docente',
@@ -1493,8 +1474,6 @@ PLAN DE INTERVENCIÓN:
             paciente_dni:    pacienteDni,
             categoria:       categoria,
             calificacion:    nota,
-            porcentaje:      pct,
-            nota:            '',
             docente:         currentUser.nombre_completo,
             colegiatura:     ctmpLimpio(currentUser.colegiatura),
             fecha:           fechaFmt
@@ -1503,18 +1482,15 @@ PLAN DE INTERVENCIÓN:
         try {
             const res = await fetch(CONFIG.webAppUrl, { method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(payload) });
             await res.json();
-        } catch(e) { /* guardar de todas formas */ }
+        } catch(e) { /* guardar localmente de todas formas */ }
 
-        // Guardar localmente para resumen inmediato
         if(!db.notas_docentes) db.notas_docentes = [];
         db.notas_docentes.push(payload);
 
         showLoad(false);
-        mostrarNotificacion(`✅ Nota ${nota}/20 (${pct}%) guardada para ${alumnoObj.nombre_completo}`);
+        mostrarNotificacion(`✅ Nota ${nota}/20 guardada para ${alumnoObj.nombre_completo}`);
         document.getElementById('nota-calificacion').value = '';
-        document.getElementById('nota-porcentaje').value   = '';
         actualizarColorNota(document.getElementById('nota-calificacion'));
-        actualizarPorcentajeBadge(document.getElementById('nota-porcentaje'));
     }
 
     function generarNotaDocentePDF() {
@@ -1522,7 +1498,6 @@ PLAN DE INTERVENCIÓN:
         const pacienteDni    = document.getElementById('nota-paciente-select').value;
         const categoria      = document.getElementById('nota-categoria').value;
         const calificacion   = document.getElementById('nota-calificacion').value;
-        const porcentaje     = document.getElementById('nota-porcentaje').value;
 
         if(!alumnoUsuario || !pacienteDni) {
             alert('⚠️ Selecciona alumno y paciente primero');
@@ -1633,7 +1608,6 @@ PLAN DE INTERVENCIÓN:
         }
 
         const notaNum = parseFloat(calificacion);
-        const pctNum  = parseFloat(porcentaje) || 0;
         const notaColor = isNaN(notaNum) ? '#888' : notaNum <= 10 ? '#c0392b' : notaNum <= 13 ? '#d35400' : notaNum <= 16 ? '#1e8449' : '#1a5276';
         const notaBg    = isNaN(notaNum) ? '#eee'  : notaNum <= 10 ? '#fadbd8'  : notaNum <= 13 ? '#fef9e7'  : notaNum <= 16 ? '#d5f5e3'  : '#d6eaf8';
         const notaLabel = isNaN(notaNum) ? 'Sin nota' : notaNum <= 10 ? 'Desaprobado' : notaNum <= 13 ? 'Regular' : notaNum <= 16 ? 'Bueno' : 'Excelente';
@@ -1648,7 +1622,6 @@ PLAN DE INTERVENCIÓN:
         <div>
             <div style="font-size:1.2rem; font-weight:bold; color:${notaColor};">${notaLabel}</div>
             <div style="color:#888; font-size:0.9rem; margin-top:4px;">Sistema Vigesimal</div>
-            ${pctNum > 0 ? `<div style="margin-top:8px;background:#fef9e7;border:1px solid #f39c12;border-radius:6px;padding:6px 12px;font-size:0.9rem;color:#d35400;font-weight:bold;">⚖️ Pondera ${pctNum}% del promedio final</div>` : ''}
         </div>
     </div>
   </div>`;
@@ -2382,11 +2355,11 @@ PLAN DE INTERVENCIÓN:
     // RESUMEN NOTAS POR ALUMNO (tab admin)
     // ============================================
     function calcularPromedioPonderado(notas) {
-        // notas: [{calificacion, porcentaje}]
-        const totalPct = notas.reduce((s,n) => s + parseFloat(n.porcentaje||0), 0);
-        if(totalPct === 0) return null;
-        const suma = notas.reduce((s,n) => s + parseFloat(n.calificacion||0) * parseFloat(n.porcentaje||0), 0);
-        return (suma / totalPct).toFixed(2);
+        // Ahora calcula promedio simple (el peso lo gestiona el admin en la estructura de cursos)
+        const validas = notas.filter(n => !isNaN(parseFloat(n.calificacion)));
+        if(validas.length === 0) return null;
+        const suma = validas.reduce((s,n) => s + parseFloat(n.calificacion), 0);
+        return (suma / validas.length).toFixed(2);
     }
 
     function cargarResumenNotas() {
@@ -2412,7 +2385,6 @@ PLAN DE INTERVENCIÓN:
             porPaciente[key].notas.push(n);
         });
 
-        const totalPct = notasAlumno.reduce((s,n) => s + parseFloat(n.porcentaje||0), 0);
         const promedioGlobal = calcularPromedioPonderado(notasAlumno);
         const colorGlobal = !promedioGlobal ? '#888' : promedioGlobal <= 10 ? '#c0392b' : promedioGlobal <= 13 ? '#d35400' : promedioGlobal <= 16 ? '#1e8449' : '#1a5276';
 
@@ -2420,11 +2392,11 @@ PLAN DE INTERVENCIÓN:
         <div style="background:var(--primary);color:white;padding:14px 16px;border-radius:8px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
             <div>
                 <div style="font-weight:bold;font-size:1rem;">${alumnoObj.nombre_completo}</div>
-                <div style="font-size:0.8rem;opacity:0.8;">${alumnoObj.codigo||''} · ${notasAlumno.length} nota(s) · ${totalPct}% acumulado</div>
+                <div style="font-size:0.8rem;opacity:0.8;">${alumnoObj.codigo||''} · ${notasAlumno.length} nota(s)</div>
             </div>
             <div style="text-align:center;">
                 <div style="font-size:1.8rem;font-weight:bold;color:${colorGlobal};background:white;border-radius:8px;padding:4px 14px;">${promedioGlobal||'—'}</div>
-                <div style="font-size:0.75rem;opacity:0.8;">Promedio pond.</div>
+                <div style="font-size:0.75rem;opacity:0.8;">Promedio</div>
             </div>
         </div>`;
 
@@ -2437,14 +2409,14 @@ PLAN DE INTERVENCIÓN:
                     <span style="background:${colorPac};color:white;padding:3px 12px;border-radius:12px;font-weight:bold;">${promPac||'—'}/20</span>
                 </div>
                 <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
-                    <tr style="background:#f8f9fa;"><th style="padding:8px;text-align:left;">Categoría</th><th style="padding:8px;text-align:center;">Nota</th><th style="padding:8px;text-align:center;">Peso %</th><th style="padding:8px;text-align:left;">Fecha</th></tr>`;
+                    <tr style="background:#f8f9fa;"><th style="padding:8px;text-align:left;">Categoría</th><th style="padding:8px;text-align:center;">Nota</th><th style="padding:8px;text-align:left;">Docente</th><th style="padding:8px;text-align:left;">Fecha</th></tr>`;
             pac.notas.forEach(n => {
                 const nc = parseFloat(n.calificacion);
                 const c  = nc <= 10 ? '#fadbd8' : nc <= 13 ? '#fef9e7' : nc <= 16 ? '#d5f5e3' : '#d6eaf8';
                 html += `<tr style="border-bottom:1px solid #f0f2f5;">
                     <td style="padding:8px;">${n.categoria}</td>
                     <td style="padding:8px;text-align:center;background:${c};font-weight:bold;">${n.calificacion}/20</td>
-                    <td style="padding:8px;text-align:center;">${n.porcentaje}%</td>
+                    <td style="padding:8px;color:#555;">${n.docente||'—'}</td>
                     <td style="padding:8px;color:#888;">${n.fecha}</td>
                 </tr>`;
             });
@@ -2512,10 +2484,10 @@ PLAN DE INTERVENCIÓN:
         });
 
         const rows = [
-            ['NOTAS POR ALUMNO — CENTYR','','','','',''],
-            ['Generado:', new Date().toLocaleDateString('es-PE'),'','','',''],
+            ['NOTAS POR ALUMNO — CENTYR','','','',''],
+            ['Generado:', new Date().toLocaleDateString('es-PE'),'','',''],
             [''],
-            ['Alumno','Código','Paciente','Categoría','Nota (0-20)','Porcentaje (%)','Promedio Pond.','Fecha','Docente']
+            ['Alumno','Código','Paciente','Categoría','Nota (0-20)','Promedio','Fecha','Docente']
         ];
 
         Object.entries(porAlumno).forEach(([nombre, data]) => {
@@ -2527,13 +2499,12 @@ PLAN DE INTERVENCIÓN:
                     n.paciente_nombre,
                     n.categoria,
                     n.calificacion,
-                    n.porcentaje+'%',
                     i===0 ? (prom||'') : '',
                     n.fecha,
                     n.docente
                 ]);
             });
-            rows.push(['','','','','','','Promedio ponderado:', prom||'Sin calcular','']);
+            rows.push(['','','','','','Promedio:', prom||'Sin calcular','']);
             rows.push(['']);
         });
         descargarCSV(`CENTYR_NotasPorAlumno_${new Date().toISOString().slice(0,10)}.csv`, rows);
@@ -2551,10 +2522,10 @@ PLAN DE INTERVENCIÓN:
         });
 
         const rows = [
-            ['NOTAS POR PACIENTE — CENTYR','','','','',''],
-            ['Generado:', new Date().toLocaleDateString('es-PE'),'','','',''],
+            ['NOTAS POR PACIENTE — CENTYR','','','',''],
+            ['Generado:', new Date().toLocaleDateString('es-PE'),'','',''],
             [''],
-            ['Paciente','DNI','Alumno','Categoría','Nota (0-20)','Porcentaje (%)','Promedio Pond.','Fecha','Docente']
+            ['Paciente','DNI','Alumno','Categoría','Nota (0-20)','Promedio','Fecha','Docente']
         ];
 
         Object.values(porPaciente).forEach(pac => {
@@ -2566,13 +2537,12 @@ PLAN DE INTERVENCIÓN:
                     n.alumno_nombre,
                     n.categoria,
                     n.calificacion,
-                    n.porcentaje+'%',
                     i===0 ? (prom||'') : '',
                     n.fecha,
                     n.docente
                 ]);
             });
-            rows.push(['','','','','','','Promedio ponderado:', prom||'Sin calcular','']);
+            rows.push(['','','','','','Promedio:', prom||'Sin calcular','']);
             rows.push(['']);
         });
         descargarCSV(`CENTYR_NotasPorPaciente_${new Date().toISOString().slice(0,10)}.csv`, rows);
