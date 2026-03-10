@@ -628,7 +628,7 @@
 
 <script>
     const CONFIG = {
-        webAppUrl: 'https://script.google.com/macros/s/AKfycbxYDyraAk5BwH_QAD-FFSVarcqm7GeG0IKFkzRPIt_3eZlLTD5-yNxmJ04GYnChNJAXPQ/exec'
+        webAppUrl: 'https://script.google.com/macros/s/AKfycbxNUMB9JIMDsDYu7WUnErkvcBQ_sxtBO89GXbGKFbID18vzHVP6wT5MkxWBdybJ-M4_AQ/exec'
     };
 
     // Elimina prefijos redundantes "CTMP" del valor almacenado
@@ -754,6 +754,13 @@ DOCENTE: ${docenteInfo}
                 calificacion: parseFloat(n.calificacion) || 0,
                 id:           String(n.id || '')
             }));
+            // Estructuras y notas de cursos guardadas en GS
+            if(data.estructuras_cursos && data.estructuras_cursos.length) {
+                db.estructuras_cursos = data.estructuras_cursos;
+            }
+            if(data.notas_cursos) {
+                db.notas_cursos = data.notas_cursos;
+            }
 
             if (mostrarCarga) {
                 showLoad(false);
@@ -2204,25 +2211,33 @@ PLAN DE INTERVENCIÓN:
         const curso = document.getElementById('curso-sel').value;
         document.getElementById('curso-grupos-wrap').style.display = curso ? 'block' : 'none';
         if(curso) {
-            // Cargar estructura guardada si existe
             const existente = (db.estructuras_cursos||[]).find(e => e.curso === curso);
             if(existente) {
                 cursoGrupos = JSON.parse(JSON.stringify(existente.grupos));
                 document.getElementById('curso-capacidad').value = existente.capacidad;
             } else {
-                cursoGrupos = [{ id: Date.now(), nombre: 'Grupo 1', cantidad: 5, peso: 50 }];
+                const cap = parseInt(document.getElementById('curso-capacidad').value) || 5;
+                cursoGrupos = [{ id: Date.now(), nombre: 'Grupo 1', cantidad: cap, peso: 100 }];
             }
             renderGruposCurso();
         }
     }
 
     function cursoCapacidadChange() {
-        renderPreviewCurso();
+        // Si solo hay un grupo y su cantidad coincide con la capacidad anterior, sincronizar
+        const cap = parseInt(document.getElementById('curso-capacidad').value) || 1;
+        if(cursoGrupos.length === 1 && (cursoGrupos[0].cantidad === undefined || cursoGrupos[0].cantidad <= 20)) {
+            cursoGrupos[0].cantidad = cap;
+            renderGruposCurso();
+        } else {
+            renderPreviewCurso();
+        }
     }
 
     function agregarGrupoCurso() {
+        const capacidad = parseInt(document.getElementById('curso-capacidad').value) || 5;
         const n = cursoGrupos.length + 1;
-        cursoGrupos.push({ id: Date.now(), nombre: `Grupo ${n}`, cantidad: 5, peso: 0 });
+        cursoGrupos.push({ id: Date.now(), nombre: `Grupo ${n}`, cantidad: capacidad, peso: 0 });
         renderGruposCurso();
     }
 
@@ -2346,7 +2361,7 @@ PLAN DE INTERVENCIÓN:
         preview.innerHTML = html;
     }
 
-    function guardarEstructuraCurso() {
+    async function guardarEstructuraCurso() {
         const curso     = document.getElementById('curso-sel').value;
         const capacidad = parseInt(document.getElementById('curso-capacidad').value)||1;
         if(!curso) { alert('⚠️ Selecciona un curso'); return; }
@@ -2371,21 +2386,62 @@ PLAN DE INTERVENCIÓN:
         if(idx >= 0) db.estructuras_cursos[idx] = estructura;
         else         db.estructuras_cursos.push(estructura);
 
-        // Inicializar notas de pacientes si no existen
-        if(!db.notas_cursos) db.notas_cursos = {};
-        if(!db.notas_cursos[curso]) {
-            db.notas_cursos[curso] = [];
-            for(let p=1; p<=capacidad; p++) {
-                const notasPac = {};
-                cursoGrupos.forEach(g => {
-                    notasPac[g.id] = Array(parseInt(g.cantidad)).fill('');
-                });
-                db.notas_cursos[curso].push({ paciente: `Paciente ${p}`, notas: notasPac });
+        // ── Precargar pacientes reales de la categoría ──
+        // Buscar pacientes únicos que tengan esa categoría en el sistema
+        const pacientesReales = [];
+        const dniVistos = new Set();
+        db.pacientes.forEach(p => {
+            if((p.categoria||'') === curso && !dniVistos.has(String(p.dni||''))) {
+                dniVistos.add(String(p.dni||''));
+                pacientesReales.push({ dni: String(p.dni||''), nombre: p.paciente });
             }
+        });
+
+        // Inicializar / actualizar notas del curso
+        if(!db.notas_cursos) db.notas_cursos = {};
+        const existingPacs = db.notas_cursos[curso] || [];
+
+        const nuevasPacs = [];
+        for(let p=0; p<capacidad; p++) {
+            // Primero intentar mantener paciente ya registrado
+            const previo = existingPacs[p];
+            // Si hay paciente real del sistema para esta posición, usarlo
+            const real = pacientesReales[p];
+            const nombre = previo?.paciente || real?.nombre || `Paciente ${p+1}`;
+            const dni    = previo?.dni    || real?.dni    || '';
+
+            // Mantener notas previas por grupo que todavía existan
+            const notasPac = {};
+            cursoGrupos.forEach(g => {
+                notasPac[g.id] = (previo?.notas?.[g.id]) || Array(parseInt(g.cantidad)).fill('');
+                // Ajustar longitud si cambió
+                while(notasPac[g.id].length < parseInt(g.cantidad)) notasPac[g.id].push('');
+                notasPac[g.id] = notasPac[g.id].slice(0, parseInt(g.cantidad));
+            });
+            nuevasPacs.push({ paciente: nombre, dni, notas: notasPac });
         }
+        db.notas_cursos[curso] = nuevasPacs;
+
+        // ── Enviar estructura al Google Sheets ──
+        showLoad(true, 'Guardando en Sheets...');
+        try {
+            await fetch(CONFIG.webAppUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action:    'save_estructura_curso',
+                    curso,
+                    capacidad,
+                    grupos:    cursoGrupos,
+                    pacientes: nuevasPacs.map(p => ({ paciente: p.paciente, dni: p.dni })),
+                    fecha:     estructura.fechaGuardado
+                })
+            });
+        } catch(e) { /* continuar localmente */ }
+        showLoad(false);
 
         renderCursosGuardados();
-        mostrarNotificacion(`✅ Estructura de ${curso} guardada (${capacidad} pacientes, ${cursoGrupos.length} grupos)`);
+        mostrarNotificacion(`✅ Estructura de ${curso} guardada en Sheets (${capacidad} pacientes, ${cursoGrupos.length} grupos)`);
     }
 
     function renderCursosGuardados() {
@@ -2433,78 +2489,133 @@ PLAN DE INTERVENCIÓN:
         mostrarNotificacion(`🗑️ Estructura de ${curso} eliminada`);
     }
 
-    // ============================================
-    // INGRESO DE NOTAS POR PACIENTE (modal)
-    // ============================================
-    function abrirIngresoCurso(curso) {
+    async function abrirIngresoCurso(curso) {
         const est = (db.estructuras_cursos||[]).find(e => e.curso === curso);
         if(!est) return;
 
+        // ── Intentar cargar notas guardadas del GS ──
+        showLoad(true, 'Cargando notas guardadas...');
+        try {
+            const res  = await fetch(`${CONFIG.webAppUrl}?action=get_notas_curso&curso=${encodeURIComponent(curso)}`);
+            const data = await res.json();
+            if(data.status === 'success' && data.pacientes && data.pacientes.length) {
+                // Reconstruir notas_cursos local con lo que devuelve el servidor
+                if(!db.notas_cursos) db.notas_cursos = {};
+                const pacsGS = data.pacientes;
+                const pacs = pacsGS.map(pg => {
+                    const notasPac = {};
+                    est.grupos.forEach(g => {
+                        notasPac[g.id] = pg.notas?.[g.nombre] || pg.notas?.[g.id] || Array(parseInt(g.cantidad)).fill('');
+                        while(notasPac[g.id].length < parseInt(g.cantidad)) notasPac[g.id].push('');
+                    });
+                    return { paciente: pg.paciente, dni: pg.dni || '', notas: notasPac };
+                });
+                db.notas_cursos[curso] = pacs;
+            }
+        } catch(e) { /* usar datos locales */ }
+        showLoad(false);
+
+        // ── Si aún no hay notas locales, inicializar con pacientes reales ──
         if(!db.notas_cursos) db.notas_cursos = {};
-        if(!db.notas_cursos[curso]) {
+        if(!db.notas_cursos[curso] || db.notas_cursos[curso].length === 0) {
+            const pacientesReales = [];
+            const dniVistos = new Set();
+            db.pacientes.forEach(p => {
+                if((p.categoria||'') === curso && !dniVistos.has(String(p.dni||''))) {
+                    dniVistos.add(String(p.dni||''));
+                    pacientesReales.push({ nombre: p.paciente, dni: String(p.dni||'') });
+                }
+            });
             db.notas_cursos[curso] = [];
-            for(let p=1; p<=est.capacidad; p++) {
+            for(let p=0; p<est.capacidad; p++) {
+                const real = pacientesReales[p];
                 const notasPac = {};
                 est.grupos.forEach(g => { notasPac[g.id] = Array(parseInt(g.cantidad)).fill(''); });
-                db.notas_cursos[curso].push({ paciente: `Paciente ${p}`, notas: notasPac });
+                db.notas_cursos[curso].push({
+                    paciente: real?.nombre || `Paciente ${p+1}`,
+                    dni:      real?.dni    || '',
+                    notas:    notasPac
+                });
             }
         }
 
-        const pacs = db.notas_cursos[curso];
-        const colors = ['#3498db','#27ae60','#e67e22','#9b59b6','#e74c3c'];
+        const pacs   = db.notas_cursos[curso];
+        const colors = ['#1B2A4A','#0288D1','#2ECC71','#6C3FC5','#F59E0B'];
 
-        let body = `<div style="font-size:0.85rem;color:var(--gray);margin-bottom:12px;">
-            Curso: <strong style="color:var(--primary);">${curso}</strong> · 
-            ${est.capacidad} pacientes · Nota máx: 20
+        let body = `<div style="font-size:0.85rem;color:var(--gray);margin-bottom:14px;padding:10px 12px;background:#f0f4ff;border-radius:8px;border-left:4px solid var(--primary);">
+            Curso: <strong style="color:var(--primary);">${curso}</strong> &nbsp;·&nbsp;
+            <strong>${est.capacidad}</strong> pacientes &nbsp;·&nbsp;
+            <strong>${est.grupos.length}</strong> grupo(s) de notas &nbsp;·&nbsp;
+            Nota máx: <strong>20</strong>
         </div>`;
 
         pacs.forEach((pac, pi) => {
-            body += `<div style="border:1px solid #e0e6ed; border-radius:10px; margin-bottom:16px; overflow:hidden;">
-                <div style="background:var(--primary); color:white; padding:10px 14px; display:flex; justify-content:space-between; align-items:center;">
-                    <input type="text" value="${pac.paciente}" id="pac-nombre-${pi}"
-                           style="background:transparent; border:none; border-bottom:1px solid rgba(255,255,255,0.5); color:white; font-weight:700; font-size:0.95rem; padding:2px 4px; width:auto;"
-                           placeholder="Nombre del paciente">
-                    <span id="nota-final-${pi}" style="background:rgba(255,255,255,0.15); padding:4px 14px; border-radius:12px; font-weight:700; font-size:0.95rem;">
-                        Final: —
-                    </span>
+            body += `
+            <div style="border:1.5px solid #e0e6ed; border-radius:12px; margin-bottom:18px; overflow:hidden; box-shadow:0 2px 8px rgba(27,42,74,0.06);">
+                <!-- Cabecera del paciente -->
+                <div style="background:var(--primary); color:white; padding:12px 16px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                        <div style="flex:1; min-width:200px;">
+                            <div style="font-size:0.7rem; opacity:0.7; margin-bottom:3px;">PACIENTE ${pi+1}</div>
+                            <input type="text" value="${pac.paciente}" id="pac-nombre-${pi}"
+                                   style="background:transparent; border:none; border-bottom:1.5px solid rgba(255,255,255,0.5); color:white; font-weight:700; font-size:1rem; padding:2px 4px; width:100%;"
+                                   placeholder="Nombre completo del paciente">
+                        </div>
+                        <div style="min-width:130px;">
+                            <div style="font-size:0.7rem; opacity:0.7; margin-bottom:3px;">DNI</div>
+                            <input type="text" value="${pac.dni||''}" id="pac-dni-${pi}"
+                                   style="background:transparent; border:none; border-bottom:1.5px solid rgba(255,255,255,0.5); color:white; font-size:0.9rem; padding:2px 4px; width:100%;"
+                                   placeholder="DNI (opcional)">
+                        </div>
+                        <span id="nota-final-${pi}" style="background:rgba(255,255,255,0.15); padding:5px 16px; border-radius:20px; font-weight:700; font-size:1rem; white-space:nowrap;">
+                            Final: —
+                        </span>
+                    </div>
                 </div>`;
 
             est.grupos.forEach((g, gi) => {
-                const col = colors[gi % colors.length];
-                const notasGrupo = pac.notas[g.id] || Array(parseInt(g.cantidad)).fill('');
-                body += `<div style="padding:10px 14px; border-bottom:1px solid #f0f2f5;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                        <span style="font-weight:700; color:${col}; font-size:0.85rem;">${g.nombre}</span>
-                        <span style="font-size:0.78rem; color:#888;">Promedio → <strong id="prom-${pi}-${gi}">—</strong> · peso ${g.peso}%</span>
+                const col        = colors[gi % colors.length];
+                const notasGrupo = (pac.notas[g.id] || []).concat(Array(parseInt(g.cantidad)).fill('')).slice(0, parseInt(g.cantidad));
+                body += `
+                <div style="padding:12px 16px; border-bottom:1px solid #f0f2f5; background:${gi%2===0?'white':'#FAFBFF'};">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="background:${col}; color:white; padding:3px 12px; border-radius:12px; font-weight:700; font-size:0.8rem;">${g.nombre}</span>
+                            <span style="font-size:0.78rem; color:#888;">${g.cantidad} nota(s)</span>
+                        </div>
+                        <span style="font-size:0.8rem; color:#888;">Prom → <strong id="prom-${pi}-${gi}" style="color:${col};">—</strong> &nbsp;·&nbsp; Peso <strong>${g.peso}%</strong></span>
                     </div>
-                    <div style="display:flex; flex-wrap:wrap; gap:6px;">`;
+                    <div style="display:flex; flex-wrap:wrap; gap:8px;">`;
                 notasGrupo.forEach((val, ni) => {
-                    body += `<div style="text-align:center;">
-                        <div style="font-size:0.65rem; color:#aaa; margin-bottom:2px;">N${ni+1}</div>
-                        <input type="number" min="0" max="20" step="0.5" value="${val}"
-                               id="nota-${pi}-${gi}-${ni}"
-                               onchange="recalcularFila(${pi},'${curso}')"
-                               style="width:44px; padding:5px 2px; text-align:center; font-weight:700; font-size:0.85rem; border:1.5px solid ${col}; border-radius:6px; margin-bottom:0;">
-                    </div>`;
+                    body += `
+                        <div style="text-align:center;">
+                            <div style="font-size:0.65rem; color:#aaa; margin-bottom:3px; font-weight:600;">N${ni+1}</div>
+                            <input type="number" min="0" max="20" step="0.5" value="${val}"
+                                   id="nota-${pi}-${gi}-${ni}"
+                                   oninput="recalcularFila(${pi},'${curso}')"
+                                   style="width:48px; padding:6px 2px; text-align:center; font-weight:700; font-size:0.9rem; border:2px solid ${col}; border-radius:8px; margin-bottom:0; transition:border-color 0.2s;">
+                        </div>`;
                 });
                 body += `</div></div>`;
             });
             body += `</div>`;
         });
 
-        // Botones de acción
-        body += `<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:4px;">
-            <button onclick="guardarNotasCurso('${curso}')" style="padding:12px; background:var(--admin); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700;">💾 GUARDAR NOTAS</button>
-            <button onclick="exportarNotasCurso('${curso}')" style="padding:12px; background:var(--accent); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700;">📥 EXPORTAR CSV</button>
+        body += `
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:8px; padding-top:4px; border-top:1px solid #f0f2f5;">
+            <button onclick="guardarNotasCurso('${curso}')" style="padding:14px; background:var(--admin); color:white; border:none; border-radius:10px; cursor:pointer; font-weight:700; font-size:0.95rem;">
+                💾 GUARDAR NOTAS EN SHEETS
+            </button>
+            <button onclick="exportarNotasCurso('${curso}')" style="padding:14px; background:var(--accent); color:white; border:none; border-radius:10px; cursor:pointer; font-weight:700; font-size:0.95rem;">
+                📥 EXPORTAR CSV
+            </button>
         </div>`;
 
         document.getElementById('modal-cursos-titulo').textContent = `📝 Notas del Curso — ${curso}`;
         document.getElementById('modal-cursos-body').innerHTML = body;
         document.getElementById('modalCursos').style.display = 'block';
 
-        // Calcular promedios iniciales
-        const est2 = (db.estructuras_cursos||[]).find(e => e.curso === curso);
-        if(est2) pacs.forEach((_, pi) => recalcularFila(pi, curso));
+        pacs.forEach((_, pi) => recalcularFila(pi, curso));
     }
 
     function recalcularFila(pi, curso) {
@@ -2537,13 +2648,17 @@ PLAN DE INTERVENCIÓN:
         }
     }
 
-    function guardarNotasCurso(curso) {
+    async function guardarNotasCurso(curso) {
         const est = (db.estructuras_cursos||[]).find(e => e.curso === curso);
         if(!est || !db.notas_cursos || !db.notas_cursos[curso]) return;
         const pacs = db.notas_cursos[curso];
+
+        // Leer valores actuales desde el DOM
         pacs.forEach((pac, pi) => {
             const nomEl = document.getElementById(`pac-nombre-${pi}`);
-            if(nomEl) pac.paciente = nomEl.value || pac.paciente;
+            const dniEl = document.getElementById(`pac-dni-${pi}`);
+            if(nomEl) pac.paciente = nomEl.value.trim() || pac.paciente;
+            if(dniEl) pac.dni     = dniEl.value.trim()  || pac.dni || '';
             est.grupos.forEach((g, gi) => {
                 if(!pac.notas[g.id]) pac.notas[g.id] = [];
                 for(let ni=0; ni<parseInt(g.cantidad); ni++) {
@@ -2552,7 +2667,27 @@ PLAN DE INTERVENCIÓN:
                 }
             });
         });
-        mostrarNotificacion(`✅ Notas de ${curso} guardadas`);
+
+        // ── Enviar al GS ──
+        showLoad(true, 'Guardando notas en Sheets...');
+        try {
+            await fetch(CONFIG.webAppUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                    action:   'save_notas_ingresadas',
+                    curso,
+                    pacientes: pacs.map(p => ({
+                        paciente: p.paciente,
+                        dni:      p.dni || '',
+                        notas:    p.notas
+                    })),
+                    grupos: est.grupos   // necesario para reconstruir columnas en GS
+                })
+            });
+        } catch(e) { /* continuar */ }
+        showLoad(false);
+        mostrarNotificacion(`✅ Notas de ${curso} guardadas en Sheets`);
     }
 
     async function exportarNotasCurso(curso) {
