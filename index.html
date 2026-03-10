@@ -1737,6 +1737,8 @@ PLAN DE INTERVENCIÓN:
         else if(val <= 16) { badge.style.background = '#d5f5e3'; badge.style.color = '#1e8449'; badge.textContent = '✅ Bueno ('+val+'/20)'; }
         else               { badge.style.background = '#d6eaf8'; badge.style.color = '#1a5276'; badge.textContent = '🌟 Excelente ('+val+'/20)'; }
     }
+
+    function sincronizar() {
         mostrarNotificacion('🔄 Sincronizando...');
         cargarDatos(false).then(() => {
             if (selectedDni) {
