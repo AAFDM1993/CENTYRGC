@@ -1,0 +1,2082 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="googlebot" content="noindex, nofollow, noarchive">
+    <meta name="bingbot" content="noindex, nofollow, noarchive">
+    <title>CENTYR | Gestión</title>
+    <style>
+        :root { 
+            --primary: #252850; --accent: #27ae60; --bg: #f0f2f5; 
+            --blue: #252850; --danger: #e74c3c; --admin: #252850; 
+            --docente: #1a6fa8; --alumno: #16a085;
+            --gray: #7f8c8d; --white: #ffffff; --shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); margin: 0; color: #333; }
+        
+        #loading { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--blue); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        #login-screen { display: none; align-items: center; justify-content: center; min-height: 100vh; }
+        .login-card { background: white; padding: 40px; border-radius: 16px; box-shadow: var(--shadow); width: 380px; text-align: center; }
+        
+        #main-app { display: none; max-width: 1300px; margin: 0 auto; padding: 20px; gap: 20px; grid-template-columns: 1fr; }
+        @media (min-width: 1024px) { #main-app { display: grid; grid-template-columns: 450px 1fr; } }
+        
+        .panel { background: white; padding: 25px; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 20px; box-sizing: border-box; }
+        h3 { margin-top: 0; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; font-size: 1.1rem; color: var(--primary); }
+        
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        input, textarea, select { width: 100%; padding: 12px; border: 1.5px solid #e0e6ed; border-radius: 8px; font-size: 0.95rem; outline: none; box-sizing: border-box; }
+        
+        .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 15px 0; }
+        .cat-btn { background: #f8f9fa; border: 1.5px solid #e0e6ed; padding: 10px; border-radius: 8px; cursor: pointer; text-align: center; font-size: 0.8rem; font-weight: 600; transition: all 0.3s; }
+        .cat-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
+        .cat-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .btn-save { background: var(--accent); color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s; }
+        .btn-save:hover { background: #229954; transform: translateY(-2px); }
+        .btn-clear { background: var(--gray); color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s; }
+        .btn-clear:hover { background: #5d6d7e; }
+        .btn-pdf { background: var(--blue); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; transition: all 0.3s; }
+        .btn-pdf:hover { background: #2874a6; }
+        
+        .paciente-item { padding: 12px; border-bottom: 1px solid #f0f2f5; cursor: pointer; transition: all 0.2s; }
+        .paciente-item:hover { background: #f8fbff; transform: translateX(5px); }
+        .sesion-card { border: 1px solid #eef2f6; padding: 15px; border-radius: 10px; margin-bottom: 15px; transition: all 0.3s; position: relative; }
+        .sesion-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        
+        .btn-delete { position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--danger); cursor: pointer; font-size: 20px; font-weight: bold; padding: 5px 10px; border-radius: 4px; transition: all 0.2s; }
+        .btn-delete:hover { background: var(--danger); color: white; }
+        
+        /* Calendario */
+        .calendar-container { background: white; border-radius: 8px; padding: 15px; }
+        #calendar-content { 
+            transition: all 0.3s ease; 
+            overflow: hidden;
+        }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .calendar-header button { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--blue); padding: 5px 10px; }
+        .calendar-header button:hover { background: #f0f2f5; border-radius: 4px; }
+        #calendar-toggle-btn { 
+            transition: transform 0.3s ease, background 0.2s ease;
+        }
+        #calendar-toggle-btn:hover { 
+            background: #e3f2fd !important; 
+            border-radius: 4px;
+        }
+        .calendar-title { font-weight: bold; color: var(--primary); }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+        .calendar-day-header { text-align: center; font-size: 0.75rem; font-weight: bold; color: var(--gray); padding: 5px; }
+        .calendar-day { text-align: center; padding: 8px; cursor: pointer; border-radius: 4px; font-size: 0.85rem; transition: all 0.2s; position: relative; }
+        .calendar-day:hover { background: #e3f2fd; }
+        .calendar-day.other-month { color: #ccc; }
+        .calendar-day.today { background: var(--blue); color: white; font-weight: bold; }
+        .calendar-day.selected { background: var(--accent); color: white; }
+        .calendar-day.has-appointments { background: #fff3cd; }
+        .calendar-day.has-appointments::after { content: '•'; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); color: var(--blue); font-size: 16px; }
+        
+        /* Lista de citas */
+        .appointments-list { margin-top: 15px; max-height: 200px; overflow-y: auto; }
+        .appointment-item { background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid var(--blue); display: flex; justify-content: space-between; align-items: center; }
+        .appointment-item:hover { background: #e9ecef; }
+        .appointment-time { font-weight: bold; color: var(--blue); font-size: 0.9rem; }
+        .appointment-patient { font-size: 0.85rem; color: var(--primary); }
+        .appointment-delete { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 16px; padding: 0 5px; }
+        .appointment-delete:hover { color: #c0392b; }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); overflow-y: auto; }
+        .modal-content { background-color: white; margin: 10% auto; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .modal-header { margin-bottom: 20px; }
+        .modal-header h2 { margin: 0; color: var(--primary); }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover { color: #000; }
+        
+        /* Estilos para módulo de ejercicios */
+        #modalEjercicios .modal-content { max-width: 900px; margin: 2% auto; }
+        .ejercicio-form { background: #f8f9fa; padding: 20px; margin: 15px 0; border-radius: 8px; border: 2px dashed var(--blue); }
+        .ejercicio-item { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid var(--blue); position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .ejercicio-item img { max-width: 200px; height: auto; border-radius: 6px; margin: 10px 0; display: block; }
+        .ejercicio-item .btn-eliminar { position: absolute; top: 10px; right: 10px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        .ejercicio-item .btn-eliminar:hover { background: #c0392b; }
+        .ejercicio-preview { margin: 15px 0; padding: 20px; background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 400px; overflow-y: auto; }
+        .btn-agregar-ejercicio { background: var(--accent); color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 10px 5px; }
+        .btn-agregar-ejercicio:hover { background: #229954; }
+        .btn-generar-pdf { background: var(--blue); color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 10px 5px; font-size: 16px; }
+        .btn-generar-pdf:hover { background: #2980b9; }
+        .input-imagen-label { display: block; margin: 10px 0; padding: 15px; border: 2px dashed var(--blue); border-radius: 6px; background: #f0f8ff; cursor: pointer; text-align: center; color: var(--blue); font-weight: 600; }
+        .input-imagen-label:hover { background: #e3f2fd; border-color: #2980b9; }
+        .ejercicio-numero { background: var(--blue); color: white; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; display: inline-block; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="loading">
+        <div class="spinner"></div>
+        <p id="loading-text" style="margin-top:15px; font-weight:bold;">Cargando sistema...</p>
+    </div>
+
+    <div id="login-screen">
+        <div class="login-card">
+            <img src="logo.png" alt="CENTYR Logo" style="width: 300px; height: auto; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;">
+            <h1 style="color:var(--blue); margin:0 0 10px 0;"> </h1>
+            <p style="color:var(--gray); margin-bottom: 20px;">Sistema de Gestión de Pacientes</p>
+            <input type="text" id="userInput" placeholder="Usuario" style="margin-bottom:10px;" onkeypress="if(event.key==='Enter') login()">
+            <input type="password" id="passInput" placeholder="Contraseña" style="margin-bottom:10px;" onkeypress="if(event.key==='Enter') login()">
+            <button class="btn-save" onclick="login()" style="width:100%; margin-top:10px;">INGRESAR</button>
+            <p id="error-msg" style="color:var(--danger); display:none; margin-top:15px;">⚠️ Credenciales incorrectas</p>
+        </div>
+    </div>
+
+    <!-- Modal Cambiar Contraseña -->
+    <div id="modalPassword" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="cerrarModalPassword()">&times;</span>
+                <h2>🔐 Cambiar Contraseña</h2>
+            </div>
+            <input type="password" id="pass-actual" placeholder="Contraseña actual" style="margin-bottom:10px;">
+            <input type="password" id="pass-nueva" placeholder="Nueva contraseña" style="margin-bottom:10px;">
+            <input type="password" id="pass-confirmar" placeholder="Confirmar nueva contraseña" style="margin-bottom:20px;">
+            <button class="btn-save" onclick="cambiarPassword()" style="width:100%;">CAMBIAR CONTRASEÑA</button>
+        </div>
+    </div>
+
+    <!-- Modal Agendar Cita -->
+    <div id="modalCita" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="cerrarModalCita()">&times;</span>
+                <h2>📅 Agendar Cita</h2>
+            </div>
+            <p style="margin-bottom:10px;"><strong id="cita-fecha-texto"></strong></p>
+            <input type="time" id="cita-hora" style="margin-bottom:10px;">
+            <input type="text" id="cita-paciente-dni" placeholder="DNI del paciente" style="margin-bottom:10px;" oninput="buscarPacienteCita(this.value)">
+            <input type="text" id="cita-paciente-nombre" placeholder="Nombre del paciente" style="margin-bottom:10px;">
+            <textarea id="cita-notas" rows="3" placeholder="Notas de la cita (opcional)" style="margin-bottom:20px;"></textarea>
+            <button class="btn-save" onclick="agendarCita()" style="width:100%;">AGENDAR CITA</button>
+        </div>
+    </div>
+
+    <!-- Modal Generar Ejercicios PDF -->
+    <div id="modalEjercicios" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="cerrarModalEjercicios()">&times;</span>
+                <h2>💪 Generar PDF de Ejercicios</h2>
+            </div>
+            
+            <div style="padding: 20px;">
+                <input type="text" id="ejercicio-titulo-pdf" placeholder="Título del PDF (ej: Ejercicios para el hogar)" style="margin-bottom: 15px; font-size: 1.1rem; font-weight: 600;">
+                
+                <div class="ejercicio-form">
+                    <h3 style="color: var(--blue); margin-top: 0;">➕ Agregar Ejercicio</h3>
+                    <input type="text" id="ejercicio-nombre" placeholder="Nombre del ejercicio (ej: Estiramiento de cuádriceps)" style="margin-bottom:10px;">
+                    
+                    <label class="input-imagen-label" for="ejercicio-imagen">
+                        📷 Subir imagen del ejercicio (opcional)
+                        <input type="file" id="ejercicio-imagen" accept="image/*" style="display:none;" onchange="previsualizarImagen(this)">
+                    </label>
+                    <div id="preview-imagen" style="margin: 10px 0;"></div>
+                    
+                    <textarea id="ejercicio-descripcion" rows="3" placeholder="Descripción del ejercicio..." style="margin-bottom:10px;"></textarea>
+                    <textarea id="ejercicio-indicaciones" rows="2" placeholder="Indicaciones (ej: 3 series de 10 repeticiones, 2 veces al día)" style="margin-bottom:10px;"></textarea>
+                    
+                    <button class="btn-agregar-ejercicio" onclick="agregarEjercicio()">➕ Agregar Ejercicio</button>
+                </div>
+                
+                <h3 style="color: var(--primary); margin-top: 30px;">📋 Ejercicios Agregados:</h3>
+                <div id="lista-ejercicios" style="min-height: 100px;">
+                    <p style="text-align: center; color: #95a5a6; padding: 40px 20px;">
+                        No hay ejercicios agregados aún.<br>
+                        <small>Usa el formulario de arriba para agregar ejercicios</small>
+                    </p>
+                </div>
+                
+                <div style="margin-top: 30px; text-align: center; border-top: 2px solid #e0e6ed; padding-top: 20px;">
+                    <button class="btn-generar-pdf" onclick="generarPDFEjercicios()">📥 GENERAR PDF</button>
+                    <button class="btn-agregar-ejercicio" onclick="limpiarEjercicios()" style="background: #e74c3c;">🗑️ Limpiar Todo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-app">
+        <aside>
+            <div class="panel">
+                <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;" onclick="toggleCalendar()">
+                    <h3 style="margin:0;">📅 Calendario de Citas</h3>
+                    <button id="calendar-toggle-btn" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--blue); padding:5px;" title="Mostrar/Ocultar calendario">▼</button>
+                </div>
+                <div id="calendar-content" style="margin-top:15px;">
+                    <div class="calendar-container">
+                        <div class="calendar-header">
+                            <button onclick="cambiarMes(-1)">◀</button>
+                            <div class="calendar-title" id="calendar-title"></div>
+                            <button onclick="cambiarMes(1)">▶</button>
+                        </div>
+                        <div class="calendar-grid" id="calendar-grid"></div>
+                    </div>
+                    <div class="appointments-list" id="appointments-list"></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <img src="logo.png" alt="CENTYR Logo" style="width: 35px; height: auto;">
+                        <span id="user-tag" style="font-weight:bold; color:var(--admin);"></span>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="abrirModalPassword()" style="background:none; border:none; color:var(--blue); cursor:pointer; font-weight:bold;" title="Cambiar contraseña">🔐</button>
+                        <button onclick="cerrarSesion()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">SALIR</button>
+                    </div>
+                </div>
+                <h3>📝 Registro de Sesión</h3>
+                <div class="form-row">
+                    <input type="text" id="dni" placeholder="DNI" oninput="autoBuscar(this.value)">
+                    <input type="text" id="paciente" placeholder="Nombre completo">
+                </div>
+                
+                <div style="margin: 15px 0;">
+                    <label style="font-size: 0.9rem; color: var(--gray); margin-bottom: 5px; display: block;">Tipo de Atención:</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <button type="button" class="tipo-atencion-btn active" onclick="setTipoAtencion(this, 'evaluacion')" data-tipo="evaluacion" style="background: var(--accent); color: white; border: 2px solid var(--accent); padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.3s;">
+                            📋 Evaluación
+                        </button>
+                        <button type="button" class="tipo-atencion-btn" onclick="setTipoAtencion(this, 'sesion')" data-tipo="sesion" style="background: white; color: var(--blue); border: 2px solid var(--blue); padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.3s;">
+                            💪 Sesión
+                        </button>
+                    </div>
+                    <input type="hidden" id="tipo-atencion" value="evaluacion">
+                </div>
+                
+                <div class="cat-grid">
+                    <div class="cat-btn active" onclick="setCat(this, 'Fisioterapia Traumatológica')">🦴 Trauma</div>
+                    <div class="cat-btn" onclick="setCat(this, 'Fisioterapia Reumatológica')">💧 Reuma</div>
+                    <div class="cat-btn" onclick="setCat(this, 'Neuropediatría')">👶 Neuro Pedia</div>
+                    <div class="cat-btn" onclick="setCat(this, 'Neuro Adultos')">🧠 Neuro Adulto</div>
+                </div>
+                <input type="hidden" id="categoria" value="Fisioterapia Traumatológica">
+                <div style="margin-bottom: 10px;">
+                    <button type="button" onclick="abrirModalNotas()" style="width: 100%; padding: 15px; background: var(--blue); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600;">
+                        📝 ABRIR EDITOR DE NOTAS
+                    </button>
+                    <div id="preview-notas" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px; min-height: 60px; color: #666; font-size: 0.9rem; max-height: 120px; overflow-y: auto;">
+                        <em>Haz clic en "ABRIR EDITOR DE NOTAS" para escribir...</em>
+                    </div>
+                </div>
+                <textarea id="notas" rows="6" placeholder="Detalles de la evolución..." style="display: none;"></textarea>
+                <div class="btn-group">
+                    <button class="btn-save" onclick="guardar()">GUARDAR</button>
+                    <button class="btn-clear" onclick="limpiarCampos()">LIMPIAR</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>👥 Buscador de Pacientes</h3>
+                <input type="text" placeholder="🔍 Buscar por nombre o DNI..." onkeyup="renderLista(this.value)">
+                <div id="listaPacientes" style="max-height: 250px; overflow-y: auto; margin-top:10px;"></div>
+                <button id="btnAdmin" class="btn-save" onclick="toggleAdmin()" style="display:none; margin-top:20px; background:var(--admin); width:100%;">⚙️ PANEL ADMIN</button>
+                <button id="btn-estadisticas" class="btn-save" onclick="abrirEstadisticas()" style="display:none; margin-top:10px; background:#252850; width:100%;">📊 ESTADÍSTICAS</button>
+                <button class="btn-save" onclick="abrirModalEjercicios()" style="margin-top:10px; background:var(--accent); width:100%;">💪 GENERAR EJERCICIOS PDF</button>
+            </div>
+        </aside>
+
+        <main class="panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 10px;">
+                <h2 id="titulo-historial" style="margin:0;">📋 Ficha Clínica</h2>
+                <div>
+                    <button id="btnSync" class="btn-pdf" onclick="sincronizar()" title="Sincronizar datos">🔄</button>
+                    <button id="btnPdf" class="btn-pdf" style="display:none;" onclick="exportarPDF()">📥 EXPORTAR PDF</button>
+                    <button id="btnInforme" class="btn-pdf" style="display:none; background: var(--accent);" onclick="generarInformeFisioterapeutico()">📋 INFORME FISIOTERAPÉUTICO</button>
+                </div>
+            </div>
+            <div id="historial"></div>
+        </main>
+    </div>
+
+    <!-- Modal Editor de Notas -->
+    <div id="modalNotas" class="modal">
+        <div class="modal-content" style="max-width: 900px; max-height: 90vh;">
+            <div class="modal-header">
+                <span class="close" onclick="cerrarModalNotas()">&times;</span>
+                <h2>📝 Editor de Notas</h2>
+            </div>
+            <div style="padding: 20px;">
+                <textarea id="editor-notas" rows="20" style="width: 100%; padding: 15px; border: 1.5px solid #e0e6ed; border-radius: 8px; font-size: 1rem; line-height: 1.6; font-family: 'Segoe UI', sans-serif; resize: vertical;" placeholder="Escribe las notas aquí..."></textarea>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button onclick="cerrarModalNotas()" style="padding: 12px 24px; background: #95a5a6; color: white; border: none; border-radius: 6px; cursor: pointer; margin-right: 10px; font-weight: 600;">CANCELAR</button>
+                    <button onclick="guardarNotasModal()" style="padding: 12px 24px; background: var(--blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">✅ GUARDAR NOTAS</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Generar Ejercicios PDF -->
+
+            <div id="admin-panel" class="panel" style="display:none; border:2px solid var(--admin);">
+                <h3 style="color:var(--admin)">🔑 Nuevo Usuario</h3>
+                <input type="text" id="adm-nombre" placeholder="Nombre completo" style="margin-bottom:10px;">
+                <input type="text" id="adm-codigo" placeholder="Código de alumno (solo alumnos)" style="margin-bottom:10px;">
+                <input type="text" id="adm-colegiatura" placeholder="Colegiatura CTMP (solo docentes)" style="margin-bottom:10px;">
+                <select id="adm-rol" style="margin-bottom:10px;">
+                    <option value="alumno">Alumno</option>
+                    <option value="docente">Docente</option>
+                    <option value="admin">Administrador</option>
+                </select>
+                <input type="text" id="adm-user" placeholder="Usuario" style="margin-bottom:10px;">
+                <input type="password" id="adm-pass" placeholder="Contraseña" style="margin-bottom:10px;">
+                <button class="btn-save" style="background:var(--admin); width:100%;" onclick="crearUsuario()">CREAR USUARIO</button>
+            </div>
+        </aside>
+
+        <main class="panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 10px;">
+                <h2 id="titulo-historial" style="margin:0;">📋 Ficha Clínica</h2>
+                <div>
+                    <button id="btnSync" class="btn-pdf" onclick="sincronizar()" title="Sincronizar datos">🔄</button>
+                    <button id="btnPdf" class="btn-pdf" style="display:none;" onclick="exportarPDF()">📥 EXPORTAR PDF</button>
+                    <button id="btnInforme" class="btn-pdf" style="display:none; background: var(--accent);" onclick="generarInformeFisioterapeutico()">📋 INFORME FISIOTERAPÉUTICO</button>
+                </div>
+            </div>
+            <div id="historial-body" style="margin-top:20px;"></div>
+        </main>
+    </div>
+
+    <!-- Modal Estadísticas -->
+    <div id="modalEstadisticas" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <span class="close" onclick="document.getElementById('modalEstadisticas').style.display='none'">&times;</span>
+                <h2>📊 Estadísticas del Sistema</h2>
+            </div>
+            <div id="estadisticas-contenido" style="padding: 20px;"></div>
+        </div>
+    </div>
+
+<script>
+    const CONFIG = {
+        webAppUrl: 'https://script.google.com/macros/s/AKfycbzsAWOhcy8cvKliwtpkc-oY1QIrz-3HnPeunSxlfSHJSVWPK62mLMoH9Be197TKM7Z7/exec'
+    };
+    
+    let db = { pacientes: [], usuarios: [], citas: [] };
+    let currentUser = null;
+    let selectedDni = "";
+    let currentDate = new Date();
+    let selectedDate = null;
+
+    // ============================================
+    // MODAL DE NOTAS
+    // ============================================
+    
+    function abrirModalNotas() {
+        const notasActuales = document.getElementById('notas').value;
+        
+        // Si es alumno y las notas están vacías, pre-rellenar con info del alumno y docente
+        if((currentUser.rol === 'alumno' || currentUser.rol === 'profesional') && !notasActuales.trim()) {
+            const docentes = db.usuarios.filter(u => u.rol === 'docente');
+            const docenteInfo = docentes.length > 0 
+                ? `${docentes[0].nombre_completo}${docentes[0].colegiatura ? ' - CTMP: ' + docentes[0].colegiatura : ''}`
+                : 'Por asignar';
+            
+            const cabecera = `ALUMNO: ${currentUser.nombre_completo}
+CÓDIGO: ${currentUser.codigo || 'N/A'}
+DOCENTE: ${docenteInfo}
+-------------------------------------------
+`;
+            document.getElementById('editor-notas').value = cabecera;
+            document.getElementById('notas').value = cabecera;
+        } else {
+            document.getElementById('editor-notas').value = notasActuales;
+        }
+        
+        document.getElementById('modalNotas').style.display = 'block';
+    }
+    
+    function cerrarModalNotas() {
+        document.getElementById('modalNotas').style.display = 'none';
+    }
+    
+    function guardarNotasModal() {
+        const notasEditadas = document.getElementById('editor-notas').value;
+        document.getElementById('notas').value = notasEditadas;
+        
+        // Actualizar preview
+        const preview = document.getElementById('preview-notas');
+        if (notasEditadas.trim()) {
+            preview.innerHTML = notasEditadas.substring(0, 200) + (notasEditadas.length > 200 ? '...' : '');
+            preview.style.color = '#333';
+        } else {
+            preview.innerHTML = '<em>Haz clic en "ABRIR EDITOR DE NOTAS" para escribir...</em>';
+            preview.style.color = '#666';
+        }
+        
+        cerrarModalNotas();
+        mostrarNotificacion('✅ Notas guardadas en el editor');
+    }
+
+    // Función para formatear fechas (tanto nuevas como antiguas)
+    function formatearFecha(fechaStr) {
+        // Si ya está en formato DD/MM/YYYY HH:MM AM/PM, retornar tal cual
+        if (fechaStr && fechaStr.includes('/') && (fechaStr.includes('AM') || fechaStr.includes('PM'))) {
+            return fechaStr;
+        }
+        
+        // Si es formato ISO (2026-02-17T00:16:33.000Z), convertir
+        try {
+            const fecha = new Date(fechaStr);
+            
+            const dia = String(fecha.getDate()).padStart(2, '0');
+            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            const anio = String(fecha.getFullYear()).slice(-2); // Solo 2 dígitos
+            
+            let horas = fecha.getHours();
+            const minutos = String(fecha.getMinutes()).padStart(2, '0');
+            const ampm = horas >= 12 ? 'PM' : 'AM';
+            horas = horas % 12;
+            horas = horas ? horas : 12;
+            const horasStr = String(horas).padStart(2, '0');
+            
+            return `${dia}/${mes}/${anio} ${horasStr}:${minutos} ${ampm}`;
+        } catch (e) {
+            return fechaStr; // Si falla, retornar original
+        }
+    }
+
+    function init() {
+        cargarDatos();
+    }
+
+    async function cargarDatos(mostrarCarga = true) {
+        try {
+            if (mostrarCarga) {
+                showLoad(true, 'Cargando sistema...');
+            }
+            
+            const url = `${CONFIG.webAppUrl}?action=loadData`;
+            const response = await fetch(url);
+            
+            if (!response.ok) throw new Error('Error al conectar');
+            
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
+            
+            // Procesar pacientes asegurando que DNI siempre sea String
+            db.pacientes = (data.pacientes || []).map(p => ({
+                ...p,
+                dni: String(p.dni || ''),
+                id: String(p.id || '')
+            }));
+            
+            // Procesar usuarios
+            db.usuarios = data.usuarios || [];
+            
+            // Procesar citas
+            db.citas = data.citas || [];
+            
+            if (mostrarCarga) {
+                showLoad(false);
+                document.getElementById('login-screen').style.display = 'flex';
+            }
+        } catch (error) {
+            if (mostrarCarga) showLoad(false);
+            alert('❌ Error al cargar datos: ' + error.message);
+        }
+    }
+
+    function login() {
+        const u = document.getElementById('userInput').value.trim().toLowerCase();
+        const p = document.getElementById('passInput').value.trim();
+        
+        const user = db.usuarios.find(x => x.usuario.toLowerCase() === u && x.password === p);
+
+        if(user) {
+            currentUser = user;
+            
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-app').style.display = 'grid';
+            
+            // Mostrar nombre y rol con color según categoría
+            const rolLabel = { admin: '👑 Administrador', docente: '🎓 Docente', alumno: '📚 Alumno', profesional: '👤 Profesional' };
+            const rolColor = { admin: 'var(--admin)', docente: 'var(--docente)', alumno: 'var(--alumno)', profesional: 'var(--admin)' };
+            const etiquetaRol = rolLabel[currentUser.rol] || ('👤 ' + currentUser.rol);
+            document.getElementById('user-tag').innerHTML = `<span style="color:${rolColor[currentUser.rol] || '#333'}">${etiquetaRol}</span><br><small style="color:#666;font-weight:normal;">${currentUser.nombre_completo}</small>`;
+            
+            // Control de visibilidad por rol
+            const esAdmin = currentUser.rol === 'admin';
+            const esDocente = currentUser.rol === 'docente';
+            const esAlumno = currentUser.rol === 'alumno' || currentUser.rol === 'profesional';
+            
+            // Panel admin solo para admin
+            if(esAdmin) {
+                document.getElementById('btnAdmin').style.display = 'block';
+                document.getElementById('btn-estadisticas').style.display = 'block';
+            }
+            
+            // Botón aprobar: solo docente y admin pueden ver
+            const btnAprobar = document.getElementById('btn-aprobar-seccion');
+            if(btnAprobar) btnAprobar.style.display = (esDocente || esAdmin) ? 'block' : 'none';
+            
+            // Si es alumno, pre-rellenar nombre del alumno y docente al iniciar
+            if(esAlumno) {
+                actualizarInfoAlumnoEnNotas();
+            }
+            
+            renderLista();
+            renderCalendar();
+            restaurarEstadoCalendar();
+        } else {
+            document.getElementById('error-msg').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('error-msg').style.display = 'none';
+            }, 3000);
+        }
+    }
+
+    // ============================================
+    // CAMBIAR CONTRASEÑA
+    // ============================================
+    
+    function abrirModalPassword() {
+        document.getElementById('modalPassword').style.display = 'block';
+        document.getElementById('pass-actual').value = '';
+        document.getElementById('pass-nueva').value = '';
+        document.getElementById('pass-confirmar').value = '';
+    }
+    
+    function cerrarModalPassword() {
+        document.getElementById('modalPassword').style.display = 'none';
+    }
+    
+    async function cambiarPassword() {
+        const passActual = document.getElementById('pass-actual').value.trim();
+        const passNueva = document.getElementById('pass-nueva').value.trim();
+        const passConfirmar = document.getElementById('pass-confirmar').value.trim();
+        
+        if (!passActual || !passNueva || !passConfirmar) {
+            alert('⚠️ Completa todos los campos');
+            return;
+        }
+        
+        if (passNueva !== passConfirmar) {
+            alert('⚠️ Las contraseñas no coinciden');
+            return;
+        }
+        
+        if (passNueva.length < 4) {
+            alert('⚠️ La contraseña debe tener al menos 4 caracteres');
+            return;
+        }
+        
+        showLoad(true, 'Cambiando contraseña...');
+        
+        const payload = {
+            action: 'change_password',
+            usuario: currentUser.usuario,
+            password_actual: passActual,
+            password_nueva: passNueva
+        };
+        
+        try {
+            const response = await fetch(CONFIG.webAppUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(payload)
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                cerrarModalPassword();
+                
+                showLoad(false);
+                mostrarNotificacion('✅ Contraseña cambiada');
+                alert('✅ Contraseña actualizada correctamente');
+                
+                // Recargar datos en segundo plano sin mostrar pantalla
+                cargarDatos(false);
+            } else {
+                throw new Error(result.message || 'Error al cambiar contraseña');
+            }
+        } catch (error) {
+            showLoad(false);
+            alert('❌ Error: ' + error.message);
+        }
+    }
+
+    async function guardar() {
+        const dniInput = document.getElementById('dni').value.trim();
+        const paciente = document.getElementById('paciente').value.trim();
+        const notas = document.getElementById('notas').value.trim();
+        const tipoAtencion = document.getElementById('tipo-atencion').value;
+        
+        if(!dniInput || !notas || !paciente) {
+            alert("⚠️ Faltan datos: DNI, Nombre y Notas son obligatorios");
+            return;
+        }
+        
+        // Alumnos no pueden aprobar - solo guardar como pendiente
+        const aprobado = (currentUser.rol === 'admin' || currentUser.rol === 'docente') ? 'aprobado' : 'pendiente';
+
+        showLoad(true, "Guardando...");
+        
+        const ahora = new Date();
+        const dia = String(ahora.getDate()).padStart(2, '0');
+        const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+        const anio = String(ahora.getFullYear()).slice(-2);
+        
+        let horas = ahora.getHours();
+        const minutos = String(ahora.getMinutes()).padStart(2, '0');
+        const ampm = horas >= 12 ? 'PM' : 'AM';
+        horas = horas % 12;
+        horas = horas ? horas : 12;
+        const horasStr = String(horas).padStart(2, '0');
+        
+        const fechaFormateada = `${dia}/${mes}/${anio} ${horasStr}:${minutos} ${ampm}`;
+        
+        // Encontrar docente asignado si el usuario es alumno
+        let docenteAsignado = '';
+        if(currentUser.rol === 'alumno' || currentUser.rol === 'profesional') {
+            const docentes = db.usuarios.filter(u => u.rol === 'docente');
+            docenteAsignado = docentes.length > 0 ? docentes[0].nombre_completo + (docentes[0].colegiatura ? ' - ' + docentes[0].colegiatura : '') : '';
+        }
+        
+        const nuevaSesion = {
+            action: 'save',
+            id: String(Date.now()),
+            dni: dniInput,
+            paciente: paciente,
+            categoria: document.getElementById('categoria').value,
+            tipo_atencion: tipoAtencion,
+            notas: notas,
+            fecha: fechaFormateada,
+            atendido_por: currentUser.nombre_completo,
+            alumno_codigo: currentUser.codigo || '',
+            docente_asignado: docenteAsignado,
+            estado_aprobacion: aprobado,
+            rol_autor: currentUser.rol
+        };
+        
+        try {
+            const response = await fetch(CONFIG.webAppUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(nuevaSesion)
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                // Agregar a la base de datos local sin modificar la referencia
+                db.pacientes = [...db.pacientes, nuevaSesion];
+                
+                // Actualizar historial inmediatamente
+                verHistorial(dniInput);
+                
+                // Limpiar notas
+                document.getElementById('notas').value = "";
+                
+                // Determinar qué tipo de atención seleccionar para la próxima
+                // Contar cuántas atenciones tiene este paciente ahora
+                const totalAtenciones = db.pacientes.filter(p => String(p.dni || '') === dniInput).length;
+                
+                // Si solo tiene 1 atención (la que acabamos de guardar), la próxima debería ser Sesión
+                // Si tiene más de 1, también debería ser Sesión por defecto
+                const btnSesion = document.querySelector('[data-tipo="sesion"]');
+                const btnEvaluacion = document.querySelector('[data-tipo="evaluacion"]');
+                
+                if (totalAtenciones >= 1) {
+                    // Ya tiene evaluación, siguiente es sesión
+                    if (btnSesion) {
+                        setTipoAtencion(btnSesion, 'sesion');
+                    }
+                } else {
+                    // Primer paciente, mantener en evaluación
+                    if (btnEvaluacion) {
+                        setTipoAtencion(btnEvaluacion, 'evaluacion');
+                    }
+                }
+                
+                showLoad(false);
+                mostrarNotificacion('✅ Sesión guardada');
+                
+                // Recargar datos en segundo plano sin mostrar pantalla
+                setTimeout(() => cargarDatos(false), 500);
+            } else {
+                throw new Error(result.message || 'Error al guardar');
+            }
+        } catch (error) {
+            showLoad(false);
+            alert('❌ Error: ' + error.message);
+        }
+    }
+
+    // ============================================
+    // ELIMINAR SESIÓN
+    // ============================================
+    
+    async function eliminarSesion(id) {
+        if (!confirm('¿Está seguro de eliminar esta sesión?\n\nEsta acción no se puede deshacer.')) {
+            return;
+        }
+        
+        showLoad(true, 'Eliminando...');
+        
+        const payload = {
+            action: 'delete_session',
+            id: id
+        };
+        
+        try {
+            const response = await fetch(CONFIG.webAppUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(payload)
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                // Eliminar localmente sin modificar la referencia
+                db.pacientes = db.pacientes.filter(p => p.id !== id);
+                
+                // Actualizar historial inmediatamente
+                verHistorial(selectedDni);
+                
+                showLoad(false);
+                mostrarNotificacion('✅ Sesión eliminada');
+                
+                // Recargar datos en segundo plano sin mostrar pantalla
+                setTimeout(() => cargarDatos(false), 500);
+            } else {
+                throw new Error(result.message || 'Error al eliminar');
+            }
+        } catch (error) {
+            showLoad(false);
+            alert('❌ Error: ' + error.message);
+        }
+    }
+
+    async function crearUsuario() {
+        const nombre = document.getElementById('adm-nombre').value.trim();
+        const codigo = document.getElementById('adm-codigo').value.trim();
+        const colegiatura = document.getElementById('adm-colegiatura').value.trim();
+        const usuario = document.getElementById('adm-user').value.trim();
+        const password = document.getElementById('adm-pass').value.trim();
+        const rol = document.getElementById('adm-rol').value;
+
+        if(!nombre || !usuario || !password) {
+            alert("⚠️ Completa todos los campos obligatorios");
+            return;
+        }
+        
+        if (db.usuarios.find(u => u.usuario === usuario)) {
+            alert("⚠️ El usuario ya existe");
+            return;
+        }
+
+        showLoad(true, "Creando usuario...");
+        
+        const payload = {
+            action: 'add_user',
+            nombre_completo: nombre,
+            codigo: codigo || '',
+            colegiatura: colegiatura || '',
+            usuario: usuario,
+            password: password,
+            rol: rol
+        };
+        
+        try {
+            const response = await fetch(CONFIG.webAppUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(payload)
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                document.getElementById('adm-nombre').value = "";
+                document.getElementById('adm-codigo').value = "";
+                document.getElementById('adm-colegiatura').value = "";
+                document.getElementById('adm-user').value = "";
+                document.getElementById('adm-pass').value = "";
+                
+                showLoad(false);
+                mostrarNotificacion('✅ Usuario creado');
+                const rolLabel = { admin: 'Administrador', docente: 'Docente', alumno: 'Alumno' };
+                alert(`✅ Usuario creado\n\nNombre: ${nombre}\nRol: ${rolLabel[rol] || rol}\nUsuario: ${usuario}\nContraseña: ${password}\n\n¡Ya puede iniciar sesión!`);
+                
+                cargarDatos(false);
+            } else {
+                throw new Error(result.message || 'Error al crear usuario');
+            }
+        } catch (error) {
+            showLoad(false);
+            alert('❌ Error: ' + error.message);
+        }
+    }
+
+    function renderLista(filtro = "") {
+        const div = document.getElementById('listaPacientes');
+        const unicos = {};
+        // Asegurar que DNI siempre sea String
+        db.pacientes.forEach(p => {
+            const dniStr = String(p.dni || '');
+            if (dniStr) {
+                unicos[dniStr] = p.paciente;
+            }
+        });
+        
+        const keys = Object.keys(unicos).filter(d => 
+            unicos[d].toLowerCase().includes(filtro.toLowerCase()) || d.includes(filtro)
+        );
+
+        if(keys.length === 0) {
+            div.innerHTML = '<p style="text-align:center; color:#999; padding:20px;">🔍 Sin resultados</p>';
+            return;
+        }
+
+        div.innerHTML = keys.map(d => `
+            <div class="paciente-item" onclick="seleccionar('${d}', '${unicos[d].replace(/'/g, "\\'")}')">
+                <strong>${unicos[d]}</strong><br>
+                <small style="color: var(--gray);">DNI: ${d}</small>
+            </div>
+        `).join('');
+    }
+
+    function seleccionar(d, n) {
+        document.getElementById('dni').value = d;
+        document.getElementById('paciente').value = n;
+        verHistorial(d);
+    }
+
+    function verHistorial(d) {
+        selectedDni = String(d || '');
+        // Filtrar y ordenar cronológicamente (más antigua primero)
+        const todosPaciente = db.pacientes.filter(x => String(x.dni || '') === selectedDni);
+        
+        // Ordenar por ID (timestamp) para tener orden cronológico correcto
+        todosPaciente.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+        
+        // Ahora invertir para mostrar más reciente primero
+        const filtrados = [...todosPaciente].reverse();
+        
+        document.getElementById('btnPdf').style.display = filtrados.length ? 'inline-block' : 'none';
+        document.getElementById('btnInforme').style.display = filtrados.length ? 'inline-block' : 'none';
+        document.getElementById('titulo-historial').innerText = "📋 Historial: " + (filtrados[0]?.paciente || "Sin paciente");
+        
+        if(filtrados.length === 0) {
+            document.getElementById('historial').innerHTML = '<div style="text-align:center; padding:60px 20px; color:#95a5a6;"><h3>📋 Sin registros</h3><p>No hay sesiones previas para este paciente</p></div>';
+            return;
+        }
+
+        document.getElementById('historial').innerHTML = filtrados.map((s, idx) => {
+            let tipoAtencion = s.tipo_atencion;
+            
+            if (!tipoAtencion) {
+                const indiceEnOrdenCronologico = todosPaciente.findIndex(x => x.id === s.id);
+                tipoAtencion = indiceEnOrdenCronologico === 0 ? 'evaluacion' : 'sesion';
+            }
+            
+            const esEvaluacion = tipoAtencion === 'evaluacion';
+            
+            const indiceEnOrdenCronologico = todosPaciente.findIndex(x => x.id === s.id);
+            
+            const sesionesAnteriores = todosPaciente.slice(0, indiceEnOrdenCronologico + 1)
+                .filter((x, i) => {
+                    if (x.tipo_atencion) {
+                        return x.tipo_atencion === 'sesion';
+                    }
+                    return i !== 0;
+                }).length;
+            
+            const etiqueta = esEvaluacion ? 'EVALUACIÓN FISIOTERAPÉUTICA' : `SESIÓN #${sesionesAnteriores}`;
+            const colorEtiqueta = esEvaluacion ? 'var(--accent)' : 'var(--blue)';
+            
+            // Estado de aprobación
+            const estadoAprobacion = s.estado_aprobacion || 'aprobado';
+            const esPendiente = estadoAprobacion === 'pendiente';
+            const badgeAprobacion = esPendiente 
+                ? `<span style="background:#f39c12;color:white;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:bold;">⏳ PENDIENTE</span>`
+                : `<span style="background:#27ae60;color:white;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:bold;">✅ APROBADO</span>`;
+            
+            // Botón aprobar solo para docente y admin
+            const puedeAprobar = currentUser && (currentUser.rol === 'docente' || currentUser.rol === 'admin');
+            const btnAprobarCard = (esPendiente && puedeAprobar) 
+                ? `<button onclick="aprobarSesion('${s.id}')" style="background:var(--accent);color:white;border:none;padding:6px 12px;border-radius:6px;cursor:pointer;font-size:0.8rem;font-weight:bold;margin-top:8px;">✅ Aprobar</button>`
+                : '';
+            
+            // Botón eliminar: solo docente y admin
+            const puedeEliminar = currentUser && (currentUser.rol === 'docente' || currentUser.rol === 'admin');
+            const btnEliminar = puedeEliminar ? `<button class="btn-delete" onclick="eliminarSesion('${s.id}')" title="Eliminar sesión">✕</button>` : '';
+            
+            // Info de alumno y docente
+            const infoAlumno = s.alumno_codigo ? `<span style="color:#666;font-size:0.75rem;">🎓 Cód: ${s.alumno_codigo}</span> ` : '';
+            const infoDocente = s.docente_asignado ? `<div style="color:var(--docente);font-size:0.78rem;margin-top:4px;">👨‍🏫 Docente: ${s.docente_asignado}</div>` : '';
+            
+            return `
+            <div class="sesion-card" style="${esPendiente ? 'border-left:4px solid #f39c12;' : ''}">
+                ${btnEliminar}
+                <div style="display:flex; justify-content:space-between; align-items:center; padding-right:30px; flex-wrap:wrap; gap:5px;">
+                    <small style="color: var(--primary);"><b>📅 ${formatearFecha(s.fecha)}</b></small>
+                    <div style="display:flex;gap:5px;align-items:center;">
+                        ${badgeAprobacion}
+                        <span style="background: ${colorEtiqueta}; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold;">${etiqueta}</span>
+                    </div>
+                </div>
+                <div style="color:var(--blue); font-size:0.85rem; margin:8px 0; font-weight:600;">
+                    ${s.categoria}
+                </div>
+                <div style="color:var(--gray); font-size:0.8rem; margin-bottom:4px;">
+                    👨‍⚕️ Registró: ${s.atendido_por} ${infoAlumno}
+                </div>
+                ${infoDocente}
+                <div style="background: #f8f9fa; padding: 12px; border-radius: 6px; border-left: 3px solid ${colorEtiqueta}; margin-top:8px;">
+                    <p style="margin:0; line-height:1.6; white-space: pre-wrap;">${s.notas}</p>
+                </div>
+                ${btnAprobarCard}
+            </div>
+        `}).join('');
+    }
+
+    function autoBuscar(val) {
+        const valTrimmed = String(val || '').trim();
+        const p = db.pacientes.find(x => String(x.dni || '') === valTrimmed);
+        if(p) { 
+            document.getElementById('paciente').value = p.paciente; 
+            verHistorial(valTrimmed); 
+        }
+    }
+
+    function setCat(el, v) {
+        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('categoria').value = v;
+    }
+    
+    function setTipoAtencion(el, tipo) {
+        // Remover active de todos
+        document.querySelectorAll('.tipo-atencion-btn').forEach(b => {
+            b.classList.remove('active');
+            if (b.dataset.tipo === 'evaluacion') {
+                b.style.background = 'white';
+                b.style.color = 'var(--accent)';
+            } else {
+                b.style.background = 'white';
+                b.style.color = 'var(--blue)';
+            }
+        });
+        
+        // Activar el seleccionado
+        el.classList.add('active');
+        if (tipo === 'evaluacion') {
+            el.style.background = 'var(--accent)';
+            el.style.color = 'white';
+            
+            // Insertar plantilla de evaluación según modelo APTA
+            const notasField = document.getElementById('notas');
+            if (!notasField.value.trim()) { // Solo si está vacío
+                const plantilla = `ANTECEDENTES:
+- Motivo de consulta:
+- Historia de la condición actual:
+- Historia médica relevante:
+- Medicamentos:
+- Cirugías previas:
+- Antecedentes familiares:
+
+EXAMEN SUBJETIVO:
+- Descripción del dolor/síntoma:
+- Localización:
+- Intensidad (EVA 0-10):
+- Factores agravantes:
+- Factores atenuantes:
+- Patrón temporal:
+- Impacto en actividades diarias:
+
+EXAMEN OBJETIVO:
+- Observación/Inspección:
+- Postura:
+- Marcha:
+- Palpación:
+- Rango de movimiento (ROM):
+- Fuerza muscular:
+- Pruebas especiales:
+- Sensibilidad:
+
+ANÁLISIS Y DIAGNÓSTICO FISIOTERAPÉUTICO:
+- Problemas identificados:
+- Hipótesis:
+- Diagnóstico fisioterapéutico:
+
+PLAN DE INTERVENCIÓN:
+- Objetivos a corto plazo:
+- Objetivos a largo plazo:
+- Tratamiento propuesto:
+- Frecuencia:
+- Pronóstico:`;
+                
+                notasField.value = plantilla;
+                document.getElementById('editor-notas').value = plantilla; // También actualizar el editor
+                
+                // Actualizar preview también
+                const preview = document.getElementById('preview-notas');
+                preview.innerHTML = plantilla.substring(0, 200) + '...';
+                preview.style.color = '#333';
+            }
+        } else {
+            el.style.background = 'var(--blue)';
+            el.style.color = 'white';
+        }
+        
+        document.getElementById('tipo-atencion').value = tipo;
+    }
+
+    function limpiarCampos() {
+        document.getElementById('dni').value = "";
+        document.getElementById('paciente').value = "";
+        document.getElementById('notas').value = "";
+        document.getElementById('editor-notas').value = "";
+        
+        // Limpiar preview
+        const preview = document.getElementById('preview-notas');
+        preview.innerHTML = '<em>Haz clic en "ABRIR EDITOR DE NOTAS" para escribir...</em>';
+        preview.style.color = '#666';
+        
+        document.querySelectorAll('.cat-btn').forEach((b, i) => {
+            if(i === 0) b.classList.add('active');
+            else b.classList.remove('active');
+        });
+        document.getElementById('categoria').value = "Fisioterapia Traumatológica";
+        
+        // Resetear a Evaluación al limpiar SIN insertar plantilla
+        document.querySelectorAll('.tipo-atencion-btn').forEach(b => {
+            b.classList.remove('active');
+            if (b.dataset.tipo === 'evaluacion') {
+                b.style.background = 'white';
+                b.style.color = 'var(--accent)';
+            } else {
+                b.style.background = 'white';
+                b.style.color = 'var(--blue)';
+            }
+        });
+        
+        const btnEvaluacion = document.querySelector('[data-tipo="evaluacion"]');
+        if (btnEvaluacion) {
+            btnEvaluacion.classList.add('active');
+            btnEvaluacion.style.background = 'var(--accent)';
+            btnEvaluacion.style.color = 'white';
+        }
+        
+        document.getElementById('tipo-atencion').value = 'evaluacion';
+    }
+
+    function toggleAdmin() {
+        const p = document.getElementById('admin-panel');
+        p.style.display = p.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function cerrarSesion() {
+        if(confirm('¿Cerrar sesión?')) {
+            currentUser = null;
+            selectedDni = "";
+            document.getElementById('main-app').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'flex';
+            document.getElementById('userInput').value = "";
+            document.getElementById('passInput').value = "";
+        }
+    }
+
+    // ============================================
+    // AUTO-FILL INFO ALUMNO EN NOTAS
+    // ============================================
+    
+    function actualizarInfoAlumnoEnNotas() {
+        // Esta función se llama cuando un alumno inicia sesión
+        // Se puede expandir para pre-rellenar datos en la sesión
+    }
+    
+    // Al abrir el editor de notas, si es alumno, incluir cabecera con info
+    function abrirModalNotas_original() {
+        abrirModalNotas();
+    }
+
+    // ============================================
+    // APROBAR SESIÓN (solo docente y admin)
+    // ============================================
+    
+    async function aprobarSesion(id) {
+        if(!currentUser || (currentUser.rol !== 'docente' && currentUser.rol !== 'admin')) {
+            alert('⚠️ No tienes permiso para aprobar sesiones');
+            return;
+        }
+        
+        if(!confirm('¿Aprobar esta sesión/evaluación?')) return;
+        
+        showLoad(true, 'Aprobando...');
+        
+        const payload = {
+            action: 'approve_session',
+            id: id,
+            aprobado_por: currentUser.nombre_completo,
+            colegiatura: currentUser.colegiatura || ''
+        };
+        
+        try {
+            const response = await fetch(CONFIG.webAppUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(payload)
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                // Actualizar localmente
+                const sesion = db.pacientes.find(p => p.id === id);
+                if(sesion) sesion.estado_aprobacion = 'aprobado';
+                
+                verHistorial(selectedDni);
+                showLoad(false);
+                mostrarNotificacion('✅ Sesión aprobada por ' + currentUser.nombre_completo);
+                
+                setTimeout(() => cargarDatos(false), 500);
+            } else {
+                // Si el backend no soporta approve_session aún, actualizar localmente
+                const sesion = db.pacientes.find(p => p.id === id);
+                if(sesion) sesion.estado_aprobacion = 'aprobado';
+                verHistorial(selectedDni);
+                showLoad(false);
+                mostrarNotificacion('✅ Aprobado localmente - ' + currentUser.nombre_completo);
+            }
+        } catch (error) {
+            // Actualizar localmente aunque falle el servidor
+            const sesion = db.pacientes.find(p => p.id === id);
+            if(sesion) sesion.estado_aprobacion = 'aprobado';
+            verHistorial(selectedDni);
+            showLoad(false);
+            mostrarNotificacion('✅ Aprobado - ' + currentUser.nombre_completo);
+        }
+    }
+
+    // ============================================
+    // ESTADÍSTICAS (solo admin)
+    // ============================================
+    
+    function abrirEstadisticas() {
+        if(!currentUser || currentUser.rol !== 'admin') {
+            alert('⚠️ Solo el administrador puede ver estadísticas');
+            return;
+        }
+        
+        const total = db.pacientes.length;
+        const evaluaciones = db.pacientes.filter(p => p.tipo_atencion === 'evaluacion' || !p.tipo_atencion).length;
+        const sesiones = db.pacientes.filter(p => p.tipo_atencion === 'sesion').length;
+        const pendientes = db.pacientes.filter(p => p.estado_aprobacion === 'pendiente').length;
+        const aprobados = db.pacientes.filter(p => p.estado_aprobacion === 'aprobado' || !p.estado_aprobacion).length;
+        
+        // Estadísticas por alumno
+        const porAlumno = {};
+        db.pacientes.forEach(p => {
+            if(p.rol_autor === 'alumno') {
+                const nombre = p.atendido_por || 'Desconocido';
+                if(!porAlumno[nombre]) porAlumno[nombre] = { evaluaciones: 0, sesiones: 0 };
+                if(p.tipo_atencion === 'evaluacion') porAlumno[nombre].evaluaciones++;
+                else porAlumno[nombre].sesiones++;
+            }
+        });
+        
+        // Estadísticas por categoría
+        const porCategoria = {};
+        db.pacientes.forEach(p => {
+            const cat = p.categoria || 'Sin categoría';
+            porCategoria[cat] = (porCategoria[cat] || 0) + 1;
+        });
+        
+        let html = `
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:25px;">
+                <div style="background:#252850;color:white;padding:20px;border-radius:10px;text-align:center;">
+                    <div style="font-size:2rem;font-weight:bold;">${total}</div>
+                    <div style="font-size:0.9rem;opacity:0.9;">Total Registros</div>
+                </div>
+                <div style="background:#27ae60;color:white;padding:20px;border-radius:10px;text-align:center;">
+                    <div style="font-size:2rem;font-weight:bold;">${evaluaciones}</div>
+                    <div style="font-size:0.9rem;opacity:0.9;">Evaluaciones</div>
+                </div>
+                <div style="background:#1a6fa8;color:white;padding:20px;border-radius:10px;text-align:center;">
+                    <div style="font-size:2rem;font-weight:bold;">${sesiones}</div>
+                    <div style="font-size:0.9rem;opacity:0.9;">Sesiones</div>
+                </div>
+                <div style="background:#f39c12;color:white;padding:20px;border-radius:10px;text-align:center;">
+                    <div style="font-size:2rem;font-weight:bold;">${pendientes}</div>
+                    <div style="font-size:0.9rem;opacity:0.9;">Pendientes de Aprobación</div>
+                </div>
+            </div>`;
+        
+        if(Object.keys(porAlumno).length > 0) {
+            html += `<h3 style="color:var(--primary);border-bottom:2px solid #f0f2f5;padding-bottom:8px;">📚 Registros por Alumno</h3>`;
+            html += `<table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+                <tr style="background:#f0f2f5;"><th style="padding:10px;text-align:left;">Alumno</th><th style="padding:10px;text-align:center;">Evaluaciones</th><th style="padding:10px;text-align:center;">Sesiones</th></tr>`;
+            Object.entries(porAlumno).forEach(([nombre, data]) => {
+                html += `<tr style="border-bottom:1px solid #f0f2f5;">
+                    <td style="padding:10px;">${nombre}</td>
+                    <td style="padding:10px;text-align:center;">${data.evaluaciones}</td>
+                    <td style="padding:10px;text-align:center;">${data.sesiones}</td>
+                </tr>`;
+            });
+            html += `</table>`;
+        }
+        
+        html += `<h3 style="color:var(--primary);border-bottom:2px solid #f0f2f5;padding-bottom:8px;">🏥 Registros por Categoría</h3>`;
+        html += `<table style="width:100%;border-collapse:collapse;">
+            <tr style="background:#f0f2f5;"><th style="padding:10px;text-align:left;">Categoría</th><th style="padding:10px;text-align:center;">Total</th></tr>`;
+        Object.entries(porCategoria).forEach(([cat, count]) => {
+            html += `<tr style="border-bottom:1px solid #f0f2f5;">
+                <td style="padding:10px;">${cat}</td>
+                <td style="padding:10px;text-align:center;">${count}</td>
+            </tr>`;
+        });
+        html += `</table>`;
+        
+        document.getElementById('estadisticas-contenido').innerHTML = html;
+        document.getElementById('modalEstadisticas').style.display = 'block';
+    }
+
+    function sincronizar() {
+        mostrarNotificacion('🔄 Sincronizando...');
+        cargarDatos(false).then(() => {
+            if (selectedDni) {
+                verHistorial(selectedDni);
+            }
+            renderLista();
+        });
+    }
+
+    function exportarPDF() {
+        if(!selectedDni) {
+            alert("⚠️ Selecciona un paciente primero");
+            return;
+        }
+        
+        const filtrados = db.pacientes.filter(x => String(x.dni || '') === selectedDni);
+        if(filtrados.length === 0) {
+            alert("⚠️ No hay sesiones para exportar");
+            return;
+        }
+        
+        // Ordenar cronológicamente (más antigua primero)
+        filtrados.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+        
+        const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+        const logoUrl = baseUrl + 'logo.png';
+        
+        // Formatear fecha actual
+        const ahora = new Date();
+        const dia = String(ahora.getDate()).padStart(2, '0');
+        const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+        const anio = String(ahora.getFullYear()).slice(-2); // Solo 2 dígitos
+        let horas = ahora.getHours();
+        const minutos = String(ahora.getMinutes()).padStart(2, '0');
+        const ampm = horas >= 12 ? 'PM' : 'AM';
+        horas = horas % 12;
+        horas = horas ? horas : 12;
+        const horasStr = String(horas).padStart(2, '0');
+        const fechaGeneracion = `${dia}/${mes}/${anio} ${horasStr}:${minutos} ${ampm}`;
+        
+        const colegiaturaInfo = currentUser && currentUser.colegiatura ? `<p><strong>Profesional:</strong> ${currentUser.nombre_completo} - ${currentUser.colegiatura}</p>` : currentUser ? `<p><strong>Profesional:</strong> ${currentUser.nombre_completo}</p>` : '';
+        
+        let html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>Historial - ${filtrados[0].paciente}</title><style>@page{margin:1cm}body{font-family:'Segoe UI',sans-serif;max-width:100%;margin:0;padding:0;line-height:1.6;color:#333}.header{text-align:center;border-bottom:3px solid #3498db;padding-bottom:20px;margin-bottom:30px}.logo{width:250px;height:auto;margin-bottom:15px}.info-paciente{background:#f8f9fa;padding:20px;border-radius:8px;margin-bottom:30px}.sesion{border:1px solid #e0e6ed;border-radius:10px;padding:20px;margin-bottom:25px;page-break-inside:avoid}.sesion-header{background:#3498db;color:white;padding:10px 15px;border-radius:6px;margin-bottom:15px;font-weight:bold}.sesion-header.evaluacion{background:#27ae60}.sesion-categoria{color:#3498db;font-weight:600;margin:10px 0}.sesion-notas{background:#f8f9fa;padding:15px;border-left:4px solid #3498db;border-radius:4px;white-space:pre-wrap}.sesion-notas.evaluacion{border-left-color:#27ae60}@media print{body{margin:0}.sesion{page-break-inside:avoid}}</style></head><body><div class="header"><img src="${logoUrl}" alt="Logo" class="logo" onerror="this.style.display='none'"><h2>HISTORIA CLÍNICA</h2></div><div class="info-paciente"><p><strong>Paciente:</strong> ${filtrados[0].paciente}</p><p><strong>DNI:</strong> ${selectedDni}</p><p><strong>Fecha de generación:</strong> ${fechaGeneracion}</p><p><strong>Total sesiones:</strong> ${filtrados.length}</p>${colegiaturaInfo}</div>`;
+        
+        filtrados.forEach((s, i) => {
+            // Usar el campo tipo_atencion guardado, con fallback para datos antiguos
+            let tipoAtencion = s.tipo_atencion;
+            
+            // Si no tiene tipo_atencion (datos antiguos), asignar basándose en posición
+            if (!tipoAtencion) {
+                // La primera atención (índice 0) es evaluación, el resto son sesiones
+                tipoAtencion = i === 0 ? 'evaluacion' : 'sesion';
+            }
+            
+            const esEvaluacion = tipoAtencion === 'evaluacion';
+            
+            // Contar sesiones hasta este punto (en orden cronológico)
+            const sesionesAnteriores = filtrados.slice(0, i + 1)
+                .filter((x, idx) => {
+                    // Si tiene tipo_atencion, usarlo
+                    if (x.tipo_atencion) {
+                        return x.tipo_atencion === 'sesion';
+                    }
+                    // Si no tiene (datos antiguos), la primera es evaluación, el resto sesiones
+                    return idx !== 0;
+                }).length;
+            
+            const etiqueta = esEvaluacion ? 'EVALUACIÓN FISIOTERAPÉUTICA' : `SESIÓN #${sesionesAnteriores}`;
+            const claseExtra = esEvaluacion ? ' evaluacion' : '';
+            
+            html += `<div class="sesion"><div class="sesion-header${claseExtra}">📅 ${etiqueta} - ${formatearFecha(s.fecha)}</div><div class="sesion-categoria">${s.categoria}</div><p style="color:#7f8c8d;font-size:14px">👨‍⚕️ ${s.atendido_por}</p><div class="sesion-notas${claseExtra}">${s.notas}</div></div>`;
+        });
+        
+        html += `<div style="margin-top:40px;text-align:center;color:#7f8c8d;font-size:12px;border-top:1px solid #e0e6ed;padding-top:20px"><p>© ${new Date().getFullYear()}</p></div></body></html>`;
+        
+        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Historial_${filtrados[0].paciente}_${selectedDni}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        mostrarNotificacion('📥 HTML Descargado - Ábrelo y presiona Ctrl+P para imprimir/guardar como PDF');
+    }
+
+    // ============================================
+    // GENERAR INFORME FISIOTERAPÉUTICO
+    // ============================================
+    
+    function generarInformeFisioterapeutico() {
+        if(!selectedDni) {
+            alert("⚠️ Selecciona un paciente primero");
+            return;
+        }
+        
+        const filtrados = db.pacientes.filter(x => String(x.dni || '') === selectedDni);
+        if(filtrados.length === 0) {
+            alert("⚠️ No hay sesiones para generar informe");
+            return;
+        }
+        
+        // Ordenar cronológicamente (más antigua primero)
+        filtrados.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+        
+        // Separar evaluación y sesiones
+        const evaluacion = filtrados.find(s => (s.tipo_atencion === 'evaluacion' || filtrados.indexOf(s) === 0));
+        const sesiones = filtrados.filter((s, idx) => {
+            if (s.tipo_atencion) {
+                return s.tipo_atencion === 'sesion';
+            }
+            return idx !== 0; // Si no tiene tipo_atencion, la primera es evaluación
+        });
+        
+        const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+        const logoUrl = baseUrl + 'logo.png';
+        
+        // Formatear fecha actual
+        const ahora = new Date();
+        const dia = String(ahora.getDate()).padStart(2, '0');
+        const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+        const anio = String(ahora.getFullYear()).slice(-2);
+        let horas = ahora.getHours();
+        const minutos = String(ahora.getMinutes()).padStart(2, '0');
+        const ampm = horas >= 12 ? 'PM' : 'AM';
+        horas = horas % 12;
+        horas = horas ? horas : 12;
+        const horasStr = String(horas).padStart(2, '0');
+        const fechaGeneracion = `${dia}/${mes}/${anio} ${horasStr}:${minutos} ${ampm}`;
+        
+        const colegiaturaInfo = currentUser && currentUser.colegiatura ? currentUser.colegiatura : '';
+        
+        let html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Informe Fisioterapéutico - ${filtrados[0].paciente}</title>
+    <style>
+        @page { margin: 1cm; }
+        body { font-family: 'Segoe UI', sans-serif; max-width: 100%; margin: 0; padding: 0; line-height: 1.6; color: #333; font-size: 11pt; }
+        .header { text-align: center; border-bottom: 3px solid #27ae60; padding-bottom: 20px; margin-bottom: 30px; }
+        .logo { width: 250px; height: auto; margin-bottom: 15px; }
+        .titulo-informe { color: #27ae60; font-size: 24pt; font-weight: bold; margin: 10px 0; }
+        .info-paciente { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px; border-left: 4px solid #27ae60; }
+        .info-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 10px; }
+        .info-item strong { color: #2c3e50; }
+        .seccion { margin-bottom: 30px; page-break-inside: avoid; }
+        .seccion-titulo { background: #27ae60; color: white; padding: 12px 20px; border-radius: 6px; font-weight: bold; font-size: 14pt; margin-bottom: 15px; }
+        .evaluacion-content { background: #fff; padding: 20px; border: 2px solid #e0e6ed; border-radius: 8px; }
+        .sesion { background: #f8f9fa; padding: 15px; margin-bottom: 15px; border-left: 4px solid #3498db; border-radius: 4px; page-break-inside: avoid; }
+        .sesion-header { font-weight: bold; color: #3498db; margin-bottom: 8px; font-size: 11pt; }
+        .sesion-meta { color: #7f8c8d; font-size: 9pt; margin-bottom: 10px; }
+        .sesion-contenido { color: #333; white-space: pre-wrap; line-height: 1.5; }
+        .resumen { background: #fff3cd; padding: 20px; border-left: 4px solid #ffc107; border-radius: 8px; margin-top: 30px; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 2px solid #e0e6ed; text-align: center; color: #7f8c8d; font-size: 9pt; }
+        .firma { margin-top: 50px; text-align: center; }
+        .linea-firma { border-top: 2px solid #333; width: 300px; margin: 0 auto 10px; }
+        @media print { body { margin: 0; } .seccion { page-break-inside: avoid; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="${logoUrl}" alt="Logo" class="logo" onerror="this.style.display='none'">
+        <div class="titulo-informe">INFORME FISIOTERAPÉUTICO</div>
+    </div>
+    
+    <div class="info-paciente">
+        <div class="info-row">
+            <div class="info-item"><strong>Paciente:</strong> ${filtrados[0].paciente}</div>
+            <div class="info-item"><strong>DNI:</strong> ${selectedDni}</div>
+        </div>
+        <div class="info-row">
+            <div class="info-item"><strong>Fecha del informe:</strong> ${fechaGeneracion}</div>
+            <div class="info-item"><strong>Total de sesiones:</strong> ${sesiones.length}</div>
+        </div>
+        ${currentUser ? `<div class="info-row"><div class="info-item"><strong>Profesional:</strong> ${currentUser.nombre_completo}</div>${colegiaturaInfo ? `<div class="info-item"><strong>Colegiatura:</strong> ${colegiaturaInfo}</div>` : ''}</div>` : ''}
+    </div>`;
+        
+        // SECCIÓN DE EVALUACIÓN
+        if (evaluacion) {
+            html += `<div class="seccion"><div class="seccion-titulo">📋 EVALUACIÓN INICIAL FISIOTERAPÉUTICA</div><div class="evaluacion-content"><p><strong>Fecha:</strong> ${formatearFecha(evaluacion.fecha)}</p><p><strong>Categoría:</strong> ${evaluacion.categoria}</p><p><strong>Evaluado por:</strong> ${evaluacion.atendido_por}</p><hr style="margin: 15px 0; border: none; border-top: 1px solid #e0e6ed;"><div class="sesion-contenido">${evaluacion.notas}</div></div></div>`;
+        }
+        
+        // SECCIÓN DE SESIONES
+        if (sesiones.length > 0) {
+            html += `<div class="seccion"><div class="seccion-titulo">💪 EVOLUCIÓN Y TRATAMIENTO (${sesiones.length} ${sesiones.length === 1 ? 'sesión' : 'sesiones'})</div>`;
+            sesiones.forEach((s, idx) => {
+                html += `<div class="sesion"><div class="sesion-header">Sesión #${idx + 1} - ${formatearFecha(s.fecha)}</div><div class="sesion-meta">📌 ${s.categoria} | 👨‍⚕️ ${s.atendido_por}</div><div class="sesion-contenido">${s.notas}</div></div>`;
+            });
+            html += `</div>`;
+        }
+        
+        // RESUMEN
+        html += `<div class="resumen"><h3 style="margin-top: 0; color: #856404;">📊 RESUMEN DEL TRATAMIENTO</h3><p><strong>Periodo de atención:</strong> ${formatearFecha(filtrados[0].fecha)} - ${formatearFecha(filtrados[filtrados.length - 1].fecha)}</p><p><strong>Total de sesiones realizadas:</strong> ${sesiones.length}</p><p><strong>Categorías de atención:</strong> ${[...new Set(filtrados.map(s => s.categoria))].join(', ')}</p></div>`;
+        
+        // FIRMA Y FOOTER
+        html += `<div class="firma"><div class="linea-firma"></div><p style="margin: 5px 0; font-weight: bold;">${currentUser ? currentUser.nombre_completo : ''}</p>${colegiaturaInfo ? `<p style="margin: 5px 0;">${colegiaturaInfo}</p>` : ''}<p style="margin: 5px 0; color: #7f8c8d;">Fisioterapeuta</p></div><div class="footer"><p>Este informe es un documento profesional de carácter confidencial.</p><p>© ${new Date().getFullYear()}</p></div></body></html>`;
+        
+        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Informe_Fisioterapeutico_${filtrados[0].paciente.replace(/ /g, '_')}_${selectedDni}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        mostrarNotificacion('📋 Informe generado - Ábrelo y presiona Ctrl+P para imprimir/guardar como PDF');
+    }
+
+    function showLoad(mostrar, texto = 'Cargando...') {
+        document.getElementById('loading-text').innerText = texto;
+        document.getElementById('loading').style.display = mostrar ? 'flex' : 'none';
+    }
+
+    function mostrarNotificacion(mensaje) {
+        const notif = document.createElement('div');
+        notif.style.cssText = 'position:fixed;top:20px;right:20px;background:var(--accent);color:white;padding:15px 25px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:10000;animation:slideIn 0.3s ease';
+        notif.innerText = mensaje;
+        document.body.appendChild(notif);
+        setTimeout(() => {
+            notif.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => document.body.removeChild(notif), 300);
+        }, 2500);
+    }
+
+    // Cerrar modal al hacer clic fuera
+    window.onclick = function(event) {
+        const modalPassword = document.getElementById('modalPassword');
+        const modalCita = document.getElementById('modalCita');
+        const modalEstadisticas = document.getElementById('modalEstadisticas');
+        if (event.target == modalPassword) {
+            cerrarModalPassword();
+        }
+        if (event.target == modalCita) {
+            cerrarModalCita();
+        }
+        if (event.target == modalEstadisticas) {
+            modalEstadisticas.style.display = 'none';
+        }
+    }
+
+    // ============================================
+    // CALENDARIO Y CITAS
+    // ============================================
+    
+    function toggleCalendar() {
+        const content = document.getElementById('calendar-content');
+        const btn = document.getElementById('calendar-toggle-btn');
+        
+        if (content.style.display === 'none') {
+            content.style.display = 'block';
+            btn.innerText = '▼';
+            localStorage.setItem('calendarExpanded', 'true');
+        } else {
+            content.style.display = 'none';
+            btn.innerText = '▶';
+            localStorage.setItem('calendarExpanded', 'false');
+        }
+    }
+    
+    function restaurarEstadoCalendar() {
+        const expanded = localStorage.getItem('calendarExpanded');
+        const content = document.getElementById('calendar-content');
+        const btn = document.getElementById('calendar-toggle-btn');
+        
+        // Por defecto, el calendario está expandido
+        if (expanded === 'false') {
+            content.style.display = 'none';
+            btn.innerText = '▶';
+        } else {
+            content.style.display = 'block';
+            btn.innerText = '▼';
+        }
+    }
+    
+    function renderCalendar() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        
+        // Título del calendario
+        const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                           'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        document.getElementById('calendar-title').innerText = `${monthNames[month]} ${year}`;
+        
+        // Calcular días
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const daysInPrevMonth = new Date(year, month, 0).getDate();
+        
+        const grid = document.getElementById('calendar-grid');
+        grid.innerHTML = '';
+        
+        // Headers de días
+        const dayHeaders = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+        dayHeaders.forEach(day => {
+            const header = document.createElement('div');
+            header.className = 'calendar-day-header';
+            header.innerText = day;
+            grid.appendChild(header);
+        });
+        
+        // Días del mes anterior
+        for (let i = firstDay - 1; i >= 0; i--) {
+            const day = daysInPrevMonth - i;
+            const dayEl = createDayElement(day, month - 1, year, true);
+            grid.appendChild(dayEl);
+        }
+        
+        // Días del mes actual
+        const today = new Date();
+        for (let day = 1; day <= daysInMonth; day++) {
+            const isToday = day === today.getDate() && 
+                           month === today.getMonth() && 
+                           year === today.getFullYear();
+            const dayEl = createDayElement(day, month, year, false, isToday);
+            grid.appendChild(dayEl);
+        }
+        
+        // Días del siguiente mes
+        const remainingDays = 42 - (firstDay + daysInMonth);
+        for (let day = 1; day <= remainingDays; day++) {
+            const dayEl = createDayElement(day, month + 1, year, true);
+            grid.appendChild(dayEl);
+        }
+        
+        // Mostrar citas del día seleccionado
+        if (selectedDate) {
+            mostrarCitasDia(selectedDate);
+        }
+    }
+    
+    function createDayElement(day, month, year, otherMonth = false, isToday = false) {
+        const dayEl = document.createElement('div');
+        dayEl.className = 'calendar-day';
+        if (otherMonth) dayEl.classList.add('other-month');
+        if (isToday) dayEl.classList.add('today');
+        
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        
+        // Verificar si tiene citas
+        const hasCitas = db.citas.some(c => c.fecha === dateStr);
+        if (hasCitas) dayEl.classList.add('has-appointments');
+        
+        // Marcar si es la fecha seleccionada
+        if (selectedDate === dateStr) dayEl.classList.add('selected');
+        
+        dayEl.innerText = day;
+        dayEl.onclick = () => selectDay(dateStr);
+        
+        return dayEl;
+    }
+    
+    function cambiarMes(direction) {
+        currentDate.setMonth(currentDate.getMonth() + direction);
+        renderCalendar();
+    }
+    
+    function selectDay(dateStr) {
+        selectedDate = dateStr;
+        renderCalendar();
+        mostrarCitasDia(dateStr);
+    }
+    
+    function mostrarCitasDia(dateStr) {
+        const citas = db.citas.filter(c => c.fecha === dateStr).sort((a, b) => a.hora.localeCompare(b.hora));
+        const container = document.getElementById('appointments-list');
+        
+        if (citas.length === 0) {
+            container.innerHTML = `
+                <p style="text-align:center; color:#999; padding:20px; font-size:0.9rem;">
+                    📅 Sin citas agendadas<br>
+                    <button class="btn-save" onclick="abrirModalCita('${dateStr}')" style="margin-top:10px; padding:8px 15px; font-size:0.85rem;">
+                        Agendar Cita
+                    </button>
+                </p>
+            `;
+            return;
+        }
+        
+        container.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <small style="color:var(--gray); font-weight:bold;">Citas del día</small>
+                <button class="btn-save" onclick="abrirModalCita('${dateStr}')" style="padding:5px 10px; font-size:0.75rem;">+ Agregar</button>
+            </div>
+        ` + citas.map(c => `
+            <div class="appointment-item">
+                <div>
+                    <div class="appointment-time">${c.hora}</div>
+                    <div class="appointment-patient">${c.paciente_nombre}</div>
+                    ${c.notas ? `<small style="color:var(--gray); font-size:0.75rem;">${c.notas}</small>` : ''}
+                </div>
+                <button class="appointment-delete" onclick="eliminarCita('${c.id}')" title="Eliminar cita">✕</button>
+            </div>
+        `).join('');
+    }
+    
+    function abrirModalCita(dateStr) {
+        if (!dateStr) dateStr = selectedDate || new Date().toISOString().split('T')[0];
+        selectedDate = dateStr;
+        
+        const [year, month, day] = dateStr.split('-');
+        const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                           'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        document.getElementById('cita-fecha-texto').innerText = 
+            `${parseInt(day)} de ${monthNames[parseInt(month) - 1]} de ${year}`;
+        
+        document.getElementById('cita-hora').value = '';
+        document.getElementById('cita-paciente-dni').value = '';
+        document.getElementById('cita-paciente-nombre').value = '';
+        document.getElementById('cita-notas').value = '';
+        
+        document.getElementById('modalCita').style.display = 'block';
+    }
+    
+    function cerrarModalCita() {
+        document.getElementById('modalCita').style.display = 'none';
+    }
+    
+    function buscarPacienteCita(dni) {
+        const paciente = db.pacientes.find(p => String(p.dni) === dni.trim());
+        if (paciente) {
+            document.getElementById('cita-paciente-nombre').value = paciente.paciente;
+        }
+    }
+    
+    async function agendarCita() {
+        const hora = document.getElementById('cita-hora').value;
+        const dni = document.getElementById('cita-paciente-dni').value.trim();
+        const nombre = document.getElementById('cita-paciente-nombre').value.trim();
+        const notas = document.getElementById('cita-notas').value.trim();
+        
+        if (!hora || !dni || !nombre) {
+            alert('⚠️ Completa hora, DNI y nombre del paciente');
+            return;
+        }
+        
+        showLoad(true, 'Agendando cita...');
+        
+        const nuevaCita = {
+            action: 'save_cita',
+            id: String(Date.now()),
+            fecha: selectedDate,
+            hora: hora,
+            paciente_dni: dni,
+            paciente_nombre: nombre,
+            notas: notas,
+            agendado_por: currentUser.nombre_completo
+        };
+        
+        try {
+            const response = await fetch(CONFIG.webAppUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(nuevaCita)
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                // Agregar localmente
+                db.citas = [...db.citas, nuevaCita];
+                
+                cerrarModalCita();
+                renderCalendar();
+                mostrarCitasDia(selectedDate);
+                showLoad(false);
+                mostrarNotificacion('✅ Cita agendada');
+                
+                // Recargar en segundo plano
+                setTimeout(() => cargarDatos(false), 500);
+            } else {
+                throw new Error(result.message || 'Error al agendar cita');
+            }
+        } catch (error) {
+            showLoad(false);
+            alert('❌ Error: ' + error.message);
+        }
+    }
+    
+    async function eliminarCita(id) {
+        if (!confirm('¿Eliminar esta cita?')) return;
+        
+        showLoad(true, 'Eliminando cita...');
+        
+        const payload = {
+            action: 'delete_cita',
+            id: id
+        };
+        
+        try {
+            const response = await fetch(CONFIG.webAppUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(payload)
+            });
+            
+            const result = await response.json();
+            
+            if (result.status === 'success') {
+                // Eliminar localmente
+                db.citas = db.citas.filter(c => c.id !== id);
+                
+                renderCalendar();
+                mostrarCitasDia(selectedDate);
+                showLoad(false);
+                mostrarNotificacion('✅ Cita eliminada');
+                
+                // Recargar en segundo plano
+                setTimeout(() => cargarDatos(false), 500);
+            } else {
+                throw new Error(result.message || 'Error al eliminar cita');
+            }
+        } catch (error) {
+            showLoad(false);
+            alert('❌ Error: ' + error.message);
+        }
+    }
+
+    // ============================================
+    // MÓDULO DE EJERCICIOS PDF
+    // ============================================
+    
+    let ejercicios = [];
+    let imagenTemporal = null;
+    
+    function abrirModalEjercicios() {
+        document.getElementById('modalEjercicios').style.display = 'block';
+    }
+    
+    function cerrarModalEjercicios() {
+        document.getElementById('modalEjercicios').style.display = 'none';
+    }
+    
+    function previsualizarImagen(input) {
+        const preview = document.getElementById('preview-imagen');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                imagenTemporal = e.target.result;
+                preview.innerHTML = `<img src="${e.target.result}" style="max-width: 200px; border-radius: 6px; margin: 10px 0;">`;
+            };
+            
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    
+    function agregarEjercicio() {
+        const nombre = document.getElementById('ejercicio-nombre').value.trim();
+        const descripcion = document.getElementById('ejercicio-descripcion').value.trim();
+        const indicaciones = document.getElementById('ejercicio-indicaciones').value.trim();
+        
+        if (!nombre) {
+            alert('⚠️ Ingresa al menos el nombre del ejercicio');
+            return;
+        }
+        
+        const ejercicio = {
+            id: Date.now(),
+            nombre: nombre,
+            imagen: imagenTemporal,
+            descripcion: descripcion,
+            indicaciones: indicaciones
+        };
+        
+        ejercicios.push(ejercicio);
+        
+        // Limpiar formulario
+        document.getElementById('ejercicio-nombre').value = '';
+        document.getElementById('ejercicio-descripcion').value = '';
+        document.getElementById('ejercicio-indicaciones').value = '';
+        document.getElementById('ejercicio-imagen').value = '';
+        document.getElementById('preview-imagen').innerHTML = '';
+        imagenTemporal = null;
+        
+        renderizarEjercicios();
+        mostrarNotificacion('✅ Ejercicio agregado');
+    }
+    
+    function eliminarEjercicio(id) {
+        ejercicios = ejercicios.filter(e => e.id !== id);
+        renderizarEjercicios();
+        mostrarNotificacion('🗑️ Ejercicio eliminado');
+    }
+    
+    function limpiarEjercicios() {
+        if (!confirm('¿Eliminar todos los ejercicios agregados?')) return;
+        ejercicios = [];
+        renderizarEjercicios();
+        mostrarNotificacion('🗑️ Lista limpiada');
+    }
+    
+    function renderizarEjercicios() {
+        const lista = document.getElementById('lista-ejercicios');
+        
+        if (ejercicios.length === 0) {
+            lista.innerHTML = `
+                <p style="text-align: center; color: #95a5a6; padding: 40px 20px;">
+                    No hay ejercicios agregados aún.<br>
+                    <small>Usa el formulario de arriba para agregar ejercicios</small>
+                </p>
+            `;
+            return;
+        }
+        
+        lista.innerHTML = ejercicios.map((e, idx) => `
+            <div class="ejercicio-item">
+                <button class="btn-eliminar" onclick="eliminarEjercicio(${e.id})" title="Eliminar">×</button>
+                <span class="ejercicio-numero">Ejercicio ${idx + 1}</span>
+                <h4 style="color: var(--blue); margin: 10px 0;">${e.nombre}</h4>
+                ${e.imagen ? `<img src="${e.imagen}" alt="${e.nombre}">` : ''}
+                ${e.descripcion ? `<p style="margin: 10px 0;"><strong>Descripción:</strong><br>${e.descripcion}</p>` : ''}
+                ${e.indicaciones ? `<p style="margin: 10px 0; padding: 10px; background: #fff3cd; border-left: 3px solid #ffc107; border-radius: 4px;"><strong>📌 Indicaciones:</strong><br>${e.indicaciones}</p>` : ''}
+            </div>
+        `).join('');
+    }
+    
+    function generarPDFEjercicios() {
+        if (ejercicios.length === 0) {
+            alert('⚠️ Agrega al menos un ejercicio antes de generar el PDF');
+            return;
+        }
+        
+        // Solicitar nombre del paciente
+        const nombrePaciente = prompt('Nombre del paciente:', selectedDni ? db.pacientes.find(p => String(p.dni) === selectedDni)?.paciente || '' : '');
+        if (!nombrePaciente || !nombrePaciente.trim()) {
+            alert('⚠️ Debes ingresar el nombre del paciente');
+            return;
+        }
+        
+        const titulo = document.getElementById('ejercicio-titulo-pdf').value.trim() || 'Plan de Ejercicios';
+        
+        const baseUrl = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+        const logoUrl = baseUrl + 'logo.png';
+        
+        // Formatear fecha actual
+        const ahora = new Date();
+        const dia = String(ahora.getDate()).padStart(2, '0');
+        const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+        const anio = String(ahora.getFullYear()).slice(-2);
+        const fechaGeneracion = `${dia}/${mes}/${anio}`;
+        
+        let html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>${titulo} - ${nombrePaciente}</title>
+    <style>
+        @page {
+            margin: 1cm;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #27ae60;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo {
+            width: 250px;
+            height: auto;
+            margin-bottom: 15px;
+        }
+        .info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .info p {
+            margin: 5px 0;
+        }
+        .ejercicio {
+            border: 2px solid #e0e6ed;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            page-break-inside: avoid;
+            background: white;
+        }
+        .ejercicio-header {
+            background: #27ae60;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 6px;
+            margin: -20px -20px 20px -20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .ejercicio-content {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        .ejercicio-imagen {
+            flex-shrink: 0;
+            width: 5cm;
+            height: 5cm;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            background: #f8f9fa;
+        }
+        .ejercicio-texto {
+            flex-grow: 1;
+        }
+        .descripcion {
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid #3498db;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .indicaciones {
+            background: #fff3cd;
+            padding: 15px;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
+        }
+        .indicaciones strong {
+            color: #856404;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 12px;
+            border-top: 1px solid #e0e6ed;
+            padding-top: 20px;
+        }
+        @media print {
+            body {
+                margin: 0;
+            }
+            .ejercicio {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="${logoUrl}" alt="Logo" class="logo" onerror="this.style.display='none'">
+        <h1>${titulo}</h1>
+    </div>
+    
+    <div class="info">
+        <p><strong>Paciente:</strong> ${nombrePaciente}</p>
+        <p><strong>Fecha:</strong> ${fechaGeneracion}</p>
+        <p><strong>Total de ejercicios:</strong> ${ejercicios.length}</p>
+        ${currentUser && currentUser.colegiatura ? `<p><strong>Profesional:</strong> ${currentUser.nombre_completo} - ${currentUser.colegiatura}</p>` : currentUser ? `<p><strong>Profesional:</strong> ${currentUser.nombre_completo}</p>` : ''}
+    </div>
+`;
+        
+        ejercicios.forEach((e, idx) => {
+            html += `
+    <div class="ejercicio">
+        <div class="ejercicio-header">
+            💪 Ejercicio ${idx + 1}: ${e.nombre}
+        </div>
+        
+        <div class="ejercicio-content">
+            ${e.imagen ? `<img src="${e.imagen}" alt="${e.nombre}" class="ejercicio-imagen">` : ''}
+            
+            <div class="ejercicio-texto">
+                ${e.descripcion ? `
+                <div class="descripcion">
+                    <strong>📝 Descripción:</strong><br>
+                    ${e.descripcion.replace(/\n/g, '<br>')}
+                </div>
+                ` : ''}
+                
+                ${e.indicaciones ? `
+                <div class="indicaciones">
+                    <strong>📌 Indicaciones:</strong><br>
+                    ${e.indicaciones.replace(/\n/g, '<br>')}
+                </div>
+                ` : ''}
+            </div>
+        </div>
+    </div>
+`;
+        });
+        
+        html += `
+    <div class="footer">
+        <p><strong>Importante:</strong> Realice estos ejercicios según las indicaciones. 
+        Ante cualquier dolor o molestia, suspenda y consulte a su profesional de la salud.</p>
+        <p>© ${new Date().getFullYear()}</p>
+    </div>
+</body>
+</html>
+`;
+        
+        // Crear un Blob y descargar
+        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Ejercicios_${nombrePaciente.replace(/ /g, '_')}_${fechaGeneracion.replace(/\//g, '-')}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+        
+        mostrarNotificacion('📥 HTML Descargado - Ábrelo y presiona Ctrl+P para imprimir/guardar como PDF');
+    }
+
+    window.onload = init;
+</script>
+<style>
+    @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
+</style>
+</body>
+</html>
