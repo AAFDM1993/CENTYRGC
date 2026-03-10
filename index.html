@@ -318,18 +318,56 @@
             </div>
 
             <div id="admin-panel" class="panel" style="display:none; border:2px solid var(--admin);">
-                <h3 style="color:var(--admin)">🔑 Nuevo Usuario</h3>
-                <input type="text" id="adm-nombre" placeholder="Nombre completo" style="margin-bottom:10px;">
-                <input type="text" id="adm-codigo" placeholder="Código de alumno (solo alumnos)" style="margin-bottom:10px;">
-                <input type="text" id="adm-colegiatura" placeholder="Colegiatura CTMP (solo docentes)" style="margin-bottom:10px;">
-                <select id="adm-rol" style="margin-bottom:10px;">
-                    <option value="alumno">Alumno</option>
-                    <option value="docente">Docente</option>
-                    <option value="admin">Administrador</option>
-                </select>
-                <input type="text" id="adm-user" placeholder="Usuario" style="margin-bottom:10px;">
-                <input type="password" id="adm-pass" placeholder="Contraseña" style="margin-bottom:10px;">
-                <button class="btn-save" style="background:var(--admin); width:100%;" onclick="crearUsuario()">CREAR USUARIO</button>
+                <!-- Tab navigation -->
+                <div style="display:flex; gap:6px; margin-bottom:18px; flex-wrap:wrap;">
+                    <button onclick="adminTab('tab-usuarios')" id="btn-tab-usuarios" style="padding:8px 14px; background:var(--admin); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.85rem;">👤 Usuarios</button>
+                    <button onclick="adminTab('tab-notas-cfg')" id="btn-tab-notas-cfg" style="padding:8px 14px; background:#eee; color:#555; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.85rem;">⚖️ Notas</button>
+                    <button onclick="adminTab('tab-exportar')" id="btn-tab-exportar" style="padding:8px 14px; background:#eee; color:#555; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.85rem;">📤 Exportar</button>
+                </div>
+
+                <!-- Tab: Nuevo usuario -->
+                <div id="tab-usuarios">
+                    <h3 style="color:var(--admin); margin-top:0;">🔑 Nuevo Usuario</h3>
+                    <input type="text" id="adm-nombre" placeholder="Nombre completo" style="margin-bottom:10px;">
+                    <input type="text" id="adm-codigo" placeholder="Código de alumno (solo alumnos)" style="margin-bottom:10px;">
+                    <input type="text" id="adm-colegiatura" placeholder="Número CTMP (solo docentes)" style="margin-bottom:10px;">
+                    <select id="adm-rol" style="margin-bottom:10px;">
+                        <option value="alumno">Alumno</option>
+                        <option value="docente">Docente</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                    <input type="text" id="adm-user" placeholder="Usuario" style="margin-bottom:10px;">
+                    <input type="password" id="adm-pass" placeholder="Contraseña" style="margin-bottom:10px;">
+                    <button class="btn-save" style="background:var(--admin); width:100%;" onclick="crearUsuario()">CREAR USUARIO</button>
+                </div>
+
+                <!-- Tab: Configuración de notas -->
+                <div id="tab-notas-cfg" style="display:none;">
+                    <h3 style="color:var(--admin); margin-top:0;">⚖️ Notas y Ponderaciones por Alumno y Paciente</h3>
+                    <div style="margin-bottom:12px;">
+                        <select id="cfg-alumno-sel" onchange="cargarResumenNotas()" style="margin-bottom:0;">
+                            <option value="">-- Selecciona un alumno --</option>
+                        </select>
+                    </div>
+                    <div id="cfg-notas-resumen" style="margin-top:10px;"></div>
+                </div>
+
+                <!-- Tab: Exportar datos -->
+                <div id="tab-exportar" style="display:none;">
+                    <h3 style="color:var(--admin); margin-top:0;">📤 Exportar Datos del Sistema</h3>
+                    <p style="color:var(--gray); font-size:0.9rem; margin-bottom:16px;">Genera un reporte Excel/CSV con los datos seleccionados.</p>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <button onclick="exportarResumenGeneral()" style="padding:12px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; text-align:left;">
+                            📊 Resumen General (evaluaciones, sesiones, aprobadas, pendientes)
+                        </button>
+                        <button onclick="exportarNotasPorAlumno()" style="padding:12px; background:var(--docente); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; text-align:left;">
+                            🎓 Notas y promedios por alumno
+                        </button>
+                        <button onclick="exportarNotasPorPaciente()" style="padding:12px; background:var(--accent); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; text-align:left;">
+                            🏥 Notas y promedios por paciente
+                        </button>
+                    </div>
+                </div>
             </div>
         </aside>
 
@@ -418,8 +456,8 @@
                 <div style="margin-bottom:15px;">
                     <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:8px;">🔢 Nota (Sistema Vigesimal 0–20):</label>
                     <div style="display:flex; align-items:center; gap:16px;">
-                        <input type="number" id="nota-calificacion" min="0" max="20" step="0.5" 
-                               placeholder="0 – 20" 
+                        <input type="number" id="nota-calificacion" min="0" max="20" step="0.5"
+                               placeholder="0 – 20"
                                style="width:120px; font-size:1.6rem; font-weight:bold; text-align:center; border:2px solid var(--docente); border-radius:8px; padding:10px;"
                                oninput="actualizarColorNota(this)">
                         <div id="nota-color-badge" style="padding:8px 18px; border-radius:20px; font-weight:bold; font-size:1rem; background:#eee; color:#666;">
@@ -430,10 +468,21 @@
                         0–10: Desaprobado &nbsp;|&nbsp; 11–13: Regular &nbsp;|&nbsp; 14–16: Bueno &nbsp;|&nbsp; 17–20: Excelente
                     </small>
                 </div>
-                <!-- Observación -->
-                <div style="margin-bottom:15px;">
-                    <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:6px;">✍️ Observaciones del Docente:</label>
-                    <textarea id="nota-docente-texto" rows="5" placeholder="Observaciones, correcciones o retroalimentación sobre la sesión/evaluación del alumno..."></textarea>
+                <!-- Porcentaje de ponderación -->
+                <div style="margin-bottom:20px;">
+                    <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:8px;">⚖️ Porcentaje de ponderación (%):</label>
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <input type="number" id="nota-porcentaje" min="1" max="100" step="1"
+                               placeholder="ej: 30"
+                               style="width:120px; font-size:1.4rem; font-weight:bold; text-align:center; border:2px solid #f39c12; border-radius:8px; padding:10px;"
+                               oninput="actualizarPorcentajeBadge(this)">
+                        <div id="nota-pct-badge" style="padding:8px 18px; border-radius:20px; font-weight:bold; font-size:1rem; background:#eee; color:#666;">
+                            Ingresa el %
+                        </div>
+                    </div>
+                    <small style="color:var(--gray); margin-top:6px; display:block;">
+                        Indica cuánto pondera esta nota en el promedio final del alumno.
+                    </small>
                 </div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                     <button onclick="guardarNotaDocente()" style="padding:14px; background:var(--docente); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:1rem;">💾 GUARDAR NOTA</button>
@@ -445,8 +494,14 @@
 
 <script>
     const CONFIG = {
-        webAppUrl: 'https://script.google.com/macros/s/AKfycbwTv7kvnXcW3mjqBPXEHbAbpL8fqN8rGowoWpUuNP0y-BglmaVOJYwUcpRuI-aP818kPA/exec'
+        webAppUrl: 'https://script.google.com/macros/s/AKfycbwwCuZkauJjyxTE5kKS33zAqZLqMnWXqTjrh4sKqFRjqbv_wU4cAv3YEImXp7fnl8PUJQ/exec'
     };
+
+    // Elimina prefijos redundantes "CTMP" del valor almacenado
+    function ctmpLimpio(val) {
+        if(!val) return '';
+        return String(val).replace(/^CTMP\s*/i, '').trim();
+    }
     
     let db = { pacientes: [], usuarios: [], citas: [] };
     let currentUser = null;
@@ -465,7 +520,7 @@
         if((currentUser.rol === 'alumno' || currentUser.rol === 'profesional') && !notasActuales.trim()) {
             const docentes = db.usuarios.filter(u => u.rol === 'docente');
             const docenteInfo = docentes.length > 0 
-                ? `${docentes[0].nombre_completo}${docentes[0].colegiatura ? ' - CTMP: ' + docentes[0].colegiatura : ''}`
+                ? `${docentes[0].nombre_completo}${docentes[0].colegiatura ? ' - CTMP: ' + ctmpLimpio(docentes[0].colegiatura) : ''}`
                 : 'Por asignar';
             
             const cabecera = `ALUMNO: ${currentUser.nombre_completo}
@@ -738,7 +793,7 @@ DOCENTE: ${docenteInfo}
         let docenteAsignado = '';
         if(currentUser.rol === 'alumno' || currentUser.rol === 'profesional') {
             const docentes = db.usuarios.filter(u => u.rol === 'docente');
-            docenteAsignado = docentes.length > 0 ? docentes[0].nombre_completo + (docentes[0].colegiatura ? ' - ' + docentes[0].colegiatura : '') : '';
+            docenteAsignado = docentes.length > 0 ? docentes[0].nombre_completo + (docentes[0].colegiatura ? ' - CTMP: ' + ctmpLimpio(docentes[0].colegiatura) : '') : '';
         }
         
         const nuevaSesion = {
@@ -1021,7 +1076,7 @@ DOCENTE: ${docenteInfo}
             const infoAlumno = s.alumno_codigo ? `<span style="color:#666;font-size:0.75rem;">🎓 Cód: ${s.alumno_codigo}</span> ` : '';
             // El docente que aparece es quien aprobó (aprobado_por), no el asignado inicial
             const docenteMostrado = s.aprobado_por 
-                ? s.aprobado_por + (s.colegiatura_aprobador ? ' — CTMP: '+s.colegiatura_aprobador : '')
+                ? s.aprobado_por + (s.colegiatura_aprobador ? ' — CTMP: '+ctmpLimpio(s.colegiatura_aprobador) : '')
                 : (s.docente_asignado || '');
             const infoDocente = docenteMostrado 
                 ? `<div style="color:var(--docente);font-size:0.78rem;margin-top:4px;">👨‍🏫 Docente: ${docenteMostrado}</div>` 
@@ -1287,7 +1342,7 @@ PLAN DE INTERVENCIÓN:
                 <strong>🔢 Código:</strong> ${alumnoObj.codigo || 'N/A'}<br>
                 <strong>🏥 Paciente:</strong> ${pacienteRec.paciente}<br>
                 <strong>📋 DNI:</strong> ${pacienteDni}<br>
-                <strong>👨‍🏫 Docente:</strong> ${currentUser.nombre_completo}${currentUser.colegiatura ? ' — CTMP: '+currentUser.colegiatura : ''}
+                <strong>👨‍🏫 Docente:</strong> ${currentUser.nombre_completo}${currentUser.colegiatura ? ' — CTMP: '+ctmpLimpio(currentUser.colegiatura) : ''}
             `;
             infoBox.style.display = 'block';
         }
@@ -1302,35 +1357,30 @@ PLAN DE INTERVENCIÓN:
     async function guardarNotaDocente() {
         const alumnoUsuario  = document.getElementById('nota-alumno-select').value;
         const pacienteDni    = document.getElementById('nota-paciente-select').value;
-        const notaTxt        = document.getElementById('nota-docente-texto').value.trim();
         const categoria      = document.getElementById('nota-categoria').value;
         const calificacion   = document.getElementById('nota-calificacion').value;
+        const porcentaje     = document.getElementById('nota-porcentaje').value;
 
         if(!alumnoUsuario || !pacienteDni) {
-            alert('⚠️ Selecciona alumno y paciente');
-            return;
+            alert('⚠️ Selecciona alumno y paciente'); return;
         }
         if(calificacion === '' || isNaN(parseFloat(calificacion))) {
-            alert('⚠️ Ingresa una calificación entre 0 y 20');
-            return;
+            alert('⚠️ Ingresa una calificación entre 0 y 20'); return;
         }
         const nota = parseFloat(calificacion);
-        if(nota < 0 || nota > 20) {
-            alert('⚠️ La nota debe estar entre 0 y 20');
-            return;
+        if(nota < 0 || nota > 20) { alert('⚠️ La nota debe estar entre 0 y 20'); return; }
+
+        const pct = parseFloat(porcentaje);
+        if(!porcentaje || isNaN(pct) || pct <= 0 || pct > 100) {
+            alert('⚠️ Ingresa un porcentaje válido (1–100)'); return;
         }
 
         const alumnoObj   = db.usuarios.find(u => u.usuario === alumnoUsuario);
         const pacienteRec = db.pacientes.find(p => String(p.dni) === pacienteDni);
-
-        if(!alumnoObj || !pacienteRec) {
-            alert('⚠️ No se encontró el alumno o paciente');
-            return;
-        }
+        if(!alumnoObj || !pacienteRec) { alert('⚠️ No se encontró el alumno o paciente'); return; }
 
         showLoad(true, 'Guardando nota...');
-
-        const ahora   = new Date();
+        const ahora    = new Date();
         const fechaFmt = `${String(ahora.getDate()).padStart(2,'0')}/${String(ahora.getMonth()+1).padStart(2,'0')}/${String(ahora.getFullYear()).slice(-2)}`;
 
         const payload = {
@@ -1342,34 +1392,36 @@ PLAN DE INTERVENCIÓN:
             paciente_dni:    pacienteDni,
             categoria:       categoria,
             calificacion:    nota,
-            nota:            notaTxt,
+            porcentaje:      pct,
+            nota:            '',
             docente:         currentUser.nombre_completo,
-            colegiatura:     currentUser.colegiatura || '',
+            colegiatura:     ctmpLimpio(currentUser.colegiatura),
             fecha:           fechaFmt
         };
 
         try {
-            const response = await fetch(CONFIG.webAppUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify(payload)
-            });
-            await response.json();
+            const res = await fetch(CONFIG.webAppUrl, { method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(payload) });
+            await res.json();
         } catch(e) { /* guardar de todas formas */ }
 
+        // Guardar localmente para resumen inmediato
+        if(!db.notas_docentes) db.notas_docentes = [];
+        db.notas_docentes.push(payload);
+
         showLoad(false);
-        mostrarNotificacion(`✅ Nota ${nota}/20 guardada para ${alumnoObj.nombre_completo}`);
-        document.getElementById('nota-docente-texto').value  = '';
-        document.getElementById('nota-calificacion').value   = '';
+        mostrarNotificacion(`✅ Nota ${nota}/20 (${pct}%) guardada para ${alumnoObj.nombre_completo}`);
+        document.getElementById('nota-calificacion').value = '';
+        document.getElementById('nota-porcentaje').value   = '';
         actualizarColorNota(document.getElementById('nota-calificacion'));
+        actualizarPorcentajeBadge(document.getElementById('nota-porcentaje'));
     }
 
     function generarNotaDocentePDF() {
         const alumnoUsuario  = document.getElementById('nota-alumno-select').value;
         const pacienteDni    = document.getElementById('nota-paciente-select').value;
-        const notaTxt        = document.getElementById('nota-docente-texto').value.trim();
         const categoria      = document.getElementById('nota-categoria').value;
         const calificacion   = document.getElementById('nota-calificacion').value;
+        const porcentaje     = document.getElementById('nota-porcentaje').value;
 
         if(!alumnoUsuario || !pacienteDni) {
             alert('⚠️ Selecciona alumno y paciente primero');
@@ -1479,15 +1531,15 @@ PLAN DE INTERVENCIÓN:
             html += `</div>`;
         }
 
-        // Nota vigesimal y observaciones
         const notaNum = parseFloat(calificacion);
+        const pctNum  = parseFloat(porcentaje) || 0;
         const notaColor = isNaN(notaNum) ? '#888' : notaNum <= 10 ? '#c0392b' : notaNum <= 13 ? '#d35400' : notaNum <= 16 ? '#1e8449' : '#1a5276';
         const notaBg    = isNaN(notaNum) ? '#eee'  : notaNum <= 10 ? '#fadbd8'  : notaNum <= 13 ? '#fef9e7'  : notaNum <= 16 ? '#d5f5e3'  : '#d6eaf8';
         const notaLabel = isNaN(notaNum) ? 'Sin nota' : notaNum <= 10 ? 'Desaprobado' : notaNum <= 13 ? 'Regular' : notaNum <= 16 ? 'Bueno' : 'Excelente';
 
         html += `<div class="seccion">
-    <div class="seccion-titulo">📊 CALIFICACIÓN Y OBSERVACIONES</div>
-    <div style="display:flex; align-items:center; gap:20px; margin-bottom:16px; flex-wrap:wrap;">
+    <div class="seccion-titulo">📊 CALIFICACIÓN</div>
+    <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
         <div style="text-align:center; background:${notaBg}; border:3px solid ${notaColor}; border-radius:12px; padding:16px 28px;">
             <div style="font-size:2.5rem; font-weight:bold; color:${notaColor};">${isNaN(notaNum)?'—':notaNum}</div>
             <div style="font-size:0.8rem; color:${notaColor}; font-weight:bold;">/ 20</div>
@@ -1495,12 +1547,9 @@ PLAN DE INTERVENCIÓN:
         <div>
             <div style="font-size:1.2rem; font-weight:bold; color:${notaColor};">${notaLabel}</div>
             <div style="color:#888; font-size:0.9rem; margin-top:4px;">Sistema Vigesimal</div>
+            ${pctNum > 0 ? `<div style="margin-top:8px;background:#fef9e7;border:1px solid #f39c12;border-radius:6px;padding:6px 12px;font-size:0.9rem;color:#d35400;font-weight:bold;">⚖️ Pondera ${pctNum}% del promedio final</div>` : ''}
         </div>
     </div>
-    ${notaTxt ? `<div class="nota-box">
-      <h4>Observaciones de ${currentUser.nombre_completo}:</h4>
-      <p style="white-space:pre-wrap; line-height:1.6; margin:0;">${notaTxt}</p>
-    </div>` : ''}
   </div>`;
 
         html += `
@@ -1738,6 +1787,244 @@ PLAN DE INTERVENCIÓN:
         else               { badge.style.background = '#d6eaf8'; badge.style.color = '#1a5276'; badge.textContent = '🌟 Excelente ('+val+'/20)'; }
     }
 
+    function actualizarPorcentajeBadge(input) {
+        const val   = parseFloat(input.value);
+        const badge = document.getElementById('nota-pct-badge');
+        if(isNaN(val) || input.value === '') {
+            badge.style.background='#eee'; badge.style.color='#666'; badge.textContent='Ingresa el %'; return;
+        }
+        if(val <= 0 || val > 100) {
+            badge.style.background='#fadbd8'; badge.style.color='#c0392b'; badge.textContent='⚠️ Fuera de rango'; return;
+        }
+        badge.style.background='#fef9e7'; badge.style.color='#d35400';
+        badge.textContent = `Pondera ${val}% del promedio`;
+    }
+
+    // ============================================
+    // ADMIN TABS
+    // ============================================
+    function adminTab(tabId) {
+        ['tab-usuarios','tab-notas-cfg','tab-exportar'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.style.display = id === tabId ? 'block' : 'none';
+        });
+        const labels = { 'tab-usuarios':'btn-tab-usuarios', 'tab-notas-cfg':'btn-tab-notas-cfg', 'tab-exportar':'btn-tab-exportar' };
+        Object.values(labels).forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            if(btn) { btn.style.background='#eee'; btn.style.color='#555'; }
+        });
+        const activeBtn = document.getElementById(labels[tabId]);
+        if(activeBtn) { activeBtn.style.background='var(--admin)'; activeBtn.style.color='white'; }
+
+        // Llenar selectores al abrir tab de notas
+        if(tabId === 'tab-notas-cfg') {
+            const sel = document.getElementById('cfg-alumno-sel');
+            const alumnos = db.usuarios.filter(u => u.rol === 'alumno');
+            sel.innerHTML = '<option value="">-- Selecciona un alumno --</option>';
+            alumnos.forEach(a => sel.innerHTML += `<option value="${a.usuario}">${a.nombre_completo} (${a.codigo||'Sin código'})</option>`);
+        }
+    }
+
+    // ============================================
+    // RESUMEN NOTAS POR ALUMNO (tab admin)
+    // ============================================
+    function calcularPromedioPonderado(notas) {
+        // notas: [{calificacion, porcentaje}]
+        const totalPct = notas.reduce((s,n) => s + parseFloat(n.porcentaje||0), 0);
+        if(totalPct === 0) return null;
+        const suma = notas.reduce((s,n) => s + parseFloat(n.calificacion||0) * parseFloat(n.porcentaje||0), 0);
+        return (suma / totalPct).toFixed(2);
+    }
+
+    function cargarResumenNotas() {
+        const alumnoUsuario = document.getElementById('cfg-alumno-sel').value;
+        const div = document.getElementById('cfg-notas-resumen');
+        if(!alumnoUsuario) { div.innerHTML = ''; return; }
+
+        const alumnoObj = db.usuarios.find(u => u.usuario === alumnoUsuario);
+        if(!alumnoObj) return;
+
+        const notasAlumno = (db.notas_docentes || []).filter(n => n.alumno_nombre === alumnoObj.nombre_completo);
+
+        if(notasAlumno.length === 0) {
+            div.innerHTML = '<p style="color:#999; text-align:center; padding:20px;">Sin notas registradas para este alumno en esta sesión.<br><small>Las notas se cargan al guardarlas en esta sesión.</small></p>';
+            return;
+        }
+
+        // Agrupar por paciente
+        const porPaciente = {};
+        notasAlumno.forEach(n => {
+            const key = n.paciente_dni || n.paciente_nombre;
+            if(!porPaciente[key]) porPaciente[key] = { nombre: n.paciente_nombre, notas: [] };
+            porPaciente[key].notas.push(n);
+        });
+
+        const totalPct = notasAlumno.reduce((s,n) => s + parseFloat(n.porcentaje||0), 0);
+        const promedioGlobal = calcularPromedioPonderado(notasAlumno);
+        const colorGlobal = !promedioGlobal ? '#888' : promedioGlobal <= 10 ? '#c0392b' : promedioGlobal <= 13 ? '#d35400' : promedioGlobal <= 16 ? '#1e8449' : '#1a5276';
+
+        let html = `
+        <div style="background:var(--primary);color:white;padding:14px 16px;border-radius:8px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <div style="font-weight:bold;font-size:1rem;">${alumnoObj.nombre_completo}</div>
+                <div style="font-size:0.8rem;opacity:0.8;">${alumnoObj.codigo||''} · ${notasAlumno.length} nota(s) · ${totalPct}% acumulado</div>
+            </div>
+            <div style="text-align:center;">
+                <div style="font-size:1.8rem;font-weight:bold;color:${colorGlobal};background:white;border-radius:8px;padding:4px 14px;">${promedioGlobal||'—'}</div>
+                <div style="font-size:0.75rem;opacity:0.8;">Promedio pond.</div>
+            </div>
+        </div>`;
+
+        Object.values(porPaciente).forEach(pac => {
+            const promPac = calcularPromedioPonderado(pac.notas);
+            const colorPac = !promPac ? '#888' : promPac <= 10 ? '#c0392b' : promPac <= 13 ? '#d35400' : promPac <= 16 ? '#1e8449' : '#1a5276';
+            html += `<div style="border:1px solid #eee;border-radius:8px;margin-bottom:10px;overflow:hidden;">
+                <div style="background:#f0f4ff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;">
+                    <strong style="color:var(--primary);">🏥 ${pac.nombre}</strong>
+                    <span style="background:${colorPac};color:white;padding:3px 12px;border-radius:12px;font-weight:bold;">${promPac||'—'}/20</span>
+                </div>
+                <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+                    <tr style="background:#f8f9fa;"><th style="padding:8px;text-align:left;">Categoría</th><th style="padding:8px;text-align:center;">Nota</th><th style="padding:8px;text-align:center;">Peso %</th><th style="padding:8px;text-align:left;">Fecha</th></tr>`;
+            pac.notas.forEach(n => {
+                const nc = parseFloat(n.calificacion);
+                const c  = nc <= 10 ? '#fadbd8' : nc <= 13 ? '#fef9e7' : nc <= 16 ? '#d5f5e3' : '#d6eaf8';
+                html += `<tr style="border-bottom:1px solid #f0f2f5;">
+                    <td style="padding:8px;">${n.categoria}</td>
+                    <td style="padding:8px;text-align:center;background:${c};font-weight:bold;">${n.calificacion}/20</td>
+                    <td style="padding:8px;text-align:center;">${n.porcentaje}%</td>
+                    <td style="padding:8px;color:#888;">${n.fecha}</td>
+                </tr>`;
+            });
+            html += `</table></div>`;
+        });
+
+        div.innerHTML = html;
+    }
+
+    // ============================================
+    // EXPORTACIONES CSV (admin)
+    // ============================================
+    function descargarCSV(filename, rows) {
+        const csv = rows.map(r => r.map(c => `"${String(c||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+        const bom = '\uFEFF'; // BOM para Excel
+        const blob = new Blob([bom+csv], {type:'text/csv;charset=utf-8'});
+        const url  = URL.createObjectURL(blob);
+        const a    = Object.assign(document.createElement('a'), {href:url, download:filename});
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        mostrarNotificacion('📥 Archivo CSV descargado — ábrelo con Excel');
+    }
+
+    function exportarResumenGeneral() {
+        const total      = db.pacientes.length;
+        const evaluaciones = db.pacientes.filter(p => p.tipo_atencion === 'evaluacion').length;
+        const sesiones     = db.pacientes.filter(p => p.tipo_atencion === 'sesion').length;
+        const aprobadas    = db.pacientes.filter(p => p.estado_aprobacion === 'aprobado').length;
+        const pendientes   = db.pacientes.filter(p => p.estado_aprobacion === 'pendiente').length;
+
+        // Detalle por alumno
+        const porAlumno = {};
+        db.pacientes.forEach(p => {
+            const nombre = p.atendido_por || 'Sin nombre';
+            if(!porAlumno[nombre]) porAlumno[nombre] = {evaluaciones:0, sesiones:0, aprobadas:0, pendientes:0};
+            if(p.tipo_atencion === 'evaluacion') porAlumno[nombre].evaluaciones++;
+            else                                 porAlumno[nombre].sesiones++;
+            if(p.estado_aprobacion === 'aprobado') porAlumno[nombre].aprobadas++;
+            else                                   porAlumno[nombre].pendientes++;
+        });
+
+        const rows = [
+            ['RESUMEN GENERAL — CENTYR', '', '', '', ''],
+            ['Generado:', new Date().toLocaleDateString('es-PE'), '', '', ''],
+            [''],
+            ['TOTALES GLOBALES','','','',''],
+            ['Total Registros','Evaluaciones','Sesiones','Aprobadas','Pendientes'],
+            [total, evaluaciones, sesiones, aprobadas, pendientes],
+            [''],
+            ['DETALLE POR ALUMNO','','','',''],
+            ['Alumno','Evaluaciones','Sesiones','Aprobadas','Pendientes'],
+            ...Object.entries(porAlumno).map(([n,d]) => [n, d.evaluaciones, d.sesiones, d.aprobadas, d.pendientes])
+        ];
+        descargarCSV(`CENTYR_Resumen_${new Date().toISOString().slice(0,10)}.csv`, rows);
+    }
+
+    function exportarNotasPorAlumno() {
+        const notas = db.notas_docentes || [];
+        if(notas.length === 0) { alert('⚠️ No hay notas registradas en esta sesión. Guarda notas primero.'); return; }
+
+        const porAlumno = {};
+        notas.forEach(n => {
+            if(!porAlumno[n.alumno_nombre]) porAlumno[n.alumno_nombre] = { codigo: n.alumno_codigo, notas: [] };
+            porAlumno[n.alumno_nombre].notas.push(n);
+        });
+
+        const rows = [
+            ['NOTAS POR ALUMNO — CENTYR','','','','',''],
+            ['Generado:', new Date().toLocaleDateString('es-PE'),'','','',''],
+            [''],
+            ['Alumno','Código','Paciente','Categoría','Nota (0-20)','Porcentaje (%)','Promedio Pond.','Fecha','Docente']
+        ];
+
+        Object.entries(porAlumno).forEach(([nombre, data]) => {
+            const prom = calcularPromedioPonderado(data.notas);
+            data.notas.forEach((n, i) => {
+                rows.push([
+                    i===0 ? nombre : '',
+                    i===0 ? data.codigo : '',
+                    n.paciente_nombre,
+                    n.categoria,
+                    n.calificacion,
+                    n.porcentaje+'%',
+                    i===0 ? (prom||'') : '',
+                    n.fecha,
+                    n.docente
+                ]);
+            });
+            rows.push(['','','','','','','Promedio ponderado:', prom||'Sin calcular','']);
+            rows.push(['']);
+        });
+        descargarCSV(`CENTYR_NotasPorAlumno_${new Date().toISOString().slice(0,10)}.csv`, rows);
+    }
+
+    function exportarNotasPorPaciente() {
+        const notas = db.notas_docentes || [];
+        if(notas.length === 0) { alert('⚠️ No hay notas registradas en esta sesión.'); return; }
+
+        const porPaciente = {};
+        notas.forEach(n => {
+            const key = n.paciente_dni || n.paciente_nombre;
+            if(!porPaciente[key]) porPaciente[key] = { nombre: n.paciente_nombre, dni: n.paciente_dni, notas: [] };
+            porPaciente[key].notas.push(n);
+        });
+
+        const rows = [
+            ['NOTAS POR PACIENTE — CENTYR','','','','',''],
+            ['Generado:', new Date().toLocaleDateString('es-PE'),'','','',''],
+            [''],
+            ['Paciente','DNI','Alumno','Categoría','Nota (0-20)','Porcentaje (%)','Promedio Pond.','Fecha','Docente']
+        ];
+
+        Object.values(porPaciente).forEach(pac => {
+            const prom = calcularPromedioPonderado(pac.notas);
+            pac.notas.forEach((n, i) => {
+                rows.push([
+                    i===0 ? pac.nombre : '',
+                    i===0 ? pac.dni    : '',
+                    n.alumno_nombre,
+                    n.categoria,
+                    n.calificacion,
+                    n.porcentaje+'%',
+                    i===0 ? (prom||'') : '',
+                    n.fecha,
+                    n.docente
+                ]);
+            });
+            rows.push(['','','','','','','Promedio ponderado:', prom||'Sin calcular','']);
+            rows.push(['']);
+        });
+        descargarCSV(`CENTYR_NotasPorPaciente_${new Date().toISOString().slice(0,10)}.csv`, rows);
+    }
+
     function sincronizar() {
         mostrarNotificacion('🔄 Sincronizando...');
         cargarDatos(false).then(() => {
@@ -1871,7 +2158,7 @@ PLAN DE INTERVENCIÓN:
         const horasStr = String(horas).padStart(2, '0');
         const fechaGeneracion = `${dia}/${mes}/${anio} ${horasStr}:${minutos} ${ampm}`;
         
-        const colegiaturaInfo = currentUser && currentUser.colegiatura ? currentUser.colegiatura : '';
+        const colegiaturaInfo = currentUser && currentUser.colegiatura ? ctmpLimpio(currentUser.colegiatura) : '';
         
         let html = `<!DOCTYPE html>
 <html lang="es">
