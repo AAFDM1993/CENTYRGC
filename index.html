@@ -291,14 +291,24 @@
                     <input type="hidden" id="tipo-atencion" value="evaluacion">
                 </div>
                 
-                <div class="cat-grid" style="grid-template-columns:1fr 1fr 1fr;">
-                    <div class="cat-btn active" onclick="setCat(this, 'Traumatología')">🦴 Trauma</div>
-                    <div class="cat-btn" onclick="setCat(this, 'Reumatología')">💧 Reuma</div>
-                    <div class="cat-btn" onclick="setCat(this, 'Cardiología')">❤️ Cardio</div>
-                    <div class="cat-btn" onclick="setCat(this, 'Neuropediatría')">👶 Neuro Pedia</div>
-                    <div class="cat-btn" onclick="setCat(this, 'Neuro Adultos')">🧠 Neuro Adulto</div>
-                    <div class="cat-btn" onclick="setCat(this, 'Geriatría')">👴 Geriatría</div>
-                    <div class="cat-btn" onclick="setCat(this, 'Cirugía')">🏥 Cirugía</div>
+                <div id="cat-wrapper">
+                    <label style="font-size:0.85rem; color:var(--gray); margin-bottom:5px; display:flex; align-items:center; gap:8px;">
+                        <span id="cat-label-text">Categoría:</span>
+                        <span id="cat-locked-badge" style="display:none; background:#F59E0B; color:white; padding:1px 8px; border-radius:8px; font-size:0.72rem; font-weight:700;">🔒 Fijada en la evaluación</span>
+                    </label>
+                    <div class="cat-grid" style="grid-template-columns:1fr 1fr 1fr;" id="cat-grid-btns">
+                        <div class="cat-btn active" onclick="setCat(this, 'Traumatología')">🦴 Trauma</div>
+                        <div class="cat-btn" onclick="setCat(this, 'Reumatología')">💧 Reuma</div>
+                        <div class="cat-btn" onclick="setCat(this, 'Cardiología')">❤️ Cardio</div>
+                        <div class="cat-btn" onclick="setCat(this, 'Neuropediatría')">👶 Neuro Pedia</div>
+                        <div class="cat-btn" onclick="setCat(this, 'Neuro Adultos')">🧠 Neuro Adulto</div>
+                        <div class="cat-btn" onclick="setCat(this, 'Geriatría')">👴 Geriatría</div>
+                        <div class="cat-btn" onclick="setCat(this, 'Cirugía')">🏥 Cirugía</div>
+                    </div>
+                    <div id="cat-locked-display" style="display:none; background:#FEF3C7; border:1.5px solid #F59E0B; border-radius:8px; padding:10px 14px; margin-top:2px;">
+                        <span id="cat-locked-nombre" style="font-weight:700; color:#92400E; font-size:0.95rem;"></span>
+                        <div style="font-size:0.75rem; color:#B45309; margin-top:2px;">La categoría se fija en la evaluación inicial y no puede cambiarse en sesiones.</div>
+                    </div>
                 </div>
                 <input type="hidden" id="categoria" value="Traumatología">
                 <div style="margin-bottom: 10px;">
@@ -324,6 +334,21 @@
                 <button id="btn-estadisticas" class="btn-save" onclick="abrirEstadisticas()" style="display:none; margin-top:10px; background:#252850; width:100%;">📊 ESTADÍSTICAS</button>
                 <button id="btn-nota-docente" class="btn-save" onclick="abrirModalNotaDocente()" style="display:none; margin-top:10px; background:var(--docente); width:100%;">📝 NOTA DOCENTE</button>
                 <button class="btn-save" onclick="abrirModalEjercicios()" style="margin-top:10px; background:var(--accent); width:100%;">💪 GENERAR EJERCICIOS PDF</button>
+            </div>
+
+            <!-- Panel Notas Docentes (solo docente y admin) -->
+            <div id="panel-notas-sidebar" class="panel" style="display:none; padding:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h3 style="margin:0; font-size:0.95rem; color:var(--docente);">📊 Cuadro de Notas</h3>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <input type="text" id="notas-sidebar-filtro" placeholder="🔍 Apellido..." oninput="renderNotasSidebar(this.value)"
+                               style="margin:0; padding:5px 10px; font-size:0.8rem; border-radius:6px; border:1px solid #ddd; width:110px;">
+                        <button onclick="renderNotasSidebar('')" style="padding:5px 8px; background:#eee; border:none; border-radius:5px; cursor:pointer; font-size:0.75rem;">✕</button>
+                    </div>
+                </div>
+                <div id="notas-sidebar-body" style="max-height:360px; overflow-y:auto; font-size:0.8rem;">
+                    <p style="color:#999; text-align:center; padding:20px 0;">Cargando notas...</p>
+                </div>
             </div>
 
             <div id="admin-panel" class="panel" style="display:none; border:2px solid var(--admin);">
@@ -508,63 +533,94 @@
 
     <!-- Modal Nota Docente -->
     <div id="modalNotaDocente" class="modal">
-        <div class="modal-content" style="max-width: 750px; max-height: 90vh; overflow-y: auto;">
-            <div class="modal-header">
-                <span class="close" onclick="document.getElementById('modalNotaDocente').style.display='none'">&times;</span>
-                <h2>📝 Nota del Docente</h2>
+        <div class="modal-content" style="max-width:900px; max-height:92vh; overflow-y:auto;">
+            <div class="modal-header" style="background:var(--docente); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0;">
+                <span class="close" onclick="document.getElementById('modalNotaDocente').style.display='none'" style="color:white;">&times;</span>
+                <h2 style="margin:0; color:white; font-size:1.1rem;">📝 Nota del Docente</h2>
             </div>
-            <div style="padding: 20px;">
-                <!-- Selector de alumno -->
-                <div style="margin-bottom:15px;">
-                    <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:6px;">👨‍🎓 Seleccionar Alumno:</label>
-                    <select id="nota-alumno-select" onchange="cargarPacientesAlumno()" style="margin-bottom:0;">
-                        <option value="">-- Selecciona un alumno --</option>
-                    </select>
-                </div>
-                <!-- Selector de paciente -->
-                <div style="margin-bottom:15px;">
-                    <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:6px;">🏥 Paciente:</label>
-                    <select id="nota-paciente-select" onchange="cargarDatosNota()" style="margin-bottom:0;">
-                        <option value="">-- Selecciona un paciente --</option>
-                    </select>
-                </div>
-                <!-- Info auto-completada -->
-                <div id="nota-info-alumno" style="background:#f0f4ff; border-left:4px solid var(--docente); padding:12px; border-radius:6px; margin-bottom:15px; display:none;">
-                    <div id="nota-info-texto" style="font-size:0.9rem; color:var(--primary);"></div>
-                </div>
-                <!-- Selector de categoría -->
-                <div style="margin-bottom:15px;">
-                    <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:6px;">📂 Categoría:</label>
-                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;" id="nota-cat-grid">
-                        <div class="cat-btn active" onclick="setNotaCat(this,'Traumatología')">🦴 Trauma</div>
-                        <div class="cat-btn" onclick="setNotaCat(this,'Reumatología')">💧 Reuma</div>
-                        <div class="cat-btn" onclick="setNotaCat(this,'Cardiología')">❤️ Cardio</div>
-                        <div class="cat-btn" onclick="setNotaCat(this,'Neuropediatría')">👶 Neuro Pedia</div>
-                        <div class="cat-btn" onclick="setNotaCat(this,'Neuro Adultos')">🧠 Neuro Adulto</div>
-                        <div class="cat-btn" onclick="setNotaCat(this,'Geriatría')">👴 Geriatría</div>
-                        <div class="cat-btn" onclick="setNotaCat(this,'Cirugía')">🏥 Cirugía</div>
+            <div style="padding:0 4px;">
+
+                <!-- ── Buscador por apellido ── -->
+                <div style="background:#F0F4FF; border-radius:10px; padding:14px; margin-bottom:14px; border-left:4px solid var(--docente);">
+                    <label style="font-weight:700; color:var(--primary); display:block; margin-bottom:8px; font-size:0.88rem;">🔍 Buscar Alumno por Apellido:</label>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <input type="text" id="nota-buscar-apellido" placeholder="Ej: García, López..."
+                               oninput="filtrarAlumnosNota(this.value)"
+                               style="margin-bottom:0; flex:1; padding:10px 14px; border:1.5px solid var(--docente); border-radius:8px; font-size:0.95rem;">
+                        <button onclick="filtrarAlumnosNota('')" style="padding:10px 14px; background:#eee; border:none; border-radius:8px; cursor:pointer; font-size:0.85rem; white-space:nowrap;">✕ Limpiar</button>
                     </div>
-                    <input type="hidden" id="nota-categoria" value="Traumatología">
+                    <div id="nota-alumnos-resultados" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:6px;"></div>
                 </div>
-                <!-- Nota vigesimal -->
-                <div style="margin-bottom:20px;">
-                    <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:8px;">🔢 Nota (Sistema Vigesimal 0–20):</label>
-                    <div style="display:flex; align-items:center; gap:16px;">
-                        <input type="number" id="nota-calificacion" min="0" max="20" step="0.5"
-                               placeholder="0 – 20"
-                               style="width:120px; font-size:1.6rem; font-weight:bold; text-align:center; border:2px solid var(--docente); border-radius:8px; padding:10px;"
-                               oninput="actualizarColorNota(this)">
-                        <div id="nota-color-badge" style="padding:8px 18px; border-radius:20px; font-weight:bold; font-size:1rem; background:#eee; color:#666;">
-                            Ingresa una nota
+
+                <!-- ── Grid: Form (izq) + Panel notas previas (der) ── -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start;">
+
+                    <!-- Columna izquierda: formulario -->
+                    <div>
+                        <!-- Alumno seleccionado -->
+                        <div style="margin-bottom:12px;">
+                            <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:5px; font-size:0.85rem;">👨‍🎓 Alumno:</label>
+                            <select id="nota-alumno-select" onchange="cargarPacientesAlumno()" style="margin-bottom:0;">
+                                <option value="">-- Selecciona un alumno --</option>
+                            </select>
+                        </div>
+                        <!-- Selector de paciente -->
+                        <div style="margin-bottom:12px;">
+                            <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:5px; font-size:0.85rem;">🏥 Paciente:</label>
+                            <select id="nota-paciente-select" onchange="cargarDatosNota()" style="margin-bottom:0;">
+                                <option value="">-- Selecciona un paciente --</option>
+                            </select>
+                        </div>
+                        <!-- Info auto-completada -->
+                        <div id="nota-info-alumno" style="background:#f0f4ff; border-left:4px solid var(--docente); padding:10px 12px; border-radius:6px; margin-bottom:12px; display:none;">
+                            <div id="nota-info-texto" style="font-size:0.85rem; color:var(--primary); line-height:1.6;"></div>
+                        </div>
+                        <!-- Selector de categoría -->
+                        <div style="margin-bottom:12px;">
+                            <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:6px; font-size:0.85rem;">📂 Categoría:</label>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;" id="nota-cat-grid">
+                                <div class="cat-btn active" onclick="setNotaCat(this,'Traumatología')" style="font-size:0.78rem; padding:7px;">🦴 Traumatología</div>
+                                <div class="cat-btn" onclick="setNotaCat(this,'Reumatología')" style="font-size:0.78rem; padding:7px;">💧 Reumatología</div>
+                                <div class="cat-btn" onclick="setNotaCat(this,'Cardiología')" style="font-size:0.78rem; padding:7px;">❤️ Cardiología</div>
+                                <div class="cat-btn" onclick="setNotaCat(this,'Neuropediatría')" style="font-size:0.78rem; padding:7px;">👶 Neuropediatría</div>
+                                <div class="cat-btn" onclick="setNotaCat(this,'Neuro Adultos')" style="font-size:0.78rem; padding:7px;">🧠 Neuro Adultos</div>
+                                <div class="cat-btn" onclick="setNotaCat(this,'Geriatría')" style="font-size:0.78rem; padding:7px;">👴 Geriatría</div>
+                                <div class="cat-btn" onclick="setNotaCat(this,'Cirugía')" style="font-size:0.78rem; padding:7px;">🏥 Cirugía</div>
+                            </div>
+                            <input type="hidden" id="nota-categoria" value="Traumatología">
+                        </div>
+                        <!-- Nota vigesimal -->
+                        <div style="margin-bottom:16px;">
+                            <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:8px; font-size:0.85rem;">🔢 Nota (0–20):</label>
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <input type="number" id="nota-calificacion" min="0" max="20" step="0.5"
+                                       placeholder="0–20"
+                                       style="width:100px; font-size:1.5rem; font-weight:bold; text-align:center; border:2px solid var(--docente); border-radius:8px; padding:8px; margin-bottom:0;"
+                                       oninput="actualizarColorNota(this)">
+                                <div id="nota-color-badge" style="padding:7px 14px; border-radius:20px; font-weight:bold; font-size:0.88rem; background:#eee; color:#666; flex:1; text-align:center;">
+                                    Ingresa una nota
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                            <button onclick="guardarNotaDocente()" style="padding:12px; background:var(--docente); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.9rem;">💾 GUARDAR</button>
+                            <button onclick="generarNotaDocentePDF()" style="padding:12px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.9rem;">📄 REPORTE</button>
                         </div>
                     </div>
-                    <small style="color:var(--gray); margin-top:6px; display:block;">
-                        0–10: Desaprobado &nbsp;|&nbsp; 11–13: Regular &nbsp;|&nbsp; 14–16: Bueno &nbsp;|&nbsp; 17–20: Excelente
-                    </small>
-                </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    <button onclick="guardarNotaDocente()" style="padding:14px; background:var(--docente); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:1rem;">💾 GUARDAR NOTA</button>
-                    <button onclick="generarNotaDocentePDF()" style="padding:14px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:1rem;">📄 GENERAR REPORTE</button>
+
+                    <!-- Columna derecha: notas previas del alumno seleccionado -->
+                    <div>
+                        <div style="background:#f8f9fa; border-radius:10px; padding:12px; min-height:300px; border:1.5px solid #e0e6ed;">
+                            <div style="font-weight:700; color:var(--docente); margin-bottom:10px; font-size:0.88rem; display:flex; justify-content:space-between; align-items:center;">
+                                <span>📊 Notas Previas del Alumno</span>
+                                <span id="notas-previas-badge" style="background:#eee; color:#888; padding:2px 8px; border-radius:8px; font-size:0.75rem; font-weight:600;">0 notas</span>
+                            </div>
+                            <div id="notas-previas-panel" style="font-size:0.82rem; color:#999; text-align:center; padding:20px 0;">
+                                Selecciona un alumno para ver sus notas.
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
@@ -755,15 +811,18 @@ DOCENTE: ${docenteInfo}
             // Botones exclusivos por rol — primero ocultar todos, luego mostrar los correctos
             document.getElementById('btnAdmin').style.display          = esAdmin   ? 'block' : 'none';
             document.getElementById('btn-estadisticas').style.display  = esAdmin   ? 'block' : 'none';
-            document.getElementById('btn-nota-docente').style.display  = esDocente ? 'block' : 'none';
-            
-            // Formulario de registro: alumnos y docentes pueden escribir, admin también
-            // El botón GUARDAR permanece visible para todos
+            document.getElementById('btn-nota-docente').style.display  = (esDocente||esAdmin) ? 'block' : 'none';
+
+            // Panel de notas visible solo para docente y admin
+            const panelNotas = document.getElementById('panel-notas-sidebar');
+            if(panelNotas) {
+                panelNotas.style.display = (esDocente || esAdmin) ? 'block' : 'none';
+                if(esDocente || esAdmin) renderNotasSidebar('');
+            }
             
             renderLista();
             renderCalendar();
             restaurarEstadoCalendar();
-            // Mostrar pop-up de pendientes si es docente
             verificarPendientesDocente();
         } else {
             document.getElementById('error-msg').style.display = 'block';
@@ -1199,14 +1258,51 @@ DOCENTE: ${docenteInfo}
         const p = db.pacientes.find(x => String(x.dni || '') === valTrimmed);
         if(p) { 
             document.getElementById('paciente').value = p.paciente; 
-            verHistorial(valTrimmed); 
+            verHistorial(valTrimmed);
         }
+        actualizarBloqueoCategoria();
     }
 
     function setCat(el, v) {
-        document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+        // Si la categoría está bloqueada (modo sesión con paciente existente) no hacer nada
+        if(document.getElementById('cat-grid-btns').dataset.locked === 'true') return;
+        document.querySelectorAll('#cat-grid-btns .cat-btn').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
         document.getElementById('categoria').value = v;
+    }
+
+    /** Aplica o levanta el bloqueo de categoría según tipo de atención y si el paciente ya tiene registros */
+    function actualizarBloqueoCategoria() {
+        const tipo   = document.getElementById('tipo-atencion').value;
+        const dni    = document.getElementById('dni').value.trim();
+        const grid   = document.getElementById('cat-grid-btns');
+        const badge  = document.getElementById('cat-locked-badge');
+        const display= document.getElementById('cat-locked-display');
+        const nombre = document.getElementById('cat-locked-nombre');
+
+        // Buscar si el paciente ya tiene una evaluación previa
+        const evalPrevia = dni
+            ? db.pacientes.find(p => String(p.dni||'') === dni && p.tipo_atencion === 'evaluacion')
+            : null;
+
+        const debeBloquear = (tipo === 'sesion') && evalPrevia;
+
+        if(debeBloquear) {
+            const catFijada = evalPrevia.categoria || 'Sin categoría';
+            // Marcar activo el botón correcto y ocultar grid
+            document.querySelectorAll('#cat-grid-btns .cat-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('categoria').value = catFijada;
+            grid.style.display    = 'none';
+            display.style.display = 'block';
+            nombre.textContent    = catFijada;
+            badge.style.display   = 'inline-block';
+            grid.dataset.locked   = 'true';
+        } else {
+            grid.style.display    = '';
+            display.style.display = 'none';
+            badge.style.display   = 'none';
+            grid.dataset.locked   = 'false';
+        }
     }
     
     function setTipoAtencion(el, tipo) {
@@ -1284,6 +1380,7 @@ PLAN DE INTERVENCIÓN:
         }
         
         document.getElementById('tipo-atencion').value = tipo;
+        actualizarBloqueoCategoria();
     }
 
     function limpiarCampos() {
@@ -1292,18 +1389,22 @@ PLAN DE INTERVENCIÓN:
         document.getElementById('notas').value = "";
         document.getElementById('editor-notas').value = "";
         
-        // Limpiar preview
         const preview = document.getElementById('preview-notas');
         preview.innerHTML = '<em>Haz clic en "ABRIR EDITOR DE NOTAS" para escribir...</em>';
         preview.style.color = '#666';
         
-        document.querySelectorAll('.cat-btn').forEach((b, i) => {
+        // Resetear categoría (solo los del formulario principal)
+        document.querySelectorAll('#cat-grid-btns .cat-btn').forEach((b, i) => {
             if(i === 0) b.classList.add('active');
             else b.classList.remove('active');
         });
         document.getElementById('categoria').value = "Traumatología";
-        
-        // Resetear a Evaluación al limpiar SIN insertar plantilla
+        document.getElementById('cat-grid-btns').dataset.locked = 'false';
+        document.getElementById('cat-grid-btns').style.display = '';
+        document.getElementById('cat-locked-display').style.display = 'none';
+        document.getElementById('cat-locked-badge').style.display = 'none';
+
+        // Resetear a Evaluación sin insertar plantilla
         document.querySelectorAll('.tipo-atencion-btn').forEach(b => {
             b.classList.remove('active');
             if (b.dataset.tipo === 'evaluacion') {
@@ -1337,6 +1438,8 @@ PLAN DE INTERVENCIÓN:
             document.getElementById('btnAdmin').style.display         = 'none';
             document.getElementById('btn-estadisticas').style.display = 'none';
             document.getElementById('btn-nota-docente').style.display = 'none';
+            const pns = document.getElementById('panel-notas-sidebar');
+            if(pns) pns.style.display = 'none';
             document.getElementById('admin-panel').style.display      = 'none';
             document.getElementById('popup-pendientes').style.display = 'none';
             document.getElementById('userInput').value = "";
@@ -1358,26 +1461,139 @@ PLAN DE INTERVENCIÓN:
     // ============================================
 
     function abrirModalNotaDocente() {
-        if(!currentUser || currentUser.rol !== 'docente') {
-            alert('⚠️ Solo los docentes pueden crear notas docentes');
+        if(!currentUser || (currentUser.rol !== 'docente' && currentUser.rol !== 'admin')) {
+            alert('⚠️ Solo los docentes y administradores pueden crear notas');
             return;
         }
 
-        // Llenar selector de alumnos
-        const alumnos = db.usuarios.filter(u => u.rol === 'alumno');
-        const sel = document.getElementById('nota-alumno-select');
-        sel.innerHTML = '<option value="">-- Selecciona un alumno --</option>';
-        alumnos.forEach(a => {
-            sel.innerHTML += `<option value="${a.usuario}">${a.nombre_completo} (${a.codigo || 'Sin código'})</option>`;
-        });
-
         // Limpiar campos
+        document.getElementById('nota-buscar-apellido').value = '';
         document.getElementById('nota-paciente-select').innerHTML = '<option value="">-- Selecciona un paciente --</option>';
         document.getElementById('nota-calificacion').value = '';
         document.getElementById('nota-info-alumno').style.display = 'none';
         actualizarColorNota(document.getElementById('nota-calificacion'));
 
+        _cargarSelectAlumnos('');
+        filtrarAlumnosNota('');
+
+        // Limpiar panel de notas previas
+        document.getElementById('notas-previas-panel').innerHTML = '<p style="color:#999; text-align:center; padding:20px 0;">Selecciona un alumno para ver sus notas.</p>';
+        document.getElementById('notas-previas-badge').textContent = '0 notas';
+
         document.getElementById('modalNotaDocente').style.display = 'block';
+    }
+
+    function _cargarSelectAlumnos(filtro) {
+        const sel = document.getElementById('nota-alumno-select');
+        const alumnos = db.usuarios.filter(u => u.rol === 'alumno');
+        const filtrados = filtro.trim()
+            ? alumnos.filter(a => a.nombre_completo.toLowerCase().includes(filtro.toLowerCase()))
+            : alumnos;
+        sel.innerHTML = '<option value="">-- Selecciona un alumno --</option>';
+        filtrados.forEach(a => {
+            sel.innerHTML += `<option value="${a.usuario}">${a.nombre_completo} (${a.codigo||'Sin código'})</option>`;
+        });
+    }
+
+    function filtrarAlumnosNota(query) {
+        const alumnos = db.usuarios.filter(u => u.rol === 'alumno');
+        const q = (query||'').trim().toLowerCase();
+        const filtrados = q
+            ? alumnos.filter(a => a.nombre_completo.toLowerCase().includes(q))
+            : alumnos;
+
+        const div = document.getElementById('nota-alumnos-resultados');
+        if(!div) return;
+
+        if(filtrados.length === 0) {
+            div.innerHTML = '<span style="color:#999; font-size:0.82rem;">Sin coincidencias</span>';
+            return;
+        }
+
+        div.innerHTML = filtrados.map(a => {
+            const notasA   = (db.notas_docentes||[]).filter(n => n.alumno_nombre === a.nombre_completo);
+            const promedio = notasA.length ? (notasA.reduce((s,n)=>s+parseFloat(n.calificacion||0),0)/notasA.length).toFixed(1) : null;
+            const col      = !promedio ? '#888' : promedio <= 10 ? '#E53935' : promedio <= 13 ? '#F59E0B' : promedio <= 16 ? '#2ECC71' : '#0288D1';
+            return `<button onclick="seleccionarAlumnoNota('${a.usuario}')"
+                style="padding:6px 12px; background:white; border:1.5px solid #e0e6ed; border-radius:8px; cursor:pointer; font-size:0.8rem; font-weight:600; text-align:left;">
+                <div style="color:var(--primary);">${a.nombre_completo}</div>
+                <div style="color:#888; font-size:0.72rem;">${a.codigo||'Sin código'} ${promedio ? `· <span style="color:${col}">${promedio}/20</span>` : '· Sin notas'}</div>
+            </button>`;
+        }).join('');
+    }
+
+    function seleccionarAlumnoNota(usuario) {
+        const sel = document.getElementById('nota-alumno-select');
+        if(![...sel.options].some(o=>o.value===usuario)) _cargarSelectAlumnos('');
+        sel.value = usuario;
+        cargarPacientesAlumno();
+        renderNotasPrevias(usuario);
+    }
+
+    /** Renderiza el panel derecho con notas previas del alumno en el modal docente */
+    function renderNotasPrevias(alumnoUsuario) {
+        const panel  = document.getElementById('notas-previas-panel');
+        const badge  = document.getElementById('notas-previas-badge');
+        if(!panel) return;
+
+        if(!alumnoUsuario) {
+            panel.innerHTML = '<p style="color:#999; text-align:center; padding:20px 0;">Selecciona un alumno para ver sus notas.</p>';
+            badge.textContent = '0 notas';
+            return;
+        }
+
+        const alumnoObj = db.usuarios.find(u => u.usuario === alumnoUsuario);
+        if(!alumnoObj) return;
+
+        const notasAlumno = (db.notas_docentes||[]).filter(n => n.alumno_nombre === alumnoObj.nombre_completo);
+        badge.textContent = `${notasAlumno.length} nota(s)`;
+        badge.style.background = notasAlumno.length ? 'var(--docente)' : '#eee';
+        badge.style.color      = notasAlumno.length ? 'white' : '#888';
+
+        if(notasAlumno.length === 0) {
+            panel.innerHTML = `<p style="color:#999; text-align:center; padding:20px 0;">Sin notas registradas para <strong>${alumnoObj.nombre_completo}</strong>.</p>`;
+            return;
+        }
+
+        // Agrupar por paciente
+        const porPaciente = {};
+        notasAlumno.forEach(n => {
+            const key = n.paciente_dni || n.paciente_nombre;
+            if(!porPaciente[key]) porPaciente[key] = { nombre: n.paciente_nombre, notas: [] };
+            porPaciente[key].notas.push(n);
+        });
+
+        let html = '';
+        Object.values(porPaciente).forEach(pac => {
+            const prom = pac.notas.length
+                ? (pac.notas.reduce((s,n)=>s+parseFloat(n.calificacion||0),0)/pac.notas.length).toFixed(1)
+                : null;
+            const col = !prom ? '#888' : prom <= 10 ? '#E53935' : prom <= 13 ? '#F59E0B' : prom <= 16 ? '#2ECC71' : '#0288D1';
+            html += `<div style="border:1px solid #e0e6ed; border-radius:8px; margin-bottom:8px; overflow:hidden;">
+                <div style="background:var(--primary); color:white; padding:7px 10px; display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:700; font-size:0.82rem;">🏥 ${pac.nombre}</span>
+                    <span style="background:${col}; color:white; padding:1px 8px; border-radius:8px; font-size:0.75rem; font-weight:700;">Prom: ${prom||'—'}/20</span>
+                </div>
+                <table style="width:100%; border-collapse:collapse; font-size:0.78rem;">
+                    <tr style="background:#f8f9fa;">
+                        <th style="padding:5px 8px; text-align:left; color:#555;">Categoría</th>
+                        <th style="padding:5px 8px; text-align:center; color:#555;">Nota</th>
+                        <th style="padding:5px 8px; text-align:left; color:#555;">Fecha</th>
+                    </tr>`;
+            pac.notas.forEach(n => {
+                const nc  = parseFloat(n.calificacion);
+                const bg  = nc <= 10 ? '#FECACA' : nc <= 13 ? '#FEF3C7' : nc <= 16 ? '#D1FAE5' : '#DBEAFE';
+                const fc  = nc <= 10 ? '#991B1B' : nc <= 13 ? '#92400E' : nc <= 16 ? '#065F46' : '#1E40AF';
+                html += `<tr style="border-bottom:1px solid #f0f2f5;">
+                    <td style="padding:5px 8px;">${n.categoria||'—'}</td>
+                    <td style="padding:5px 8px; text-align:center; background:${bg}; color:${fc}; font-weight:700;">${nc}/20</td>
+                    <td style="padding:5px 8px; color:#888;">${n.fecha||''}</td>
+                </tr>`;
+            });
+            html += `</table></div>`;
+        });
+
+        panel.innerHTML = html;
     }
 
     function cargarPacientesAlumno() {
@@ -1385,6 +1601,7 @@ PLAN DE INTERVENCIÓN:
         const selPac = document.getElementById('nota-paciente-select');
         selPac.innerHTML = '<option value="">-- Selecciona un paciente --</option>';
         document.getElementById('nota-info-alumno').style.display = 'none';
+        renderNotasPrevias(alumnoUsuario);
 
         if(!alumnoUsuario) return;
 
@@ -1442,6 +1659,70 @@ PLAN DE INTERVENCIÓN:
         document.getElementById('nota-categoria').value = val;
     }
 
+    /** Renderiza el cuadro de notas en el sidebar (docente/admin) */
+    function renderNotasSidebar(filtro) {
+        const body = document.getElementById('notas-sidebar-body');
+        if(!body) return;
+
+        const notas = db.notas_docentes || [];
+        const q = (filtro||'').trim().toLowerCase();
+        const filtradas = q
+            ? notas.filter(n => (n.alumno_nombre||'').toLowerCase().includes(q))
+            : notas;
+
+        if(filtradas.length === 0) {
+            body.innerHTML = '<p style="color:#999; text-align:center; padding:15px 0;">Sin notas registradas.</p>';
+            return;
+        }
+
+        // Agrupar por alumno
+        const porAlumno = {};
+        filtradas.forEach(n => {
+            const key = n.alumno_nombre || 'Sin nombre';
+            if(!porAlumno[key]) porAlumno[key] = { codigo: n.alumno_codigo, notas: [] };
+            porAlumno[key].notas.push(n);
+        });
+
+        let html = '';
+        Object.entries(porAlumno).forEach(([nombre, data]) => {
+            const prom = data.notas.length
+                ? (data.notas.reduce((s,n)=>s+parseFloat(n.calificacion||0),0)/data.notas.length).toFixed(1)
+                : null;
+            const col = !prom ? '#888' : prom <= 10 ? '#E53935' : prom <= 13 ? '#F59E0B' : prom <= 16 ? '#2ECC71' : '#0288D1';
+
+            html += `<div style="border:1px solid #e0e6ed; border-radius:8px; margin-bottom:8px; overflow:hidden;">
+                <div style="background:var(--primary); color:white; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;">
+                    <span style="font-weight:700; font-size:0.8rem;">👨‍🎓 ${nombre}</span>
+                    <span style="background:${col}; padding:1px 8px; border-radius:8px; font-size:0.72rem; font-weight:700; color:white;">${prom||'—'}/20</span>
+                </div>`;
+
+            // Agrupar por paciente dentro del alumno
+            const porPac = {};
+            data.notas.forEach(n => {
+                const k = n.paciente_nombre || 'Sin paciente';
+                if(!porPac[k]) porPac[k] = [];
+                porPac[k].push(n);
+            });
+
+            Object.entries(porPac).forEach(([pacNombre, ns]) => {
+                html += `<div style="padding:5px 10px; background:#f8f9fa; border-bottom:1px solid #eee; font-size:0.77rem;">
+                    <span style="font-weight:600; color:var(--docente);">🏥 ${pacNombre}</span>
+                    <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:3px;">`;
+                ns.forEach(n => {
+                    const nc = parseFloat(n.calificacion);
+                    const bg = nc<=10?'#FECACA':nc<=13?'#FEF3C7':nc<=16?'#D1FAE5':'#DBEAFE';
+                    const fc = nc<=10?'#991B1B':nc<=13?'#92400E':nc<=16?'#065F46':'#1E40AF';
+                    html += `<span style="background:${bg}; color:${fc}; padding:2px 7px; border-radius:6px; font-weight:700; font-size:0.72rem;" title="${n.categoria||''} · ${n.fecha||''}">${nc}/20</span>`;
+                });
+                html += `</div></div>`;
+            });
+            html += `</div>`;
+        });
+
+        body.innerHTML = html;
+    }
+
+    /** También refrescar el sidebar tras guardar una nota */
     async function guardarNotaDocente() {
         const alumnoUsuario  = document.getElementById('nota-alumno-select').value;
         const pacienteDni    = document.getElementById('nota-paciente-select').value;
@@ -1491,6 +1772,10 @@ PLAN DE INTERVENCIÓN:
         mostrarNotificacion(`✅ Nota ${nota}/20 guardada para ${alumnoObj.nombre_completo}`);
         document.getElementById('nota-calificacion').value = '';
         actualizarColorNota(document.getElementById('nota-calificacion'));
+
+        // Refrescar panel de notas previas dentro del modal y sidebar
+        renderNotasPrevias(alumnoUsuario);
+        renderNotasSidebar(document.getElementById('notas-sidebar-filtro')?.value || '');
     }
 
     function generarNotaDocentePDF() {
