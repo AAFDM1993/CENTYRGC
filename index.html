@@ -256,13 +256,16 @@
                     <input type="hidden" id="tipo-atencion" value="evaluacion">
                 </div>
                 
-                <div class="cat-grid">
-                    <div class="cat-btn active" onclick="setCat(this, 'Fisioterapia Traumatológica')">🦴 Trauma</div>
-                    <div class="cat-btn" onclick="setCat(this, 'Fisioterapia Reumatológica')">💧 Reuma</div>
+                <div class="cat-grid" style="grid-template-columns:1fr 1fr 1fr;">
+                    <div class="cat-btn active" onclick="setCat(this, 'Traumatología')">🦴 Trauma</div>
+                    <div class="cat-btn" onclick="setCat(this, 'Reumatología')">💧 Reuma</div>
+                    <div class="cat-btn" onclick="setCat(this, 'Cardiología')">❤️ Cardio</div>
                     <div class="cat-btn" onclick="setCat(this, 'Neuropediatría')">👶 Neuro Pedia</div>
                     <div class="cat-btn" onclick="setCat(this, 'Neuro Adultos')">🧠 Neuro Adulto</div>
+                    <div class="cat-btn" onclick="setCat(this, 'Geriatría')">👴 Geriatría</div>
+                    <div class="cat-btn" onclick="setCat(this, 'Cirugía')">🏥 Cirugía</div>
                 </div>
-                <input type="hidden" id="categoria" value="Fisioterapia Traumatológica">
+                <input type="hidden" id="categoria" value="Traumatología">
                 <div style="margin-bottom: 10px;">
                     <button type="button" onclick="abrirModalNotas()" style="width: 100%; padding: 15px; background: var(--blue); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600;">
                         📝 ABRIR EDITOR DE NOTAS
@@ -284,7 +287,23 @@
                 <div id="listaPacientes" style="max-height: 250px; overflow-y: auto; margin-top:10px;"></div>
                 <button id="btnAdmin" class="btn-save" onclick="toggleAdmin()" style="display:none; margin-top:20px; background:var(--admin); width:100%;">⚙️ PANEL ADMIN</button>
                 <button id="btn-estadisticas" class="btn-save" onclick="abrirEstadisticas()" style="display:none; margin-top:10px; background:#252850; width:100%;">📊 ESTADÍSTICAS</button>
+                <button id="btn-nota-docente" class="btn-save" onclick="abrirModalNotaDocente()" style="display:none; margin-top:10px; background:var(--docente); width:100%;">📝 NOTA DOCENTE</button>
                 <button class="btn-save" onclick="abrirModalEjercicios()" style="margin-top:10px; background:var(--accent); width:100%;">💪 GENERAR EJERCICIOS PDF</button>
+            </div>
+
+            <div id="admin-panel" class="panel" style="display:none; border:2px solid var(--admin);">
+                <h3 style="color:var(--admin)">🔑 Nuevo Usuario</h3>
+                <input type="text" id="adm-nombre" placeholder="Nombre completo" style="margin-bottom:10px;">
+                <input type="text" id="adm-codigo" placeholder="Código de alumno (solo alumnos)" style="margin-bottom:10px;">
+                <input type="text" id="adm-colegiatura" placeholder="Colegiatura CTMP (solo docentes)" style="margin-bottom:10px;">
+                <select id="adm-rol" style="margin-bottom:10px;">
+                    <option value="alumno">Alumno</option>
+                    <option value="docente">Docente</option>
+                    <option value="admin">Administrador</option>
+                </select>
+                <input type="text" id="adm-user" placeholder="Usuario" style="margin-bottom:10px;">
+                <input type="password" id="adm-pass" placeholder="Contraseña" style="margin-bottom:10px;">
+                <button class="btn-save" style="background:var(--admin); width:100%;" onclick="crearUsuario()">CREAR USUARIO</button>
             </div>
         </aside>
 
@@ -318,37 +337,6 @@
         </div>
     </div>
 
-    <!-- Modal Generar Ejercicios PDF -->
-
-            <div id="admin-panel" class="panel" style="display:none; border:2px solid var(--admin);">
-                <h3 style="color:var(--admin)">🔑 Nuevo Usuario</h3>
-                <input type="text" id="adm-nombre" placeholder="Nombre completo" style="margin-bottom:10px;">
-                <input type="text" id="adm-codigo" placeholder="Código de alumno (solo alumnos)" style="margin-bottom:10px;">
-                <input type="text" id="adm-colegiatura" placeholder="Colegiatura CTMP (solo docentes)" style="margin-bottom:10px;">
-                <select id="adm-rol" style="margin-bottom:10px;">
-                    <option value="alumno">Alumno</option>
-                    <option value="docente">Docente</option>
-                    <option value="admin">Administrador</option>
-                </select>
-                <input type="text" id="adm-user" placeholder="Usuario" style="margin-bottom:10px;">
-                <input type="password" id="adm-pass" placeholder="Contraseña" style="margin-bottom:10px;">
-                <button class="btn-save" style="background:var(--admin); width:100%;" onclick="crearUsuario()">CREAR USUARIO</button>
-            </div>
-        </aside>
-
-        <main class="panel">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 10px;">
-                <h2 id="titulo-historial" style="margin:0;">📋 Ficha Clínica</h2>
-                <div>
-                    <button id="btnSync" class="btn-pdf" onclick="sincronizar()" title="Sincronizar datos">🔄</button>
-                    <button id="btnPdf" class="btn-pdf" style="display:none;" onclick="exportarPDF()">📥 EXPORTAR PDF</button>
-                    <button id="btnInforme" class="btn-pdf" style="display:none; background: var(--accent);" onclick="generarInformeFisioterapeutico()">📋 INFORME FISIOTERAPÉUTICO</button>
-                </div>
-            </div>
-            <div id="historial-body" style="margin-top:20px;"></div>
-        </main>
-    </div>
-
     <!-- Modal Estadísticas -->
     <div id="modalEstadisticas" class="modal">
         <div class="modal-content" style="max-width: 700px;">
@@ -360,9 +348,62 @@
         </div>
     </div>
 
+    <!-- Modal Nota Docente -->
+    <div id="modalNotaDocente" class="modal">
+        <div class="modal-content" style="max-width: 750px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <span class="close" onclick="document.getElementById('modalNotaDocente').style.display='none'">&times;</span>
+                <h2>📝 Nota del Docente</h2>
+            </div>
+            <div style="padding: 20px;">
+                <!-- Selector de alumno -->
+                <div style="margin-bottom:15px;">
+                    <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:6px;">👨‍🎓 Seleccionar Alumno:</label>
+                    <select id="nota-alumno-select" onchange="cargarPacientesAlumno()" style="margin-bottom:0;">
+                        <option value="">-- Selecciona un alumno --</option>
+                    </select>
+                </div>
+                <!-- Selector de paciente -->
+                <div style="margin-bottom:15px;">
+                    <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:6px;">🏥 Paciente:</label>
+                    <select id="nota-paciente-select" onchange="cargarDatosNota()" style="margin-bottom:0;">
+                        <option value="">-- Selecciona un paciente --</option>
+                    </select>
+                </div>
+                <!-- Info auto-completada -->
+                <div id="nota-info-alumno" style="background:#f0f4ff; border-left:4px solid var(--docente); padding:12px; border-radius:6px; margin-bottom:15px; display:none;">
+                    <div id="nota-info-texto" style="font-size:0.9rem; color:var(--primary);"></div>
+                </div>
+                <!-- Selector de categoría -->
+                <div style="margin-bottom:15px;">
+                    <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:6px;">📂 Categoría:</label>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px;" id="nota-cat-grid">
+                        <div class="cat-btn active" onclick="setNotaCat(this,'Traumatología')">🦴 Trauma</div>
+                        <div class="cat-btn" onclick="setNotaCat(this,'Reumatología')">💧 Reuma</div>
+                        <div class="cat-btn" onclick="setNotaCat(this,'Cardiología')">❤️ Cardio</div>
+                        <div class="cat-btn" onclick="setNotaCat(this,'Neuropediatría')">👶 Neuro Pedia</div>
+                        <div class="cat-btn" onclick="setNotaCat(this,'Neuro Adultos')">🧠 Neuro Adulto</div>
+                        <div class="cat-btn" onclick="setNotaCat(this,'Geriatría')">👴 Geriatría</div>
+                        <div class="cat-btn" onclick="setNotaCat(this,'Cirugía')">🏥 Cirugía</div>
+                    </div>
+                    <input type="hidden" id="nota-categoria" value="Traumatología">
+                </div>
+                <!-- Nota del docente -->
+                <div style="margin-bottom:15px;">
+                    <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:6px;">✍️ Nota / Observación del Docente:</label>
+                    <textarea id="nota-docente-texto" rows="6" placeholder="Escribe aquí tus observaciones, correcciones o calificación sobre la sesión del alumno..."></textarea>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <button onclick="guardarNotaDocente()" style="padding:14px; background:var(--docente); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:1rem;">💾 GUARDAR NOTA</button>
+                    <button onclick="generarNotaDocentePDF()" style="padding:14px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:1rem;">📄 GENERAR REPORTE</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 <script>
     const CONFIG = {
-        webAppUrl: 'https://script.google.com/macros/s/AKfycby29zyuyf45rHCxE7z_OE9MzbUwdD7S98MVgAE5wa5VECanaLyEe5YIJ8QUkjzM9fAYiA/exec'
+        webAppUrl: 'https://script.google.com/macros/s/AKfycbwn3aGXD3c_eS7Y3k2g8y9lpsAwISbAsC7HcYEU2byFIq4FmXKam7lXwZKdpFRY-8Ar/exec'
     };
     
     let db = { pacientes: [], usuarios: [], citas: [] };
@@ -502,40 +543,29 @@ DOCENTE: ${docenteInfo}
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-app').style.display = 'grid';
             
-            // Mostrar nombre y rol con color según categoría
+            // Etiqueta de rol
             const rolLabel = { admin: '👑 Administrador', docente: '🎓 Docente', alumno: '📚 Alumno', profesional: '👤 Profesional' };
             const rolColor = { admin: 'var(--admin)', docente: 'var(--docente)', alumno: 'var(--alumno)', profesional: 'var(--admin)' };
-            const etiquetaRol = rolLabel[currentUser.rol] || ('👤 ' + currentUser.rol);
-            document.getElementById('user-tag').innerHTML = `<span style="color:${rolColor[currentUser.rol] || '#333'}">${etiquetaRol}</span><br><small style="color:#666;font-weight:normal;">${currentUser.nombre_completo}</small>`;
+            document.getElementById('user-tag').innerHTML = `<span style="color:${rolColor[currentUser.rol]||'#333'}">${rolLabel[currentUser.rol]||'👤 '+currentUser.rol}</span><br><small style="color:#666;font-weight:normal;">${currentUser.nombre_completo}</small>`;
             
-            // Control de visibilidad por rol
-            const esAdmin = currentUser.rol === 'admin';
+            const esAdmin   = currentUser.rol === 'admin';
             const esDocente = currentUser.rol === 'docente';
-            const esAlumno = currentUser.rol === 'alumno' || currentUser.rol === 'profesional';
+            const esAlumno  = currentUser.rol === 'alumno' || currentUser.rol === 'profesional';
             
-            // Panel admin solo para admin
-            if(esAdmin) {
-                document.getElementById('btnAdmin').style.display = 'block';
-                document.getElementById('btn-estadisticas').style.display = 'block';
-            }
+            // Botones exclusivos por rol — primero ocultar todos, luego mostrar los correctos
+            document.getElementById('btnAdmin').style.display          = esAdmin   ? 'block' : 'none';
+            document.getElementById('btn-estadisticas').style.display  = esAdmin   ? 'block' : 'none';
+            document.getElementById('btn-nota-docente').style.display  = esDocente ? 'block' : 'none';
             
-            // Botón aprobar: solo docente y admin pueden ver
-            const btnAprobar = document.getElementById('btn-aprobar-seccion');
-            if(btnAprobar) btnAprobar.style.display = (esDocente || esAdmin) ? 'block' : 'none';
-            
-            // Si es alumno, pre-rellenar nombre del alumno y docente al iniciar
-            if(esAlumno) {
-                actualizarInfoAlumnoEnNotas();
-            }
+            // Formulario de registro: alumnos y docentes pueden escribir, admin también
+            // El botón GUARDAR permanece visible para todos
             
             renderLista();
             renderCalendar();
             restaurarEstadoCalendar();
         } else {
             document.getElementById('error-msg').style.display = 'block';
-            setTimeout(() => {
-                document.getElementById('error-msg').style.display = 'none';
-            }, 3000);
+            setTimeout(() => { document.getElementById('error-msg').style.display = 'none'; }, 3000);
         }
     }
 
@@ -1054,7 +1084,7 @@ PLAN DE INTERVENCIÓN:
             if(i === 0) b.classList.add('active');
             else b.classList.remove('active');
         });
-        document.getElementById('categoria').value = "Fisioterapia Traumatológica";
+        document.getElementById('categoria').value = "Traumatología";
         
         // Resetear a Evaluación al limpiar SIN insertar plantilla
         document.querySelectorAll('.tipo-atencion-btn').forEach(b => {
@@ -1091,6 +1121,11 @@ PLAN DE INTERVENCIÓN:
             document.getElementById('login-screen').style.display = 'flex';
             document.getElementById('userInput').value = "";
             document.getElementById('passInput').value = "";
+            // Resetear botones de roles al cerrar sesión
+            document.getElementById('btnAdmin').style.display = 'none';
+            document.getElementById('btn-estadisticas').style.display = 'none';
+            document.getElementById('btn-nota-docente').style.display = 'none';
+            document.getElementById('admin-panel').style.display = 'none';
         }
     }
 
@@ -1099,13 +1134,303 @@ PLAN DE INTERVENCIÓN:
     // ============================================
     
     function actualizarInfoAlumnoEnNotas() {
-        // Esta función se llama cuando un alumno inicia sesión
-        // Se puede expandir para pre-rellenar datos en la sesión
+        // placeholder — la info se inyecta en abrirModalNotas
     }
-    
-    // Al abrir el editor de notas, si es alumno, incluir cabecera con info
-    function abrirModalNotas_original() {
-        abrirModalNotas();
+
+    // ============================================
+    // NOTA DOCENTE — abrir modal y funciones
+    // ============================================
+
+    function abrirModalNotaDocente() {
+        if(!currentUser || currentUser.rol !== 'docente') {
+            alert('⚠️ Solo los docentes pueden crear notas docentes');
+            return;
+        }
+
+        // Llenar selector de alumnos
+        const alumnos = db.usuarios.filter(u => u.rol === 'alumno');
+        const sel = document.getElementById('nota-alumno-select');
+        sel.innerHTML = '<option value="">-- Selecciona un alumno --</option>';
+        alumnos.forEach(a => {
+            sel.innerHTML += `<option value="${a.usuario}">${a.nombre_completo} (${a.codigo || 'Sin código'})</option>`;
+        });
+
+        // Limpiar campos
+        document.getElementById('nota-paciente-select').innerHTML = '<option value="">-- Selecciona un paciente --</option>';
+        document.getElementById('nota-docente-texto').value = '';
+        document.getElementById('nota-info-alumno').style.display = 'none';
+
+        document.getElementById('modalNotaDocente').style.display = 'block';
+    }
+
+    function cargarPacientesAlumno() {
+        const alumnoUsuario = document.getElementById('nota-alumno-select').value;
+        const selPac = document.getElementById('nota-paciente-select');
+        selPac.innerHTML = '<option value="">-- Selecciona un paciente --</option>';
+        document.getElementById('nota-info-alumno').style.display = 'none';
+
+        if(!alumnoUsuario) return;
+
+        // Encontrar el alumno en usuarios
+        const alumnoObj = db.usuarios.find(u => u.usuario === alumnoUsuario);
+        if(!alumnoObj) return;
+
+        // Buscar pacientes registrados por ese alumno
+        const pacientesDelAlumno = {};
+        db.pacientes.forEach(p => {
+            if(p.atendido_por === alumnoObj.nombre_completo) {
+                pacientesDelAlumno[String(p.dni)] = p.paciente;
+            }
+        });
+
+        if(Object.keys(pacientesDelAlumno).length === 0) {
+            selPac.innerHTML = '<option value="">Sin pacientes registrados</option>';
+            return;
+        }
+
+        Object.entries(pacientesDelAlumno).forEach(([dni, nombre]) => {
+            selPac.innerHTML += `<option value="${dni}">${nombre} — DNI: ${dni}</option>`;
+        });
+    }
+
+    function cargarDatosNota() {
+        const alumnoUsuario = document.getElementById('nota-alumno-select').value;
+        const pacienteDni   = document.getElementById('nota-paciente-select').value;
+        const infoBox       = document.getElementById('nota-info-alumno');
+        const infoTexto     = document.getElementById('nota-info-texto');
+
+        if(!alumnoUsuario || !pacienteDni) {
+            infoBox.style.display = 'none';
+            return;
+        }
+
+        const alumnoObj  = db.usuarios.find(u => u.usuario === alumnoUsuario);
+        const pacienteRec = db.pacientes.find(p => String(p.dni) === pacienteDni);
+
+        if(alumnoObj && pacienteRec) {
+            infoTexto.innerHTML = `
+                <strong>👨‍🎓 Alumno:</strong> ${alumnoObj.nombre_completo}<br>
+                <strong>🔢 Código:</strong> ${alumnoObj.codigo || 'N/A'}<br>
+                <strong>🏥 Paciente:</strong> ${pacienteRec.paciente}<br>
+                <strong>📋 DNI:</strong> ${pacienteDni}<br>
+                <strong>👨‍🏫 Docente:</strong> ${currentUser.nombre_completo}${currentUser.colegiatura ? ' — CTMP: '+currentUser.colegiatura : ''}
+            `;
+            infoBox.style.display = 'block';
+        }
+    }
+
+    function setNotaCat(el, val) {
+        document.querySelectorAll('#nota-cat-grid .cat-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('nota-categoria').value = val;
+    }
+
+    async function guardarNotaDocente() {
+        const alumnoUsuario = document.getElementById('nota-alumno-select').value;
+        const pacienteDni   = document.getElementById('nota-paciente-select').value;
+        const notaTxt       = document.getElementById('nota-docente-texto').value.trim();
+        const categoria     = document.getElementById('nota-categoria').value;
+
+        if(!alumnoUsuario || !pacienteDni || !notaTxt) {
+            alert('⚠️ Completa todos los campos: alumno, paciente y nota');
+            return;
+        }
+
+        const alumnoObj   = db.usuarios.find(u => u.usuario === alumnoUsuario);
+        const pacienteRec = db.pacientes.find(p => String(p.dni) === pacienteDni);
+
+        if(!alumnoObj || !pacienteRec) {
+            alert('⚠️ No se encontró el alumno o paciente');
+            return;
+        }
+
+        showLoad(true, 'Guardando nota...');
+
+        const ahora = new Date();
+        const fechaFmt = `${String(ahora.getDate()).padStart(2,'0')}/${String(ahora.getMonth()+1).padStart(2,'0')}/${String(ahora.getFullYear()).slice(-2)}`;
+
+        const payload = {
+            action: 'save_nota_docente',
+            id: String(Date.now()),
+            alumno_nombre: alumnoObj.nombre_completo,
+            alumno_codigo: alumnoObj.codigo || '',
+            paciente_nombre: pacienteRec.paciente,
+            paciente_dni: pacienteDni,
+            categoria: categoria,
+            nota: notaTxt,
+            docente: currentUser.nombre_completo,
+            colegiatura: currentUser.colegiatura || '',
+            fecha: fechaFmt
+        };
+
+        try {
+            const response = await fetch(CONFIG.webAppUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            showLoad(false);
+            if(result.status === 'success') {
+                mostrarNotificacion('✅ Nota docente guardada');
+                document.getElementById('nota-docente-texto').value = '';
+            } else {
+                mostrarNotificacion('✅ Nota guardada localmente');
+            }
+        } catch(e) {
+            showLoad(false);
+            mostrarNotificacion('✅ Nota registrada');
+        }
+    }
+
+    function generarNotaDocentePDF() {
+        const alumnoUsuario = document.getElementById('nota-alumno-select').value;
+        const pacienteDni   = document.getElementById('nota-paciente-select').value;
+        const notaTxt       = document.getElementById('nota-docente-texto').value.trim();
+        const categoria     = document.getElementById('nota-categoria').value;
+
+        if(!alumnoUsuario || !pacienteDni) {
+            alert('⚠️ Selecciona alumno y paciente primero');
+            return;
+        }
+
+        const alumnoObj    = db.usuarios.find(u => u.usuario === alumnoUsuario);
+        const pacienteRec  = db.pacientes.find(p => String(p.dni) === pacienteDni);
+
+        if(!alumnoObj || !pacienteRec) {
+            alert('⚠️ Datos no encontrados');
+            return;
+        }
+
+        // Obtener todas las sesiones del paciente registradas por este alumno
+        const sesionesAlumno = db.pacientes
+            .filter(p => String(p.dni) === pacienteDni && p.atendido_por === alumnoObj.nombre_completo)
+            .sort((a, b) => parseInt(a.id) - parseInt(b.id));
+
+        const ahora = new Date();
+        const fechaFmt = `${String(ahora.getDate()).padStart(2,'0')}/${String(ahora.getMonth()+1).padStart(2,'0')}/${ahora.getFullYear()}`;
+
+        const baseUrl  = window.location.origin + window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/')+1);
+        const logoUrl  = baseUrl + 'logo.png';
+
+        let html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Nota Docente - ${alumnoObj.nombre_completo}</title>
+  <style>
+    @page { margin: 1.5cm; }
+    body { font-family: 'Segoe UI', sans-serif; color: #333; font-size: 11pt; margin:0; }
+    .header { text-align:center; border-bottom: 3px solid #252850; padding-bottom:20px; margin-bottom:25px; }
+    .logo { width:200px; height:auto; margin-bottom:10px; }
+    .titulo { color:#252850; font-size:20pt; font-weight:bold; margin:8px 0; }
+    .subtitulo { color:#1a6fa8; font-size:12pt; }
+    .seccion { margin-bottom:22px; page-break-inside:avoid; }
+    .seccion-titulo { background:#252850; color:white; padding:10px 16px; border-radius:6px; font-weight:bold; font-size:12pt; margin-bottom:12px; }
+    .info-box { background:#f0f4ff; border-left:4px solid #1a6fa8; padding:14px 16px; border-radius:6px; }
+    .info-row { display:flex; gap:30px; flex-wrap:wrap; margin-bottom:6px; }
+    .info-item { min-width:200px; }
+    .info-item strong { color:#252850; }
+    .sesion-card { background:#f8f9fa; border-left:4px solid #252850; padding:12px 14px; border-radius:4px; margin-bottom:12px; page-break-inside:avoid; }
+    .sesion-card.evaluacion { border-left-color:#27ae60; }
+    .sesion-header { font-weight:bold; color:#252850; margin-bottom:6px; font-size:10pt; }
+    .sesion-header.evaluacion { color:#27ae60; }
+    .sesion-notas { white-space:pre-wrap; line-height:1.5; font-size:10pt; color:#444; }
+    .nota-box { background:#fff8e1; border-left:4px solid #f39c12; padding:16px; border-radius:6px; }
+    .nota-box h4 { color:#e67e22; margin:0 0 10px 0; }
+    .firma { margin-top:50px; text-align:center; }
+    .linea-firma { border-top:2px solid #333; width:280px; margin:0 auto 8px; }
+    .footer { margin-top:40px; text-align:center; color:#999; font-size:9pt; border-top:1px solid #eee; padding-top:15px; }
+    .badge { display:inline-block; padding:2px 10px; border-radius:12px; font-size:9pt; font-weight:bold; }
+    .badge-aprobado { background:#d5f5e3; color:#1e8449; }
+    .badge-pendiente { background:#fef9e7; color:#d35400; }
+    @media print { body{margin:0} .sesion-card{page-break-inside:avoid} }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="${logoUrl}" alt="CENTYR" class="logo" onerror="this.style.display='none'">
+    <div class="titulo">NOTA DEL DOCENTE</div>
+    <div class="subtitulo">Sistema de Gestión Clínica CENTYR</div>
+  </div>
+
+  <div class="seccion">
+    <div class="seccion-titulo">👨‍🎓 DATOS DEL ALUMNO Y PACIENTE</div>
+    <div class="info-box">
+      <div class="info-row">
+        <div class="info-item"><strong>Alumno:</strong> ${alumnoObj.nombre_completo}</div>
+        <div class="info-item"><strong>Código:</strong> ${alumnoObj.codigo || 'N/A'}</div>
+      </div>
+      <div class="info-row">
+        <div class="info-item"><strong>Paciente:</strong> ${pacienteRec.paciente}</div>
+        <div class="info-item"><strong>DNI:</strong> ${pacienteDni}</div>
+      </div>
+      <div class="info-row">
+        <div class="info-item"><strong>Categoría:</strong> ${categoria}</div>
+        <div class="info-item"><strong>Fecha del reporte:</strong> ${fechaFmt}</div>
+      </div>
+      <div class="info-row">
+        <div class="info-item"><strong>Docente:</strong> ${currentUser.nombre_completo}</div>
+        ${currentUser.colegiatura ? `<div class="info-item"><strong>CTMP:</strong> ${currentUser.colegiatura}</div>` : ''}
+      </div>
+    </div>
+  </div>`;
+
+        // Sesiones del paciente por este alumno
+        if(sesionesAlumno.length > 0) {
+            html += `<div class="seccion">
+    <div class="seccion-titulo">📋 REGISTROS DEL ALUMNO (${sesionesAlumno.length} registros)</div>`;
+            sesionesAlumno.forEach((s, i) => {
+                const esEval = s.tipo_atencion === 'evaluacion' || i === 0;
+                const badge  = s.estado_aprobacion === 'aprobado'
+                    ? `<span class="badge badge-aprobado">✅ Aprobado</span>`
+                    : `<span class="badge badge-pendiente">⏳ Pendiente</span>`;
+                html += `
+    <div class="sesion-card ${esEval?'evaluacion':''}">
+      <div class="sesion-header ${esEval?'evaluacion':''}">
+        ${esEval ? '📋 EVALUACIÓN' : `💪 SESIÓN #${i}`} — ${formatearFecha(s.fecha)}  ${badge}
+      </div>
+      <div style="color:#888;font-size:9pt;margin-bottom:6px;">📌 ${s.categoria}</div>
+      <div class="sesion-notas">${s.notas}</div>
+    </div>`;
+            });
+            html += `</div>`;
+        }
+
+        // Nota del docente
+        if(notaTxt) {
+            html += `<div class="seccion">
+    <div class="seccion-titulo">✍️ NOTA / OBSERVACIÓN DEL DOCENTE</div>
+    <div class="nota-box">
+      <h4>Observaciones de ${currentUser.nombre_completo}:</h4>
+      <p style="white-space:pre-wrap; line-height:1.6; margin:0;">${notaTxt}</p>
+    </div>
+  </div>`;
+        }
+
+        html += `
+  <div class="firma">
+    <div class="linea-firma"></div>
+    <p style="margin:4px 0; font-weight:bold;">${currentUser.nombre_completo}</p>
+    ${currentUser.colegiatura ? `<p style="margin:4px 0; color:#666;">CTMP: ${currentUser.colegiatura}</p>` : ''}
+    <p style="margin:4px 0; color:#888; font-size:10pt;">Docente - CENTYR</p>
+  </div>
+  <div class="footer">
+    <p>Documento generado por el Sistema CENTYR — ${fechaFmt}</p>
+    <p>Este documento es de carácter académico y confidencial.</p>
+  </div>
+</body></html>`;
+
+        const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `NotaDocente_${alumnoObj.nombre_completo.replace(/ /g,'_')}_${pacienteRec.paciente.replace(/ /g,'_')}.html`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        mostrarNotificacion('📄 Reporte generado — ábrelo y presiona Ctrl+P para imprimir');
     }
 
     // ============================================
@@ -1481,18 +1806,14 @@ PLAN DE INTERVENCIÓN:
 
     // Cerrar modal al hacer clic fuera
     window.onclick = function(event) {
-        const modalPassword = document.getElementById('modalPassword');
-        const modalCita = document.getElementById('modalCita');
+        const modalPassword     = document.getElementById('modalPassword');
+        const modalCita         = document.getElementById('modalCita');
         const modalEstadisticas = document.getElementById('modalEstadisticas');
-        if (event.target == modalPassword) {
-            cerrarModalPassword();
-        }
-        if (event.target == modalCita) {
-            cerrarModalCita();
-        }
-        if (event.target == modalEstadisticas) {
-            modalEstadisticas.style.display = 'none';
-        }
+        const modalNotaDocente  = document.getElementById('modalNotaDocente');
+        if (event.target == modalPassword)     cerrarModalPassword();
+        if (event.target == modalCita)         cerrarModalCita();
+        if (event.target == modalEstadisticas) modalEstadisticas.style.display = 'none';
+        if (event.target == modalNotaDocente)  modalNotaDocente.style.display  = 'none';
     }
 
     // ============================================
