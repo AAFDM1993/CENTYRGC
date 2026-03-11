@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="googlebot" content="noindex, nofollow, noarchive">
+    <meta name="bingbot" content="noindex, nofollow, noarchive">
+    <title>CENTYR | Gestión</title>
+    <style>
+        :root { 
+            --primary:  #1B2A4A;   /* azul marino profundo */
+            --accent:   #2ECC71;   /* verde esmeralda */
+            --blue:     #1B2A4A;
+            --bg:       #F4F6FB;
+            --danger:   #E53935;
+            --admin:    #6C3FC5;   /* violeta */
+            --docente:  #0288D1;   /* azul cielo */
+            --alumno:   #00897B;   /* teal */
+            --warning:  #F59E0B;   /* ámbar */
+            --gray:     #64748B;
+            --white:    #ffffff;
+            --shadow:   0 4px 24px rgba(27,42,74,0.10);
+            --radius:   12px;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); margin: 0; color: #333; }
+        
+        #loading { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        .spinner { border: 4px solid #f3f3f3; border-top: 4px solid var(--blue); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Pop-up pendientes docente */
+        #popup-pendientes {
+            position: fixed; bottom: 24px; right: 24px; z-index: 9998;
+            background: white; border-radius: 14px; box-shadow: 0 8px 32px rgba(37,40,80,0.18);
+            width: 340px; max-height: 420px; overflow: hidden;
+            border-top: 4px solid #f39c12; display: none; flex-direction: column;
+            animation: slideInRight 0.35s ease;
+        }
+        @keyframes slideInRight { from { transform: translateX(400px); opacity:0; } to { transform: translateX(0); opacity:1; } }
+        #popup-pendientes .pp-header {
+            background: #f39c12; color: white; padding: 12px 16px;
+            display: flex; justify-content: space-between; align-items: center;
+            font-weight: bold; font-size: 0.95rem; cursor: pointer;
+        }
+        #popup-pendientes .pp-body { padding: 12px; overflow-y: auto; max-height: 320px; }
+        .pp-item { background: #fff8e1; border-left: 3px solid #f39c12; padding: 10px 12px;
+            border-radius: 6px; margin-bottom: 8px; font-size: 0.85rem; }
+        .pp-item strong { color: #252850; display: block; margin-bottom: 4px; }
+        .pp-item .pp-meta { color: #888; font-size: 0.78rem; margin-bottom:6px; }
+        .pp-item .pp-btn { background: #27ae60; color: white; border: none; padding: 5px 12px;
+            border-radius: 5px; cursor: pointer; font-size: 0.8rem; font-weight: bold; }
+        .pp-item .pp-btn:hover { background: #1e8449; }
+        #pp-badge { background: #e74c3c; color: white; border-radius: 50%;
+            width: 20px; height: 20px; display: inline-flex; align-items: center;
+            justify-content: center; font-size: 0.75rem; font-weight: bold; margin-left: 6px; }
+
+        #login-screen { display: none; align-items: center; justify-content: center; min-height: 100vh; }
+        .login-card { background: white; padding: 40px; border-radius: 16px; box-shadow: var(--shadow); width: 380px; text-align: center; }
+        
+        #main-app { display: none; max-width: 1300px; margin: 0 auto; padding: 20px; gap: 20px; grid-template-columns: 1fr; }
+        @media (min-width: 1024px) { #main-app { display: grid; grid-template-columns: 450px 1fr; } }
+        
+        .panel { background: white; padding: 25px; border-radius: 12px; box-shadow: var(--shadow); margin-bottom: 20px; box-sizing: border-box; }
+        h3 { margin-top: 0; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; font-size: 1.1rem; color: var(--primary); }
+        
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        input, textarea, select { width: 100%; padding: 12px; border: 1.5px solid #e0e6ed; border-radius: 8px; font-size: 0.95rem; outline: none; box-sizing: border-box; }
+        
+        .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 15px 0; }
+        .cat-btn { background: #f8f9fa; border: 1.5px solid #e0e6ed; padding: 10px; border-radius: 8px; cursor: pointer; text-align: center; font-size: 0.8rem; font-weight: 600; transition: all 0.3s; }
+        .cat-btn.active { background: var(--blue); color: white; border-color: var(--blue); }
+        .cat-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .btn-save { background: var(--accent); color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s; }
+        .btn-save:hover { background: #229954; transform: translateY(-2px); }
+        .btn-clear { background: var(--gray); color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s; }
+        .btn-clear:hover { background: #5d6d7e; }
+        .btn-pdf { background: var(--blue); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; transition: all 0.3s; }
+        .btn-pdf:hover { background: #2874a6; }
+        
+        .paciente-item { padding: 12px; border-bottom: 1px solid #f0f2f5; cursor: pointer; transition: all 0.2s; }
+        .paciente-item:hover { background: #f8fbff; transform: translateX(5px); }
+        .sesion-card { border: 1px solid #eef2f6; padding: 15px; border-radius: 10px; margin-bottom: 15px; transition: all 0.3s; position: relative; }
+        .sesion-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+        
+        .btn-delete { position: absolute; top: 10px; right: 10px; background: none; border: none; color: var(--danger); cursor: pointer; font-size: 20px; font-weight: bold; padding: 5px 10px; border-radius: 4px; transition: all 0.2s; }
+        .btn-delete:hover { background: var(--danger); color: white; }
+        
+        /* Calendario */
+        .calendar-container { background: white; border-radius: 8px; padding: 15px; }
+        #calendar-content { 
+            transition: all 0.3s ease; 
+            overflow: hidden;
+        }
+        .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .calendar-header button { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--blue); padding: 5px 10px; }
+        .calendar-header button:hover { background: #f0f2f5; border-radius: 4px; }
+        #calendar-toggle-btn { 
+            transition: transform 0.3s ease, background 0.2s ease;
+        }
+        #calendar-toggle-btn:hover { 
+            background: #e3f2fd !important; 
+            border-radius: 4px;
+        }
+        .calendar-title { font-weight: bold; color: var(--primary); }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+        .calendar-day-header { text-align: center; font-size: 0.75rem; font-weight: bold; color: var(--gray); padding: 5px; }
+        .calendar-day { text-align: center; padding: 8px; cursor: pointer; border-radius: 4px; font-size: 0.85rem; transition: all 0.2s; position: relative; }
+        .calendar-day:hover { background: #e3f2fd; }
+        .calendar-day.other-month { color: #ccc; }
+        .calendar-day.today { background: var(--blue); color: white; font-weight: bold; }
+        .calendar-day.selected { background: var(--accent); color: white; }
+        .calendar-day.has-appointments { background: #fff3cd; }
+        .calendar-day.has-appointments::after { content: '•'; position: absolute; bottom: 2px; left: 50%; transform: translateX(-50%); color: var(--blue); font-size: 16px; }
+        
+        /* Lista de citas */
+        .appointments-list { margin-top: 15px; max-height: 200px; overflow-y: auto; }
+        .appointment-item { background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 8px; border-left: 3px solid var(--blue); display: flex; justify-content: space-between; align-items: center; }
+        .appointment-item:hover { background: #e9ecef; }
+        .appointment-time { font-weight: bold; color: var(--blue); font-size: 0.9rem; }
+        .appointment-patient { font-size: 0.85rem; color: var(--primary); }
+        .appointment-delete { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 16px; padding: 0 5px; }
+        .appointment-delete:hover { color: #c0392b; }
+        
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); overflow-y: auto; }
+        .modal-content { background-color: white; margin: 10% auto; padding: 30px; border-radius: 12px; width: 90%; max-width: 400px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+        .modal-header { margin-bottom: 20px; }
+        .modal-header h2 { margin: 0; color: var(--primary); }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover { color: #000; }
+        
+        /* Estilos para módulo de ejercicios */
+        #modalEjercicios .modal-content { max-width: 900px; margin: 2% auto; }
+        .ejercicio-form { background: #f8f9fa; padding: 20px; margin: 15px 0; border-radius: 8px; border: 2px dashed var(--blue); }
+        .ejercicio-item { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid var(--blue); position: relative; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .ejercicio-item img { max-width: 200px; height: auto; border-radius: 6px; margin: 10px 0; display: block; }
+        .ejercicio-item .btn-eliminar { position: absolute; top: 10px; right: 10px; background: var(--danger); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        .ejercicio-item .btn-eliminar:hover { background: #c0392b; }
+        .ejercicio-preview { margin: 15px 0; padding: 20px; background: white; border: 1px solid #ddd; border-radius: 8px; max-height: 400px; overflow-y: auto; }
+        .btn-agregar-ejercicio { background: var(--accent); color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 10px 5px; }
+        .btn-agregar-ejercicio:hover { background: #229954; }
+        .btn-generar-pdf { background: var(--blue); color: white; padding: 12px 24px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; margin: 10px 5px; font-size: 16px; }
+        .btn-generar-pdf:hover { background: #2980b9; }
+        .input-imagen-label { display: block; margin: 10px 0; padding: 15px; border: 2px dashed var(--blue); border-radius: 6px; background: #f0f8ff; cursor: pointer; text-align: center; color: var(--blue); font-weight: 600; }
+        .input-imagen-label:hover { background: #e3f2fd; border-color: #2980b9; }
+        .ejercicio-numero { background: var(--blue); color: white; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; display: inline-block; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div id="loading">
+        <div class="spinner"></div>
+        <p id="loading-text" style="margin-top:15px; font-weight:bold;">Cargando sistema...</p>
+    </div>
+
+    <div id="login-screen">
+        <div class="login-card">
+            <img src="logo.png" alt="CENTYR Logo" style="width: 300px; height: auto; margin-bottom: 20px; display: block; margin-left: auto; margin-right: auto;">
+            <h1 style="color:var(--blue); margin:0 0 10px 0;"> </h1>
+            <p style="color:var(--gray); margin-bottom: 20px;">Sistema de Gestión de Pacientes</p>
+            <input type="text" id="userInput" placeholder="Usuario" style="margin-bottom:10px;" onkeypress="if(event.key==='Enter') login()">
+            <input type="password" id="passInput" placeholder="Contraseña" style="margin-bottom:10px;" onkeypress="if(event.key==='Enter') login()">
+            <button class="btn-save" onclick="login()" style="width:100%; margin-top:10px;">INGRESAR</button>
+            <p id="error-msg" style="color:var(--danger); display:none; margin-top:15px;">⚠️ Credenciales incorrectas</p>
+        </div>
+    </div>
+
+    <!-- Modal Cambiar Contraseña -->
+    <div id="modalPassword" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="cerrarModalPassword()">&times;</span>
+                <h2>🔐 Cambiar Contraseña</h2>
+            </div>
+            <input type="password" id="pass-actual" placeholder="Contraseña actual" style="margin-bottom:10px;">
+            <input type="password" id="pass-nueva" placeholder="Nueva contraseña" style="margin-bottom:10px;">
+            <input type="password" id="pass-confirmar" placeholder="Confirmar nueva contraseña" style="margin-bottom:20px;">
+            <button class="btn-save" onclick="cambiarPassword()" style="width:100%;">CAMBIAR CONTRASEÑA</button>
+        </div>
+    </div>
+
+    <!-- Modal Agendar Cita -->
+    <div id="modalCita" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="cerrarModalCita()">&times;</span>
+                <h2>📅 Agendar Cita</h2>
+            </div>
+            <p style="margin-bottom:10px;"><strong id="cita-fecha-texto"></strong></p>
+            <input type="time" id="cita-hora" style="margin-bottom:10px;">
+            <input type="text" id="cita-paciente-dni" placeholder="DNI del paciente" style="margin-bottom:10px;" oninput="buscarPacienteCita(this.value)">
+            <input type="text" id="cita-paciente-nombre" placeholder="Nombre del paciente" style="margin-bottom:10px;">
+            <textarea id="cita-notas" rows="3" placeholder="Notas de la cita (opcional)" style="margin-bottom:20px;"></textarea>
+            <button class="btn-save" onclick="agendarCita()" style="width:100%;">AGENDAR CITA</button>
+        </div>
+    </div>
+
+    <!-- Modal Generar Ejercicios PDF -->
+    <div id="modalEjercicios" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="close" onclick="cerrarModalEjercicios()">&times;</span>
+                <h2>💪 Generar PDF de Ejercicios</h2>
+            </div>
+            
+            <div style="padding: 20px;">
+                <input type="text" id="ejercicio-titulo-pdf" placeholder="Título del PDF (ej: Ejercicios para el hogar)" style="margin-bottom: 15px; font-size: 1.1rem; font-weight: 600;">
+                
+                <div class="ejercicio-form">
+                    <h3 style="color: var(--blue); margin-top: 0;">➕ Agregar Ejercicio</h3>
+                    <input type="text" id="ejercicio-nombre" placeholder="Nombre del ejercicio (ej: Estiramiento de cuádriceps)" style="margin-bottom:10px;">
+                    
+                    <label class="input-imagen-label" for="ejercicio-imagen">
+                        📷 Subir imagen del ejercicio (opcional)
+                        <input type="file" id="ejercicio-imagen" accept="image/*" style="display:none;" onchange="previsualizarImagen(this)">
+                    </label>
+                    <div id="preview-imagen" style="margin: 10px 0;"></div>
+                    
+                    <textarea id="ejercicio-descripcion" rows="3" placeholder="Descripción del ejercicio..." style="margin-bottom:10px;"></textarea>
+                    <textarea id="ejercicio-indicaciones" rows="2" placeholder="Indicaciones (ej: 3 series de 10 repeticiones, 2 veces al día)" style="margin-bottom:10px;"></textarea>
+                    
+                    <button class="btn-agregar-ejercicio" onclick="agregarEjercicio()">➕ Agregar Ejercicio</button>
+                </div>
+                
+                <h3 style="color: var(--primary); margin-top: 30px;">📋 Ejercicios Agregados:</h3>
+                <div id="lista-ejercicios" style="min-height: 100px;">
+                    <p style="text-align: center; color: #95a5a6; padding: 40px 20px;">
+                        No hay ejercicios agregados aún.<br>
+                        <small>Usa el formulario de arriba para agregar ejercicios</small>
+                    </p>
+                </div>
+                
+                <div style="margin-top: 30px; text-align: center; border-top: 2px solid #e0e6ed; padding-top: 20px;">
+                    <button class="btn-generar-pdf" onclick="generarPDFEjercicios()">📥 GENERAR PDF</button>
+                    <button class="btn-agregar-ejercicio" onclick="limpiarEjercicios()" style="background: #e74c3c;">🗑️ Limpiar Todo</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-app">
+        <aside>
+            <div class="panel">
+                <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer; user-select:none;" onclick="toggleCalendar()">
+                    <h3 style="margin:0;">📅 Calendario de Citas</h3>
+                    <button id="calendar-toggle-btn" style="background:none; border:none; font-size:20px; cursor:pointer; color:var(--blue); padding:5px;" title="Mostrar/Ocultar calendario">▼</button>
+                </div>
+                <div id="calendar-content" style="margin-top:15px;">
+                    <div class="calendar-container">
+                        <div class="calendar-header">
+                            <button onclick="cambiarMes(-1)">◀</button>
+                            <div class="calendar-title" id="calendar-title"></div>
+                            <button onclick="cambiarMes(1)">▶</button>
+                        </div>
+                        <div class="calendar-grid" id="calendar-grid"></div>
+                    </div>
+                    <div class="appointments-list" id="appointments-list"></div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <img src="logo.png" alt="CENTYR Logo" style="width: 35px; height: auto;">
+                        <span id="user-tag" style="font-weight:bold; color:var(--admin);"></span>
+                    </div>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="abrirModalPassword()" style="background:none; border:none; color:var(--blue); cursor:pointer; font-weight:bold;" title="Cambiar contraseña">🔐</button>
+                        <button onclick="cerrarSesion()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">SALIR</button>
+                    </div>
+                </div>
+                <h3>📝 Registro de Sesión</h3>
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:0.82rem;color:var(--gray);display:block;margin-bottom:4px;">DNI del Paciente</label>
+                    <input type="text" id="dni" placeholder="Ingresa el DNI del paciente..." oninput="autoBuscar(this.value)" style="margin-bottom:0;" maxlength="12">
+                </div>
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:0.82rem;color:var(--gray);display:block;margin-bottom:4px;">
+                        Nombre del Paciente
+                        <span id="pac-encontrado-badge" style="display:none;background:#D1FAE5;color:#065F46;padding:1px 8px;border-radius:8px;font-size:0.7rem;font-weight:700;margin-left:6px;">✓ Paciente existente</span>
+                    </label>
+                    <input type="text" id="paciente" placeholder="Se completa automáticamente al buscar DNI..." style="margin-bottom:0;">
+                </div>
+                
+                <div style="margin: 15px 0;">
+                    <label style="font-size: 0.9rem; color: var(--gray); margin-bottom: 5px; display: block;">Tipo de Atención:</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <button type="button" class="tipo-atencion-btn active" onclick="setTipoAtencion(this, 'evaluacion')" data-tipo="evaluacion" style="background: var(--accent); color: white; border: 2px solid var(--accent); padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.3s;">
+                            📋 Evaluación
+                        </button>
+                        <button type="button" class="tipo-atencion-btn" onclick="setTipoAtencion(this, 'sesion')" data-tipo="sesion" style="background: white; color: var(--blue); border: 2px solid var(--blue); padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem; transition: all 0.3s;">
+                            💪 Sesión
+                        </button>
+                    </div>
+                    <input type="hidden" id="tipo-atencion" value="evaluacion">
+                </div>
+
+                <!-- Selector docente+curso SIEMPRE visible (todos los roles eligen docente evaluador) -->
+                <div id="alumno-docente-curso" style="background:#F0F4FF;border-radius:10px;padding:12px;margin-bottom:12px;border-left:4px solid var(--docente);">
+                    <div style="font-size:0.8rem;font-weight:700;color:var(--docente);margin-bottom:8px;">👨‍🏫 Docente evaluador &amp; Curso clínico</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <div>
+                            <label style="font-size:0.75rem;color:var(--gray);display:block;margin-bottom:3px;">Docente que evaluará</label>
+                            <select id="alumno-docente-sel" style="margin-bottom:0;font-size:0.85rem;padding:8px;border:1.5px solid var(--docente);">
+                                <option value="">-- Selecciona --</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:0.75rem;color:var(--gray);display:block;margin-bottom:3px;">Curso clínico</label>
+                            <select id="alumno-curso-sel" onchange="onCursoSelChange()" style="margin-bottom:0;font-size:0.85rem;padding:8px;border:1.5px solid var(--primary);">
+                                <option value="">-- Selecciona --</option>
+                                <option value="Traumatología">🦴 Traumatología</option>
+                                <option value="Reumatología">💧 Reumatología</option>
+                                <option value="Cardiología">❤️ Cardiología</option>
+                                <option value="Neuropediatría">👶 Neuropediatría</option>
+                                <option value="Neuro Adultos">🧠 Neuro Adultos</option>
+                                <option value="Geriatría">👴 Geriatría</option>
+                                <option value="Cirugía">🏥 Cirugía</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="cat-wrapper">
+                    <label style="font-size:0.85rem; color:var(--gray); margin-bottom:5px; display:flex; align-items:center; gap:8px;">
+                        <span id="cat-label-text">Categoría:</span>
+                        <span id="cat-locked-badge" style="display:none; background:#F59E0B; color:white; padding:1px 8px; border-radius:8px; font-size:0.72rem; font-weight:700;">🔒 Fijada en la evaluación</span>
+                    </label>
+                    <div class="cat-grid" style="grid-template-columns:1fr 1fr 1fr;" id="cat-grid-btns">
+                        <div class="cat-btn active" onclick="setCat(this, 'Traumatología')">🦴 Trauma</div>
+                        <div class="cat-btn" onclick="setCat(this, 'Reumatología')">💧 Reuma</div>
+                        <div class="cat-btn" onclick="setCat(this, 'Cardiología')">❤️ Cardio</div>
+                        <div class="cat-btn" onclick="setCat(this, 'Neuropediatría')">👶 Neuro Pedia</div>
+                        <div class="cat-btn" onclick="setCat(this, 'Neuro Adultos')">🧠 Neuro Adulto</div>
+                        <div class="cat-btn" onclick="setCat(this, 'Geriatría')">👴 Geriatría</div>
+                        <div class="cat-btn" onclick="setCat(this, 'Cirugía')">🏥 Cirugía</div>
+                    </div>
+                    <div id="cat-locked-display" style="display:none; background:#FEF3C7; border:1.5px solid #F59E0B; border-radius:8px; padding:10px 14px; margin-top:2px;">
+                        <span id="cat-locked-nombre" style="font-weight:700; color:#92400E; font-size:0.95rem;"></span>
+                        <div style="font-size:0.75rem; color:#B45309; margin-top:2px;">La categoría se fija en la evaluación inicial y no puede cambiarse en sesiones.</div>
+                    </div>
+                </div>
+                <input type="hidden" id="categoria" value="Traumatología">
+                <div style="margin-bottom: 10px;">
+                    <button type="button" onclick="abrirModalNotas()" style="width: 100%; padding: 15px; background: var(--blue); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600;">
+                        📝 ABRIR EDITOR DE NOTAS
+                    </button>
+                    <div id="preview-notas" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 6px; min-height: 60px; color: #666; font-size: 0.9rem; max-height: 120px; overflow-y: auto;">
+                        <em>Haz clic en "ABRIR EDITOR DE NOTAS" para escribir...</em>
+                    </div>
+                </div>
+                <textarea id="notas" rows="6" placeholder="Detalles de la evolución..." style="display: none;"></textarea>
+                <div class="btn-group">
+                    <button class="btn-save" onclick="guardar()">GUARDAR</button>
+                    <button class="btn-clear" onclick="limpiarCampos()">LIMPIAR</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h3>👥 Buscador de Pacientes</h3>
+                <input type="text" placeholder="🔍 Buscar por nombre o DNI..." onkeyup="renderLista(this.value)">
+                <div id="listaPacientes" style="max-height: 250px; overflow-y: auto; margin-top:10px;"></div>
+                <button id="btnAdmin" class="btn-save" onclick="toggleAdmin()" style="display:none; margin-top:20px; background:var(--admin); width:100%;">⚙️ PANEL ADMIN</button>
+                <button id="btn-estadisticas" class="btn-save" onclick="abrirEstadisticas()" style="display:none; margin-top:10px; background:#252850; width:100%;">📊 ESTADÍSTICAS</button>
+                <button id="btn-nota-docente" class="btn-save" onclick="abrirModalNotaDocente()" style="display:none; margin-top:10px; background:var(--docente); width:100%;">📝 NOTA DOCENTE</button>
+                <button id="btn-notas-alumno" class="btn-save" onclick="abrirModalNotasAlumno()" style="display:none; margin-top:10px; background:#0277BD; width:100%;">📊 NOTAS DE ALUMNOS</button>
+                <button id="btn-mis-notas" class="btn-save" onclick="abrirModalMisNotas()" style="display:none; margin-top:10px; background:var(--alumno); width:100%;">📊 MIS NOTAS</button>
+                <button class="btn-save" onclick="abrirModalEjercicios()" style="margin-top:10px; background:var(--accent); width:100%;">💪 GENERAR EJERCICIOS PDF</button>
+            </div>
+
+            <!-- Panel Notas Docentes (solo docente y admin) -->
+            <div id="panel-notas-sidebar" class="panel" style="display:none; padding:14px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <h3 style="margin:0; font-size:0.95rem; color:var(--docente);">📊 Cuadro de Notas</h3>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <input type="text" id="notas-sidebar-filtro" placeholder="🔍 Apellido..." oninput="renderNotasSidebar(this.value)"
+                               style="margin:0; padding:5px 10px; font-size:0.8rem; border-radius:6px; border:1px solid #ddd; width:110px;">
+                        <button onclick="renderNotasSidebar('')" style="padding:5px 8px; background:#eee; border:none; border-radius:5px; cursor:pointer; font-size:0.75rem;">✕</button>
+                    </div>
+                </div>
+                <div id="notas-sidebar-body" style="max-height:360px; overflow-y:auto; font-size:0.8rem;">
+                    <p style="color:#999; text-align:center; padding:20px 0;">Cargando notas...</p>
+                </div>
+            </div>
+
+            <div id="admin-panel" class="panel" style="display:none; border:2px solid var(--admin);">
+                <!-- Tab navigation -->
+                <div style="display:flex; gap:6px; margin-bottom:18px; flex-wrap:wrap;">
+                    <button onclick="adminTab('tab-usuarios')" id="btn-tab-usuarios" style="padding:8px 14px; background:var(--admin); color:white; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.85rem;">👤 Usuarios</button>
+                    <button onclick="adminTab('tab-notas-cfg')" id="btn-tab-notas-cfg" style="padding:8px 14px; background:#eee; color:#555; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.85rem;">⚖️ Notas</button>
+                    <button onclick="adminTab('tab-exportar')" id="btn-tab-exportar" style="padding:8px 14px; background:#eee; color:#555; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.85rem;">📤 Exportar</button>
+                    <button onclick="adminTab('tab-cursos')" id="btn-tab-cursos" style="padding:8px 14px; background:#eee; color:#555; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.85rem;">🏫 Cursos</button>
+                </div>
+
+                <!-- Tab: Nuevo usuario -->
+                <div id="tab-usuarios">
+                    <h3 style="color:var(--admin); margin-top:0;">🔑 Nuevo Usuario</h3>
+                    <input type="text" id="adm-nombre" placeholder="Nombre completo" style="margin-bottom:10px;">
+                    <input type="text" id="adm-codigo" placeholder="Código de alumno (solo alumnos)" style="margin-bottom:10px;">
+                    <input type="text" id="adm-colegiatura" placeholder="Número CTMP (solo docentes)" style="margin-bottom:10px;">
+                    <select id="adm-rol" style="margin-bottom:10px;">
+                        <option value="alumno">Alumno</option>
+                        <option value="docente">Docente</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                    <input type="text" id="adm-user" placeholder="Usuario" style="margin-bottom:10px;">
+                    <input type="password" id="adm-pass" placeholder="Contraseña" style="margin-bottom:10px;">
+                    <button class="btn-save" style="background:var(--admin); width:100%;" onclick="crearUsuario()">CREAR USUARIO</button>
+                </div>
+
+                <!-- Tab: Configuración de notas -->
+                <div id="tab-notas-cfg" style="display:none;">
+                    <h3 style="color:var(--admin); margin-top:0;">⚖️ Notas y Ponderaciones por Alumno y Paciente</h3>
+                    <div style="margin-bottom:12px;">
+                        <select id="cfg-alumno-sel" onchange="cargarResumenNotas()" style="margin-bottom:0;">
+                            <option value="">-- Selecciona un alumno --</option>
+                        </select>
+                    </div>
+                    <div id="cfg-notas-resumen" style="margin-top:10px;"></div>
+                </div>
+
+                <!-- Tab: Exportar datos -->
+                <div id="tab-exportar" style="display:none;">
+                    <h3 style="color:var(--admin); margin-top:0;">📤 Exportar Datos del Sistema</h3>
+                    <p style="color:var(--gray); font-size:0.9rem; margin-bottom:16px;">Genera un reporte Excel/CSV con los datos seleccionados.</p>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <button onclick="exportarResumenGeneral()" style="padding:12px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; text-align:left;">
+                            📊 Resumen General (evaluaciones, sesiones, aprobadas, pendientes)
+                        </button>
+                        <button onclick="exportarNotasPorAlumno()" style="padding:12px; background:var(--docente); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; text-align:left;">
+                            🎓 Notas y promedios por alumno
+                        </button>
+                        <button onclick="exportarNotasPorPaciente()" style="padding:12px; background:var(--accent); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; text-align:left;">
+                            🏥 Notas y promedios por paciente
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab: Estructura de cursos -->
+                <div id="tab-cursos" style="display:none;">
+                    <h3 style="color:var(--admin); margin-top:0;">🏫 Estructura de Evaluación de Cursos</h3>
+
+                    <!-- Paso 1: Selección de curso y capacidad -->
+                    <div style="background:#f8f9fa; border-radius:10px; padding:14px; margin-bottom:14px; border-left:4px solid var(--admin);">
+                        <div style="font-weight:700; color:var(--admin); margin-bottom:10px; font-size:0.9rem;">PASO 1 — Curso y Capacidad</div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <div>
+                                <label style="font-size:0.82rem; color:var(--gray); display:block; margin-bottom:4px;">Curso Clínico</label>
+                                <select id="curso-sel" onchange="cursoSelChange()" style="margin-bottom:0; font-weight:600;">
+                                    <option value="">-- Seleccionar --</option>
+                                    <option value="Traumatología">🦴 Traumatología</option>
+                                    <option value="Reumatología">💧 Reumatología</option>
+                                    <option value="Cardiología">❤️ Cardiología</option>
+                                    <option value="Neuropediatría">👶 Neuropediatría</option>
+                                    <option value="Neuro Adultos">🧠 Neuro Adultos</option>
+                                    <option value="Cirugía">🏥 Cirugía</option>
+                                    <option value="Geriatría">👴 Geriatría</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.82rem; color:var(--gray); display:block; margin-bottom:4px;">N° Pacientes del curso</label>
+                                <input type="number" id="curso-capacidad" min="1" max="20" value="5" placeholder="ej: 5"
+                                       style="margin-bottom:0; font-weight:600;" onchange="cursoCapacidadChange()">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Paso 2: Grupos de notas y ponderaciones -->
+                    <div id="curso-grupos-wrap" style="display:none;">
+                        <div style="background:#f8f9fa; border-radius:10px; padding:14px; margin-bottom:14px; border-left:4px solid #f39c12;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                                <div style="font-weight:700; color:#e67e22; font-size:0.9rem;">PASO 2 — Grupos de Notas y Pesos</div>
+                                <button onclick="agregarGrupoCurso()" style="padding:5px 12px; background:#f39c12; color:white; border:none; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:700;">+ Agregar grupo</button>
+                            </div>
+                            <div id="curso-grupos-list"></div>
+                            <!-- Barra de porcentaje total -->
+                            <div style="margin-top:10px; padding:10px; background:white; border-radius:8px; border:1px solid #eee;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <span style="font-size:0.85rem; font-weight:600; color:var(--primary);">Total ponderación:</span>
+                                    <span id="curso-pct-total" style="font-weight:700; font-size:1rem; color:#888;">0%</span>
+                                </div>
+                                <div style="background:#eee; border-radius:4px; height:8px; overflow:hidden;">
+                                    <div id="curso-pct-bar" style="height:100%; width:0%; background:#27ae60; transition:all 0.4s; border-radius:4px;"></div>
+                                </div>
+                                <div id="curso-pct-aviso" style="font-size:0.78rem; margin-top:5px; color:#888;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Paso 3: Vista previa de la plantilla por paciente -->
+                        <div style="background:#f8f9fa; border-radius:10px; padding:14px; margin-bottom:14px; border-left:4px solid var(--docente);">
+                            <div style="font-weight:700; color:var(--docente); margin-bottom:10px; font-size:0.9rem;">PASO 3 — Vista Previa por Paciente</div>
+                            <div id="curso-preview" style="color:#999; font-size:0.88rem; text-align:center; padding:10px;">
+                                Configura los grupos para ver la vista previa.
+                            </div>
+                        </div>
+
+                        <!-- Guardar estructura -->
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                            <button onclick="guardarEstructuraCurso()" style="padding:13px; background:var(--admin); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.95rem;">
+                                💾 GUARDAR ESTRUCTURA
+                            </button>
+                            <button onclick="calcularNotasFinalCurso()" style="padding:13px; background:var(--accent); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.95rem;">
+                                🧮 CALCULAR NOTAS FINALES
+                            </button>
+                        </div>
+
+                        <!-- Resultado de notas finales -->
+                        <div id="curso-resultado" style="margin-top:14px; display:none;"></div>
+                    </div>
+
+                    <!-- Cursos guardados -->
+                    <div style="margin-top:16px;">
+                        <div style="font-weight:700; color:var(--primary); margin-bottom:8px; font-size:0.88rem; display:flex; justify-content:space-between; align-items:center;">
+                            <span>📋 Estructuras guardadas</span>
+                            <button onclick="renderCursosGuardados()" style="padding:3px 10px; background:#eee; color:#555; border:none; border-radius:4px; cursor:pointer; font-size:0.78rem;">🔄 Actualizar</button>
+                        </div>
+                        <div id="cursos-guardados-list" style="color:#999; font-size:0.85rem; text-align:center; padding:10px;">
+                            Sin estructuras guardadas aún.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="panel">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap: wrap; gap: 10px;">
+                <h2 id="titulo-historial" style="margin:0;">📋 Ficha Clínica</h2>
+                <div>
+                    <button id="btnSync" class="btn-pdf" onclick="sincronizar()" title="Sincronizar datos">🔄</button>
+                    <button id="btnPdf" class="btn-pdf" style="display:none;" onclick="exportarPDF()">📥 EXPORTAR PDF</button>
+                    <button id="btnInforme" class="btn-pdf" style="display:none; background: var(--accent);" onclick="generarInformeFisioterapeutico()">📋 INFORME FISIOTERAPÉUTICO</button>
+                </div>
+            </div>
+            <div id="historial"></div>
+        </main>
+    </div>
+
+    <!-- Modal Editor de Notas -->
+    <div id="modalNotas" class="modal">
+        <div class="modal-content" style="max-width: 900px; max-height: 90vh;">
+            <div class="modal-header">
+                <span class="close" onclick="cerrarModalNotas()">&times;</span>
+                <h2>📝 Editor de Notas</h2>
+            </div>
+            <div style="padding: 20px;">
+                <textarea id="editor-notas" rows="20" style="width: 100%; padding: 15px; border: 1.5px solid #e0e6ed; border-radius: 8px; font-size: 1rem; line-height: 1.6; font-family: 'Segoe UI', sans-serif; resize: vertical;" placeholder="Escribe las notas aquí..."></textarea>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button onclick="cerrarModalNotas()" style="padding: 12px 24px; background: #95a5a6; color: white; border: none; border-radius: 6px; cursor: pointer; margin-right: 10px; font-weight: 600;">CANCELAR</button>
+                    <button onclick="guardarNotasModal()" style="padding: 12px 24px; background: var(--blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">✅ GUARDAR NOTAS</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Estadísticas -->
+    <div id="modalEstadisticas" class="modal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <span class="close" onclick="document.getElementById('modalEstadisticas').style.display='none'">&times;</span>
+                <h2>📊 Estadísticas del Sistema</h2>
+            </div>
+            <div id="estadisticas-contenido" style="padding: 20px;"></div>
+        </div>
+    </div>
+
+    <!-- Modal Nota Docente -->
+    <div id="modalNotaDocente" class="modal">
+        <div class="modal-content" style="max-width:900px; max-height:92vh; overflow-y:auto;">
+            <div class="modal-header" style="background:var(--docente); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0;">
+                <span class="close" onclick="document.getElementById('modalNotaDocente').style.display='none'" style="color:white;">&times;</span>
+                <h2 style="margin:0; color:white; font-size:1.1rem;">📝 Nota del Docente</h2>
+            </div>
+            <div style="padding:0 4px;">
+
+                <!-- ── Buscador por apellido ── -->
+                <div style="background:#F0F4FF; border-radius:10px; padding:14px; margin-bottom:14px; border-left:4px solid var(--docente);">
+                    <label style="font-weight:700; color:var(--primary); display:block; margin-bottom:8px; font-size:0.88rem;">🔍 Buscar Alumno por Apellido:</label>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <input type="text" id="nota-buscar-apellido" placeholder="Ej: García, López..."
+                               oninput="filtrarAlumnosNota(this.value)"
+                               style="margin-bottom:0; flex:1; padding:10px 14px; border:1.5px solid var(--docente); border-radius:8px; font-size:0.95rem;">
+                        <button onclick="filtrarAlumnosNota('')" style="padding:10px 14px; background:#eee; border:none; border-radius:8px; cursor:pointer; font-size:0.85rem; white-space:nowrap;">✕ Limpiar</button>
+                    </div>
+                    <div id="nota-alumnos-resultados" style="margin-top:10px; display:flex; flex-wrap:wrap; gap:6px;"></div>
+                </div>
+
+                <!-- ── Grid: Form (izq) + Panel notas previas (der) ── -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start;">
+
+                    <!-- Columna izquierda: formulario -->
+                    <div>
+                        <!-- Alumno seleccionado -->
+                        <div style="margin-bottom:12px;">
+                            <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:5px; font-size:0.85rem;">👨‍🎓 Alumno:</label>
+                            <select id="nota-alumno-select" onchange="cargarPacientesAlumno()" style="margin-bottom:0;">
+                                <option value="">-- Selecciona un alumno --</option>
+                            </select>
+                        </div>
+                        <!-- Selector de paciente -->
+                        <div style="margin-bottom:12px;">
+                            <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:5px; font-size:0.85rem;">🏥 Paciente:</label>
+                            <select id="nota-paciente-select" onchange="cargarDatosNota()" style="margin-bottom:0;">
+                                <option value="">-- Selecciona un paciente --</option>
+                            </select>
+                        </div>
+                        <!-- Info auto-completada -->
+                        <div id="nota-info-alumno" style="background:#f0f4ff; border-left:4px solid var(--docente); padding:10px 12px; border-radius:6px; margin-bottom:12px; display:none;">
+                            <div id="nota-info-texto" style="font-size:0.85rem; color:var(--primary); line-height:1.6;"></div>
+                        </div>
+                        <!-- Selector de categoría -->
+                        <div style="margin-bottom:12px;">
+                            <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:6px; font-size:0.85rem;">📂 Categoría:</label>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;" id="nota-cat-grid">
+                                <div class="cat-btn active" onclick="setNotaCat(this,'Traumatología')" style="font-size:0.78rem; padding:7px;">🦴 Traumatología</div>
+                                <div class="cat-btn" onclick="setNotaCat(this,'Reumatología')" style="font-size:0.78rem; padding:7px;">💧 Reumatología</div>
+                                <div class="cat-btn" onclick="setNotaCat(this,'Cardiología')" style="font-size:0.78rem; padding:7px;">❤️ Cardiología</div>
+                                <div class="cat-btn" onclick="setNotaCat(this,'Neuropediatría')" style="font-size:0.78rem; padding:7px;">👶 Neuropediatría</div>
+                                <div class="cat-btn" onclick="setNotaCat(this,'Neuro Adultos')" style="font-size:0.78rem; padding:7px;">🧠 Neuro Adultos</div>
+                                <div class="cat-btn" onclick="setNotaCat(this,'Geriatría')" style="font-size:0.78rem; padding:7px;">👴 Geriatría</div>
+                                <div class="cat-btn" onclick="setNotaCat(this,'Cirugía')" style="font-size:0.78rem; padding:7px;">🏥 Cirugía</div>
+                            </div>
+                            <input type="hidden" id="nota-categoria" value="Traumatología">
+                        </div>
+                        <!-- Nota vigesimal -->
+                        <div style="margin-bottom:16px;">
+                            <label style="font-weight:600; color:var(--primary); display:block; margin-bottom:8px; font-size:0.85rem;">🔢 Nota (0–20):</label>
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                <input type="number" id="nota-calificacion" min="0" max="20" step="0.5"
+                                       placeholder="0–20"
+                                       style="width:100px; font-size:1.5rem; font-weight:bold; text-align:center; border:2px solid var(--docente); border-radius:8px; padding:8px; margin-bottom:0;"
+                                       oninput="actualizarColorNota(this)">
+                                <div id="nota-color-badge" style="padding:7px 14px; border-radius:20px; font-weight:bold; font-size:0.88rem; background:#eee; color:#666; flex:1; text-align:center;">
+                                    Ingresa una nota
+                                </div>
+                            </div>
+                        </div>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                            <button onclick="guardarNotaDocente()" style="padding:12px; background:var(--docente); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.9rem;">💾 GUARDAR</button>
+                            <button onclick="generarNotaDocentePDF()" style="padding:12px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.9rem;">📄 REPORTE</button>
+                        </div>
+                    </div>
+
+                    <!-- Columna derecha: notas previas del alumno seleccionado -->
+                    <div>
+                        <div style="background:#f8f9fa; border-radius:10px; padding:12px; min-height:300px; border:1.5px solid #e0e6ed;">
+                            <div style="font-weight:700; color:var(--docente); margin-bottom:10px; font-size:0.88rem; display:flex; justify-content:space-between; align-items:center;">
+                                <span>📊 Notas Previas del Alumno</span>
+                                <span id="notas-previas-badge" style="background:#eee; color:#888; padding:2px 8px; border-radius:8px; font-size:0.75rem; font-weight:600;">0 notas</span>
+                            </div>
+                            <div id="notas-previas-panel" style="font-size:0.82rem; color:#999; text-align:center; padding:20px 0;">
+                                Selecciona un alumno para ver sus notas.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!--
+    ╔══════════════════════════════════════════════════════════════════╗
+    ║  CENTYR — Cargador dinámico de módulos                           ║
+    ║  Orden garantizado: core → auth → session → docente →            ║
+    ║                     alumno → admin → utils                       ║
+    ║  Para ejecutar tests en consola: CENTYR.test.runAll()            ║
+    ╚══════════════════════════════════════════════════════════════════╝
+    -->
+    <script>
+    (function () {
+        'use strict';
+
+        // ── Módulos en orden estricto de dependencia ─────────────────────────
+        const MODULES = [
+            'js/centyr-core.js',
+            'js/centyr-auth.js',
+            'js/centyr-session.js',
+            'js/centyr-docente.js',
+            'js/centyr-alumno.js',
+            'js/centyr-admin.js',
+            'js/centyr-utils.js'
+        ];
+
+        // ── Carga secuencial con Promise chain ───────────────────────────────
+        function loadScript(src) {
+            return new Promise(function (resolve, reject) {
+                const s    = document.createElement('script');
+                s.src      = src;
+                s.onload   = function () { resolve(src); };
+                s.onerror  = function () { reject(new Error('Error cargando: ' + src)); };
+                document.head.appendChild(s);
+            });
+        }
+
+        function loadSequential(modules) {
+            return modules.reduce(function (promise, src) {
+                return promise.then(function () { return loadScript(src); });
+            }, Promise.resolve());
+        }
+
+        // ── Arranque ─────────────────────────────────────────────────────────
+        loadSequential(MODULES)
+            .then(function () {
+                console.log('🚀 CENTYR — todos los módulos cargados');
+
+                // Registrar runner de todos los tests
+                if (window.CENTYR) {
+                    CENTYR.test.runAll = function () {
+                        console.group('🧪 CENTYR — Suite completa de tests');
+                        const results = {};
+                        let totalPass = 0, totalFail = 0;
+                        ['core','auth','session','docente','alumno','admin','utils'].forEach(function (m) {
+                            if (typeof CENTYR.test[m] === 'function') {
+                                results[m] = CENTYR.test[m]();
+                                totalPass += results[m].pass;
+                                totalFail += results[m].fail;
+                            }
+                        });
+                        console.groupEnd();
+                        console.log('═══════════════════════════════════');
+                        console.log('Total: ' + totalPass + ' ✅   ' + totalFail + ' ❌');
+                        if (totalFail === 0) console.log('%c¡Todos los tests pasan! 🎉', 'color:green;font-weight:bold');
+                        return results;
+                    };
+                    console.log('💡 Ejecuta CENTYR.test.runAll() en consola para probar todos los módulos');
+                }
+
+                // Iniciar la aplicación
+                if (typeof init === 'function') init();
+            })
+            .catch(function (err) {
+                console.error('❌ Error al cargar módulos CENTYR:', err.message);
+                // Mostrar error en pantalla
+                const div = document.createElement('div');
+                div.style.cssText = 'position:fixed;inset:0;background:#1B2A4A;color:white;' +
+                    'display:flex;flex-direction:column;align-items:center;justify-content:center;' +
+                    'font-family:monospace;z-index:99999;';
+                div.innerHTML = '<h2>⚠️ Error al cargar CENTYR</h2>' +
+                    '<p style="color:#ff6b6b;">' + err.message + '</p>' +
+                    '<p style="color:#aaa;font-size:.9rem;">Verifica que los archivos js/ estén en el servidor.</p>';
+                document.body.appendChild(div);
+            });
+    })();
+    </script>
+<!-- Modal Mis Notas (alumno) -->
+<div id="modalMisNotas" class="modal">
+    <div class="modal-content" style="max-width:920px; max-height:92vh; overflow-y:auto;">
+        <div class="modal-header" style="background:var(--alumno); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0;">
+            <span class="close" onclick="document.getElementById('modalMisNotas').style.display='none'" style="color:white;">&times;</span>
+            <h2 style="margin:0; color:white; font-size:1.1rem;">📊 Mis Notas Académicas</h2>
+        </div>
+        <div id="mis-notas-body" style="padding:0 4px;"></div>
+    </div>
+</div>
+
+<!-- Modal Notas por Alumno (docente / admin) -->
+<div id="modalNotasAlumno" class="modal">
+    <div class="modal-content" style="max-width:920px; max-height:92vh; overflow-y:auto;">
+        <div class="modal-header" style="background:var(--docente); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0;">
+            <span class="close" onclick="document.getElementById('modalNotasAlumno').style.display='none'" style="color:white;">&times;</span>
+            <h2 style="margin:0; color:white; font-size:1.1rem;">📊 Notas del Alumno</h2>
+        </div>
+        <div style="padding:0 4px;">
+            <div style="background:#F0F4FF; border-radius:10px; padding:12px; margin-bottom:14px;">
+                <label style="font-size:0.85rem; font-weight:700; color:var(--primary); display:block; margin-bottom:6px;">🔍 Buscar alumno por apellido:</label>
+                <input type="text" id="notas-alumno-buscar" placeholder="Escribe el apellido..." oninput="buscarAlumnoNotas(this.value)"
+                       style="margin-bottom:6px; border:1.5px solid var(--docente);">
+                <div id="notas-alumno-chips" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;"></div>
+            </div>
+            <div id="notas-alumno-body" style="color:#999; text-align:center; padding:30px 0;">
+                Busca y selecciona un alumno para ver sus notas.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ingreso de Notas por Curso -->
+<div id="modalCursos" class="modal">
+    <div class="modal-content" style="max-width:860px; max-height:92vh; overflow-y:auto;">
+        <div class="modal-header" style="background:var(--primary); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0;">
+            <span class="close" onclick="document.getElementById('modalCursos').style.display='none'" style="color:white;">&times;</span>
+            <h2 id="modal-cursos-titulo" style="margin:0; color:white; font-size:1.1rem;">📝 Notas del Curso</h2>
+        </div>
+        <div id="modal-cursos-body" style="padding:0;"></div>
+    </div>
+</div>
+
+<style>
+    @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
+</style>
+
+<!-- Pop-up pendientes docente -->
+<div id="popup-pendientes">
+    <div class="pp-header" onclick="togglePopupPendientes()">
+        <span>⏳ Sesiones Pendientes<span id="pp-badge">0</span></span>
+        <span id="pp-chevron">▲</span>
+    </div>
+    <div class="pp-body" id="pp-body"></div>
+</div>
+</body>
+</html>
