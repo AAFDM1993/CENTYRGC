@@ -33,7 +33,7 @@
     // ── Contrato público window.CENTYR ──────────────────────────────────────
     window.CENTYR = {
         CONFIG: {
-            webAppUrl: 'https://script.google.com/macros/s/AKfycbwn3aGXD3c_eS7Y3k2g8y9lpsAwISbAsC7HcYEU2byFIq4FmXKam7lXwZKdpFRY-8Ar/exec'
+            webAppUrl: 'https://script.google.com/macros/s/AKfycbw5uidFUWk0I2XUpMKmGsqteq1i7fvb1xU5ywIV9a2AFGnYRGbd8q0fLXrKk5KBK67E/exec'
         },
 
         // Getters/setters para estado
