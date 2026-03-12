@@ -261,123 +261,121 @@ function toggleAdmin() {
         abrirIngresoCurso(curso, alumnoUsuario);
     }
 
-    /** Renderiza el cuadro de notas en el sidebar (docente/admin) */
-    function renderNotasSidebar(filtro) {
+    /** Cuadro de Notas sidebar — muestra alumnos con sus promedios finales por curso */
+    function renderNotasSidebar() {
         const body = document.getElementById('notas-sidebar-body');
-        if(!body) return;
+        if (!body) return;
 
-        const notas = CENTYR.db.notas_docentes || [];
-        const q = (filtro||'').trim().toLowerCase();
-        const filtradas = q
-            ? notas.filter(n => (n.alumno_nombre||'').toLowerCase().includes(q))
-            : notas;
+        const filtroAlumno = (document.getElementById('notas-sidebar-filtro-alumno')?.value || '').trim().toLowerCase();
+        const filtroCurso  = (document.getElementById('notas-sidebar-filtro-curso')?.value  || '').trim();
 
-        if(filtradas.length === 0) {
-            body.innerHTML = '<p style="color:#999; text-align:center; padding:15px 0;">Sin notas registradas.</p>';
+        // Poblar select de cursos la primera vez
+        const selCurso = document.getElementById('notas-sidebar-filtro-curso');
+        if (selCurso && selCurso.options.length <= 1) {
+            const cursos = (CENTYR.db.estructuras_cursos || []).map(e => e.curso);
+            selCurso.innerHTML = '<option value="">— Curso —</option>' +
+                cursos.map(c => `<option value="${c}">${c}</option>`).join('');
+        }
+
+        const alumnos = (CENTYR.db.usuarios || []).filter(u => u.rol === 'alumno' &&
+            (!filtroAlumno || u.nombre_completo.toLowerCase().includes(filtroAlumno) ||
+             (u.codigo||'').toLowerCase().includes(filtroAlumno)));
+        const estructuras = CENTYR.db.estructuras_cursos || [];
+        const notasCursos = CENTYR.db.notas_cursos || {};
+
+        if (!alumnos.length) {
+            body.innerHTML = '<p style="color:#999;text-align:center;padding:15px 0;font-size:0.8rem;">Sin alumnos registrados.</p>';
             return;
         }
 
-        // Agrupar por alumno
-        const porAlumno = {};
-        filtradas.forEach(n => {
-            const key = n.alumno_nombre || 'Sin nombre';
-            if(!porAlumno[key]) porAlumno[key] = { codigo: n.alumno_codigo, notas: [] };
-            porAlumno[key].notas.push(n);
-        });
-
-        let html = '';
-        Object.entries(porAlumno).forEach(([nombre, data]) => {
-            const prom = data.notas.length
-                ? (data.notas.reduce((s,n)=>s+parseFloat(n.calificacion||0),0)/data.notas.length).toFixed(1)
-                : null;
-            const col = !prom ? '#888' : prom <= 10 ? '#E53935' : prom <= 13 ? '#F59E0B' : prom <= 16 ? '#2ECC71' : '#0288D1';
-
-            html += `<div style="border:1px solid #e0e6ed; border-radius:8px; margin-bottom:8px; overflow:hidden;">
-                <div style="background:var(--primary); color:white; padding:6px 10px; display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-weight:700; font-size:0.8rem;">👨‍🎓 ${nombre}</span>
-                    <span style="background:${col}; padding:1px 8px; border-radius:8px; font-size:0.72rem; font-weight:700; color:white;">${prom||'—'}/20</span>
-                </div>`;
-
-            // Agrupar por paciente dentro del alumno
-            const porPac = {};
-            data.notas.forEach(n => {
-                const k = n.paciente_nombre || 'Sin paciente';
-                if(!porPac[k]) porPac[k] = [];
-                porPac[k].push(n);
+        // Calcular promedio final de un alumno en un curso (igual que admin)
+        const calcProm = (alumnoUsuario, curso) => {
+            const est  = estructuras.find(e => e.curso === curso);
+            if (!est) return null;
+            const pacs = notasCursos[`${alumnoUsuario}::${curso}`] || [];
+            if (!pacs.length) return null;
+            const pesoEV = est.pesoEV || 20, pesoSS = est.pesoSS || 80;
+            const notas = [];
+            let pi = 0;
+            (est.grupos || []).forEach(g => {
+                const nSS = g.nSesiones||10, nExt = g.nExtras||0, pctE = g.pctExtra||0;
+                for (let k=0; k<(g.nPacientes||1); k++) {
+                    const pac   = pacs[pi++] || {};
+                    const evVal = pac.nota_ev!==''&&pac.nota_ev!==undefined ? parseFloat(pac.nota_ev)||0 : null;
+                    const ss    = pac.notas_ss  || [];
+                    const ext   = pac.notas_ext || [];
+                    const sumSS = ss.reduce((s,v) => s+(v!==''?parseFloat(v)||0:0), 0);
+                    const promSS= sumSS / nSS;
+                    const sumExt= ext.reduce((s,v) => s+(v!==''?parseFloat(v)||0:0), 0);
+                    const promExt = nExt>0 ? sumExt/nExt : null;
+                    let base=0, pw=0;
+                    if (evVal!==null) { base+=evVal*pesoEV/100; pw+=pesoEV; }
+                    base += promSS*pesoSS/100; pw+=pesoSS;
+                    const bono = (promExt!==null&&nExt>0) ? promExt*pctE/100 : 0;
+                    if (pw>0) notas.push(Math.min(20, base+bono));
+                }
             });
-
-            Object.entries(porPac).forEach(([pacNombre, ns]) => {
-                html += `<div style="padding:5px 10px; background:#f8f9fa; border-bottom:1px solid #eee; font-size:0.77rem;">
-                    <span style="font-weight:600; color:var(--docente);">🏥 ${pacNombre}</span>
-                    <div style="display:flex; flex-wrap:wrap; gap:4px; margin-top:3px;">`;
-                ns.forEach(n => {
-                    const nc = parseFloat(n.calificacion);
-                    const bg = nc<=10?'#FECACA':nc<=13?'#FEF3C7':nc<=16?'#D1FAE5':'#DBEAFE';
-                    const fc = nc<=10?'#991B1B':nc<=13?'#92400E':nc<=16?'#065F46':'#1E40AF';
-                    html += `<span style="background:${bg}; color:${fc}; padding:2px 7px; border-radius:6px; font-weight:700; font-size:0.72rem;" title="${n.categoria||''} · ${n.fecha||''}">${nc}/20</span>`;
-                });
-                html += `</div></div>`;
-            });
-            html += `</div>`;
-        });
-
-        body.innerHTML = html;
-    }
-
-    /** También refrescar el sidebar tras guardar una nota */
-    async function guardarNotaDocente() {
-        const alumnoUsuario  = document.getElementById('nota-alumno-select').value;
-        const pacienteDni    = document.getElementById('nota-paciente-select').value;
-        const categoria      = document.getElementById('nota-categoria').value;
-        const calificacion   = document.getElementById('nota-calificacion').value;
-
-        if(!alumnoUsuario || !pacienteDni) {
-            alert('⚠️ Selecciona alumno y paciente'); return;
-        }
-        if(calificacion === '' || isNaN(parseFloat(calificacion))) {
-            alert('⚠️ Ingresa una calificación entre 0 y 20'); return;
-        }
-        const nota = parseFloat(calificacion);
-        if(nota < 0 || nota > 20) { alert('⚠️ La nota debe estar entre 0 y 20'); return; }
-
-        const alumnoObj   = CENTYR.db.usuarios.find(u => u.usuario === alumnoUsuario);
-        const pacienteRec = CENTYR.db.pacientes.find(p => String(p.dni) === pacienteDni);
-        if(!alumnoObj || !pacienteRec) { alert('⚠️ No se encontró el alumno o paciente'); return; }
-
-        showLoad(true, 'Guardando nota...');
-        const ahora    = new Date();
-        const fechaFmt = `${String(ahora.getDate()).padStart(2,'0')}/${String(ahora.getMonth()+1).padStart(2,'0')}/${ahora.getFullYear()}`;
-
-        const payload = {
-            action:          'save_nota_docente',
-            id:              String(Date.now()),
-            alumno_nombre:   alumnoObj.nombre_completo,
-            alumno_codigo:   alumnoObj.codigo || '',
-            paciente_nombre: pacienteRec.paciente,
-            paciente_dni:    pacienteDni,
-            categoria:       categoria,
-            calificacion:    nota,
-            docente:         CENTYR.currentUser.nombre_completo,
-            colegiatura:     ctmpLimpio(CENTYR.currentUser.colegiatura),
-            fecha:           fechaFmt
+            return notas.length ? notas.reduce((s,v)=>s+v,0)/notas.length : null;
         };
 
-        try {
-            const res = await fetch(CENTYR.CONFIG.webAppUrl, { method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(payload) });
-            await res.json();
-        } catch(e) { /* guardar localmente de todas formas */ }
+        const cursosFiltrados = filtroCurso
+            ? [filtroCurso]
+            : estructuras.map(e => e.curso);
 
-        if(!CENTYR.db.notas_docentes) CENTYR.db.notas_docentes = [];
-        CENTYR.db.notas_docentes.push(payload);
+        if (!cursosFiltrados.length) {
+            body.innerHTML = '<p style="color:#D97706;text-align:center;padding:12px;font-size:0.78rem;background:#FFF3E0;border-radius:7px;">Sin estructuras de curso. Ve a ⚙️ Cursos para crear una.</p>';
+            return;
+        }
 
-        showLoad(false);
-        mostrarNotificacion(`✅ Nota ${nota}/20 guardada para ${alumnoObj.nombre_completo}`);
-        document.getElementById('nota-calificacion').value = '';
-        actualizarColorNota(document.getElementById('nota-calificacion'));
+        let html = '';
+        cursosFiltrados.forEach(curso => {
+            const est = estructuras.find(e => e.curso === curso);
+            if (!est) return;
 
-        // Refrescar panel de notas previas dentro del modal y sidebar
-        renderNotasPrevias(alumnoUsuario);
-        renderNotasSidebar(document.getElementById('notas-sidebar-filtro')?.value || '');
+            const filas = alumnos.map(a => {
+                const prom = calcProm(a.usuario, curso);
+                return { alumno: a, prom };
+            });
+
+            const col = '#0288D1';
+            html += `<div style="margin-bottom:12px;border:1.5px solid #e0e6ed;border-radius:9px;overflow:hidden;">
+                <div style="background:var(--primary);color:white;padding:7px 11px;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-weight:700;font-size:0.82rem;">🏫 ${curso}</span>
+                    <span style="font-size:0.68rem;opacity:0.8;">EV ${est.pesoEV||20}% + SS ${est.pesoSS||80}%</span>
+                </div>
+                <table style="width:100%;border-collapse:collapse;font-size:0.75rem;">
+                    <thead><tr style="background:#f0f4ff;">
+                        <th style="padding:5px 8px;text-align:left;color:var(--primary);font-weight:700;">Alumno</th>
+                        <th style="padding:5px 8px;text-align:center;color:var(--primary);font-weight:700;width:70px;">Prom. Final</th>
+                        <th style="padding:5px 6px;text-align:center;width:36px;"></th>
+                    </tr></thead>
+                    <tbody>
+                    ${filas.map(({alumno, prom}) => {
+                        const p = prom;
+                        const bg = p===null?'#f5f5f5':p<=10?'#FECACA':p<=13?'#FEF3C7':p<=16?'#D1FAE5':'#DBEAFE';
+                        const fc = p===null?'#aaa'   :p<=10?'#991B1B':p<=13?'#92400E':p<=16?'#065F46':'#1E40AF';
+                        return `<tr style="border-bottom:1px solid #f0f2f5;">
+                            <td style="padding:5px 8px;">
+                                <div style="font-weight:600;color:var(--primary);">${alumno.nombre_completo}</div>
+                                <div style="font-size:0.68rem;color:#888;">${alumno.codigo||alumno.usuario}</div>
+                            </td>
+                            <td style="padding:5px 8px;text-align:center;">
+                                <span style="background:${bg};color:${fc};padding:2px 9px;border-radius:10px;font-weight:700;font-size:0.78rem;">
+                                    ${p!==null?p.toFixed(2):'—'}</span>
+                            </td>
+                            <td style="padding:4px 5px;text-align:center;">
+                                <button onclick="abrirIngresoCurso('${curso}','${alumno.usuario}')"
+                                        title="Editar notas"
+                                        style="padding:3px 7px;background:#EEF4FF;color:var(--admin);border:1.5px solid var(--admin);border-radius:5px;cursor:pointer;font-size:0.7rem;font-weight:700;">✏️</button>
+                            </td>
+                        </tr>`;
+                    }).join('')}
+                    </tbody>
+                </table>
+            </div>`;
+        });
+
+        body.innerHTML = html || '<p style="color:#999;text-align:center;padding:15px 0;font-size:0.78rem;">Sin datos.</p>';
     }
 
     function generarNotaDocentePDF() {
