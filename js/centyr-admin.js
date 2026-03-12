@@ -79,6 +79,12 @@
             renderCursosGuardados();
             _renderSugerencias();
         }
+        if (tabId === 'tab-usuarios') {
+            renderListaAsignacion();
+        }
+        if (tabId === 'tab-exportar') {
+            _poblarFiltrosExport();
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -1138,28 +1144,422 @@
         mostrarNotificacion('📥 CSV descargado');
     }
 
-    function exportarResumenGeneral(){
-        const pac=CENTYR.db.pacientes;const porAlumno={};
-        pac.forEach(p=>{const n=p.atendido_por||'Sin nombre';if(!porAlumno[n])porAlumno[n]={ev:0,ss:0,ap:0,pe:0};if(p.tipo_atencion==='evaluacion')porAlumno[n].ev++;else porAlumno[n].ss++;if(p.estado_aprobacion==='aprobado')porAlumno[n].ap++;else porAlumno[n].pe++;});
-        const rows=[['RESUMEN CENTYR',''],['Generado:',new Date().toLocaleDateString('es-PE')],[''],['Total',pac.length],['Evaluaciones',pac.filter(p=>p.tipo_atencion==='evaluacion').length],['Sesiones',pac.filter(p=>p.tipo_atencion==='sesion').length],['Aprobadas',pac.filter(p=>p.estado_aprobacion==='aprobado').length],['Pendientes',pac.filter(p=>p.estado_aprobacion==='pendiente').length],[''],['Alumno','Evaluaciones','Sesiones','Aprobadas','Pendientes'],...Object.entries(porAlumno).map(([n,d])=>[n,d.ev,d.ss,d.ap,d.pe])];
-        descargarCSV(`CENTYR_Resumen_${new Date().toISOString().slice(0,10)}.csv`,rows);
+    // ═══════════════════════════════════════════════════════════════
+    //  IMPORTAR LISTA DE ALUMNOS (CSV / XLSX)
+    // ═══════════════════════════════════════════════════════════════
+    let _importAlumnosData = [];   // filas parseadas {codigo, apellidos_nombres}
+
+    function previsualizarImportAlumnos() {
+        const fileInput = document.getElementById('import-alumnos-file');
+        const file = fileInput?.files?.[0];
+        if (!file) return;
+
+        const ext = file.name.split('.').pop().toLowerCase();
+
+        const processRows = (rawRows) => {
+            // Normalizar: buscar columnas codigo y apellidos_nombres (case-insensitive)
+            if (!rawRows.length) { alert('⚠️ El archivo está vacío.'); return; }
+
+            // Detectar si la primera fila es encabezado
+            const first = rawRows[0].map(c => String(c||'').trim().toLowerCase());
+            let colCod  = first.findIndex(c => c.includes('cod') || c.includes('cód'));
+            let colNom  = first.findIndex(c => c.includes('apellido') || c.includes('nombre') || c.includes('nom'));
+            let startRow = 0;
+
+            if (colCod === -1 || colNom === -1) {
+                // Sin encabezado: asumir col 0 = codigo, col 1 = nombre
+                colCod = 0; colNom = 1; startRow = 0;
+            } else {
+                startRow = 1;
+            }
+
+            _importAlumnosData = rawRows.slice(startRow)
+                .map(row => ({
+                    codigo:            String(row[colCod] || '').trim(),
+                    apellidos_nombres: String(row[colNom] || '').trim()
+                }))
+                .filter(r => r.codigo && r.apellidos_nombres);
+
+            if (!_importAlumnosData.length) { alert('⚠️ No se encontraron filas válidas. Verifica el formato.'); return; }
+
+            // Renderizar vista previa
+            const cntEl  = document.getElementById('import-preview-count');
+            const tabEl  = document.getElementById('import-preview-tabla');
+            const btnEl  = document.querySelector('#import-preview button');
+            const wrap   = document.getElementById('import-preview');
+
+            const existing = new Set((CENTYR.db.usuarios||[]).filter(u=>u.rol==='alumno').map(u=>u.codigo));
+            const nuevos   = _importAlumnosData.filter(r => !existing.has(r.codigo)).length;
+            const actuali  = _importAlumnosData.length - nuevos;
+
+            if (cntEl) cntEl.innerHTML =
+                `✅ <strong>${_importAlumnosData.length}</strong> alumnos leídos — ` +
+                `<span style="color:var(--accent);">+${nuevos} nuevos</span> · ` +
+                `<span style="color:#D97706;">${actuali} actualizaciones</span>`;
+
+            if (btnEl) btnEl.textContent = `✅ IMPORTAR ${_importAlumnosData.length} ALUMNOS`;
+
+            tabEl.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:0.75rem;">
+                <thead><tr>
+                    <th style="background:var(--primary);color:white;padding:5px 8px;text-align:left;">Código</th>
+                    <th style="background:var(--primary);color:white;padding:5px 8px;text-align:left;">Apellidos y Nombres</th>
+                    <th style="background:var(--primary);color:white;padding:5px 8px;text-align:center;">Estado</th>
+                </tr></thead>
+                <tbody>
+                ${_importAlumnosData.slice(0, 50).map(r => {
+                    const existe = existing.has(r.codigo);
+                    return `<tr style="border-bottom:1px solid #e0e6ed;">
+                        <td style="padding:4px 8px;font-weight:700;color:var(--primary);">${r.codigo}</td>
+                        <td style="padding:4px 8px;">${r.apellidos_nombres}</td>
+                        <td style="padding:4px 8px;text-align:center;">
+                            <span style="font-size:0.68rem;font-weight:700;padding:2px 7px;border-radius:10px;
+                                background:${existe?'#FFF3E0':'#E8F5E9'};color:${existe?'#D97706':'#065F46'};">
+                                ${existe ? '↻ Actualizar' : '+ Nuevo'}
+                            </span>
+                        </td>
+                    </tr>`;
+                }).join('')}
+                ${_importAlumnosData.length > 50 ? `<tr><td colspan="3" style="text-align:center;padding:6px;color:#aaa;font-size:0.72rem;">… ${_importAlumnosData.length-50} más</td></tr>` : ''}
+                </tbody>
+            </table>`;
+
+            if (wrap) wrap.style.display = 'block';
+        };
+
+        if (ext === 'csv') {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const text = e.target.result;
+                const rows = text.trim().split('\n').map(l => l.split(/[,;|\t]/).map(c => c.replace(/^"|"$/g,'').trim()));
+                processRows(rows);
+            };
+            reader.readAsText(file, 'UTF-8');
+        } else {
+            // XLSX — requiere SheetJS
+            if (typeof XLSX === 'undefined') { alert('⚠️ Librería XLSX no disponible. Usa un archivo CSV.'); return; }
+            const reader = new FileReader();
+            reader.onload = e => {
+                const wb   = XLSX.read(e.target.result, {type:'binary'});
+                const ws   = wb.Sheets[wb.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(ws, {header:1});
+                processRows(rows);
+            };
+            reader.readAsBinaryString(file);
+        }
     }
 
-    function exportarNotasPorAlumno(){
-        const notas=CENTYR.db.notas_docentes||[];if(!notas.length){alert('⚠️ No hay notas.');return;}
-        const porAlumno={};notas.forEach(n=>{if(!porAlumno[n.alumno_nombre])porAlumno[n.alumno_nombre]={codigo:n.alumno_codigo,notas:[]};porAlumno[n.alumno_nombre].notas.push(n);});
-        const rows=[['NOTAS POR ALUMNO',''],['Generado:',new Date().toLocaleDateString('es-PE')],[''],['Alumno','Código','Paciente','Categoría','Nota','Promedio','Fecha','Docente']];
-        Object.entries(porAlumno).forEach(([nombre,data])=>{const prom=calcularPromedioPonderado(data.notas);data.notas.forEach((n,i)=>rows.push([i===0?nombre:'',i===0?data.codigo:'',n.paciente_nombre,n.categoria,n.calificacion,i===0?(prom||''):'',n.fecha,n.docente]));rows.push(['','','','','','Prom:',prom||'—','']);rows.push(['']);});
-        descargarCSV(`CENTYR_NotasPorAlumno_${new Date().toISOString().slice(0,10)}.csv`,rows);
+    function cancelarImportAlumnos() {
+        _importAlumnosData = [];
+        const wrap = document.getElementById('import-preview');
+        if (wrap) wrap.style.display = 'none';
+        const inp = document.getElementById('import-alumnos-file');
+        if (inp) inp.value = '';
     }
 
-    function exportarNotasPorPaciente(){
-        const notas=CENTYR.db.notas_docentes||[];if(!notas.length){alert('⚠️ No hay notas.');return;}
-        const porPaciente={};notas.forEach(n=>{const k=n.paciente_dni||n.paciente_nombre;if(!porPaciente[k])porPaciente[k]={nombre:n.paciente_nombre,dni:n.paciente_dni,notas:[]};porPaciente[k].notas.push(n);});
-        const rows=[['NOTAS POR PACIENTE',''],['Generado:',new Date().toLocaleDateString('es-PE')],[''],['Paciente','DNI','Alumno','Categoría','Nota','Promedio','Fecha','Docente']];
-        Object.values(porPaciente).forEach(pac=>{const prom=calcularPromedioPonderado(pac.notas);pac.notas.forEach((n,i)=>rows.push([i===0?pac.nombre:'',i===0?pac.dni:'',n.alumno_nombre,n.categoria,n.calificacion,i===0?(prom||''):'',n.fecha,n.docente]));rows.push(['','','','','','Prom:',prom||'—','']);rows.push(['']);});
-        descargarCSV(`CENTYR_NotasPorPaciente_${new Date().toISOString().slice(0,10)}.csv`,rows);
+    async function confirmarImportAlumnos() {
+        if (!_importAlumnosData.length) return;
+        showLoad(true, `Importando ${_importAlumnosData.length} alumnos…`);
+
+        let creados = 0, actualizados = 0, errores = 0;
+        for (const r of _importAlumnosData) {
+            const existe = CENTYR.db.usuarios.find(u => u.codigo === r.codigo && u.rol === 'alumno');
+            const payload = {
+                action:          existe ? 'update_user' : 'add_user',
+                nombre_completo: r.apellidos_nombres,
+                codigo:          r.codigo,
+                usuario:         r.codigo,          // usuario = código
+                password:        r.codigo,          // contraseña inicial = código
+                rol:             'alumno',
+                colegiatura:     ''
+            };
+            try {
+                const resp = await fetch(CENTYR.CONFIG.webAppUrl, {
+                    method: 'POST', headers: {'Content-Type':'text/plain'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await resp.json();
+                if (data.status === 'success') {
+                    if (existe) {
+                        existe.nombre_completo = r.apellidos_nombres;
+                        actualizados++;
+                    } else {
+                        CENTYR.db.usuarios.push({
+                            usuario: r.codigo, nombre_completo: r.apellidos_nombres,
+                            codigo: r.codigo, rol: 'alumno', cursos: []
+                        });
+                        creados++;
+                    }
+                } else { errores++; }
+            } catch(e) { errores++; }
+        }
+
+        showLoad(false);
+        cancelarImportAlumnos();
+        renderListaAsignacion();
+        mostrarNotificacion(`✅ Importación completa: ${creados} nuevos · ${actualizados} actualizados${errores?` · ⚠️ ${errores} errores`:''}`);
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  ASIGNAR CURSOS A ALUMNOS
+    // ═══════════════════════════════════════════════════════════════
+    function renderListaAsignacion() {
+        const cont    = document.getElementById('asignar-lista-alumnos');
+        if (!cont) return;
+        const alumnos = (CENTYR.db.usuarios||[]).filter(u => u.rol === 'alumno');
+        const cursos  = (CENTYR.db.estructuras_cursos||[]).map(e => e.curso);
+
+        if (!alumnos.length) {
+            cont.innerHTML = `<div style="text-align:center;color:#aaa;padding:20px;font-size:0.85rem;">
+                Sin alumnos registrados. Importa una lista primero.</div>`;
+            return;
+        }
+        if (!cursos.length) {
+            cont.innerHTML = `<div style="text-align:center;color:#D97706;padding:16px;font-size:0.82rem;background:#FFF3E0;border-radius:8px;">
+                ⚠️ No hay estructuras de curso guardadas. Ve a la pestaña 🏫 Cursos y guarda una estructura primero.</div>`;
+            return;
+        }
+
+        cont.innerHTML = alumnos.map((a, ai) => {
+            const asignados = a.cursos || [];
+            const checks = cursos.map(c => `
+                <label style="display:flex;align-items:center;gap:5px;font-size:0.78rem;cursor:pointer;
+                              padding:3px 8px;border-radius:6px;border:1.5px solid ${asignados.includes(c)?'var(--admin)':'#e0e6ed'};
+                              background:${asignados.includes(c)?'#F0EBFF':'white'};white-space:nowrap;">
+                    <input type="checkbox" data-alumno="${a.usuario}" data-curso="${c}"
+                           ${asignados.includes(c)?'checked':''}
+                           onchange="toggleAsignacionCurso(this)"
+                           style="width:14px;height:14px;accent-color:var(--admin);cursor:pointer;">
+                    <span>${c}</span>
+                </label>`).join('');
+
+            return `<div style="border-bottom:1px solid #f0f2f5;padding:10px 4px;display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:4px;">
+                    <div>
+                        <span style="font-weight:700;color:var(--primary);font-size:0.85rem;">${a.nombre_completo}</span>
+                        <span style="color:#888;font-size:0.75rem;margin-left:6px;">${a.codigo||a.usuario}</span>
+                    </div>
+                    <span style="font-size:0.7rem;background:#EEF4FF;color:var(--admin);border-radius:10px;padding:2px 8px;font-weight:700;"
+                          id="asign-count-${a.usuario}">${asignados.length} curso(s)</span>
+                </div>
+                <div style="display:flex;flex-wrap:wrap;gap:5px;">${checks}</div>
+            </div>`;
+        }).join('');
+    }
+
+    function filtrarListaAsignacion() {
+        const q       = (document.getElementById('asignar-buscar')?.value||'').toLowerCase().trim();
+        const alumnos = (CENTYR.db.usuarios||[]).filter(u => u.rol === 'alumno');
+        const cont    = document.getElementById('asignar-lista-alumnos');
+        if (!cont) return;
+        const items = cont.querySelectorAll('[data-alumno-row]');
+        // Si ya está renderizado con data-attr, filtrar; si no, re-renderizar
+        if (!q) { renderListaAsignacion(); return; }
+        // Filtrar alumnos y re-renderizar solo los que coinciden
+        const filtrados = alumnos.filter(a =>
+            a.nombre_completo.toLowerCase().includes(q) ||
+            (a.codigo||'').toLowerCase().includes(q) ||
+            (a.usuario||'').toLowerCase().includes(q)
+        );
+        // Reusar renderListaAsignacion con override temporal
+        const _orig = CENTYR.db.usuarios;
+        CENTYR.db.usuarios = [...(CENTYR.db.usuarios.filter(u=>u.rol!=='alumno')), ...filtrados];
+        renderListaAsignacion();
+        CENTYR.db.usuarios = _orig;
+    }
+
+    function toggleAsignacionCurso(checkbox) {
+        const alumnoUsuario = checkbox.dataset.alumno;
+        const curso         = checkbox.dataset.curso;
+        const alumno = CENTYR.db.usuarios.find(u => u.usuario === alumnoUsuario);
+        if (!alumno) return;
+        if (!alumno.cursos) alumno.cursos = [];
+
+        if (checkbox.checked) {
+            if (!alumno.cursos.includes(curso)) alumno.cursos.push(curso);
+        } else {
+            alumno.cursos = alumno.cursos.filter(c => c !== curso);
+        }
+
+        // Actualizar estilo del label
+        const label = checkbox.parentElement;
+        label.style.borderColor    = checkbox.checked ? 'var(--admin)' : '#e0e6ed';
+        label.style.background     = checkbox.checked ? '#F0EBFF' : 'white';
+
+        // Actualizar contador
+        const cntEl = document.getElementById(`asign-count-${alumnoUsuario}`);
+        if (cntEl) cntEl.textContent = `${alumno.cursos.length} curso(s)`;
+    }
+
+    async function guardarAsignacionCursos() {
+        const alumnos = (CENTYR.db.usuarios||[]).filter(u => u.rol === 'alumno');
+        if (!alumnos.length) { mostrarNotificacion('⚠️ Sin alumnos para guardar.'); return; }
+
+        showLoad(true, 'Guardando asignaciones…');
+        let ok = 0, err = 0;
+        for (const a of alumnos) {
+            try {
+                await fetch(CENTYR.CONFIG.webAppUrl, {
+                    method: 'POST', headers: {'Content-Type':'text/plain'},
+                    body: JSON.stringify({
+                        action:  'save_asignacion_cursos',
+                        usuario: a.usuario,
+                        cursos:  a.cursos || []
+                    })
+                });
+                ok++;
+            } catch(e) { err++; }
+        }
+        showLoad(false);
+        mostrarNotificacion(`✅ Asignaciones guardadas (${ok} alumnos${err?` · ⚠️ ${err} errores`:''})`) ;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  EXPORTAR NOTAS FINALES — solo Apellidos/Nombres + Curso + Prom
+    // ═══════════════════════════════════════════════════════════════
+    function _poblarFiltrosExport() {
+        const selCurso  = document.getElementById('export-filtro-curso');
+        const selAlumno = document.getElementById('export-filtro-alumno');
+        if (!selCurso || !selAlumno) return;
+
+        const cursos  = (CENTYR.db.estructuras_cursos||[]).map(e=>e.curso);
+        const alumnos = (CENTYR.db.usuarios||[]).filter(u=>u.rol==='alumno');
+
+        selCurso.innerHTML  = '<option value="">— Todos los cursos —</option>' +
+            cursos.map(c=>`<option value="${c}">${c}</option>`).join('');
+        selAlumno.innerHTML = '<option value="">— Todos los alumnos —</option>' +
+            alumnos.map(a=>`<option value="${a.usuario}">${a.nombre_completo}</option>`).join('');
+    }
+
+    /** Calcula el promedio final de un alumno en un curso desde los datos en memoria */
+    function _calcularPromedioFinalAlumno(alumnoUsuario, curso) {
+        const est = (CENTYR.db.estructuras_cursos||[]).find(e=>e.curso===curso);
+        if (!est) return null;
+        const key  = `${alumnoUsuario}::${curso}`;
+        const pacs = (CENTYR.db.notas_cursos||{})[key] || [];
+        if (!pacs.length) return null;
+
+        const pesoEV = est.pesoEV || 20;
+        const pesoSS = est.pesoSS || 80;
+        const notas  = [];
+
+        let pi = 0;
+        (est.grupos||[]).forEach(g => {
+            const nSS  = g.nSesiones || 10;
+            const nExt = g.nExtras   || 0;
+            const pctE = g.pctExtra  || 0;
+            for (let k=0; k<(g.nPacientes||1); k++) {
+                const pac    = pacs[pi++] || {};
+                const evVal  = pac.nota_ev!==''&&pac.nota_ev!==undefined ? parseFloat(pac.nota_ev)||0 : null;
+                const ss     = pac.notas_ss  || [];
+                const ext    = pac.notas_ext || [];
+                const sumaSS = ss.reduce((s,v)=>s+(v!==''?parseFloat(v)||0:0), 0);
+                const promSS = sumaSS / nSS;   // ← siempre sobre total programado
+                const sumaExt= ext.reduce((s,v)=>s+(v!==''?parseFloat(v)||0:0), 0);
+                const promExt= nExt>0 ? sumaExt/nExt : null;
+                let base = 0, pw = 0;
+                if (evVal!==null) { base+=evVal*pesoEV/100; pw+=pesoEV; }
+                base += promSS*pesoSS/100; pw+=pesoSS;
+                const bono = (promExt!==null&&nExt>0) ? promExt*pctE/100 : 0;
+                if (pw>0) notas.push(Math.min(20, base+bono));
+            }
+        });
+        return notas.length ? (notas.reduce((s,v)=>s+v,0)/notas.length) : null;
+    }
+
+    function _buildFilasExport(filtroCurso, filtroAlumno) {
+        const alumnos = (CENTYR.db.usuarios||[]).filter(u => u.rol==='alumno' &&
+            (!filtroAlumno || u.usuario===filtroAlumno));
+        const cursos  = (CENTYR.db.estructuras_cursos||[]).map(e=>e.curso)
+            .filter(c => !filtroCurso || c===filtroCurso);
+
+        const filas = [];
+        alumnos.forEach(a => {
+            const cursosAlumno = filtroCurso ? [filtroCurso] :
+                (a.cursos?.length ? a.cursos.filter(c=>cursos.includes(c)) : cursos);
+            cursosAlumno.forEach(curso => {
+                const prom = _calcularPromedioFinalAlumno(a.usuario, curso);
+                filas.push({
+                    apellidos_nombres: a.nombre_completo,
+                    codigo:            a.codigo || a.usuario,
+                    curso,
+                    promedio:          prom!==null ? prom.toFixed(2) : '—'
+                });
+            });
+        });
+        return filas;
+    }
+
+    function previsualizarExportNotas() {
+        _poblarFiltrosExport();
+        const filtroCurso  = document.getElementById('export-filtro-curso')?.value  || '';
+        const filtroAlumno = document.getElementById('export-filtro-alumno')?.value || '';
+        const filas = _buildFilasExport(filtroCurso, filtroAlumno);
+
+        const wrap   = document.getElementById('export-preview-wrap');
+        const cntEl  = document.getElementById('export-preview-count');
+        const tabEl  = document.getElementById('export-preview-tabla');
+        if (!wrap) return;
+
+        if (!filas.length) {
+            wrap.style.display = 'block';
+            tabEl.innerHTML = '<div style="padding:16px;text-align:center;color:#999;font-size:0.85rem;">Sin datos que coincidan con los filtros.</div>';
+            if (cntEl) cntEl.textContent = '';
+            return;
+        }
+
+        if (cntEl) cntEl.innerHTML = `Vista previa: <strong>${filas.length}</strong> fila(s)`;
+
+        tabEl.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:0.77rem;">
+            <thead><tr>
+                <th style="background:var(--primary);color:white;padding:6px 10px;text-align:left;">Apellidos y Nombres</th>
+                <th style="background:var(--primary);color:white;padding:6px 8px;text-align:center;">Código</th>
+                <th style="background:var(--primary);color:white;padding:6px 10px;text-align:left;">Curso</th>
+                <th style="background:#6C3FC5;color:white;padding:6px 10px;text-align:center;">Prom. Final</th>
+            </tr></thead>
+            <tbody>
+            ${filas.map(f => {
+                const p = parseFloat(f.promedio);
+                const col = isNaN(p)?'#888':p<=10?'#E53935':p<=13?'#F59E0B':p<=16?'#2ECC71':'#0288D1';
+                return `<tr style="border-bottom:1px solid #f0f2f5;">
+                    <td style="padding:5px 10px;">${f.apellidos_nombres}</td>
+                    <td style="padding:5px 8px;text-align:center;color:#555;">${f.codigo}</td>
+                    <td style="padding:5px 10px;color:var(--primary);font-weight:600;">${f.curso}</td>
+                    <td style="padding:5px 10px;text-align:center;font-weight:700;color:${col};">${f.promedio}</td>
+                </tr>`;
+            }).join('')}
+            </tbody>
+        </table>`;
+
+        wrap.style.display = 'block';
+    }
+
+    function exportarNotasFinalesCSV() {
+        _poblarFiltrosExport();
+        const filtroCurso  = document.getElementById('export-filtro-curso')?.value  || '';
+        const filtroAlumno = document.getElementById('export-filtro-alumno')?.value || '';
+        const filas = _buildFilasExport(filtroCurso, filtroAlumno);
+
+        if (!filas.length) { alert('⚠️ No hay datos para exportar con los filtros actuales.'); return; }
+
+        const rows = [
+            ['REPORTE DE NOTAS FINALES — CENTYR'],
+            [`Generado: ${new Date().toLocaleDateString('es-PE')}`],
+            filtroCurso  ? [`Curso: ${filtroCurso}`]  : [],
+            filtroAlumno ? [`Alumno: ${filtroAlumno}`]: [],
+            [],
+            ['APELLIDOS Y NOMBRES', 'CÓDIGO', 'CURSO', 'PROMEDIO FINAL'],
+            ...filas.map(f => [f.apellidos_nombres, f.codigo, f.curso, f.promedio])
+        ].filter(r => r.length);
+
+        const sufijo = filtroCurso ? `_${filtroCurso.replace(/ /g,'_')}` : '_Todos';
+        descargarCSV(`CENTYR_NotasFinales${sufijo}_${new Date().toISOString().slice(0,10)}.csv`, rows);
+        mostrarNotificacion(`📥 CSV exportado — ${filas.length} filas`);
+    }
+
+    // mantener alias legacy por si se llaman desde otros lugares
+    function exportarResumenGeneral()  { exportarNotasFinalesCSV(); }
+    function exportarNotasPorAlumno()  { exportarNotasFinalesCSV(); }
+    function exportarNotasPorPaciente(){ exportarNotasFinalesCSV(); }
 
     // ─── Registro ─────────────────────────────────
     const _fns = {
@@ -1175,6 +1575,13 @@
         recalcularNotaFinalAlumno, recalcularPromedioGrupo, recalcularPromedioCurso,
         exportarNotasCurso, calcularNotasFinalCurso,
         calcularPromedioPonderado, cargarResumenNotas,
+        // Importar alumnos
+        previsualizarImportAlumnos, cancelarImportAlumnos, confirmarImportAlumnos,
+        // Asignación de cursos
+        renderListaAsignacion, filtrarListaAsignacion,
+        toggleAsignacionCurso, guardarAsignacionCursos,
+        // Exportar notas finales
+        previsualizarExportNotas, exportarNotasFinalesCSV,
         descargarCSV, exportarResumenGeneral, exportarNotasPorAlumno, exportarNotasPorPaciente
     };
     Object.assign(CENTYR.fn, _fns);
