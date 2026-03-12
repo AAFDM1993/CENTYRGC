@@ -548,16 +548,21 @@
                         <div id="export-preview-tabla" style="max-height:220px;overflow:auto;border-radius:8px;border:1.5px solid #c0c8e0;"></div>
                     </div>
 
-                    <!-- Botón exportar -->
+                    <!-- Botones exportar -->
+                    <button onclick="exportarNotasFinalesPDF()"
+                            style="width:100%;padding:14px;background:var(--admin);color:white;border:none;border-radius:10px;cursor:pointer;font-weight:700;font-size:0.97rem;margin-bottom:8px;">
+                        📄 EXPORTAR PDF — Lista de Promedios Finales
+                    </button>
                     <button onclick="exportarNotasFinalesCSV()"
-                            style="width:100%;padding:14px;background:var(--admin);color:white;border:none;border-radius:10px;cursor:pointer;font-weight:700;font-size:0.97rem;">
-                        📥 DESCARGAR CSV — Apellidos y Nombres · Curso · Promedio Final
+                            style="width:100%;padding:11px;background:#EEF4FF;color:var(--admin);border:2px solid var(--admin);border-radius:10px;cursor:pointer;font-weight:700;font-size:0.88rem;">
+                        📥 Descargar CSV
                     </button>
 
                     <div style="margin-top:10px;background:#F0FFF4;border-radius:8px;padding:8px 12px;font-size:0.75rem;color:#065F46;border:1px solid #a7f3d0;">
-                        ℹ️ El CSV incluye exactamente: <strong>Apellidos y Nombres · Código · Curso · Promedio Final</strong>.
-                        El promedio final es el calculado con la fórmula de cada grupo (promedio sobre sesiones programadas).
+                        ℹ️ Incluye: <strong>Apellidos y Nombres · Código · Curso · Promedio Final</strong>.
+                        El PDF genera una lista imprimible agrupada por curso.
                     </div>
+                </div>
                 </div>
 
                 <!-- Tab: Estructura de cursos -->
