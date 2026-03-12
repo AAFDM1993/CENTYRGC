@@ -13,26 +13,9 @@ function toggleAdmin() {
         p.style.display = p.style.display === 'none' ? 'block' : 'none';
     }
 
-    function cerrarSesion() {
-        if(confirm('¿Cerrar sesión?')) {
-            CENTYR.currentUser = null;
-            CENTYR.selectedDni = "";
-            document.getElementById('btnAdmin').style.display         = 'none';
-            document.getElementById('btn-estadisticas').style.display = 'none';
-            document.getElementById('btn-nota-docente').style.display = 'none';
-            document.getElementById('btn-notas-alumno').style.display = 'none';
-            document.getElementById('btn-mis-notas').style.display    = 'none';
-            // div docente-curso siempre visible, no se oculta al cerrar sesión
-            const selDocReset = document.getElementById('alumno-docente-sel');
-            if(selDocReset) selDocReset.innerHTML = '<option value="">-- Selecciona docente --</option>';
-            const pns = document.getElementById('panel-notas-sidebar');
-            if(pns) pns.style.display = 'none';
-            document.getElementById('admin-panel').style.display      = 'none';
-            document.getElementById('popup-pendientes').style.display = 'none';
-            document.getElementById('userInput').value = "";
-            document.getElementById('passInput').value = "";
-            mostrarLoginScreen();
-        }
+    // cerrarSesion se maneja en centyr-auth.js — este es un stub de compatibilidad
+    function cerrarSesionDocente() {
+        // No-op: centyr-auth.js tiene la implementación principal
     }
 
     // ============================================
