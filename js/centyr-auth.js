@@ -45,7 +45,6 @@
             // Visibilidad de botones por rol
             document.getElementById('btnAdmin').style.display          = esAdmin  ? 'block' : 'none';
             document.getElementById('btn-estadisticas').style.display  = esAdmin  ? 'block' : 'none';
-            document.getElementById('btn-nota-docente').style.display  = (esDocente||esAdmin) ? 'block' : 'none';
             document.getElementById('btn-notas-alumno').style.display  = (esDocente||esAdmin) ? 'block' : 'none';
             document.getElementById('btn-mis-notas').style.display     = esAlumno ? 'block' : 'none';
 
