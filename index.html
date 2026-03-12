@@ -147,6 +147,32 @@
         .input-imagen-label { display: block; margin: 10px 0; padding: 15px; border: 2px dashed var(--blue); border-radius: 6px; background: #f0f8ff; cursor: pointer; text-align: center; color: var(--blue); font-weight: 600; }
         .input-imagen-label:hover { background: #e3f2fd; border-color: #2980b9; }
         .ejercicio-numero { background: var(--blue); color: white; padding: 5px 12px; border-radius: 20px; font-weight: bold; font-size: 0.9rem; display: inline-block; margin-bottom: 10px; }
+
+        /* ── Quitar flechitas de inputs numéricos ── */
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+
+        /* ── Botón X de cierre de modal (global) ── */
+        .modal-close-x {
+            position: absolute; top: 14px; right: 18px;
+            font-size: 1.5rem; font-weight: 700; line-height: 1;
+            color: rgba(255,255,255,0.85); cursor: pointer;
+            background: none; border: none; padding: 0;
+            transition: color 0.2s, transform 0.2s;
+            z-index: 10;
+        }
+        .modal-close-x:hover { color: white; transform: scale(1.2); }
+        .modal-close-x-dark {
+            position: absolute; top: 12px; right: 16px;
+            font-size: 1.4rem; font-weight: 700; line-height: 1;
+            color: #888; cursor: pointer; background: none; border: none; padding: 0;
+            transition: color 0.2s, transform 0.2s; z-index: 10;
+        }
+        .modal-close-x-dark:hover { color: #333; transform: scale(1.2); }
+
+        /* ── Inputs estables (no pierden foco en re-render) ── */
+        .input-estable { margin-bottom: 0 !important; }
     </style>
 </head>
 <body>
@@ -170,9 +196,9 @@
 
     <!-- Modal Cambiar Contraseña -->
     <div id="modalPassword" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="position:relative;">
+            <button class="modal-close-x-dark" onclick="cerrarModalPassword()">✕</button>
             <div class="modal-header">
-                <span class="close" onclick="cerrarModalPassword()">&times;</span>
                 <h2>🔐 Cambiar Contraseña</h2>
             </div>
             <input type="password" id="pass-actual" placeholder="Contraseña actual" style="margin-bottom:10px;">
@@ -184,9 +210,9 @@
 
     <!-- Modal Agendar Cita -->
     <div id="modalCita" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="position:relative;">
+            <button class="modal-close-x-dark" onclick="cerrarModalCita()">✕</button>
             <div class="modal-header">
-                <span class="close" onclick="cerrarModalCita()">&times;</span>
                 <h2>📅 Agendar Cita</h2>
             </div>
             <p style="margin-bottom:10px;"><strong id="cita-fecha-texto"></strong></p>
@@ -200,9 +226,9 @@
 
     <!-- Modal Generar Ejercicios PDF -->
     <div id="modalEjercicios" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="position:relative;">
+            <button class="modal-close-x-dark" onclick="cerrarModalEjercicios()">✕</button>
             <div class="modal-header">
-                <span class="close" onclick="cerrarModalEjercicios()">&times;</span>
                 <h2>💪 Generar PDF de Ejercicios</h2>
             </div>
             
@@ -365,23 +391,30 @@
                 <div id="listaPacientes" style="max-height: 250px; overflow-y: auto; margin-top:10px;"></div>
                 <button id="btnAdmin" class="btn-save" onclick="toggleAdmin()" style="display:none; margin-top:20px; background:var(--admin); width:100%;">⚙️ PANEL ADMIN</button>
                 <button id="btn-estadisticas" class="btn-save" onclick="abrirEstadisticas()" style="display:none; margin-top:10px; background:#252850; width:100%;">📊 ESTADÍSTICAS</button>
-                <button id="btn-nota-docente" class="btn-save" onclick="abrirModalNotaDocente()" style="display:none; margin-top:10px; background:var(--docente); width:100%;">📝 NOTA DOCENTE</button>
                 <button id="btn-notas-alumno" class="btn-save" onclick="abrirModalNotasAlumno()" style="display:none; margin-top:10px; background:#0277BD; width:100%;">📊 NOTAS DE ALUMNOS</button>
                 <button id="btn-mis-notas" class="btn-save" onclick="abrirModalMisNotas()" style="display:none; margin-top:10px; background:var(--alumno); width:100%;">📊 MIS NOTAS</button>
                 <button class="btn-save" onclick="abrirModalEjercicios()" style="margin-top:10px; background:var(--accent); width:100%;">💪 GENERAR EJERCICIOS PDF</button>
             </div>
 
-            <!-- Panel Notas Docentes (solo docente y admin) -->
+            <!-- Panel Notas — Cuadro de notas de alumnos por curso (docente/admin) -->
             <div id="panel-notas-sidebar" class="panel" style="display:none; padding:14px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <h3 style="margin:0; font-size:0.95rem; color:var(--docente);">📊 Cuadro de Notas</h3>
-                    <div style="display:flex; gap:6px; align-items:center;">
-                        <input type="text" id="notas-sidebar-filtro" placeholder="🔍 Apellido..." oninput="renderNotasSidebar(this.value)"
-                               style="margin:0; padding:5px 10px; font-size:0.8rem; border-radius:6px; border:1px solid #ddd; width:110px;">
-                        <button onclick="renderNotasSidebar('')" style="padding:5px 8px; background:#eee; border:none; border-radius:5px; cursor:pointer; font-size:0.75rem;">✕</button>
-                    </div>
+                    <button onclick="renderNotasSidebar('')" style="padding:4px 9px; background:#EEF4FF; border:1.5px solid var(--docente); border-radius:5px; cursor:pointer; font-size:0.72rem; color:var(--docente); font-weight:700;">🔄</button>
                 </div>
-                <div id="notas-sidebar-body" style="max-height:360px; overflow-y:auto; font-size:0.8rem;">
+
+                <!-- Filtros rápidos -->
+                <div style="display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+                    <input type="text" id="notas-sidebar-filtro-alumno" placeholder="🔍 Alumno…"
+                           oninput="renderNotasSidebar()"
+                           style="flex:1; min-width:80px; margin:0; padding:5px 8px; font-size:0.78rem; border-radius:6px; border:1.5px solid #ddd;">
+                    <select id="notas-sidebar-filtro-curso" onchange="renderNotasSidebar()"
+                            style="flex:1; min-width:90px; margin:0; padding:5px 6px; font-size:0.75rem; border-radius:6px; border:1.5px solid #ddd;">
+                        <option value="">— Curso —</option>
+                    </select>
+                </div>
+
+                <div id="notas-sidebar-body" style="max-height:380px; overflow-y:auto; font-size:0.78rem;">
                     <p style="color:#999; text-align:center; padding:20px 0;">Cargando notas...</p>
                 </div>
             </div>
@@ -672,9 +705,9 @@
 
     <!-- Modal Editor de Notas -->
     <div id="modalNotas" class="modal">
-        <div class="modal-content" style="max-width: 900px; max-height: 90vh;">
+        <div class="modal-content" style="max-width: 900px; max-height: 90vh; position:relative;">
+            <button class="modal-close-x-dark" onclick="cerrarModalNotas()">✕</button>
             <div class="modal-header">
-                <span class="close" onclick="cerrarModalNotas()">&times;</span>
                 <h2>📝 Editor de Notas</h2>
             </div>
             <div style="padding: 20px;">
@@ -689,9 +722,9 @@
 
     <!-- Modal Estadísticas -->
     <div id="modalEstadisticas" class="modal">
-        <div class="modal-content" style="max-width: 700px;">
+        <div class="modal-content" style="max-width: 700px; position:relative;">
+            <button class="modal-close-x-dark" onclick="document.getElementById('modalEstadisticas').style.display='none'">✕</button>
             <div class="modal-header">
-                <span class="close" onclick="document.getElementById('modalEstadisticas').style.display='none'">&times;</span>
                 <h2>📊 Estadísticas del Sistema</h2>
             </div>
             <div id="estadisticas-contenido" style="padding: 20px;"></div>
@@ -700,9 +733,9 @@
 
     <!-- Modal Nota Docente -->
     <div id="modalNotaDocente" class="modal">
-        <div class="modal-content" style="max-width:900px; max-height:92vh; overflow-y:auto;">
-            <div class="modal-header" style="background:var(--docente); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0;">
-                <span class="close" onclick="document.getElementById('modalNotaDocente').style.display='none'" style="color:white;">&times;</span>
+        <div class="modal-content" style="max-width:900px; max-height:92vh; overflow-y:auto; position:relative;">
+            <div class="modal-header" style="background:var(--docente); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0; position:relative;">
+                <button class="modal-close-x" onclick="document.getElementById('modalNotaDocente').style.display='none'">✕</button>
                 <h2 style="margin:0; color:white; font-size:1.1rem;">📝 Nota del Docente</h2>
             </div>
             <div style="padding:0 4px;">
@@ -879,9 +912,9 @@
     </script>
 <!-- Modal Mis Notas (alumno) -->
 <div id="modalMisNotas" class="modal">
-    <div class="modal-content" style="max-width:920px; max-height:92vh; overflow-y:auto;">
-        <div class="modal-header" style="background:var(--alumno); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0;">
-            <span class="close" onclick="document.getElementById('modalMisNotas').style.display='none'" style="color:white;">&times;</span>
+    <div class="modal-content" style="max-width:920px; max-height:92vh; overflow-y:auto; position:relative;">
+        <div class="modal-header" style="background:var(--alumno); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0; position:relative;">
+            <button class="modal-close-x" onclick="document.getElementById('modalMisNotas').style.display='none'">✕</button>
             <h2 style="margin:0; color:white; font-size:1.1rem;">📊 Mis Notas Académicas</h2>
         </div>
         <div id="mis-notas-body" style="padding:0 4px;"></div>
@@ -890,9 +923,9 @@
 
 <!-- Modal Notas por Alumno (docente / admin) -->
 <div id="modalNotasAlumno" class="modal">
-    <div class="modal-content" style="max-width:920px; max-height:92vh; overflow-y:auto;">
-        <div class="modal-header" style="background:var(--docente); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0;">
-            <span class="close" onclick="document.getElementById('modalNotasAlumno').style.display='none'" style="color:white;">&times;</span>
+    <div class="modal-content" style="max-width:920px; max-height:92vh; overflow-y:auto; position:relative;">
+        <div class="modal-header" style="background:var(--docente); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0; position:relative;">
+            <button class="modal-close-x" onclick="document.getElementById('modalNotasAlumno').style.display='none'">✕</button>
             <h2 style="margin:0; color:white; font-size:1.1rem;">📊 Notas del Alumno</h2>
         </div>
         <div style="padding:0 4px;">
@@ -911,9 +944,9 @@
 
 <!-- Modal Ingreso de Notas por Curso -->
 <div id="modalCursos" class="modal">
-    <div class="modal-content" style="max-width:860px; max-height:92vh; overflow-y:auto;">
-        <div class="modal-header" style="background:var(--primary); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0;">
-            <span class="close" onclick="document.getElementById('modalCursos').style.display='none'" style="color:white;">&times;</span>
+    <div class="modal-content" style="max-width:860px; max-height:92vh; overflow-y:auto; position:relative;">
+        <div class="modal-header" style="background:var(--primary); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0; position:relative;">
+            <button class="modal-close-x" onclick="document.getElementById('modalCursos').style.display='none'">✕</button>
             <h2 id="modal-cursos-titulo" style="margin:0; color:white; font-size:1.1rem;">📝 Notas del Curso</h2>
         </div>
         <div id="modal-cursos-body" style="padding:0;"></div>
