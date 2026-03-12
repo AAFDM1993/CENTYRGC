@@ -200,7 +200,8 @@
                     <div style="display:flex;align-items:center;gap:8px;">
                         <div style="width:12px;height:12px;border-radius:50%;background:${g.colorHex};flex-shrink:0;"></div>
                         <input type="text" id="grp-nombre-${i}" value="${g.nombre}"
-                               oninput="cursoConfigChange()"
+                               onchange="_leerGruposDesdeDOM();_actualizarResumenGrupo(${i})"
+                               onblur="_leerGruposDesdeDOM();_actualizarResumenGrupo(${i})"
                                style="margin-bottom:0;padding:4px 8px;font-size:0.88rem;font-weight:700;
                                       border:1.5px solid ${g.colorHex};border-radius:6px;color:${g.colorHex};
                                       width:140px;">
@@ -216,7 +217,7 @@
                     <div>
                         <label style="font-size:0.7rem;color:var(--gray);display:block;margin-bottom:3px;">👥 Pacientes</label>
                         <input type="number" id="grp-npacs-${i}" value="${g.nPacientes}" min="1" max="50"
-                               oninput="cursoConfigChange()"
+                               onchange="_leerGruposDesdeDOM();_actualizarResumenGrupo(${i})"
                                style="margin-bottom:0;font-weight:700;font-size:1rem;text-align:center;
                                       border:2px solid ${g.colorHex};border-radius:7px;background:${g.colorHex}0D;">
                     </div>
@@ -224,7 +225,7 @@
                     <div>
                         <label style="font-size:0.7rem;color:var(--gray);display:block;margin-bottom:3px;">🏃 Sesiones base</label>
                         <input type="number" id="grp-nses-${i}" value="${g.nSesiones}" min="1" max="100"
-                               oninput="cursoConfigChange()"
+                               onchange="_leerGruposDesdeDOM();_actualizarResumenGrupo(${i})"
                                style="margin-bottom:0;font-weight:700;font-size:1rem;text-align:center;
                                       border:2px solid #27ae60;border-radius:7px;background:#27ae600D;"
                                title="Meta = 100% — el promedio se divide sobre este número siempre">
@@ -233,7 +234,7 @@
                     <div>
                         <label style="font-size:0.7rem;color:var(--gray);display:block;margin-bottom:3px;">⭐ SS extra</label>
                         <input type="number" id="grp-next-${i}" value="${g.nExtras}" min="0" max="50"
-                               oninput="cursoConfigChange()"
+                               onchange="_leerGruposDesdeDOM();_actualizarResumenGrupo(${i})"
                                style="margin-bottom:0;font-weight:700;font-size:1rem;text-align:center;
                                       border:2px solid #D97706;border-radius:7px;background:#D977060D;">
                     </div>
@@ -242,7 +243,7 @@
                         <label style="font-size:0.7rem;color:var(--gray);display:block;margin-bottom:3px;">📈 Bono extra</label>
                         <div style="display:flex;align-items:center;gap:3px;">
                             <input type="number" id="grp-pctex-${i}" value="${g.pctExtra}" min="0" max="100"
-                                   oninput="cursoConfigChange()"
+                                   onchange="_leerGruposDesdeDOM();_actualizarResumenGrupo(${i})"
                                    style="margin-bottom:0;font-weight:700;font-size:1rem;text-align:center;
                                           border:2px solid #9C27B0;border-radius:7px;background:#9C27B00D;flex:1;">
                             <span style="font-size:0.78rem;font-weight:700;color:#9C27B0;">%</span>
@@ -250,8 +251,8 @@
                     </div>
                 </div>
 
-                <!-- Resumen del grupo -->
-                <div style="background:${g.colorHex}0D;border-radius:6px;padding:6px 10px;font-size:0.73rem;color:#444;display:flex;gap:12px;flex-wrap:wrap;">
+                <!-- Resumen del grupo (actualizable sin re-renderizar todo) -->
+                <div id="grp-resumen-${i}" style="background:${g.colorHex}0D;border-radius:6px;padding:6px 10px;font-size:0.73rem;color:#444;display:flex;gap:12px;flex-wrap:wrap;">
                     <span>👥 <strong>${g.nPacientes}</strong> pac</span>
                     <span>🏃 <strong>${g.nSesiones}</strong> SS programadas</span>
                     ${g.nExtras > 0 ? `<span>⭐ <strong>${g.nExtras}</strong> SS extra · bono máx <strong>+${bonoPts}</strong> pts</span>` : '<span style="color:#aaa;">Sin sesiones extra</span>'}
@@ -259,6 +260,38 @@
                 </div>
             </div>`;
         }).join('');
+    }
+
+    /** Actualiza solo el resumen del grupo (sin re-renderizar toda la lista) */
+    function _actualizarResumenGrupo(i) {
+        const g = _grupos[i];
+        if (!g) return;
+        const el = document.getElementById(`grp-resumen-${i}`);
+        if (!el) return;
+        const bonoPts = g.nExtras > 0 ? (20 * g.pctExtra / 100).toFixed(1) : '0';
+        el.innerHTML = `<span>👥 <strong>${g.nPacientes}</strong> pac</span>
+            <span>🏃 <strong>${g.nSesiones}</strong> SS programadas</span>
+            ${g.nExtras > 0 ? `<span>⭐ <strong>${g.nExtras}</strong> SS extra · bono máx <strong>+${bonoPts}</strong> pts</span>` : '<span style="color:#aaa;">Sin sesiones extra</span>'}
+            <span style="color:${g.colorHex};font-weight:700;">Meta: 100% = ${g.nSesiones} atenciones</span>`;
+        // Actualizar también barra y fórmula sin re-renderizar lista
+        const pesoEV = parseInt(document.getElementById('curso-peso-ev')?.value)  || 20;
+        const pesoSS = parseInt(document.getElementById('curso-peso-ss')?.value)  || 80;
+        _actualizarFormula(pesoEV, pesoSS);
+        _actualizarPacsResumen();
+    }
+
+    function _actualizarPacsResumen() {
+        const cap = parseInt(document.getElementById('curso-capacidad')?.value) || 0;
+        const asignados = _grupos.reduce((s,g)=>s+(parseInt(g.nPacientes)||0),0);
+        const rRes = document.getElementById('curso-pacs-resumen');
+        if (rRes) {
+            const ok = asignados === cap;
+            rRes.style.background   = ok ? '#E8F5E9' : '#FFF3E0';
+            rRes.style.color        = ok ? '#1B5E20' : '#92400E';
+            rRes.innerHTML = ok
+                ? `✅ Pacientes asignados: <strong>${asignados}/${cap}</strong> — todos cubiertos`
+                : `⚠️ Pacientes asignados: <strong>${asignados}/${cap}</strong> — ${asignados < cap ? `faltan ${cap-asignados}` : `sobran ${asignados-cap}`}`;
+        }
     }
 
     function _cargarGruposDesdeEstructura(est) {
@@ -1582,6 +1615,8 @@
         toggleAsignacionCurso, guardarAsignacionCursos,
         // Exportar notas finales
         previsualizarExportNotas, exportarNotasFinalesCSV,
+        // Helpers grupo editor (necesarios en window para onchange inline)
+        _actualizarResumenGrupo, _actualizarPacsResumen,
         descargarCSV, exportarResumenGeneral, exportarNotasPorAlumno, exportarNotasPorPaciente
     };
     Object.assign(CENTYR.fn, _fns);
