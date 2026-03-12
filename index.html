@@ -441,78 +441,151 @@
 
                 <!-- Tab: Estructura de cursos -->
                 <div id="tab-cursos" style="display:none;">
-                    <h3 style="color:var(--admin); margin-top:0;">🏫 Estructura de Evaluación de Cursos</h3>
+                    <h3 style="color:var(--admin); margin-top:0;">🏫 Constructor de Cursos</h3>
 
-                    <!-- Paso 1: Selección de curso y capacidad -->
-                    <div style="background:#f8f9fa; border-radius:10px; padding:14px; margin-bottom:14px; border-left:4px solid var(--admin);">
-                        <div style="font-weight:700; color:var(--admin); margin-bottom:10px; font-size:0.9rem;">PASO 1 — Curso y Capacidad</div>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                            <div>
-                                <label style="font-size:0.82rem; color:var(--gray); display:block; margin-bottom:4px;">Curso Clínico</label>
-                                <select id="curso-sel" onchange="cursoSelChange()" style="margin-bottom:0; font-weight:600;">
-                                    <option value="">-- Seleccionar --</option>
-                                    <option value="Traumatología">🦴 Traumatología</option>
-                                    <option value="Reumatología">💧 Reumatología</option>
-                                    <option value="Cardiología">❤️ Cardiología</option>
-                                    <option value="Neuropediatría">👶 Neuropediatría</option>
-                                    <option value="Neuro Adultos">🧠 Neuro Adultos</option>
-                                    <option value="Cirugía">🏥 Cirugía</option>
-                                    <option value="Geriatría">👴 Geriatría</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label style="font-size:0.82rem; color:var(--gray); display:block; margin-bottom:4px;">N° Pacientes del curso</label>
-                                <input type="number" id="curso-capacidad" min="1" max="20" value="5" placeholder="ej: 5"
-                                       style="margin-bottom:0; font-weight:600;" onchange="cursoCapacidadChange()">
-                            </div>
+                    <!-- ══ PASO 1: Nombre del Curso (libre) ══ -->
+                    <div style="background:#f0f4ff; border-radius:10px; padding:14px; margin-bottom:10px; border-left:4px solid var(--admin);">
+                        <div style="font-weight:700; color:var(--admin); margin-bottom:8px; font-size:0.85rem;">① NOMBRE DEL CURSO</div>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <input type="text" id="curso-nombre-input"
+                                   placeholder="Ej: MyT II, Traumatología, Neurología Adultos…"
+                                   oninput="cursoNombreChange()"
+                                   style="margin-bottom:0; font-weight:600; font-size:0.92rem; border:2px solid var(--admin); border-radius:8px; flex:1;">
+                            <button onclick="nuevoCurso()" title="Limpiar formulario para crear nuevo"
+                                    style="padding:10px 14px; background:#f0f4ff; color:var(--admin); border:2px solid var(--admin); border-radius:8px; cursor:pointer; font-weight:700; font-size:0.82rem; white-space:nowrap;">
+                                ✨ Nuevo
+                            </button>
                         </div>
+                        <!-- Sugerencias de cursos guardados -->
+                        <div id="curso-sugerencias" style="display:none; margin-top:8px; display:flex; flex-wrap:wrap; gap:5px;"></div>
                     </div>
 
-                    <!-- Paso 2: Grupos de notas y ponderaciones -->
+                    <!-- ══ PASOS 2-5: aparecen al escribir nombre ══ -->
                     <div id="curso-grupos-wrap" style="display:none;">
-                        <div style="background:#f8f9fa; border-radius:10px; padding:14px; margin-bottom:14px; border-left:4px solid #f39c12;">
+
+                        <!-- ══ PASO 2: Pacientes y Sesiones Base ══ -->
+                        <div style="background:#f8f9fa; border-radius:10px; padding:14px; margin-bottom:10px; border-left:4px solid #2ECC71;">
+                            <div style="font-weight:700; color:#27ae60; margin-bottom:10px; font-size:0.85rem;">② PACIENTES Y SESIONES BASE</div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                                <div>
+                                    <label style="font-size:0.78rem; color:var(--gray); display:block; margin-bottom:4px;">👥 N° Pacientes por alumno</label>
+                                    <input type="number" id="curso-capacidad" min="1" max="50" value="8"
+                                           oninput="cursoConfigChange()"
+                                           style="margin-bottom:0; font-weight:700; font-size:1.1rem; text-align:center; border:2px solid #2ECC71; border-radius:8px;">
+                                </div>
+                                <div>
+                                    <label style="font-size:0.78rem; color:var(--gray); display:block; margin-bottom:4px;">🏃 N° Sesiones base <span style="color:#27ae60; font-size:0.7rem;">(SS1 … SSn)</span></label>
+                                    <input type="number" id="curso-sesiones-base" min="1" max="50" value="10"
+                                           oninput="cursoConfigChange()"
+                                           style="margin-bottom:0; font-weight:700; font-size:1.1rem; text-align:center; border:2px solid #2ECC71; border-radius:8px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ══ PASO 3: Pesos EV y SS ══ -->
+                        <div style="background:#f8f9fa; border-radius:10px; padding:14px; margin-bottom:10px; border-left:4px solid #0288D1;">
+                            <div style="font-weight:700; color:#0288D1; margin-bottom:10px; font-size:0.85rem;">③ PESOS DE EVALUACIÓN (EV + SS = 100%)</div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                                <div>
+                                    <label style="font-size:0.78rem; color:var(--gray); display:block; margin-bottom:4px;">📋 Peso Evaluación Inicial (EV)</label>
+                                    <div style="display:flex; align-items:center; gap:6px;">
+                                        <input type="number" id="curso-peso-ev" min="0" max="100" value="20"
+                                               oninput="cursoConfigChange()"
+                                               style="margin-bottom:0; font-weight:700; font-size:1.1rem; text-align:center; border:2px solid #0288D1; border-radius:8px; flex:1;">
+                                        <span style="color:#0288D1; font-weight:700; font-size:1rem;">%</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style="font-size:0.78rem; color:var(--gray); display:block; margin-bottom:4px;">🏃 Peso Sesiones base (SS)</label>
+                                    <div style="display:flex; align-items:center; gap:6px;">
+                                        <input type="number" id="curso-peso-ss" min="0" max="100" value="80"
+                                               oninput="cursoConfigChange()"
+                                               style="margin-bottom:0; font-weight:700; font-size:1.1rem; text-align:center; border:2px solid #2ECC71; border-radius:8px; flex:1;">
+                                        <span style="color:#2ECC71; font-weight:700; font-size:1rem;">%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Barra EV + SS -->
+                            <div style="background:white; border-radius:8px; padding:9px 12px; border:1px solid #eee;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                                    <span style="font-size:0.8rem; font-weight:600; color:var(--primary);">Total EV + SS:</span>
+                                    <span id="curso-pct-total" style="font-weight:700; font-size:1rem; color:#27ae60;">100%</span>
+                                </div>
+                                <div style="background:#eee; border-radius:4px; height:10px; overflow:hidden; display:flex;">
+                                    <div id="curso-pct-bar-ev" style="height:100%; width:20%; background:#0288D1; transition:all 0.4s;"></div>
+                                    <div id="curso-pct-bar-ss" style="height:100%; width:80%; background:#2ECC71; transition:all 0.4s;"></div>
+                                </div>
+                                <div style="display:flex; justify-content:space-between; margin-top:4px;">
+                                    <span id="curso-lbl-ev" style="font-size:0.72rem; color:#0288D1; font-weight:600;">EV: 20%</span>
+                                    <span id="curso-pct-aviso" style="font-size:0.72rem; color:#27ae60; font-weight:600;">✅ Suma 100%</span>
+                                    <span id="curso-lbl-ss" style="font-size:0.72rem; color:#2ECC71; font-weight:600;">SS: 80%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ══ PASO 4: Sesiones Extra / Evaluaciones Campaña (bono) ══ -->
+                        <div style="background:#f8f9fa; border-radius:10px; padding:14px; margin-bottom:10px; border-left:4px solid #F59E0B;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                                <div style="font-weight:700; color:#e67e22; font-size:0.9rem;">PASO 2 — Grupos de Notas y Pesos</div>
-                                <button onclick="agregarGrupoCurso()" style="padding:5px 12px; background:#f39c12; color:white; border:none; border-radius:6px; cursor:pointer; font-size:0.8rem; font-weight:700;">+ Agregar grupo</button>
+                                <div>
+                                    <div style="font-weight:700; color:#D97706; font-size:0.85rem;">④ SESIONES EXTRA · EVALUACIONES CAMPAÑA</div>
+                                    <div style="font-size:0.72rem; color:#92400E; margin-top:2px;">Columnas adicionales con porcentaje bono (EXTRA +20% en la planilla)</div>
+                                </div>
+                                <label style="display:flex; align-items:center; gap:7px; cursor:pointer; font-size:0.82rem; color:#555; font-weight:600; user-select:none; flex-shrink:0;">
+                                    <input type="checkbox" id="curso-tiene-extra" checked
+                                           onchange="toggleExtraSection(this.checked)"
+                                           style="width:17px; height:17px; accent-color:#F59E0B; margin-bottom:0; cursor:pointer;">
+                                    Activar
+                                </label>
                             </div>
-                            <div id="curso-grupos-list"></div>
-                            <!-- Barra de porcentaje total -->
-                            <div style="margin-top:10px; padding:10px; background:white; border-radius:8px; border:1px solid #eee;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                                    <span style="font-size:0.85rem; font-weight:600; color:var(--primary);">Total ponderación:</span>
-                                    <span id="curso-pct-total" style="font-weight:700; font-size:1rem; color:#888;">0%</span>
+                            <div id="curso-extra-seccion">
+                                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:8px;">
+                                    <div>
+                                        <label style="font-size:0.78rem; color:var(--gray); display:block; margin-bottom:4px;">⭐ N° Sesiones extra disponibles</label>
+                                        <input type="number" id="curso-sesiones-extra" min="1" max="50" value="5"
+                                               oninput="cursoConfigChange()"
+                                               style="margin-bottom:0; font-weight:700; font-size:1.1rem; text-align:center; border:2px solid #F59E0B; border-radius:8px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size:0.78rem; color:var(--gray); display:block; margin-bottom:4px;">📈 Porcentaje de bonificación (EXTRA +X%)</label>
+                                        <div style="display:flex; align-items:center; gap:6px;">
+                                            <input type="number" id="curso-pct-extra" min="1" max="100" value="20"
+                                                   oninput="cursoConfigChange()"
+                                                   style="margin-bottom:0; font-weight:700; font-size:1.1rem; text-align:center; border:2px solid #F59E0B; border-radius:8px; flex:1;">
+                                            <span style="color:#F59E0B; font-weight:700; font-size:1rem;">%</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div style="background:#eee; border-radius:4px; height:8px; overflow:hidden;">
-                                    <div id="curso-pct-bar" style="height:100%; width:0%; background:#27ae60; transition:all 0.4s; border-radius:4px;"></div>
+                                <div style="background:#FFF8E7; border-radius:7px; padding:8px 12px; font-size:0.78rem; color:#92400E;">
+                                    💡 Bono = Prom(SS extra) × <span id="lbl-pext">20</span>% · Ejemplo: nota 20 en <span id="lbl-next">5</span> SS extra → +<span id="lbl-bonusmax">4.0</span> pts al promedio final
                                 </div>
-                                <div id="curso-pct-aviso" style="font-size:0.78rem; margin-top:5px; color:#888;"></div>
                             </div>
                         </div>
 
-                        <!-- Paso 3: Vista previa de la plantilla por paciente -->
-                        <div style="background:#f8f9fa; border-radius:10px; padding:14px; margin-bottom:14px; border-left:4px solid var(--docente);">
-                            <div style="font-weight:700; color:var(--docente); margin-bottom:10px; font-size:0.9rem;">PASO 3 — Vista Previa por Paciente</div>
-                            <div id="curso-preview" style="color:#999; font-size:0.88rem; text-align:center; padding:10px;">
-                                Configura los grupos para ver la vista previa.
+                        <!-- ══ PASO 5: Fórmula y Vista Previa ══ -->
+                        <div style="background:#f8f9fa; border-radius:10px; padding:12px; margin-bottom:10px; border-left:4px solid var(--docente);">
+                            <div style="font-weight:700; color:var(--docente); margin-bottom:8px; font-size:0.85rem;">⑤ FÓRMULA Y VISTA PREVIA</div>
+                            <div id="curso-formula-resumen" style="background:#F0F4FF; border-radius:8px; padding:10px 14px; margin-bottom:10px; font-size:0.82rem; color:var(--primary);"></div>
+                            <div id="curso-preview" style="color:#999; font-size:0.85rem; text-align:center; padding:10px;">
+                                Escribe el nombre del curso para ver la vista previa.
                             </div>
                         </div>
 
-                        <!-- Guardar estructura -->
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                            <button onclick="guardarEstructuraCurso()" style="padding:13px; background:var(--admin); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.95rem;">
+                        <!-- ══ Botones de acción ══ -->
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                            <button onclick="guardarEstructuraCurso()"
+                                    style="padding:13px; background:var(--admin); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.95rem;">
                                 💾 GUARDAR ESTRUCTURA
                             </button>
-                            <button onclick="calcularNotasFinalCurso()" style="padding:13px; background:var(--accent); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.95rem;">
-                                🧮 CALCULAR NOTAS FINALES
+                            <button onclick="calcularNotasFinalCurso()"
+                                    style="padding:13px; background:var(--accent); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:700; font-size:0.95rem;">
+                                🧮 INGRESAR NOTAS
                             </button>
                         </div>
-
-                        <!-- Resultado de notas finales -->
-                        <div id="curso-resultado" style="margin-top:14px; display:none;"></div>
+                        <div id="curso-resultado" style="margin-top:10px; display:none;"></div>
                     </div>
 
-                    <!-- Cursos guardados -->
-                    <div style="margin-top:16px;">
+                    <!-- ══ Estructuras Guardadas ══ -->
+                    <div style="margin-top:14px;">
                         <div style="font-weight:700; color:var(--primary); margin-bottom:8px; font-size:0.88rem; display:flex; justify-content:space-between; align-items:center;">
                             <span>📋 Estructuras guardadas</span>
                             <button onclick="renderCursosGuardados()" style="padding:3px 10px; background:#eee; color:#555; border:none; border-radius:4px; cursor:pointer; font-size:0.78rem;">🔄 Actualizar</button>
