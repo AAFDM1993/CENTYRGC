@@ -395,20 +395,80 @@
                     <button onclick="adminTab('tab-cursos')" id="btn-tab-cursos" style="padding:8px 14px; background:#eee; color:#555; border:none; border-radius:6px; cursor:pointer; font-weight:600; font-size:0.85rem;">🏫 Cursos</button>
                 </div>
 
-                <!-- Tab: Nuevo usuario -->
+                <!-- Tab: Usuarios -->
                 <div id="tab-usuarios">
-                    <h3 style="color:var(--admin); margin-top:0;">🔑 Nuevo Usuario</h3>
-                    <input type="text" id="adm-nombre" placeholder="Nombre completo" style="margin-bottom:10px;">
-                    <input type="text" id="adm-codigo" placeholder="Código de alumno (solo alumnos)" style="margin-bottom:10px;">
-                    <input type="text" id="adm-colegiatura" placeholder="Número CTMP (solo docentes)" style="margin-bottom:10px;">
-                    <select id="adm-rol" style="margin-bottom:10px;">
-                        <option value="alumno">Alumno</option>
-                        <option value="docente">Docente</option>
-                        <option value="admin">Administrador</option>
-                    </select>
-                    <input type="text" id="adm-user" placeholder="Usuario" style="margin-bottom:10px;">
-                    <input type="password" id="adm-pass" placeholder="Contraseña" style="margin-bottom:10px;">
-                    <button class="btn-save" style="background:var(--admin); width:100%;" onclick="crearUsuario()">CREAR USUARIO</button>
+
+                    <!-- ══ SECCIÓN A: Importar lista de alumnos ══ -->
+                    <div style="background:#f0f4ff;border-radius:10px;padding:14px;margin-bottom:14px;border-left:4px solid var(--admin);">
+                        <div style="font-weight:700;color:var(--admin);font-size:0.85rem;margin-bottom:8px;">📥 IMPORTAR LISTA DE ALUMNOS</div>
+                        <p style="font-size:0.78rem;color:#555;margin:0 0 10px;">
+                            Sube un archivo <strong>CSV o Excel (.xlsx)</strong> con columnas: <code>codigo</code>, <code>apellidos_nombres</code>.<br>
+                            Si el alumno ya existe (mismo código) se actualiza su nombre. Se crea usuario con contraseña = código.
+                        </p>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <input type="file" id="import-alumnos-file" accept=".csv,.xlsx,.xls"
+                                   onchange="previsualizarImportAlumnos()"
+                                   style="flex:1;min-width:0;margin-bottom:0;font-size:0.8rem;border:2px dashed var(--admin);border-radius:8px;padding:8px;background:white;cursor:pointer;">
+                            <button onclick="document.getElementById('import-alumnos-file').click()"
+                                    style="padding:9px 14px;background:var(--admin);color:white;border:none;border-radius:7px;cursor:pointer;font-weight:700;font-size:0.8rem;white-space:nowrap;">
+                                📂 Elegir archivo
+                            </button>
+                        </div>
+                        <!-- Vista previa de la lista importada -->
+                        <div id="import-preview" style="display:none;margin-top:10px;">
+                            <div style="font-size:0.78rem;font-weight:700;color:var(--primary);margin-bottom:6px;" id="import-preview-count"></div>
+                            <div id="import-preview-tabla" style="max-height:160px;overflow-y:auto;border-radius:7px;border:1.5px solid #c0c8e0;"></div>
+                            <div style="display:flex;gap:8px;margin-top:10px;">
+                                <button onclick="confirmarImportAlumnos()"
+                                        style="flex:1;padding:10px;background:var(--admin);color:white;border:none;border-radius:7px;cursor:pointer;font-weight:700;font-size:0.85rem;">
+                                    ✅ IMPORTAR {{N}} ALUMNOS
+                                </button>
+                                <button onclick="cancelarImportAlumnos()"
+                                        style="padding:10px 14px;background:#eee;color:#555;border:none;border-radius:7px;cursor:pointer;font-weight:600;font-size:0.85rem;">
+                                    ✕ Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ══ SECCIÓN B: Asignar cursos a alumnos ══ -->
+                    <div style="background:#f8f9fa;border-radius:10px;padding:14px;margin-bottom:14px;border-left:4px solid #0288D1;">
+                        <div style="font-weight:700;color:#0288D1;font-size:0.85rem;margin-bottom:8px;">📋 ASIGNAR CURSOS A ALUMNOS</div>
+                        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
+                            <input type="text" id="asignar-buscar" placeholder="Buscar alumno por nombre o código…"
+                                   oninput="filtrarListaAsignacion()"
+                                   style="flex:1;margin-bottom:0;font-size:0.82rem;border:1.5px solid #0288D1;border-radius:7px;padding:8px 11px;">
+                            <button onclick="renderListaAsignacion()"
+                                    style="padding:9px 13px;background:#0288D1;color:white;border:none;border-radius:7px;cursor:pointer;font-weight:700;font-size:0.8rem;white-space:nowrap;">
+                                🔄 Actualizar
+                            </button>
+                        </div>
+                        <div id="asignar-lista-alumnos" style="max-height:340px;overflow-y:auto;">
+                            <div style="text-align:center;color:#aaa;padding:20px;font-size:0.85rem;">Carga la lista para ver los alumnos.</div>
+                        </div>
+                        <button onclick="guardarAsignacionCursos()"
+                                style="width:100%;margin-top:10px;padding:11px;background:#0288D1;color:white;border:none;border-radius:8px;cursor:pointer;font-weight:700;font-size:0.9rem;">
+                            💾 GUARDAR ASIGNACIONES
+                        </button>
+                    </div>
+
+                    <!-- ══ SECCIÓN C: Crear usuario manual ══ -->
+                    <details style="border:1.5px solid #e0e6ed;border-radius:10px;padding:12px 14px;">
+                        <summary style="font-weight:700;color:var(--admin);font-size:0.85rem;cursor:pointer;">🔑 Crear usuario individual (manual)</summary>
+                        <div style="margin-top:12px;">
+                            <input type="text" id="adm-nombre" placeholder="Nombre completo" style="margin-bottom:10px;">
+                            <input type="text" id="adm-codigo" placeholder="Código de alumno (solo alumnos)" style="margin-bottom:10px;">
+                            <input type="text" id="adm-colegiatura" placeholder="Número CTMP (solo docentes)" style="margin-bottom:10px;">
+                            <select id="adm-rol" style="margin-bottom:10px;">
+                                <option value="alumno">Alumno</option>
+                                <option value="docente">Docente</option>
+                                <option value="admin">Administrador</option>
+                            </select>
+                            <input type="text" id="adm-user" placeholder="Usuario" style="margin-bottom:10px;">
+                            <input type="password" id="adm-pass" placeholder="Contraseña" style="margin-bottom:10px;">
+                            <button class="btn-save" style="background:var(--admin);width:100%;" onclick="crearUsuario()">CREAR USUARIO</button>
+                        </div>
+                    </details>
                 </div>
 
                 <!-- Tab: Configuración de notas -->
@@ -424,18 +484,46 @@
 
                 <!-- Tab: Exportar datos -->
                 <div id="tab-exportar" style="display:none;">
-                    <h3 style="color:var(--admin); margin-top:0;">📤 Exportar Datos del Sistema</h3>
-                    <p style="color:var(--gray); font-size:0.9rem; margin-bottom:16px;">Genera un reporte Excel/CSV con los datos seleccionados.</p>
-                    <div style="display:flex; flex-direction:column; gap:10px;">
-                        <button onclick="exportarResumenGeneral()" style="padding:12px; background:var(--primary); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; text-align:left;">
-                            📊 Resumen General (evaluaciones, sesiones, aprobadas, pendientes)
+                    <h3 style="color:var(--admin); margin-top:0;">📤 Exportar Notas Finales</h3>
+
+                    <!-- Filtros -->
+                    <div style="background:#f0f4ff;border-radius:10px;padding:14px;margin-bottom:14px;border-left:4px solid var(--admin);">
+                        <div style="font-weight:700;color:var(--admin);font-size:0.85rem;margin-bottom:10px;">🎯 Filtrar exportación</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                            <div>
+                                <label style="font-size:0.75rem;color:var(--gray);display:block;margin-bottom:3px;">Curso</label>
+                                <select id="export-filtro-curso" style="margin-bottom:0;font-size:0.82rem;border:1.5px solid var(--admin);">
+                                    <option value="">— Todos los cursos —</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size:0.75rem;color:var(--gray);display:block;margin-bottom:3px;">Alumno</label>
+                                <select id="export-filtro-alumno" style="margin-bottom:0;font-size:0.82rem;border:1.5px solid var(--admin);">
+                                    <option value="">— Todos los alumnos —</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button onclick="previsualizarExportNotas()"
+                                style="width:100%;padding:9px;background:#EEF4FF;color:var(--admin);border:2px solid var(--admin);border-radius:7px;cursor:pointer;font-weight:700;font-size:0.85rem;">
+                            👁 Vista previa
                         </button>
-                        <button onclick="exportarNotasPorAlumno()" style="padding:12px; background:var(--docente); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; text-align:left;">
-                            🎓 Notas y promedios por alumno
-                        </button>
-                        <button onclick="exportarNotasPorPaciente()" style="padding:12px; background:var(--accent); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold; text-align:left;">
-                            🏥 Notas y promedios por paciente
-                        </button>
+                    </div>
+
+                    <!-- Vista previa de la tabla a exportar -->
+                    <div id="export-preview-wrap" style="display:none;margin-bottom:14px;">
+                        <div style="font-size:0.78rem;font-weight:700;color:var(--primary);margin-bottom:6px;" id="export-preview-count"></div>
+                        <div id="export-preview-tabla" style="max-height:220px;overflow:auto;border-radius:8px;border:1.5px solid #c0c8e0;"></div>
+                    </div>
+
+                    <!-- Botón exportar -->
+                    <button onclick="exportarNotasFinalesCSV()"
+                            style="width:100%;padding:14px;background:var(--admin);color:white;border:none;border-radius:10px;cursor:pointer;font-weight:700;font-size:0.97rem;">
+                        📥 DESCARGAR CSV — Apellidos y Nombres · Curso · Promedio Final
+                    </button>
+
+                    <div style="margin-top:10px;background:#F0FFF4;border-radius:8px;padding:8px 12px;font-size:0.75rem;color:#065F46;border:1px solid #a7f3d0;">
+                        ℹ️ El CSV incluye exactamente: <strong>Apellidos y Nombres · Código · Curso · Promedio Final</strong>.
+                        El promedio final es el calculado con la fórmula de cada grupo (promedio sobre sesiones programadas).
                     </div>
                 </div>
 
@@ -836,6 +924,9 @@
     @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
 </style>
+
+<!-- SheetJS para leer Excel en importación de alumnos -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <!-- Pop-up pendientes docente -->
 <div id="popup-pendientes">
