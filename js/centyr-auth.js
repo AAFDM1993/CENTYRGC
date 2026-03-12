@@ -48,6 +48,15 @@
             document.getElementById('btn-notas-alumno').style.display  = (esDocente||esAdmin) ? 'block' : 'none';
             document.getElementById('btn-mis-notas').style.display     = esAlumno ? 'block' : 'none';
 
+            // El administrador no usa el formulario de sesión — ocultarlo
+            const panelRegistro = document.querySelector('.panel h3');
+            const formSesion    = document.getElementById('dni')?.closest('.panel');
+            if (formSesion) formSesion.style.display = esAdmin ? 'none' : 'block';
+
+            // Cabecera del panel principal
+            const titHistorial = document.getElementById('titulo-historial');
+            if (titHistorial && esAdmin) titHistorial.textContent = '📋 Historial Clínico';
+
             // Poblar selector de docente (visible para todos los roles)
             const selDocente = document.getElementById('alumno-docente-sel');
             if (selDocente) {
@@ -87,6 +96,10 @@
         document.getElementById('userInput').value = '';
         document.getElementById('passInput').value = '';
         document.getElementById('error-msg').style.display   = 'none';
+
+        // Restaurar el panel de sesión (oculto para admin)
+        const formSesion = document.getElementById('dni')?.closest('.panel');
+        if (formSesion) formSesion.style.display = 'block';
 
         // Limpiar selector docente
         const sel = document.getElementById('alumno-docente-sel');
