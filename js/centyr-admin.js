@@ -1824,6 +1824,148 @@
     function exportarNotasPorAlumno()  { exportarNotasFinalesCSV(); }
     function exportarNotasPorPaciente(){ exportarNotasFinalesCSV(); }
 
+    // ═══════════════════════════════════════════════════════════════
+    //  EXPORTAR PDF — Lista imprimible de promedios finales
+    // ═══════════════════════════════════════════════════════════════
+    function exportarNotasFinalesPDF() {
+        _poblarFiltrosExport();
+        const filtroCurso  = document.getElementById('export-filtro-curso')?.value  || '';
+        const filtroAlumno = document.getElementById('export-filtro-alumno')?.value || '';
+        const filas = _buildFilasExport(filtroCurso, filtroAlumno);
+
+        if (!filas.length) {
+            alert('⚠️ Sin datos para exportar. Verifica los filtros y las asignaciones de curso.');
+            return;
+        }
+
+        // Agrupar por curso para el PDF
+        const porCurso = {};
+        filas.forEach(f => {
+            if (!porCurso[f.curso]) porCurso[f.curso] = [];
+            porCurso[f.curso].push(f);
+        });
+
+        const fecha = new Date().toLocaleDateString('es-PE', { day:'2-digit', month:'2-digit', year:'numeric' });
+
+        const colNota = (p) => {
+            const n = parseFloat(p);
+            if (isNaN(n)) return { bg:'#f5f5f5', fg:'#888', label:'—' };
+            if (n <= 10)  return { bg:'#FECACA', fg:'#991B1B', label:'Desaprobado' };
+            if (n <= 13)  return { bg:'#FEF3C7', fg:'#92400E', label:'Regular' };
+            if (n <= 16)  return { bg:'#D1FAE5', fg:'#065F46', label:'Aprobado' };
+            return            { bg:'#DBEAFE', fg:'#1E40AF', label:'Excelente' };
+        };
+
+        let cursosHtml = '';
+        Object.entries(porCurso).forEach(([curso, alumnos]) => {
+            const est = (CENTYR.db.estructuras_cursos||[]).find(e=>e.curso===curso);
+            const aprobados = alumnos.filter(a => parseFloat(a.promedio) > 10).length;
+
+            cursosHtml += `
+            <div class="curso-bloque">
+                <div class="curso-titulo">
+                    <span>🏫 ${curso}</span>
+                    <span class="curso-meta">
+                        ${est ? `EV ${est.pesoEV||20}% + SS ${est.pesoSS||80}%  ·  ` : ''}
+                        ${alumnos.length} alumno(s) · ${aprobados} aprobado(s)
+                    </span>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:40px;text-align:center;">#</th>
+                            <th>Apellidos y Nombres</th>
+                            <th style="width:100px;text-align:center;">Código</th>
+                            <th style="width:90px;text-align:center;">Promedio Final</th>
+                            <th style="width:90px;text-align:center;">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    ${alumnos.map((a, i) => {
+                        const c = colNota(a.promedio);
+                        return `<tr>
+                            <td style="text-align:center;color:#888;">${i+1}</td>
+                            <td>${a.apellidos_nombres}</td>
+                            <td style="text-align:center;color:#555;">${a.codigo}</td>
+                            <td style="text-align:center;font-weight:700;background:${c.bg};color:${c.fg};">${a.promedio}</td>
+                            <td style="text-align:center;font-size:0.78rem;font-weight:700;color:${c.fg};">${c.label}</td>
+                        </tr>`;
+                    }).join('')}
+                    </tbody>
+                </table>
+            </div>`;
+        });
+
+        const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Notas Finales — CENTYR</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:'Segoe UI',Arial,sans-serif; color:#1B2A4A; background:white; padding:28px 32px; font-size:10pt; }
+  .header { text-align:center; margin-bottom:28px; border-bottom:3px solid #1B2A4A; padding-bottom:16px; }
+  .header h1 { font-size:16pt; color:#1B2A4A; letter-spacing:1px; }
+  .header .subtitulo { color:#6C3FC5; font-size:10pt; font-weight:600; margin-top:4px; }
+  .header .meta { color:#888; font-size:9pt; margin-top:6px; }
+  .curso-bloque { margin-bottom:28px; page-break-inside:avoid; }
+  .curso-titulo { background:#1B2A4A; color:white; padding:9px 14px; border-radius:7px 7px 0 0;
+                  display:flex; justify-content:space-between; align-items:center; font-weight:700; font-size:10.5pt; }
+  .curso-meta   { font-size:8.5pt; font-weight:400; opacity:0.85; }
+  table { width:100%; border-collapse:collapse; border:1.5px solid #e0e6ed; border-top:none; border-radius:0 0 7px 7px; overflow:hidden; }
+  th { background:#F0F4FF; color:#1B2A4A; padding:7px 10px; text-align:left; font-size:9pt; border-bottom:2px solid #c0c8e0; }
+  td { padding:6px 10px; border-bottom:1px solid #f0f2f5; font-size:9.5pt; }
+  tr:last-child td { border-bottom:none; }
+  tr:nth-child(even) td { background:#fafbff; }
+  .resumen { background:#F0F4FF; border:1.5px solid #c0c8e0; border-radius:8px; padding:10px 16px;
+             margin-top:20px; font-size:9pt; display:flex; gap:24px; flex-wrap:wrap; }
+  .resumen-item { font-weight:600; }
+  .resumen-item span { color:#6C3FC5; }
+  .footer { margin-top:30px; text-align:center; color:#aaa; font-size:8.5pt; border-top:1px solid #eee; padding-top:12px; }
+  @media print {
+    body { padding:15px 20px; }
+    .curso-bloque { page-break-inside:avoid; }
+    button { display:none !important; }
+  }
+</style>
+</head>
+<body>
+  <div class="header">
+    <h1>CENTYR — Notas Finales por Curso</h1>
+    <div class="subtitulo">Sistema de Gestión Clínica · Promedios Ponderados</div>
+    <div class="meta">
+        Generado el ${fecha}
+        ${filtroCurso ? `  ·  Curso: <strong>${filtroCurso}</strong>` : ''}
+        ${filtroAlumno ? `  ·  Alumno filtrado` : '  ·  Todos los alumnos asignados'}
+    </div>
+  </div>
+
+  ${cursosHtml}
+
+  <div class="resumen">
+    <div class="resumen-item">Total filas: <span>${filas.length}</span></div>
+    <div class="resumen-item">Cursos: <span>${Object.keys(porCurso).length}</span></div>
+    <div class="resumen-item">Aprobados (>10): <span>${filas.filter(f=>parseFloat(f.promedio)>10).length}</span></div>
+    <div class="resumen-item">Sin nota (—): <span>${filas.filter(f=>f.promedio==='—').length}</span></div>
+  </div>
+
+  <div class="footer">
+    <p>Documento generado por el Sistema CENTYR — ${fecha}</p>
+    <p>Los promedios se calculan sobre el total de sesiones programadas (sesiones sin nota = 0).</p>
+  </div>
+
+  <script>window.onload=()=>window.print();<\/script>
+</body>
+</html>`;
+
+        const blob = new Blob([html], { type:'text/html;charset=utf-8' });
+        const url  = URL.createObjectURL(blob);
+        const win  = window.open(url, '_blank');
+        if (!win) alert('⚠️ El navegador bloqueó la ventana emergente. Permite pop-ups para este sitio.');
+        setTimeout(() => URL.revokeObjectURL(url), 60000);
+        mostrarNotificacion('📄 PDF listo — usa Ctrl+P para imprimir / guardar como PDF');
+    }
+
     // ─── Registro ─────────────────────────────────
     const _fns = {
         adminTab, nuevoCurso,
@@ -1846,7 +1988,7 @@
         // Resumen y edición del modal de notas
         renderResumenCurso, seleccionarAlumnoIngresoCurso,
         // Exportar notas finales
-        previsualizarExportNotas, exportarNotasFinalesCSV,
+        previsualizarExportNotas, exportarNotasFinalesCSV, exportarNotasFinalesPDF,
         // Helpers grupo editor
         _actualizarResumenGrupo, _actualizarPacsResumen,
         descargarCSV, exportarResumenGeneral, exportarNotasPorAlumno, exportarNotasPorPaciente
