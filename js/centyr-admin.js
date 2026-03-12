@@ -354,21 +354,6 @@
     }
 
     function actualizarBarraPct() { cursoConfigChange(); }
-    function agregarGrupoCurso()  { _agregarGrupoInterno(); }
-
-    function _agregarGrupoInterno() {
-        const cap  = parseInt(document.getElementById('curso-capacidad')?.value) || 5;
-        const asig = _grupos.reduce((s,g)=>s+(parseInt(g.nPacientes)||0),0);
-        const rest = Math.max(1, cap - asig);
-        const idx  = _grupos.length;
-        _grupos.push({
-            id: `g${idx}`, nombre: `Grupo ${idx+1}`,
-            nPacientes: rest, nSesiones: 16, nExtras: 4, pctExtra: 20,
-            colorHex: GRUPO_COLORES[idx % GRUPO_COLORES.length]
-        });
-        _renderGruposEditor();
-        cursoConfigChange();
-    }
 
     function _actualizarFormula(pesoEV, pesoSS) {
         const el = document.getElementById('curso-formula-resumen');
@@ -1990,7 +1975,7 @@
         // Exportar notas finales
         previsualizarExportNotas, exportarNotasFinalesCSV, exportarNotasFinalesPDF,
         // Helpers grupo editor
-        _actualizarResumenGrupo, _actualizarPacsResumen,
+        _actualizarResumenGrupo, _actualizarPacsResumen, _leerGruposDesdeDOM,
         descargarCSV, exportarResumenGeneral, exportarNotasPorAlumno, exportarNotasPorPaciente
     };
     Object.assign(CENTYR.fn, _fns);
