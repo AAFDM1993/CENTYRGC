@@ -627,54 +627,271 @@
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  MODAL INGRESO DE NOTAS
+    //  MODAL DE NOTAS — Vista resumen + edición por alumno
     // ═══════════════════════════════════════════════════════════════
     async function abrirIngresoCurso(curso, alumnoPresel) {
         const est = (CENTYR.db.estructuras_cursos||[]).find(e=>e.curso===curso);
         if (!est) { alert('⚠️ No existe estructura para: '+curso); return; }
 
-        const alumnos   = CENTYR.db.usuarios.filter(u=>u.rol==='alumno');
+        document.getElementById('modal-cursos-titulo').textContent = `📝 Notas — ${curso}`;
+
+        // Alumnos asignados a este curso (o todos si no hay asignaciones aún)
+        const todosAlumnos   = CENTYR.db.usuarios.filter(u=>u.rol==='alumno');
+        const alumnosAsig    = todosAlumnos.filter(a=>(a.cursos||[]).includes(curso));
+        const alumnos        = alumnosAsig.length ? alumnosAsig : todosAlumnos;
+
+        // Header del modal con selector rápido
         const opAlumnos = alumnos.map(a=>
             `<option value="${a.usuario}" ${alumnoPresel===a.usuario?'selected':''}>${a.nombre_completo} (${a.codigo||'—'})</option>`
         ).join('');
 
         const gruposInfo = (est.grupos||[]).map(g=>
-            `<span style="background:${g.colorHex||'#1B2A4A'}18;color:${g.colorHex||'#1B2A4A'};border-radius:10px;padding:1px 8px;font-size:0.72rem;font-weight:600;">
-                ${g.nombre}: ${g.nPacientes||g.cantidad||'?'}pac/${g.nSesiones||'?'}SS
+            `<span style="background:${g.colorHex||'#1B2A4A'}18;color:${g.colorHex||'#1B2A4A'};
+                          border-radius:10px;padding:1px 8px;font-size:0.72rem;font-weight:600;">
+                ${g.nombre}: ${g.nPacientes||1}pac · ${g.nSesiones||10}SS
+                ${g.nExtras>0?` +${g.nExtras}ext`:''}
              </span>`
         ).join(' ');
 
-        document.getElementById('modal-cursos-titulo').textContent = `📝 Calificaciones — ${curso}`;
         document.getElementById('modal-cursos-body').innerHTML = `
+        <!-- Cabecera del curso -->
         <div style="background:#F0F4FF;border-radius:10px;padding:12px 16px;margin-bottom:14px;border-left:4px solid var(--primary);">
-            <div style="font-weight:700;color:var(--primary);margin-bottom:6px;font-size:0.88rem;">
+            <div style="font-weight:700;color:var(--primary);margin-bottom:5px;font-size:0.9rem;">
                 🏫 ${curso} · EV ${est.pesoEV||20}% + SS ${est.pesoSS||80}%
             </div>
-            <div style="margin-bottom:8px;display:flex;flex-wrap:wrap;gap:5px;">${gruposInfo}</div>
-            <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+            <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;">${gruposInfo}</div>
+            <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;">
                 <div style="flex:1;min-width:180px;">
-                    <label style="font-size:0.78rem;color:var(--gray);display:block;margin-bottom:3px;">Seleccionar alumno:</label>
+                    <label style="font-size:0.75rem;color:var(--gray);display:block;margin-bottom:3px;">✏️ Editar notas de alumno:</label>
                     <select id="ingreso-alumno-sel" onchange="cargarPanelNotasAlumno('${curso}')"
-                            style="margin-bottom:0;border:1.5px solid var(--primary);font-weight:600;">
-                        <option value="">-- Elige un alumno --</option>${opAlumnos}
+                            style="margin-bottom:0;border:1.5px solid var(--primary);font-weight:600;font-size:0.85rem;">
+                        <option value="">-- Selecciona un alumno --</option>${opAlumnos}
                     </select>
                 </div>
-                <div style="flex:1;min-width:140px;">
-                    <label style="font-size:0.78rem;color:var(--gray);display:block;margin-bottom:3px;">Filtrar:</label>
+                <div style="flex:1;min-width:130px;">
+                    <label style="font-size:0.75rem;color:var(--gray);display:block;margin-bottom:3px;">Filtrar:</label>
                     <input type="text" placeholder="Apellido…" id="ingreso-buscar-alumno"
                            oninput="filtrarSelectAlumnoIngreso('${curso}',this.value)"
-                           style="margin-bottom:0;border:1.5px solid var(--docente);">
+                           style="margin-bottom:0;border:1.5px solid var(--docente);font-size:0.85rem;">
                 </div>
             </div>
         </div>
-        <div id="ingreso-notas-area">
-            <div style="text-align:center;color:#aaa;padding:40px 0;">Selecciona un alumno para calificar.</div>
+
+        <!-- Resumen: tabla con todos los alumnos del curso -->
+        <div id="resumen-curso-wrap">
+            <div style="font-weight:700;color:var(--primary);font-size:0.85rem;margin-bottom:8px;
+                        display:flex;justify-content:space-between;align-items:center;">
+                <span>👥 Alumnos asignados al curso (${alumnos.length})</span>
+                <button onclick="renderResumenCurso('${curso}')"
+                        style="padding:3px 9px;background:#eee;color:#555;border:none;border-radius:5px;cursor:pointer;font-size:0.75rem;">🔄</button>
+            </div>
+            <div id="resumen-curso-tabla"></div>
+        </div>
+
+        <!-- Panel edición por alumno (se muestra debajo al seleccionar) -->
+        <div id="ingreso-notas-area" style="margin-top:16px;">
+            <div style="text-align:center;color:#aaa;padding:30px 0;font-size:0.85rem;">
+                Selecciona un alumno arriba para editar sus notas.
+            </div>
         </div>`;
+
         document.getElementById('modalCursos').style.display = 'block';
+
+        // Renderizar resumen y cargar alumno presel si hay
+        await renderResumenCurso(curso);
         if (alumnoPresel) {
             const sel = document.getElementById('ingreso-alumno-sel');
             if (sel) { sel.value = alumnoPresel; await cargarPanelNotasAlumno(curso); }
         }
+    }
+
+    /** Tabla-resumen del curso: todos los alumnos, sus pacientes, notas y promedio */
+    async function renderResumenCurso(curso) {
+        const tabEl = document.getElementById('resumen-curso-tabla');
+        if (!tabEl) return;
+
+        const est = (CENTYR.db.estructuras_cursos||[]).find(e=>e.curso===curso);
+        if (!est) return;
+
+        const todosAlumnos = CENTYR.db.usuarios.filter(u=>u.rol==='alumno');
+        const alumnos      = todosAlumnos.filter(a=>(a.cursos||[]).includes(curso));
+        const lista        = alumnos.length ? alumnos : todosAlumnos;
+
+        if (!lista.length) {
+            tabEl.innerHTML = `<div style="text-align:center;color:#aaa;padding:20px;font-size:0.82rem;">
+                Sin alumnos asignados a este curso.<br>
+                <small>Ve a 👤 Usuarios → Asignar cursos para asignar alumnos.</small></div>`;
+            return;
+        }
+
+        tabEl.innerHTML = `<div style="text-align:center;color:#888;padding:12px;font-size:0.8rem;">⏳ Cargando notas…</div>`;
+
+        // Cargar notas de todos los alumnos en paralelo (o desde caché)
+        if (!CENTYR.db.notas_cursos) CENTYR.db.notas_cursos = {};
+        await Promise.all(lista.map(async a => {
+            const key = `${a.usuario}::${curso}`;
+            if (!CENTYR.db.notas_cursos[key]) {
+                try {
+                    const res  = await fetch(`${CENTYR.CONFIG.webAppUrl}?action=get_notas_alumno_curso&alumno=${encodeURIComponent(a.usuario)}&curso=${encodeURIComponent(curso)}`);
+                    const data = await res.json();
+                    if (data.status==='success' && data.pacientes?.length)
+                        CENTYR.db.notas_cursos[key] = data.pacientes;
+                } catch(e) { /* sin conexión */ }
+            }
+        }));
+
+        const pesoEV = est.pesoEV||20, pesoSS = est.pesoSS||80;
+
+        // Helper: calcular promedio de un alumno desde datos en memoria
+        const calcProm = (alumnoUsuario) => {
+            const key  = `${alumnoUsuario}::${curso}`;
+            const pacs = CENTYR.db.notas_cursos[key] || [];
+            if (!pacs.length) return null;
+            const notas = [];
+            let pi = 0;
+            (est.grupos||[]).forEach(g => {
+                const nSS=g.nSesiones||10, nExt=g.nExtras||0, pctE=g.pctExtra||0;
+                for (let k=0;k<(g.nPacientes||1);k++) {
+                    const pac=pacs[pi++]||{};
+                    const evVal = pac.nota_ev!==''&&pac.nota_ev!==undefined ? parseFloat(pac.nota_ev)||0 : null;
+                    const sumSS = (pac.notas_ss||[]).reduce((s,v)=>s+(v!==''?parseFloat(v)||0:0),0);
+                    const promSS= sumSS/nSS;
+                    const sumExt=(pac.notas_ext||[]).reduce((s,v)=>s+(v!==''?parseFloat(v)||0:0),0);
+                    const promExt=nExt>0?sumExt/nExt:null;
+                    let base=0,pw=0;
+                    if(evVal!==null){base+=evVal*pesoEV/100;pw+=pesoEV;}
+                    base+=promSS*pesoSS/100;pw+=pesoSS;
+                    const bono=(promExt!==null&&nExt>0)?promExt*pctE/100:0;
+                    if(pw>0) notas.push(Math.min(20,base+bono));
+                }
+            });
+            return notas.length ? notas.reduce((s,v)=>s+v,0)/notas.length : null;
+        };
+
+        // Construir tabla
+        let html = `<div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:0.78rem;">
+        <thead>
+            <tr>
+                <th style="background:var(--primary);color:white;padding:7px 10px;text-align:left;min-width:160px;">Alumno</th>
+                <th style="background:var(--primary);color:white;padding:7px 8px;text-align:center;min-width:80px;">Código</th>
+                <th style="background:#0288D1;color:white;padding:7px 10px;text-align:left;min-width:130px;">Paciente</th>
+                <th style="background:#0288D1;color:white;padding:7px 8px;text-align:center;min-width:50px;">Grupo</th>
+                <th style="background:#27ae60;color:white;padding:7px 8px;text-align:center;min-width:44px;">EV</th>
+                <th style="background:#27ae60;color:white;padding:7px 8px;text-align:center;min-width:80px;">Prom.SS</th>
+                ${est.grupos?.some(g=>g.nExtras>0) ? '<th style="background:#D97706;color:white;padding:7px 8px;text-align:center;min-width:80px;">Prom.Extra</th>' : ''}
+                <th style="background:#6C3FC5;color:white;padding:7px 8px;text-align:center;min-width:64px;">Prom.Pac</th>
+            </tr>
+        </thead>
+        <tbody>`;
+
+        const tieneExtra = est.grupos?.some(g=>g.nExtras>0);
+
+        lista.forEach((a, ai) => {
+            const key  = `${a.usuario}::${curso}`;
+            const pacs = CENTYR.db.notas_cursos[key] || [];
+            const prom = calcProm(a.usuario);
+            const promCol = prom===null?'#888':prom<=10?'#E53935':prom<=13?'#F59E0B':prom<=16?'#2ECC71':'#0288D1';
+            const rowBg   = ai%2===0?'#fafbff':'white';
+
+            // Fila de alumno — colspan sobre todos los pacientes
+            const totalPacs = (est.grupos||[]).reduce((s,g)=>s+(g.nPacientes||1),0);
+
+            if (!pacs.length) {
+                // Sin notas ingresadas aún
+                html += `<tr style="background:${rowBg};">
+                    <td style="padding:7px 10px;font-weight:700;color:var(--primary);" rowspan="${totalPacs||1}">
+                        <div>${a.nombre_completo}</div>
+                        <button onclick="seleccionarAlumnoIngresoCurso('${a.usuario}','${curso}')"
+                                style="margin-top:4px;padding:3px 9px;background:var(--admin);color:white;border:none;
+                                       border-radius:5px;cursor:pointer;font-size:0.7rem;font-weight:700;">✏️ Editar</button>
+                    </td>
+                    <td style="padding:7px 8px;text-align:center;color:#888;" rowspan="${totalPacs||1}">${a.codigo||a.usuario}</td>
+                    <td colspan="${tieneExtra?5:4}" style="padding:7px 10px;text-align:center;color:#bbb;font-style:italic;">
+                        Sin notas ingresadas —
+                        <span style="color:var(--admin);cursor:pointer;text-decoration:underline;"
+                              onclick="seleccionarAlumnoIngresoCurso('${a.usuario}','${curso}')">ingresar ahora</span>
+                    </td>
+                </tr>`;
+                return;
+            }
+
+            let pi = 0, firstRow = true;
+            (est.grupos||[]).forEach((g,gi) => {
+                const nSS=g.nSesiones||10, nExt=g.nExtras||0, pctE=g.pctExtra||0;
+                const col = g.colorHex||'#0288D1';
+                for (let k=0; k<(g.nPacientes||1); k++) {
+                    const pac = pacs[pi++]||{};
+                    const evV = pac.nota_ev!==''&&pac.nota_ev!==undefined ? parseFloat(pac.nota_ev) : null;
+                    const ss  = pac.notas_ss  || [];
+                    const ext = pac.notas_ext || [];
+                    const sumSS  = ss.reduce((s,v)=>s+(v!==''?parseFloat(v)||0:0),0);
+                    const promSS = sumSS/nSS;
+                    const sumExt = ext.reduce((s,v)=>s+(v!==''?parseFloat(v)||0:0),0);
+                    const promExt= nExt>0?sumExt/nExt:null;
+                    let base=0,pw=0;
+                    if(evV!==null){base+=evV*pesoEV/100;pw+=pesoEV;}
+                    base+=promSS*pesoSS/100;pw+=pesoSS;
+                    const bono=(promExt!==null&&nExt>0)?promExt*pctE/100:0;
+                    const notaPac = pw>0 ? Math.min(20,base+bono) : null;
+                    const pacCol = notaPac===null?'#888':notaPac<=10?'#FECACA':notaPac<=13?'#FEF3C7':notaPac<=16?'#D1FAE5':'#DBEAFE';
+                    const pacFc  = notaPac===null?'#888':notaPac<=10?'#991B1B':notaPac<=13?'#92400E':notaPac<=16?'#065F46':'#1E40AF';
+
+                    html += `<tr style="background:${rowBg};border-bottom:1px solid #f0f2f5;">`;
+
+                    if (firstRow) {
+                        html += `<td style="padding:7px 10px;font-weight:700;color:var(--primary);
+                                            border-right:2px solid #e0e6ed;vertical-align:top;" rowspan="${pacs.length}">
+                            <div>${a.nombre_completo}</div>
+                            <div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap;">
+                                <button onclick="seleccionarAlumnoIngresoCurso('${a.usuario}','${curso}')"
+                                        style="padding:3px 9px;background:var(--admin);color:white;border:none;
+                                               border-radius:5px;cursor:pointer;font-size:0.7rem;font-weight:700;">✏️ Editar</button>
+                                <span style="background:${promCol};color:white;padding:2px 8px;border-radius:10px;font-weight:700;font-size:0.75rem;">
+                                    ${prom!==null?prom.toFixed(2):'—'}/20</span>
+                            </div>
+                        </td>
+                        <td style="padding:7px 8px;text-align:center;color:#888;vertical-align:top;
+                                   border-right:2px solid #e0e6ed;" rowspan="${pacs.length}">${a.codigo||a.usuario}</td>`;
+                        firstRow = false;
+                    }
+
+                    const pacNom = pac.paciente || `Paciente ${pi}`;
+                    const pacDni = pac.dni ? `<div style="font-size:0.68rem;color:#aaa;">${pac.dni}</div>` : '';
+                    html += `<td style="padding:5px 10px;border-right:1px solid #f0f2f5;">
+                                <div style="font-weight:600;color:var(--primary);">${pacNom}</div>${pacDni}</td>
+                             <td style="padding:5px 8px;text-align:center;">
+                                <span style="font-size:0.68rem;background:${col}18;color:${col};
+                                             padding:1px 6px;border-radius:8px;font-weight:700;">${g.nombre}</span></td>
+                             <td style="padding:5px 8px;text-align:center;font-weight:700;color:#0288D1;">
+                                ${evV!==null?evV.toFixed(1):'<span style="color:#ccc;">—</span>'}</td>
+                             <td style="padding:5px 8px;text-align:center;color:${col};font-weight:600;">
+                                ${promSS.toFixed(2)}<span style="color:#aaa;font-size:0.68rem;">/${nSS}</span></td>`;
+                    if (tieneExtra) {
+                        html += `<td style="padding:5px 8px;text-align:center;color:#D97706;font-weight:600;">
+                            ${promExt!==null?promExt.toFixed(2)+(nExt>0?`<span style="color:#aaa;font-size:0.68rem;">/${nExt}</span>`:''):'<span style="color:#ccc;">—</span>'}</td>`;
+                    }
+                    html += `<td style="padding:5px 8px;text-align:center;">
+                                <span style="background:${pacCol};color:${pacFc};padding:3px 8px;border-radius:8px;font-weight:700;">
+                                    ${notaPac!==null?notaPac.toFixed(2):'—'}</span></td>`;
+                    html += `</tr>`;
+                }
+            });
+        });
+
+        html += `</tbody></table></div>`;
+        tabEl.innerHTML = html;
+    }
+
+    /** Selecciona alumno en el selector y carga su panel de edición */
+    function seleccionarAlumnoIngresoCurso(alumnoUsuario, curso) {
+        const sel = document.getElementById('ingreso-alumno-sel');
+        if (sel) { sel.value = alumnoUsuario; cargarPanelNotasAlumno(curso); }
+        // Scroll suave al panel de edición
+        setTimeout(()=>{
+            const area = document.getElementById('ingreso-notas-area');
+            if (area) area.scrollIntoView({behavior:'smooth',block:'start'});
+        }, 150);
     }
 
     function filtrarSelectAlumnoIngreso(curso, q) {
@@ -1069,6 +1286,8 @@
         } catch(e){}
         showLoad(false);
         mostrarNotificacion(`✅ Notas de ${alumnoObj?.nombre_completo||alumnoUsuario} guardadas`);
+        // Refrescar tabla-resumen del curso
+        renderResumenCurso(curso);
     }
 
     async function guardarNotasCurso(curso) {
@@ -1502,14 +1721,25 @@
     function _buildFilasExport(filtroCurso, filtroAlumno) {
         const alumnos = (CENTYR.db.usuarios||[]).filter(u => u.rol==='alumno' &&
             (!filtroAlumno || u.usuario===filtroAlumno));
-        const cursos  = (CENTYR.db.estructuras_cursos||[]).map(e=>e.curso)
-            .filter(c => !filtroCurso || c===filtroCurso);
 
         const filas = [];
         alumnos.forEach(a => {
-            const cursosAlumno = filtroCurso ? [filtroCurso] :
-                (a.cursos?.length ? a.cursos.filter(c=>cursos.includes(c)) : cursos);
-            cursosAlumno.forEach(curso => {
+            // SOLO los cursos explícitamente asignados al alumno
+            const cursosAsignados = (a.cursos || []).filter(c =>
+                !filtroCurso || c === filtroCurso
+            );
+
+            if (!cursosAsignados.length) {
+                // Si hay filtro de curso activo y el alumno no lo tiene, no aparece
+                if (filtroCurso) return;
+                // Sin asignación y sin filtro: no incluir (no "todos los cursos")
+                return;
+            }
+
+            cursosAsignados.forEach(curso => {
+                // Verificar que el curso todavía existe como estructura
+                const est = (CENTYR.db.estructuras_cursos||[]).find(e=>e.curso===curso);
+                if (!est) return;
                 const prom = _calcularPromedioFinalAlumno(a.usuario, curso);
                 filas.push({
                     apellidos_nombres: a.nombre_completo,
@@ -1613,9 +1843,11 @@
         // Asignación de cursos
         renderListaAsignacion, filtrarListaAsignacion,
         toggleAsignacionCurso, guardarAsignacionCursos,
+        // Resumen y edición del modal de notas
+        renderResumenCurso, seleccionarAlumnoIngresoCurso,
         // Exportar notas finales
         previsualizarExportNotas, exportarNotasFinalesCSV,
-        // Helpers grupo editor (necesarios en window para onchange inline)
+        // Helpers grupo editor
         _actualizarResumenGrupo, _actualizarPacsResumen,
         descargarCSV, exportarResumenGeneral, exportarNotasPorAlumno, exportarNotasPorPaciente
     };
