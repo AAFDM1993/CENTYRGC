@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Planillas Clinicas - Fisioterapia v9</title>
+<title>CENTYR - Centro Docente de Terapia Fisica UPT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -28,7 +28,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 .cpill.ok{border-color:rgba(5,150,105,.35)}.cpill.ok .clabel{color:#6ee7b7}
 #loginPage{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--n900) 0%,#0d2347 60%,#162d5a 100%)}
 .login-card{background:rgba(255,255,255,.06);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);border-radius:18px;padding:44px 40px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.4)}
-.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:32px;justify-content:center}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px;justify-content:center;flex-wrap:wrap}
 .login-logo .lmark{width:44px;height:44px;font-size:18px}
 .login-logo h2{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:#fff}.login-logo p{font-size:12px;color:var(--n300)}
 .login-field{margin-bottom:16px}.login-field label{display:block;font-size:11px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
@@ -186,7 +186,11 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 
 <div id="loginPage">
   <div class="login-card">
-    <div class="login-logo"><div class="lmark">FT</div><div><h2>Planillas Clinicas</h2><p>Fisioterapia - Sistema de notas</p></div></div>
+    <div class="login-logo" style="flex-direction:column;gap:16px;text-align:center">
+      <img id="logoLogin" src="" alt="CENTYR" style="width:250px;height:auto;object-fit:contain;display:none;border-radius:10px;margin:0 auto">
+      <div class="lmark" id="logoLoginFallback" style="width:60px;height:60px;font-size:22px;margin:0 auto">FT</div>
+      <div><h2>CENTYR</h2><p>Centro Docente de Terapia Fisica - UPT</p></div>
+    </div>
     <div class="login-field"><label>Codigo</label><input class="login-inp" id="lgCode" placeholder="Codigo de usuario" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <div class="login-field"><label>Contrasena</label><input class="login-inp" id="lgPass" type="password" placeholder="**********" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="btn-login" onclick="doLogin()">Ingresar</button>
@@ -198,7 +202,11 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 <div id="appPage">
   <header>
     <div class="hdr">
-      <div class="logo"><div class="lmark">FT</div><div><h1>Planillas Clinicas</h1><p>Fisioterapia</p></div></div>
+      <div class="logo">
+        <img id="logoImg" src="" alt="CENTYR" style="height:38px;width:auto;object-fit:contain;border-radius:6px;display:none">
+        <div class="lmark" id="logoFallback">FT</div>
+        <div><h1>CENTYR</h1><p>Centro Docente de Terapia Fisica - UPT</p></div>
+      </div>
       <div class="hdr-right">
         <div class="cpill" id="cpill"><div class="dot" id="cdot"></div><span class="clabel" id="clabel">-</span></div>
         <div class="rol-pill"><div class="rdot" id="rolDot"></div><span id="rolLabel">-</span></div>
@@ -259,7 +267,20 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
             </div>
             <div class="field"><label>Nombre de la hoja</label><input class="inp" id="cfgHoja" placeholder="Ej. MyT II 2025-I"></div>
             <input type="hidden" id="scApro" value="11">
-            <div style="margin-top:14px;background:var(--n900);border-radius:10px;padding:13px 16px">
+            <div class="slbl" style="margin-top:4px">Logo institucional</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+              <div style="width:80px;height:50px;border:1px dashed var(--bd);border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--surf2);flex-shrink:0;overflow:hidden" id="logoPreviewBox">
+                <img id="logoPreview" style="max-width:100%;max-height:100%;object-fit:contain;display:none" alt="Logo">
+                <span style="font-size:10px;color:var(--tx4);text-align:center" id="logoPreviewTxt">Sin logo</span>
+              </div>
+              <div style="flex:1">
+                <button class="btn-ghost" style="width:100%;margin-bottom:6px" onclick="document.getElementById('logoFileIn').click()">Subir logo (PNG/JPG)</button>
+                <button class="btn-ghost" style="width:100%;font-size:11px;color:var(--red)" onclick="clearLogo()">Quitar logo</button>
+              </div>
+            </div>
+            <input id="logoFileIn" type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp" style="display:none" onchange="loadLogo(event)">
+            <div class="hint-b" style="font-size:11px;margin-bottom:10px"><span>i</span><span>El logo se guardara localmente en el navegador. Tamano recomendado: 250px de ancho.</span></div>
+            <div style="margin-top:2px;background:var(--n900);border-radius:10px;padding:13px 16px">
               <div style="font-size:11px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Formula por subgrupo</div>
               <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--n200);line-height:1.9">PROM = PROM(notas) x (ejecutadas / programadas)<br><span style="color:var(--n300)">ejecutadas = SS + Extra ingresados</span></div>
             </div>
@@ -364,7 +385,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 <script>
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwFaiaSgLdl8W0IrbNVs1pJWvocTVZXM0YJPNj00oiKXBMWjbXRlcGYjWRG9Bob4Gf9-w/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwMlikwKaOBJwt0Vjn6DQr8yXCzRAHEnIcrdDz5n7BqsIysgr9XojZI6Wl095s288aXYQ/exec';
 // ====================================================
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
@@ -961,6 +982,37 @@ tbody td{padding:7px 11px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
   win.document.write(htmlPDF);
   win.document.close();
 }
+
+
+// ── LOGO ─────────────────────────────────────────────────────
+function loadLogo(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const dataUrl=ev.target.result;
+    localStorage.setItem('centyr_logo',dataUrl);
+    applyLogo(dataUrl);
+  };
+  reader.readAsDataURL(file);
+  e.target.value='';
+}
+function clearLogo(){
+  localStorage.removeItem('centyr_logo');
+  applyLogo(null);
+}
+function applyLogo(dataUrl){
+  // Header
+  const img=g('logoImg'),fb=g('logoFallback');
+  if(img&&fb){if(dataUrl){img.src=dataUrl;img.style.display='';fb.style.display='none'}else{img.src='';img.style.display='none';fb.style.display=''}}
+  // Login
+  const limg=g('logoLogin'),lfb=g('logoLoginFallback');
+  if(limg&&lfb){if(dataUrl){limg.src=dataUrl;limg.style.display='';lfb.style.display='none'}else{limg.src='';limg.style.display='none';lfb.style.display=''}}
+  // Preview en config
+  const prev=g('logoPreview'),prevTxt=g('logoPreviewTxt');
+  if(prev&&prevTxt){if(dataUrl){prev.src=dataUrl;prev.style.display='';prevTxt.style.display='none'}else{prev.src='';prev.style.display='none';prevTxt.style.display=''}}
+}
+// Aplicar logo guardado al cargar
+(function(){const saved=localStorage.getItem('centyr_logo');if(saved)applyLogo(saved);})();
 
 </script>
 </body>
