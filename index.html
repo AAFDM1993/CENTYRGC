@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planillas Clínicas · Fisioterapia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+/* ── RESET & TOKENS ─────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--s1:#161b22;--s2:#21262d;--bd:#30363d;
+  --or:#f97316;--or2:#fed7aa;--bl:#3b82f6;--bl2:#dbeafe;
+  --gn:#22c55e;--gn2:#f0fdf4;--gn3:#15803d;
+  --tx:#e6edf3;--tx2:#8b949e;--tx3:#6e7681;
+  --red:#ef4444;--yl:#f59e0b;
+  --r:10px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--tx);font-family:'Lato',sans-serif;font-size:14px;min-height:100vh}
+a{color:var(--or);text-decoration:none}
+button{font-family:'Lato',sans-serif;cursor:pointer}
+input,select,textarea{font-family:'Lato',sans-serif}
+
+/* ── SCROLLBAR ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
+
+/* ── HEADER ─────────────────────────────────────────────────────────────── */
+header{
+  background:var(--s1);border-bottom:1px solid var(--bd);
+  position:sticky;top:0;z-index:200;
+}
+.hdr-inner{
+  max-width:1180px;margin:0 auto;padding:14px 24px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+}
+.logo{display:flex;align-items:center;gap:14px}
+.logo-mark{
+  width:42px;height:42px;border-radius:11px;background:var(--or);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#fff;
+  box-shadow:0 0 0 3px rgba(249,115,22,.2);
+}
+.logo h1{font-family:'Syne',sans-serif;font-weight:800;font-size:19px;letter-spacing:-.5px}
+.logo p{font-size:12px;color:var(--tx2);margin-top:2px}
+
+/* URL bar */
+.url-bar{
+  display:flex;align-items:center;gap:8px;
+  background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:7px 14px;
+  min-width:300px;
+}
+.url-bar .dot{width:8px;height:8px;border-radius:50%;background:var(--tx3);flex-shrink:0;transition:all .3s}
+.url-bar .dot.ok{background:var(--gn);box-shadow:0 0 6px var(--gn)}
+.url-bar .dot.err{background:var(--red)}
+#urlInput{
+  background:none;border:none;color:var(--tx);font-family:'DM Mono',monospace;font-size:12px;
+  outline:none;flex:1;min-width:200px;
+}
+#urlInput::placeholder{color:var(--tx3)}
+#btnConectar{
+  background:var(--or);color:#fff;border:none;border-radius:7px;
+  padding:6px 14px;font-size:12px;font-weight:700;white-space:nowrap;
+  transition:opacity .2s;
+}
+#btnConectar:hover{opacity:.85}
+
+/* ── LAYOUT ─────────────────────────────────────────────────────────────── */
+.main{max-width:1180px;margin:0 auto;padding:28px 24px;display:grid;grid-template-columns:310px 1fr;gap:22px;align-items:start}
+
+/* ── PANEL / CARD ───────────────────────────────────────────────────────── */
+.panel,.card{background:var(--s1);border:1px solid var(--bd);border-radius:14px;overflow:hidden}
+.panel-hdr,.card-hdr{
+  background:var(--s2);padding:13px 18px;border-bottom:1px solid var(--bd);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.panel-hdr h2,.card-hdr h2{font-family:'Syne',sans-serif;font-weight:700;font-size:13px}
+.panel-body,.card-body{padding:18px}
+
+/* ── TABS ───────────────────────────────────────────────────────────────── */
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--bd)}
+.tab{
+  background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--tx2);font-family:'Syne',sans-serif;font-weight:700;font-size:11px;
+  padding:11px 6px;transition:all .2s;letter-spacing:.3px;
+}
+.tab:hover{color:var(--tx)}
+.tab.on{color:var(--or);border-bottom-color:var(--or);background:rgba(249,115,22,.05)}
+.tab-pane{padding:16px;display:none}
+.tab-pane.on{display:block}
+
+/* ── FORM ───────────────────────────────────────────────────────────────── */
+.field{margin-bottom:13px}
+.field label,.lbl{
+  display:block;font-size:11px;font-weight:700;color:var(--tx2);
+  text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;
+}
+.inp{
+  width:100%;background:var(--bg);border:1px solid var(--bd);border-radius:8px;
+  color:var(--tx);font-size:13px;padding:9px 12px;outline:none;transition:border-color .2s;
+}
+.inp:focus{border-color:var(--or)}
+.row2{display:flex;gap:10px}
+.row2 .field{flex:1;margin-bottom:0}
+
+/* ── UPLOAD ─────────────────────────────────────────────────────────────── */
+.upload{
+  border:2px dashed var(--bd);border-radius:10px;padding:18px;
+  text-align:center;cursor:pointer;transition:all .2s;
+}
+.upload:hover{border-color:var(--or);background:rgba(249,115,22,.04)}
+.upload .ico{font-size:26px;margin-bottom:6px}
+.upload p{font-size:13px;color:var(--tx2)}
+.upload small{font-size:11px;color:var(--tx3);display:block;margin-top:3px}
+
+/* ── STUDENT LIST ───────────────────────────────────────────────────────── */
+.stu-list{max-height:210px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;margin-top:10px}
+.stu-item{
+  display:flex;align-items:center;gap:8px;
+  background:var(--bg);border:1px solid var(--bd);border-radius:7px;padding:7px 10px;
+}
+.stu-n{font-family:'DM Mono',monospace;font-size:10px;color:var(--tx3);min-width:20px}
+.stu-name{flex:1;font-size:13px}
+.stu-code{font-family:'DM Mono',monospace;font-size:10px;color:var(--or)}
+.stu-del{background:none;border:none;color:var(--tx3);font-size:12px;transition:color .2s;padding:0 2px}
+.stu-del:hover{color:var(--red)}
+.empty{text-align:center;padding:18px;color:var(--tx3);font-size:13px}
+
+/* ── COURSES ────────────────────────────────────────────────────────────── */
+.sec-lbl{
+  font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;
+  margin:12px 0 9px;display:flex;align-items:center;gap:8px;
+}
+.sec-lbl::after{content:'';flex:1;height:1px;background:var(--bd)}
+.crs-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.crs{
+  display:flex;align-items:center;gap:8px;
+  background:var(--bg);border:1px solid var(--bd);border-radius:8px;
+  padding:8px 10px;cursor:pointer;transition:all .2s;user-select:none;
+}
+.crs:hover{border-color:var(--or)}
+.crs.on{border-color:var(--or);background:rgba(249,115,22,.08)}
+.crs .ck{
+  width:15px;height:15px;border:2px solid var(--bd);border-radius:4px;
+  display:flex;align-items:center;justify-content:center;font-size:9px;
+  font-weight:700;flex-shrink:0;transition:all .2s;
+}
+.crs.on .ck{background:var(--or);border-color:var(--or);color:#fff}
+.crs span{font-size:12px;font-weight:700;color:var(--tx2);font-family:'DM Mono',monospace}
+.crs.on span{color:var(--or)}
+
+/* ── SCORES GRID ────────────────────────────────────────────────────────── */
+.scores-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:13px}
+.sc-ctrl label{font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:6px}
+.sc-wrap{
+  display:flex;align-items:center;gap:8px;
+  background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;
+}
+.sc-wrap input{
+  background:none;border:none;color:var(--tx);font-family:'DM Mono',monospace;
+  font-size:16px;font-weight:500;width:50px;outline:none;text-align:center;
+}
+.sc-unit{font-size:12px;color:var(--tx3);white-space:nowrap}
+.sc-wrap.ro{opacity:.55}
+.sc-val{font-family:'DM Mono',monospace;font-size:16px;font-weight:500;width:50px;text-align:center}
+
+.formula{
+  margin-top:16px;background:var(--bg);border:1px solid var(--bd);
+  border-radius:10px;padding:14px 18px;
+}
+.formula h4{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
+.fl{display:flex;align-items:center;gap:12px;margin-bottom:7px;font-family:'DM Mono',monospace;font-size:12px}
+.fl-lbl{color:var(--tx2);min-width:170px}
+.or-t{color:var(--or);font-weight:500}
+.bl-t{color:var(--bl);font-weight:500}
+.gn-t{color:var(--gn);font-size:11px}
+.formula-res{
+  margin-top:10px;padding-top:10px;border-top:1px dashed var(--bd);
+  font-family:'DM Mono',monospace;font-size:12px;color:var(--tx);line-height:1.6;
+}
+.formula-res strong{color:var(--gn)}
+
+/* ── TABLE ──────────────────────────────────────────────────────────────── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:540px}
+thead tr{background:var(--s2)}
+th{
+  padding:9px 11px;text-align:left;
+  font-family:'Syne',sans-serif;font-size:10px;font-weight:700;
+  color:var(--tx2);text-transform:uppercase;letter-spacing:.8px;
+  white-space:nowrap;border-bottom:1px solid var(--bd);
+}
+th.t-or{color:var(--or)}th.t-bl{color:var(--bl)}th.t-gn{color:var(--gn)}
+td{padding:8px 11px;border-bottom:1px solid rgba(48,54,61,.4);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr.odd td{background:rgba(255,255,255,.015)}
+tr:hover td{background:rgba(249,115,22,.03)}
+td.mn{font-family:'DM Mono',monospace;font-size:11px;color:var(--tx2)}
+td.ctr{text-align:center}
+.sbox{
+  display:inline-block;min-width:26px;
+  background:var(--s2);border:1px solid var(--bd);border-radius:4px;
+  padding:2px 5px;font-family:'DM Mono',monospace;font-size:10px;
+  color:var(--tx3);text-align:center;
+}
+.sbox.o{background:rgba(249,115,22,.1);border-color:rgba(249,115,22,.3);color:var(--or)}
+.sbox.b{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);color:var(--bl)}
+.sbox.g{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:var(--gn);font-weight:700}
+
+/* ── SHEETS LIST ────────────────────────────────────────────────────────── */
+.sheet-card{
+  display:flex;align-items:center;gap:12px;
+  background:var(--bg);border:1px solid var(--bd);border-radius:9px;
+  padding:11px 14px;margin-bottom:8px;cursor:pointer;transition:all .2s;
+}
+.sheet-card:hover{border-color:var(--or);background:rgba(249,115,22,.04)}
+.sheet-icon{font-size:20px;flex-shrink:0}
+.sheet-info{flex:1}
+.sheet-name{font-weight:700;font-size:13px;color:var(--tx)}
+.sheet-meta{font-size:11px;color:var(--tx3);margin-top:2px;font-family:'DM Mono',monospace}
+.sheet-del{background:none;border:none;color:var(--tx3);font-size:14px;transition:color .2s;padding:4px}
+.sheet-del:hover{color:var(--red)}
+
+/* ── BUTTONS ────────────────────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  border:none;border-radius:10px;padding:13px 28px;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:14px;
+  cursor:pointer;transition:all .2s;white-space:nowrap;
+}
+.btn-main{background:var(--or);color:#fff}
+.btn-main:hover:not(:disabled){opacity:.9;transform:translateY(-2px);box-shadow:0 8px 24px rgba(249,115,22,.3)}
+.btn-main:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn-sm{
+  background:var(--or);color:#fff;border:none;border-radius:8px;
+  padding:8px 13px;font-size:12px;font-weight:700;cursor:pointer;
+  transition:opacity .2s;flex-shrink:0;white-space:nowrap;
+}
+.btn-sm:hover{opacity:.85}
+.btn-ghost{
+  background:transparent;border:1px solid var(--bd);color:var(--tx2);
+  border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;
+}
+.btn-ghost:hover{border-color:var(--or);color:var(--or)}
+
+.badge{
+  font-family:'DM Mono',monospace;font-size:11px;padding:3px 10px;
+  border-radius:20px;background:rgba(249,115,22,.15);color:var(--or);
+  border:1px solid rgba(249,115,22,.3);
+}
+.hint{
+  display:flex;align-items:flex-start;gap:8px;
+  background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);
+  border-radius:9px;padding:11px 14px;font-size:12px;color:#fbbf24;line-height:1.6;
+}
+
+.row-btw{display:flex;align-items:center;justify-content:space-between;gap:10px}
+
+/* ── TOAST ──────────────────────────────────────────────────────────────── */
+#toast{
+  position:fixed;bottom:26px;right:26px;
+  background:var(--s2);border:1px solid var(--bd);border-left:3px solid var(--or);
+  border-radius:10px;padding:12px 18px;font-size:13px;color:var(--tx);
+  z-index:999;max-width:320px;opacity:0;transform:translateY(60px);
+  transition:all .3s cubic-bezier(.175,.885,.32,1.275);pointer-events:none;
+}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast.err{border-left-color:var(--red)}
+#toast.ok{border-left-color:var(--gn)}
+#toast.warn{border-left-color:var(--yl)}
+.t-title{font-weight:700;margin-bottom:2px}
+.t-msg{color:var(--tx2);font-size:12px}
+
+/* ── LOADER ─────────────────────────────────────────────────────────────── */
+#loader{
+  position:fixed;inset:0;background:rgba(13,17,23,.85);
+  display:none;align-items:center;justify-content:center;z-index:500;
+  flex-direction:column;gap:16px;
+}
+#loader.show{display:flex}
+#loader p{font-family:'Syne',sans-serif;font-size:15px;color:var(--tx)}
+.ld-ring{
+  width:48px;height:48px;border:3px solid var(--bd);border-top-color:var(--or);
+  border-radius:50%;animation:rot .8s linear infinite;
+}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ── RESPONSIVE ─────────────────────────────────────────────────────────── */
+@media(max-width:900px){
+  .main{grid-template-columns:1fr}
+  .hdr-inner{flex-wrap:wrap;padding:12px 16px}
+  .url-bar{min-width:unset;width:100%}
+  .main{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="ld-ring"></div>
+  <p id="loaderMsg">Procesando…</p>
+</div>
+
+<header>
+  <div class="hdr-inner">
+    <div class="logo">
+      <div class="logo-mark">FT</div>
+      <div>
+        <h1>Planillas Clínicas</h1>
+        <p>Fisioterapia · Google Sheets</p>
+      </div>
+    </div>
+    <div class="url-bar">
+      <div class="dot" id="connDot"></div>
+      <input id="urlInput" type="text" placeholder="URL de tu Apps Script Web App…">
+      <button id="btnConectar" onclick="conectar()">Conectar</button>
+    </div>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div style="display:flex;flex-direction:column;gap:18px">
+    <div class="panel">
+      <div class="tabs">
+        <button class="tab on"  onclick="switchTab('alumnos',this)">👤 Alumnos</button>
+        <button class="tab"     onclick="switchTab('config',this)">⚙️ Config</button>
+        <button class="tab"     onclick="switchTab('sheets',this)">📋 Mis hojas</button>
+      </div>
+
+      <!-- ALUMNOS -->
+      <div class="tab-pane on" id="tab-alumnos">
+        <div class="upload" onclick="document.getElementById('csvIn').click()">
+          <div class="ico">📂</div>
+          <p>Subir lista CSV / TXT</p>
+          <small>CÓDIGO, APELLIDOS Y NOMBRES</small>
+        </div>
+        <input id="csvIn" type="file" accept=".csv,.txt" style="display:none" onchange="loadCSV(event)">
+        <div class="row2" style="margin-top:12px">
+          <input class="inp" id="mCode" placeholder="Código" style="width:88px">
+          <input class="inp" id="mName" placeholder="Apellidos y Nombres" style="flex:1"
+            onkeydown="if(event.key==='Enter')addManual()">
+          <button class="btn-sm" onclick="addManual()">＋</button>
+        </div>
+        <div class="stu-list" id="stuList">
+          <div class="empty">Sin alumnos cargados</div>
+        </div>
+        <div class="row-btw" style="margin-top:8px">
+          <span style="font-size:12px;color:var(--tx3)" id="stuCount">0 alumnos</span>
+          <button class="btn-ghost" onclick="clearStudents()">Limpiar</button>
+        </div>
+      </div>
+
+      <!-- CONFIG -->
+      <div class="tab-pane" id="tab-config">
+        <div class="field">
+          <label>Docente Clínico</label>
+          <input class="inp" id="cfgDocente" placeholder="Nombre del docente">
+        </div>
+        <div class="field">
+          <label>Asignatura / Rotación</label>
+          <input class="inp" id="cfgAsig" value="Técnicas y métodos de fisioterapia II">
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Semestre</label>
+            <input class="inp" id="cfgSem" value="2025-I" style="width:100%">
+          </div>
+          <div class="field">
+            <label>Sección</label>
+            <input class="inp" id="cfgSec" value="MyT II" style="width:100%">
+          </div>
+        </div>
+        <div class="sec-lbl">Cursos disponibles</div>
+        <div class="crs-grid" id="crsGrid"></div>
+        <div class="row2" style="margin-top:10px">
+          <input class="inp" id="newCrs" placeholder="Nuevo curso…" style="flex:1"
+            onkeydown="if(event.key==='Enter')addCourse()">
+          <button class="btn-sm" onclick="addCourse()">Agregar</button>
+        </div>
+      </div>
+
+      <!-- SHEETS -->
+      <div class="tab-pane" id="tab-sheets">
+        <div id="sheetsContent">
+          <div class="hint">
+            <span>🔗</span>
+            <span>Conecta tu Apps Script Web App para ver y gestionar las hojas de tu Google Sheet.</span>
+          </div>
+        </div>
+        <div style="margin-top:10px">
+          <button class="btn-ghost" style="width:100%" onclick="loadSheets()">↺ Actualizar lista</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div style="display:flex;flex-direction:column;gap:18px">
+
+    <!-- CALIFICACIONES -->
+    <div class="card">
+      <div class="card-hdr">
+        <h2>⚙️ Configuración de Calificaciones</h2>
+        <span class="badge" id="notasBadge">12 base + 3 extra</span>
+      </div>
+      <div class="card-body">
+        <div class="scores-grid">
+          <div class="sc-ctrl">
+            <label>Notas base (100%)</label>
+            <div class="sc-wrap">
+              <input type="number" id="scBase" value="12" min="1" max="30" oninput="recalc()">
+              <span class="sc-unit">atenciones</span>
+            </div>
+          </div>
+          <div class="sc-ctrl">
+            <label>% notas extra</label>
+            <div class="sc-wrap">
+              <input type="number" id="scExtraPct" value="20" min="0" max="50" oninput="recalc()">
+              <span class="sc-unit">%</span>
+            </div>
+          </div>
+          <div class="sc-ctrl">
+            <label>Peso evaluación</label>
+            <div class="sc-wrap">
+              <input type="number" id="scEvalW" value="10" min="0" max="50" oninput="recalc()">
+              <span class="sc-unit">%</span>
+            </div>
+          </div>
+          <div class="sc-ctrl">
+            <label>Nota máxima</label>
+            <div class="sc-wrap">
+              <input type="number" id="scMax" value="20" min="10" max="20" oninput="recalc()">
+              <span class="sc-unit">pts</span>
+            </div>
+          </div>
+          <div class="sc-ctrl">
+            <label>Nota aprobatoria</label>
+            <div class="sc-wrap">
+              <input type="number" id="scMin" value="11" min="1" max="20" oninput="recalc()">
+              <span class="sc-unit">pts</span>
+            </div>
+          </div>
+          <div class="sc-ctrl">
+            <label>Notas extra (auto)</label>
+            <div class="sc-wrap ro">
+              <span class="sc-val" id="scExtraVal">3</span>
+              <span class="sc-unit">atenciones</span>
+            </div>
+          </div>
+        </div>
+        <div class="formula">
+          <h4>📐 Fórmula del promedio final</h4>
+          <div id="formulaDisplay"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VISTA PREVIA -->
+    <div class="card">
+      <div class="card-hdr">
+        <h2>👁 Vista Previa</h2>
+        <span class="badge" id="prevBadge">0 alumnos</span>
+      </div>
+      <div class="card-body" style="padding:0">
+        <div class="tbl-wrap">
+          <table>
+            <thead><tr id="tHead"></tr></thead>
+            <tbody id="tBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- GENERAR -->
+    <div class="card">
+      <div class="card-hdr"><h2>📊 Generar en Google Sheets</h2></div>
+      <div class="card-body">
+        <div class="field">
+          <label>Nombre de la hoja (pestaña)</label>
+          <input class="inp" id="nombreHoja" placeholder="Ej. MyT II — Fisioterapia 2025-I">
+        </div>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:4px">
+          <button class="btn btn-main" id="btnGenerar" onclick="generarPlanilla()" disabled>
+            📊 Generar planilla en Sheets
+          </button>
+          <div id="noConnHint" class="hint" style="font-size:12px;padding:8px 12px">
+            🔗 Conecta tu Apps Script primero
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"><div class="t-title" id="tTitle"></div><div class="t-msg" id="tMsg"></div></div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let students  = [];
+let scriptUrl = localStorage.getItem('ftScriptUrl') || '';
+let connected = false;
+let courses = [
+  {id:'myt1',label:'MyT I',on:false},
+  {id:'myt2',label:'MyT II',on:true},
+  {id:'myt3',label:'MyT III',on:false},
+  {id:'fis1',label:'Fisio I',on:false},
+  {id:'fis2',label:'Fisio II',on:false},
+  {id:'kine',label:'Kinesiología',on:false},
+];
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+window.onload = () => {
+  if (scriptUrl) document.getElementById('urlInput').value = scriptUrl;
+  renderCourses();
+  recalc();
+  if (scriptUrl) conectar(true);
+};
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+  document.getElementById('tab-' + id).classList.add('on');
+  btn.classList.add('on');
+  if (id === 'sheets' && connected) loadSheets();
+}
+
+// ── CONNECT ───────────────────────────────────────────────────────────────────
+async function conectar(silent = false) {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) { toast('URL requerida', 'Pega la URL de tu Apps Script Web App', 'warn'); return; }
+  scriptUrl = url;
+  localStorage.setItem('ftScriptUrl', url);
+  if (!silent) showLoader('Verificando conexión…');
+  try {
+    const res = await apiGet('ping');
+    if (res.ok) {
+      connected = true;
+      setDot('ok');
+      document.getElementById('btnGenerar').disabled = false;
+      document.getElementById('noConnHint').style.display = 'none';
+      if (!silent) toast('Conectado ✓', 'Apps Script respondió correctamente', 'ok');
+      loadSheets();
+    } else throw new Error(res.error || 'Sin respuesta válida');
+  } catch(e) {
+    connected = false;
+    setDot('err');
+    toast('Error de conexión', e.message, 'err');
+  }
+  if (!silent) hideLoader();
+}
+
+function setDot(s) {
+  document.getElementById('connDot').className = 'dot ' + (s||'');
+}
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function apiGet(action, params={}) {
+  const qs = new URLSearchParams({action,...params}).toString();
+  const r  = await fetch(`${scriptUrl}?${qs}`);
+  return r.json();
+}
+async function apiPost(body) {
+  const r = await fetch(scriptUrl, {method:'POST', body:JSON.stringify(body)});
+  return r.json();
+}
+
+// ── LOAD SHEETS ───────────────────────────────────────────────────────────────
+async function loadSheets() {
+  if (!connected) return;
+  const box = document.getElementById('sheetsContent');
+  box.innerHTML = '<div class="empty" style="padding:20px">Cargando hojas…</div>';
+  try {
+    const res = await apiGet('listarHojas');
+    if (!res.ok) throw new Error(res.error);
+    if (!res.hojas.length) {
+      box.innerHTML = '<div class="empty">No hay hojas todavía. ¡Genera tu primera planilla!</div>';
+      return;
+    }
+    box.innerHTML = res.hojas.map(h => `
+      <div class="sheet-card" onclick="verHoja('${esc(h.nombre)}')">
+        <div class="sheet-icon">📋</div>
+        <div class="sheet-info">
+          <div class="sheet-name">${h.nombre}</div>
+          <div class="sheet-meta">${h.filas} alumno${h.filas!==1?'s':''} · ${h.cols} col.</div>
+        </div>
+        <button class="sheet-del" title="Eliminar" onclick="event.stopPropagation();eliminarHoja('${esc(h.nombre)}')">🗑</button>
+      </div>`).join('');
+  } catch(e) {
+    box.innerHTML = `<div class="hint">⚠️ ${e.message}</div>`;
+  }
+}
+
+async function verHoja(nombre) {
+  showLoader('Cargando datos de la hoja…');
+  try {
+    const res = await apiGet('leerHoja', {hoja: nombre});
+    hideLoader();
+    if (!res.ok) throw new Error(res.error);
+    const w = window.open('', '_blank', 'width=960,height=640,scrollbars=yes');
+    const ths = res.cabeceras.map(h => `<th style="padding:8px 10px;background:#1f2937;color:#fff;font-size:11px;white-space:nowrap;border:1px solid #374151">${h}</th>`).join('');
+    const rows = res.alumnos.map((a,i) =>
+      `<tr style="background:${i%2===0?'#f9fafb':'#fff'}">${res.cabeceras.map(h=>`<td style="padding:6px 10px;border:1px solid #e5e7eb;font-size:12px">${a[h]??''}</td>`).join('')}</tr>`
+    ).join('');
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${nombre}</title></head>
+      <body style="font-family:sans-serif;padding:24px;background:#f3f4f6">
+      <h2 style="margin-bottom:6px;color:#111">${nombre}</h2>
+      <p style="color:#6b7280;font-size:13px;margin-bottom:18px">${res.meta||''}</p>
+      <div style="overflow-x:auto"><table style="border-collapse:collapse">
+      <thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table></div>
+      </body></html>`);
+  } catch(e) { hideLoader(); toast('Error', e.message, 'err'); }
+}
+
+async function eliminarHoja(nombre) {
+  if (!confirm(`¿Eliminar la hoja "${nombre}"?`)) return;
+  showLoader('Eliminando…');
+  try {
+    const res = await apiPost({action:'eliminarHoja', hoja:nombre});
+    hideLoader();
+    if (!res.ok) throw new Error(res.error);
+    toast('Hoja eliminada', nombre, 'ok');
+    loadSheets();
+  } catch(e) { hideLoader(); toast('Error', e.message, 'err'); }
+}
+
+// ── GENERATE ─────────────────────────────────────────────────────────────────
+async function generarPlanilla() {
+  if (!connected)         { toast('Sin conexión','Conecta Apps Script primero','warn'); return; }
+  if (!students.length)   { toast('Sin alumnos','Agrega alumnos antes de generar','warn'); return; }
+  const cursos = courses.filter(c=>c.on).map(c=>c.label);
+  if (!cursos.length)     { toast('Sin cursos','Selecciona al menos un curso','warn'); return; }
+
+  const base     = +v('scBase')     || 12;
+  const extraPct = +v('scExtraPct') || 20;
+  const evalW    = (+v('scEvalW')   || 10) / 100;
+  const extra    = Math.round(base * extraPct / 100);
+  const ssW      = parseFloat((1 - evalW).toFixed(2));
+  const nombre   = v('nombreHoja') || (v('cfgSec') + ' — ' + v('cfgAsig').substring(0,18));
+
+  showLoader('Creando planilla en Google Sheets…');
+  try {
+    const res = await apiPost({
+      action:'crearPlanilla',
+      nombreHoja: nombre,
+      config:{
+        docente:    v('cfgDocente') || 'Docente',
+        asignatura: v('cfgAsig'),
+        semestre:   v('cfgSem'),
+        seccion:    v('cfgSec'),
+        notasBase:  base,
+        notasExtra: extra,
+        pesoSS:     ssW,
+        pesoEV:     evalW,
+        notaMax:    +v('scMax') || 20,
+        notaApro:   +v('scMin') || 11,
+      },
+      alumnos: students.map(s=>({nombre:s.name, codigo:s.code})),
+      cursos,
+    });
+    hideLoader();
+    if (!res.ok) throw new Error(res.error);
+    toast('✅ Planilla creada', `Hoja: "${res.hoja}"`, 'ok');
+    window.open(res.url, '_blank');
+    loadSheets();
+  } catch(e) { hideLoader(); toast('Error al generar', e.message, 'err'); }
+}
+
+// ── STUDENTS ─────────────────────────────────────────────────────────────────
+function loadCSV(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const lines = ev.target.result.split('\n').filter(l=>l.trim());
+    let added = 0;
+    lines.forEach(line => {
+      const p = line.split(/[,;\t]/).map(x=>x.trim()).filter(Boolean);
+      if (p.length >= 2) { students.push({code:p[0], name:p.slice(1).join(' ')}); added++; }
+      else if (p.length === 1) { students.push({code:'', name:p[0]}); added++; }
+    });
+    renderStudents(); renderPreview();
+    toast(`${added} alumnos importados`, file.name);
+  };
+  reader.readAsText(file); e.target.value='';
+}
+function addManual() {
+  const code=document.getElementById('mCode').value.trim();
+  const name=document.getElementById('mName').value.trim();
+  if (!name) return;
+  students.push({code,name});
+  document.getElementById('mCode').value='';
+  document.getElementById('mName').value='';
+  renderStudents(); renderPreview();
+  document.getElementById('mCode').focus();
+}
+function removeStudent(i){ students.splice(i,1); renderStudents(); renderPreview(); }
+function clearStudents(){
+  if (!students.length) return;
+  if (!confirm('¿Limpiar toda la lista?')) return;
+  students=[]; renderStudents(); renderPreview();
+}
+function renderStudents(){
+  const list=document.getElementById('stuList');
+  list.innerHTML = students.length===0
+    ? '<div class="empty">Sin alumnos cargados</div>'
+    : students.map((s,i)=>`
+        <div class="stu-item">
+          <span class="stu-n">${i+1}</span>
+          <span class="stu-name">${s.name}</span>
+          <span class="stu-code">${s.code||'—'}</span>
+          <button class="stu-del" onclick="removeStudent(${i})">✕</button>
+        </div>`).join('');
+  document.getElementById('stuCount').textContent=`${students.length} alumno${students.length!==1?'s':''}`;
+  document.getElementById('prevBadge').textContent=`${students.length} alumnos`;
+}
+
+// ── COURSES ───────────────────────────────────────────────────────────────────
+function renderCourses(){
+  document.getElementById('crsGrid').innerHTML=courses.map(c=>`
+    <div class="crs ${c.on?'on':''}" onclick="toggleCourse('${c.id}')">
+      <div class="ck">${c.on?'✓':''}</div><span>${c.label}</span>
+    </div>`).join('');
+}
+function toggleCourse(id){
+  courses=courses.map(c=>c.id===id?{...c,on:!c.on}:c); renderCourses();
+}
+function addCourse(){
+  const inp=document.getElementById('newCrs'), name=inp.value.trim(); if (!name) return;
+  courses.push({id:'c_'+Date.now(),label:name,on:true}); inp.value=''; renderCourses();
+}
+
+// ── RECALC ────────────────────────────────────────────────────────────────────
+function recalc(){
+  const base=+v('scBase')||12, xpct=+v('scExtraPct')||20;
+  const evalW=+v('scEvalW')||10, maxG=+v('scMax')||20, minP=+v('scMin')||11;
+  const extra=Math.round(base*xpct/100), ssW=100-evalW;
+  document.getElementById('scExtraVal').textContent=extra;
+  document.getElementById('notasBadge').textContent=`${base} base + ${extra} extra`;
+  document.getElementById('formulaDisplay').innerHTML=`
+    <div class="fl"><span class="fl-lbl">Notas SS (base):</span><span class="or-t">${base} atenciones</span><span class="gn-t">= 100%</span></div>
+    <div class="fl"><span class="fl-lbl">Notas extra (+${xpct}%):</span><span class="bl-t">${extra} adicionales</span></div>
+    <div class="fl"><span class="fl-lbl">Peso atenciones / EV:</span><span class="or-t">${ssW}%</span> / <span class="bl-t">${evalW}%</span></div>
+    <div class="fl"><span class="fl-lbl">Nota máx / aprobatoria:</span><span class="or-t">${maxG} pts</span> / <span class="gn-t">≥ ${minP} pts</span></div>
+    <div class="formula-res"><strong>PROM FINAL</strong> = PROMEDIO(SS1…SS${base}) × ${ssW}% + EV × ${evalW}%</div>`;
+  renderPreview();
+}
+
+// ── PREVIEW ───────────────────────────────────────────────────────────────────
+function renderPreview(){
+  const base=+v('scBase')||12, extra=+document.getElementById('scExtraVal').textContent||3;
+  const crs=courses.filter(c=>c.on).map(c=>c.label).join(' / ')||'—';
+  document.getElementById('tHead').innerHTML=
+    `<th>N°</th><th>Curso</th><th>Apellidos y Nombres</th><th>Cód.</th>`
+    +Array.from({length:base},(_,i)=>`<th class="t-or">${i+1}SS</th>`).join('')
+    +Array.from({length:extra},(_,i)=>`<th class="t-bl">E${i+1}</th>`).join('')
+    +`<th>EV</th><th class="t-gn">PROM</th>`;
+  const body=document.getElementById('tBody');
+  if (!students.length){
+    body.innerHTML=`<tr><td colspan="${4+base+extra+2}" class="empty" style="padding:22px">Agrega alumnos para ver la vista previa</td></tr>`;
+    return;
+  }
+  body.innerHTML=students.map((s,i)=>`
+    <tr class="${i%2===1?'odd':''}">
+      <td class="mn">${i+1}</td><td class="mn">${crs}</td><td>${s.name}</td><td class="mn">${s.code||'—'}</td>
+      ${Array.from({length:base},()=>'<td class="ctr"><span class="sbox o">—</span></td>').join('')}
+      ${Array.from({length:extra},()=>'<td class="ctr"><span class="sbox b">—</span></td>').join('')}
+      <td class="ctr"><span class="sbox">—</span></td>
+      <td class="ctr"><span class="sbox g">—</span></td>
+    </tr>`).join('');
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function v(id){ return document.getElementById(id).value; }
+function esc(s){ return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+function showLoader(msg){ document.getElementById('loaderMsg').textContent=msg; document.getElementById('loader').classList.add('show'); }
+function hideLoader(){ document.getElementById('loader').classList.remove('show'); }
+let _tt;
+function toast(title,msg,type=''){
+  const el=document.getElementById('toast');
+  document.getElementById('tTitle').textContent=title;
+  document.getElementById('tMsg').textContent=msg||'';
+  el.className='show '+(type||'');
+  clearTimeout(_tt); _tt=setTimeout(()=>{ el.className=type||''; },3800);
+}
+</script>
+</body>
+</html>
