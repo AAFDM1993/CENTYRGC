@@ -5,307 +5,422 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Planillas Clínicas · Fisioterapia</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* ── RESET & TOKENS ─────────────────────────────────────────────────────── */
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0d1117;--s1:#161b22;--s2:#21262d;--bd:#30363d;
-  --or:#f97316;--or2:#fed7aa;--bl:#3b82f6;--bl2:#dbeafe;
-  --gn:#22c55e;--gn2:#f0fdf4;--gn3:#15803d;
-  --tx:#e6edf3;--tx2:#8b949e;--tx3:#6e7681;
-  --red:#ef4444;--yl:#f59e0b;
-  --r:10px;
-}
-html{scroll-behavior:smooth}
-body{background:var(--bg);color:var(--tx);font-family:'Lato',sans-serif;font-size:14px;min-height:100vh}
-a{color:var(--or);text-decoration:none}
-button{font-family:'Lato',sans-serif;cursor:pointer}
-input,select,textarea{font-family:'Lato',sans-serif}
+/* ═══════════════════════════════════════════════════════════════
+   TOKENS — AZUL NOCHE + BLANCO
+═══════════════════════════════════════════════════════════════ */
+:root {
+  /* Fondos */
+  --bg:        #f0f4ff;
+  --bg2:       #e8edf8;
+  --surface:   #ffffff;
+  --surface2:  #f5f7ff;
 
-/* ── SCROLLBAR ──────────────────────────────────────────────────────────── */
-::-webkit-scrollbar{width:6px;height:6px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
+  /* Azul noche – escala */
+  --n900: #0a1628;
+  --n800: #0f1e3d;
+  --n700: #1a2f5a;
+  --n600: #1e3a5f;
+  --n500: #1d4ed8;
+  --n400: #3b82f6;
+  --n300: #93c5fd;
+  --n200: #bfdbfe;
+  --n100: #dbeafe;
+  --n050: #eff6ff;
 
-/* ── HEADER ─────────────────────────────────────────────────────────────── */
-header{
-  background:var(--s1);border-bottom:1px solid var(--bd);
-  position:sticky;top:0;z-index:200;
-}
-.hdr-inner{
-  max-width:1180px;margin:0 auto;padding:14px 24px;
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
-}
-.logo{display:flex;align-items:center;gap:14px}
-.logo-mark{
-  width:42px;height:42px;border-radius:11px;background:var(--or);flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:#fff;
-  box-shadow:0 0 0 3px rgba(249,115,22,.2);
-}
-.logo h1{font-family:'Syne',sans-serif;font-weight:800;font-size:19px;letter-spacing:-.5px}
-.logo p{font-size:12px;color:var(--tx2);margin-top:2px}
+  /* Acentos */
+  --white:  #ffffff;
+  --text:   #0f172a;
+  --text2:  #334155;
+  --text3:  #64748b;
+  --text4:  #94a3b8;
+  --border: #cbd5e1;
+  --border2:#e2e8f0;
 
-/* URL bar */
-.url-bar{
-  display:flex;align-items:center;gap:8px;
-  background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:7px 14px;
-  min-width:300px;
-}
-.url-bar .dot{width:8px;height:8px;border-radius:50%;background:var(--tx3);flex-shrink:0;transition:all .3s}
-.url-bar .dot.ok{background:var(--gn);box-shadow:0 0 6px var(--gn)}
-.url-bar .dot.err{background:var(--red)}
-#urlInput{
-  background:none;border:none;color:var(--tx);font-family:'DM Mono',monospace;font-size:12px;
-  outline:none;flex:1;min-width:200px;
-}
-#urlInput::placeholder{color:var(--tx3)}
-#btnConectar{
-  background:var(--or);color:#fff;border:none;border-radius:7px;
-  padding:6px 14px;font-size:12px;font-weight:700;white-space:nowrap;
-  transition:opacity .2s;
-}
-#btnConectar:hover{opacity:.85}
+  --green:  #059669;
+  --green2: #d1fae5;
+  --red:    #dc2626;
+  --red2:   #fee2e2;
+  --amber:  #d97706;
+  --amber2: #fef3c7;
 
-/* ── LAYOUT ─────────────────────────────────────────────────────────────── */
-.main{max-width:1180px;margin:0 auto;padding:28px 24px;display:grid;grid-template-columns:310px 1fr;gap:22px;align-items:start}
-
-/* ── PANEL / CARD ───────────────────────────────────────────────────────── */
-.panel,.card{background:var(--s1);border:1px solid var(--bd);border-radius:14px;overflow:hidden}
-.panel-hdr,.card-hdr{
-  background:var(--s2);padding:13px 18px;border-bottom:1px solid var(--bd);
-  display:flex;align-items:center;justify-content:space-between;
-}
-.panel-hdr h2,.card-hdr h2{font-family:'Syne',sans-serif;font-weight:700;font-size:13px}
-.panel-body,.card-body{padding:18px}
-
-/* ── TABS ───────────────────────────────────────────────────────────────── */
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--bd)}
-.tab{
-  background:none;border:none;border-bottom:2px solid transparent;
-  color:var(--tx2);font-family:'Syne',sans-serif;font-weight:700;font-size:11px;
-  padding:11px 6px;transition:all .2s;letter-spacing:.3px;
-}
-.tab:hover{color:var(--tx)}
-.tab.on{color:var(--or);border-bottom-color:var(--or);background:rgba(249,115,22,.05)}
-.tab-pane{padding:16px;display:none}
-.tab-pane.on{display:block}
-
-/* ── FORM ───────────────────────────────────────────────────────────────── */
-.field{margin-bottom:13px}
-.field label,.lbl{
-  display:block;font-size:11px;font-weight:700;color:var(--tx2);
-  text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;
-}
-.inp{
-  width:100%;background:var(--bg);border:1px solid var(--bd);border-radius:8px;
-  color:var(--tx);font-size:13px;padding:9px 12px;outline:none;transition:border-color .2s;
-}
-.inp:focus{border-color:var(--or)}
-.row2{display:flex;gap:10px}
-.row2 .field{flex:1;margin-bottom:0}
-
-/* ── UPLOAD ─────────────────────────────────────────────────────────────── */
-.upload{
-  border:2px dashed var(--bd);border-radius:10px;padding:18px;
-  text-align:center;cursor:pointer;transition:all .2s;
-}
-.upload:hover{border-color:var(--or);background:rgba(249,115,22,.04)}
-.upload .ico{font-size:26px;margin-bottom:6px}
-.upload p{font-size:13px;color:var(--tx2)}
-.upload small{font-size:11px;color:var(--tx3);display:block;margin-top:3px}
-
-/* ── STUDENT LIST ───────────────────────────────────────────────────────── */
-.stu-list{max-height:210px;overflow-y:auto;display:flex;flex-direction:column;gap:5px;margin-top:10px}
-.stu-item{
-  display:flex;align-items:center;gap:8px;
-  background:var(--bg);border:1px solid var(--bd);border-radius:7px;padding:7px 10px;
-}
-.stu-n{font-family:'DM Mono',monospace;font-size:10px;color:var(--tx3);min-width:20px}
-.stu-name{flex:1;font-size:13px}
-.stu-code{font-family:'DM Mono',monospace;font-size:10px;color:var(--or)}
-.stu-del{background:none;border:none;color:var(--tx3);font-size:12px;transition:color .2s;padding:0 2px}
-.stu-del:hover{color:var(--red)}
-.empty{text-align:center;padding:18px;color:var(--tx3);font-size:13px}
-
-/* ── COURSES ────────────────────────────────────────────────────────────── */
-.sec-lbl{
-  font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:1px;
-  margin:12px 0 9px;display:flex;align-items:center;gap:8px;
-}
-.sec-lbl::after{content:'';flex:1;height:1px;background:var(--bd)}
-.crs-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
-.crs{
-  display:flex;align-items:center;gap:8px;
-  background:var(--bg);border:1px solid var(--bd);border-radius:8px;
-  padding:8px 10px;cursor:pointer;transition:all .2s;user-select:none;
-}
-.crs:hover{border-color:var(--or)}
-.crs.on{border-color:var(--or);background:rgba(249,115,22,.08)}
-.crs .ck{
-  width:15px;height:15px;border:2px solid var(--bd);border-radius:4px;
-  display:flex;align-items:center;justify-content:center;font-size:9px;
-  font-weight:700;flex-shrink:0;transition:all .2s;
-}
-.crs.on .ck{background:var(--or);border-color:var(--or);color:#fff}
-.crs span{font-size:12px;font-weight:700;color:var(--tx2);font-family:'DM Mono',monospace}
-.crs.on span{color:var(--or)}
-
-/* ── SCORES GRID ────────────────────────────────────────────────────────── */
-.scores-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:13px}
-.sc-ctrl label{font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.8px;display:block;margin-bottom:6px}
-.sc-wrap{
-  display:flex;align-items:center;gap:8px;
-  background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;
-}
-.sc-wrap input{
-  background:none;border:none;color:var(--tx);font-family:'DM Mono',monospace;
-  font-size:16px;font-weight:500;width:50px;outline:none;text-align:center;
-}
-.sc-unit{font-size:12px;color:var(--tx3);white-space:nowrap}
-.sc-wrap.ro{opacity:.55}
-.sc-val{font-family:'DM Mono',monospace;font-size:16px;font-weight:500;width:50px;text-align:center}
-
-.formula{
-  margin-top:16px;background:var(--bg);border:1px solid var(--bd);
-  border-radius:10px;padding:14px 18px;
-}
-.formula h4{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px}
-.fl{display:flex;align-items:center;gap:12px;margin-bottom:7px;font-family:'DM Mono',monospace;font-size:12px}
-.fl-lbl{color:var(--tx2);min-width:170px}
-.or-t{color:var(--or);font-weight:500}
-.bl-t{color:var(--bl);font-weight:500}
-.gn-t{color:var(--gn);font-size:11px}
-.formula-res{
-  margin-top:10px;padding-top:10px;border-top:1px dashed var(--bd);
-  font-family:'DM Mono',monospace;font-size:12px;color:var(--tx);line-height:1.6;
-}
-.formula-res strong{color:var(--gn)}
-
-/* ── TABLE ──────────────────────────────────────────────────────────────── */
-.tbl-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:12px;min-width:540px}
-thead tr{background:var(--s2)}
-th{
-  padding:9px 11px;text-align:left;
-  font-family:'Syne',sans-serif;font-size:10px;font-weight:700;
-  color:var(--tx2);text-transform:uppercase;letter-spacing:.8px;
-  white-space:nowrap;border-bottom:1px solid var(--bd);
-}
-th.t-or{color:var(--or)}th.t-bl{color:var(--bl)}th.t-gn{color:var(--gn)}
-td{padding:8px 11px;border-bottom:1px solid rgba(48,54,61,.4);white-space:nowrap}
-tr:last-child td{border-bottom:none}
-tr.odd td{background:rgba(255,255,255,.015)}
-tr:hover td{background:rgba(249,115,22,.03)}
-td.mn{font-family:'DM Mono',monospace;font-size:11px;color:var(--tx2)}
-td.ctr{text-align:center}
-.sbox{
-  display:inline-block;min-width:26px;
-  background:var(--s2);border:1px solid var(--bd);border-radius:4px;
-  padding:2px 5px;font-family:'DM Mono',monospace;font-size:10px;
-  color:var(--tx3);text-align:center;
-}
-.sbox.o{background:rgba(249,115,22,.1);border-color:rgba(249,115,22,.3);color:var(--or)}
-.sbox.b{background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);color:var(--bl)}
-.sbox.g{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.3);color:var(--gn);font-weight:700}
-
-/* ── SHEETS LIST ────────────────────────────────────────────────────────── */
-.sheet-card{
-  display:flex;align-items:center;gap:12px;
-  background:var(--bg);border:1px solid var(--bd);border-radius:9px;
-  padding:11px 14px;margin-bottom:8px;cursor:pointer;transition:all .2s;
-}
-.sheet-card:hover{border-color:var(--or);background:rgba(249,115,22,.04)}
-.sheet-icon{font-size:20px;flex-shrink:0}
-.sheet-info{flex:1}
-.sheet-name{font-weight:700;font-size:13px;color:var(--tx)}
-.sheet-meta{font-size:11px;color:var(--tx3);margin-top:2px;font-family:'DM Mono',monospace}
-.sheet-del{background:none;border:none;color:var(--tx3);font-size:14px;transition:color .2s;padding:4px}
-.sheet-del:hover{color:var(--red)}
-
-/* ── BUTTONS ────────────────────────────────────────────────────────────── */
-.btn{
-  display:inline-flex;align-items:center;gap:8px;
-  border:none;border-radius:10px;padding:13px 28px;
-  font-family:'Syne',sans-serif;font-weight:800;font-size:14px;
-  cursor:pointer;transition:all .2s;white-space:nowrap;
-}
-.btn-main{background:var(--or);color:#fff}
-.btn-main:hover:not(:disabled){opacity:.9;transform:translateY(-2px);box-shadow:0 8px 24px rgba(249,115,22,.3)}
-.btn-main:disabled{opacity:.45;cursor:not-allowed;transform:none}
-.btn-sm{
-  background:var(--or);color:#fff;border:none;border-radius:8px;
-  padding:8px 13px;font-size:12px;font-weight:700;cursor:pointer;
-  transition:opacity .2s;flex-shrink:0;white-space:nowrap;
-}
-.btn-sm:hover{opacity:.85}
-.btn-ghost{
-  background:transparent;border:1px solid var(--bd);color:var(--tx2);
-  border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;
-}
-.btn-ghost:hover{border-color:var(--or);color:var(--or)}
-
-.badge{
-  font-family:'DM Mono',monospace;font-size:11px;padding:3px 10px;
-  border-radius:20px;background:rgba(249,115,22,.15);color:var(--or);
-  border:1px solid rgba(249,115,22,.3);
-}
-.hint{
-  display:flex;align-items:flex-start;gap:8px;
-  background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);
-  border-radius:9px;padding:11px 14px;font-size:12px;color:#fbbf24;line-height:1.6;
+  --radius: 12px;
+  --shadow: 0 1px 3px rgba(15,22,40,.08), 0 4px 12px rgba(15,22,40,.06);
+  --shadow-lg: 0 8px 32px rgba(15,22,40,.14);
 }
 
-.row-btw{display:flex;align-items:center;justify-content:space-between;gap:10px}
-
-/* ── TOAST ──────────────────────────────────────────────────────────────── */
-#toast{
-  position:fixed;bottom:26px;right:26px;
-  background:var(--s2);border:1px solid var(--bd);border-left:3px solid var(--or);
-  border-radius:10px;padding:12px 18px;font-size:13px;color:var(--tx);
-  z-index:999;max-width:320px;opacity:0;transform:translateY(60px);
-  transition:all .3s cubic-bezier(.175,.885,.32,1.275);pointer-events:none;
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  min-height: 100vh;
 }
-#toast.show{opacity:1;transform:translateY(0)}
-#toast.err{border-left-color:var(--red)}
-#toast.ok{border-left-color:var(--gn)}
-#toast.warn{border-left-color:var(--yl)}
-.t-title{font-weight:700;margin-bottom:2px}
-.t-msg{color:var(--tx2);font-size:12px}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-/* ── LOADER ─────────────────────────────────────────────────────────────── */
-#loader{
-  position:fixed;inset:0;background:rgba(13,17,23,.85);
-  display:none;align-items:center;justify-content:center;z-index:500;
-  flex-direction:column;gap:16px;
+/* ── HEADER ─────────────────────────────────────────────────── */
+header {
+  background: var(--n900);
+  border-bottom: 1px solid var(--n800);
+  position: sticky; top: 0; z-index: 300;
+  box-shadow: 0 2px 16px rgba(10,22,40,.4);
 }
-#loader.show{display:flex}
-#loader p{font-family:'Syne',sans-serif;font-size:15px;color:var(--tx)}
-.ld-ring{
-  width:48px;height:48px;border:3px solid var(--bd);border-top-color:var(--or);
-  border-radius:50%;animation:rot .8s linear infinite;
+.hdr {
+  max-width: 1280px; margin: 0 auto;
+  padding: 0 28px;
+  height: 60px;
+  display: flex; align-items: center; gap: 20px;
 }
-@keyframes rot{to{transform:rotate(360deg)}}
+.logo { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.logo-mark {
+  width: 36px; height: 36px; border-radius: 9px;
+  background: linear-gradient(135deg, var(--n500), var(--n400));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 15px; color: #fff;
+}
+.logo h1 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 17px; color: var(--white); letter-spacing: -.3px; }
+.logo p { font-size: 11px; color: var(--n300); margin-top: 1px; }
 
-/* ── RESPONSIVE ─────────────────────────────────────────────────────────── */
-@media(max-width:900px){
-  .main{grid-template-columns:1fr}
-  .hdr-inner{flex-wrap:wrap;padding:12px 16px}
-  .url-bar{min-width:unset;width:100%}
-  .main{padding:16px}
+.conn-pill {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 8px;
+  background: var(--n800); border: 1px solid var(--n700);
+  border-radius: 20px; padding: 5px 14px;
+  font-size: 12px; font-weight: 600; color: var(--n300);
+  transition: all .2s;
+}
+.conn-pill .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text4); transition: all .3s;
+}
+.conn-pill .dot.ok  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.conn-pill .dot.err { background: var(--red); }
+.conn-pill.ok { border-color: rgba(5,150,105,.4); }
+.conn-pill.ok .conn-label { color: #6ee7b7; }
+
+/* ── LAYOUT ─────────────────────────────────────────────────── */
+.wrap { max-width: 1280px; margin: 0 auto; padding: 28px; display: grid; grid-template-columns: 340px 1fr; gap: 22px; align-items: start; }
+
+/* ── CARD / PANEL ───────────────────────────────────────────── */
+.card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
+}
+.card-hdr {
+  background: var(--n900); padding: 13px 18px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-hdr h2 {
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px;
+  color: var(--white); letter-spacing: .2px;
+}
+.card-body { padding: 18px; }
+
+/* ── TABS ───────────────────────────────────────────────────── */
+.tabs { display: grid; grid-template-columns: repeat(4,1fr); background: var(--n900); }
+.tab {
+  background: none; border: none; border-bottom: 2px solid transparent;
+  color: var(--n300); font-family: 'Syne', sans-serif; font-weight: 700;
+  font-size: 11px; padding: 12px 6px; cursor: pointer; transition: all .2s;
+  letter-spacing: .3px;
+}
+.tab:hover { color: var(--white); }
+.tab.on { color: var(--white); border-bottom-color: var(--n400); background: rgba(59,130,246,.08); }
+.pane { display: none; padding: 18px; }
+.pane.on { display: block; }
+
+/* ── FORM ───────────────────────────────────────────────────── */
+.field { margin-bottom: 12px; }
+.field label {
+  display: block; font-size: 11px; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px;
+}
+.inp {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text); font-size: 13px;
+  padding: 9px 12px; outline: none; transition: border-color .2s;
+}
+.inp:focus { border-color: var(--n500); background: var(--white); }
+.row2 { display: flex; gap: 10px; }
+.row2 .field { flex: 1; margin-bottom: 0; }
+
+/* ── UPLOAD ─────────────────────────────────────────────────── */
+.upload {
+  border: 2px dashed var(--border); border-radius: 10px;
+  padding: 18px; text-align: center; cursor: pointer; transition: all .2s;
+  background: var(--surface2);
+}
+.upload:hover { border-color: var(--n500); background: var(--n050); }
+.upload .ico { font-size: 26px; margin-bottom: 6px; }
+.upload p { font-size: 13px; color: var(--text2); }
+.upload small { font-size: 11px; color: var(--text4); display: block; margin-top: 3px; }
+
+/* ── STUDENTS LIST ──────────────────────────────────────────── */
+.stu-list { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+.stu-item {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 7px; padding: 7px 10px;
+}
+.sn { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--text4); min-width: 20px; }
+.sname { flex: 1; font-size: 12px; font-weight: 500; color: var(--text); }
+.scode { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--n500); }
+.sdel { background: none; border: none; color: var(--text4); font-size: 12px; cursor: pointer; transition: color .2s; padding: 0 2px; }
+.sdel:hover { color: var(--red); }
+.empty { text-align: center; padding: 18px; color: var(--text4); font-size: 13px; }
+
+/* ── CURSOS ─────────────────────────────────────────────────── */
+.sec-lbl {
+  font-size: 11px; font-weight: 700; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .8px;
+  margin: 14px 0 9px; display: flex; align-items: center; gap: 8px;
+}
+.sec-lbl::after { content: ''; flex: 1; height: 1px; background: var(--border2); }
+.crs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.crs {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; cursor: pointer;
+  transition: all .2s; user-select: none;
+}
+.crs:hover { border-color: var(--n500); }
+.crs.on { border-color: var(--n500); background: var(--n050); }
+.ck {
+  width: 15px; height: 15px; border: 2px solid var(--border);
+  border-radius: 4px; display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 700; flex-shrink: 0; transition: all .2s;
+}
+.crs.on .ck { background: var(--n500); border-color: var(--n500); color: #fff; }
+.crs span { font-size: 12px; font-weight: 600; color: var(--text2); }
+.crs.on span { color: var(--n500); }
+
+/* ── PACIENTES CONFIG ───────────────────────────────────────── */
+.pac-config { margin-top: 14px; }
+.pac-curso-block { margin-bottom: 14px; }
+.pac-curso-title {
+  font-size: 12px; font-weight: 700; color: var(--n600);
+  margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+}
+.pac-curso-title::before { content: ''; display: inline-block; width: 3px; height: 14px; background: var(--n500); border-radius: 2px; }
+.pac-list { display: flex; flex-direction: column; gap: 5px; }
+.pac-item {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 7px; padding: 6px 10px;
+}
+.pac-name { flex: 1; font-size: 12px; color: var(--text); }
+.pac-del { background: none; border: none; color: var(--text4); font-size: 12px; cursor: pointer; transition: color .2s; }
+.pac-del:hover { color: var(--red); }
+.pac-add-row { display: flex; gap: 6px; margin-top: 6px; }
+.pac-add-row .inp { flex: 1; font-size: 12px; padding: 7px 10px; }
+
+/* ── SCORES CONFIG ──────────────────────────────────────────── */
+.sc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 12px; }
+.sc-ctrl label { font-size: 11px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: .8px; display: block; margin-bottom: 6px; }
+.sc-wrap {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 12px;
+}
+.sc-wrap input {
+  background: none; border: none; color: var(--text);
+  font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500;
+  width: 50px; outline: none; text-align: center;
+}
+.sc-wrap input:focus { outline: none; }
+.sc-unit { font-size: 12px; color: var(--text4); white-space: nowrap; }
+.sc-ro { opacity: .6; }
+.sc-val { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; width: 50px; text-align: center; }
+
+.formula-box {
+  margin-top: 16px; background: var(--n900); border-radius: 10px;
+  padding: 14px 18px;
+}
+.formula-box h4 { font-size: 11px; font-weight: 700; color: var(--n300); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 10px; }
+.fl { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; font-family: 'DM Mono', monospace; font-size: 12px; }
+.fl-lbl { color: var(--n200); min-width: 160px; }
+.fl-a { color: var(--n400); font-weight: 500; }
+.fl-b { color: #7dd3fc; font-weight: 500; }
+.fl-c { color: #6ee7b7; font-size: 11px; }
+.formula-res { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--n700); font-family: 'DM Mono', monospace; font-size: 12px; color: var(--n200); line-height: 1.7; }
+.formula-res strong { color: #6ee7b7; }
+
+/* ── BUTTONS ────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: none; border-radius: 10px; padding: 12px 26px;
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 14px;
+  cursor: pointer; transition: all .2s; white-space: nowrap;
+}
+.btn-primary { background: var(--n600); color: #fff; }
+.btn-primary:hover:not(:disabled) { background: var(--n500); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(29,78,216,.35); }
+.btn-primary:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+.btn-sm {
+  background: var(--n600); color: #fff; border: none; border-radius: 8px;
+  padding: 8px 13px; font-size: 12px; font-weight: 700; cursor: pointer;
+  transition: all .2s; white-space: nowrap; flex-shrink: 0;
+}
+.btn-sm:hover { background: var(--n500); }
+.btn-ghost {
+  background: transparent; border: 1px solid var(--border); color: var(--text3);
+  border-radius: 8px; padding: 7px 12px; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .2s;
+}
+.btn-ghost:hover { border-color: var(--n500); color: var(--n500); }
+.row-btw { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.badge {
+  font-family: 'DM Mono', monospace; font-size: 11px; padding: 3px 10px;
+  border-radius: 20px; background: var(--n100); color: var(--n600);
+  border: 1px solid var(--n200); font-weight: 600;
+}
+
+/* ── MAIN CONTENT AREA ──────────────────────────────────────── */
+.content { display: flex; flex-direction: column; gap: 20px; }
+
+/* ── VISTA PREVIA ESTRUCTURA ────────────────────────────────── */
+.preview-alumno {
+  border: 1px solid var(--border2); border-radius: 10px; overflow: hidden; margin-bottom: 14px;
+  box-shadow: 0 1px 4px rgba(15,22,40,.06);
+}
+.pa-hdr {
+  background: var(--n900); color: var(--white); padding: 10px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 13px;
+}
+.pa-code { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--n300); }
+.pa-curso-hdr {
+  background: var(--n700); color: var(--n200); padding: 7px 16px;
+  font-size: 12px; font-weight: 600; font-style: italic;
+  display: flex; align-items: center; gap: 8px;
+}
+.pa-curso-hdr::before { content: '▸'; color: var(--n400); }
+
+/* Tabla de notas inline */
+.pa-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.pa-table th {
+  padding: 6px 10px; text-align: center; white-space: nowrap;
+  font-family: 'DM Mono', monospace; font-size: 10px; font-weight: 600;
+  border-bottom: 1px solid var(--border2);
+}
+.pa-table th.th-pac { text-align: left; background: var(--surface2); color: var(--text2); min-width: 160px; }
+.pa-table th.th-ss  { background: var(--n900); color: var(--n300); width: 44px; }
+.pa-table th.th-ex  { background: var(--n700); color: var(--n200); width: 44px; }
+.pa-table th.th-ev  { background: #0369a1; color: #e0f2fe; width: 44px; }
+.pa-table th.th-pr  { background: #0c4a6e; color: #7dd3fc; width: 60px; }
+.pa-table td { padding: 5px 8px; border-bottom: 1px solid var(--border2); }
+.pa-table td.td-pac { background: var(--surface2); color: var(--text); font-size: 12px; font-weight: 500; padding-left: 14px; }
+.pa-table tr:last-child td { border-bottom: none; }
+.pa-table tr:nth-child(even) td { background: var(--bg2); }
+.pa-table tr:nth-child(even) td.td-pac { background: var(--bg2); }
+
+/* Celda de nota editable */
+.nota-cell {
+  width: 100%; border: none; background: transparent;
+  font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500;
+  text-align: center; color: var(--text2); outline: none; padding: 2px;
+  cursor: pointer; border-radius: 4px; transition: all .15s;
+}
+.nota-cell:hover { background: var(--n100); color: var(--n600); }
+.nota-cell:focus { background: var(--n600); color: var(--white); cursor: text; }
+.nota-cell.has-val { color: var(--n600); font-weight: 600; }
+.nota-cell.ev { color: #0369a1; }
+.nota-cell.ev:focus { background: #0369a1; color: #fff; }
+.prom-cell {
+  font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 700;
+  text-align: center; color: #0c4a6e; padding: 4px 8px;
+  background: #e0f2fe; border-radius: 5px; display: inline-block; min-width: 44px;
+}
+.prom-cell.apro { color: var(--green); background: var(--green2); }
+.prom-cell.repr { color: var(--red);   background: var(--red2); }
+
+/* ── SHEETS LIST ────────────────────────────────────────────── */
+.sheet-item {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: 9px; padding: 11px 14px; margin-bottom: 8px;
+  cursor: pointer; transition: all .2s;
+}
+.sheet-item:hover { border-color: var(--n500); background: var(--n050); box-shadow: 0 2px 8px rgba(29,78,216,.1); }
+.si-icon { font-size: 20px; flex-shrink: 0; }
+.si-info { flex: 1; }
+.si-name { font-weight: 700; font-size: 13px; color: var(--text); }
+.si-meta { font-size: 11px; color: var(--text4); margin-top: 2px; font-family: 'DM Mono', monospace; }
+.si-del { background: none; border: none; color: var(--text4); font-size: 15px; cursor: pointer; transition: color .2s; padding: 4px; }
+.si-del:hover { color: var(--red); }
+
+/* ── HINT ───────────────────────────────────────────────────── */
+.hint {
+  display: flex; align-items: flex-start; gap: 9px;
+  background: var(--amber2); border: 1px solid rgba(217,119,6,.3);
+  border-radius: 9px; padding: 11px 14px; font-size: 12px; color: #92400e; line-height: 1.6;
+}
+.hint-blue {
+  background: var(--n050); border: 1px solid var(--n200);
+  border-radius: 9px; padding: 11px 14px; font-size: 12px; color: var(--n600); line-height: 1.6;
+  display: flex; align-items: flex-start; gap: 9px;
+}
+
+/* ── TOAST ──────────────────────────────────────────────────── */
+#toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 999;
+  background: var(--n900); border: 1px solid var(--n700);
+  border-left: 3px solid var(--n400);
+  border-radius: 10px; padding: 12px 18px; max-width: 320px;
+  color: var(--white); font-size: 13px;
+  opacity: 0; transform: translateY(50px);
+  transition: all .3s cubic-bezier(.175,.885,.32,1.275);
+  pointer-events: none;
+}
+#toast.show { opacity: 1; transform: translateY(0); }
+#toast.ok   { border-left-color: var(--green); }
+#toast.err  { border-left-color: var(--red); }
+#toast.warn { border-left-color: var(--amber); }
+.t-title { font-weight: 700; margin-bottom: 2px; }
+.t-msg { color: var(--n300); font-size: 12px; }
+
+/* ── LOADER ─────────────────────────────────────────────────── */
+#loader {
+  position: fixed; inset: 0; background: rgba(10,22,40,.8);
+  display: none; align-items: center; justify-content: center;
+  z-index: 500; flex-direction: column; gap: 16px;
+}
+#loader.show { display: flex; }
+#loader p { font-family: 'Syne', sans-serif; font-size: 15px; color: var(--white); }
+.ld-ring {
+  width: 46px; height: 46px; border: 3px solid var(--n700);
+  border-top-color: var(--n400); border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── SAVING INDICATOR ───────────────────────────────────────── */
+.saving-dot {
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--amber); animation: pulse 1s ease-in-out infinite;
+  margin-left: 4px;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+
+/* ── RESPONSIVE ─────────────────────────────────────────────── */
+@media (max-width: 960px) {
+  .wrap { grid-template-columns: 1fr; padding: 16px; }
+  .hdr  { padding: 0 16px; }
 }
 </style>
 </head>
 <body>
 
-<div id="loader">
-  <div class="ld-ring"></div>
-  <p id="loaderMsg">Procesando…</p>
-</div>
+<!-- ── LOADER ── -->
+<div id="loader"><div class="ld-ring"></div><p id="loaderMsg">Procesando…</p></div>
 
+<!-- ── HEADER ── -->
 <header>
-  <div class="hdr-inner">
+  <div class="hdr">
     <div class="logo">
       <div class="logo-mark">FT</div>
       <div>
@@ -313,480 +428,643 @@ td.ctr{text-align:center}
         <p>Fisioterapia · Google Sheets</p>
       </div>
     </div>
-    <div class="url-bar">
+    <div class="conn-pill" id="connPill">
       <div class="dot" id="connDot"></div>
-      <input id="urlInput" type="text" placeholder="URL de tu Apps Script Web App…">
-      <button id="btnConectar" onclick="conectar()">Conectar</button>
+      <span class="conn-label" id="connLabel">Sin conectar</span>
     </div>
   </div>
 </header>
 
-<div class="main">
+<div class="wrap">
 
-  <!-- SIDEBAR -->
+  <!-- ══ SIDEBAR ══════════════════════════════════════════════ -->
   <div style="display:flex;flex-direction:column;gap:18px">
-    <div class="panel">
+    <div class="card">
       <div class="tabs">
-        <button class="tab on"  onclick="switchTab('alumnos',this)">👤 Alumnos</button>
-        <button class="tab"     onclick="switchTab('config',this)">⚙️ Config</button>
-        <button class="tab"     onclick="switchTab('sheets',this)">📋 Mis hojas</button>
+        <button class="tab on"  onclick="tab('alumnos',this)">👤 Alumnos</button>
+        <button class="tab"     onclick="tab('cursos',this)">📚 Cursos</button>
+        <button class="tab"     onclick="tab('notas',this)">⚙️ Notas</button>
+        <button class="tab"     onclick="tab('hojas',this)">📋 Hojas</button>
       </div>
 
       <!-- ALUMNOS -->
-      <div class="tab-pane on" id="tab-alumnos">
+      <div class="pane on" id="pane-alumnos">
         <div class="upload" onclick="document.getElementById('csvIn').click()">
           <div class="ico">📂</div>
-          <p>Subir lista CSV / TXT</p>
+          <p>Subir CSV / TXT</p>
           <small>CÓDIGO, APELLIDOS Y NOMBRES</small>
         </div>
         <input id="csvIn" type="file" accept=".csv,.txt" style="display:none" onchange="loadCSV(event)">
         <div class="row2" style="margin-top:12px">
           <input class="inp" id="mCode" placeholder="Código" style="width:88px">
           <input class="inp" id="mName" placeholder="Apellidos y Nombres" style="flex:1"
-            onkeydown="if(event.key==='Enter')addManual()">
-          <button class="btn-sm" onclick="addManual()">＋</button>
+            onkeydown="if(event.key==='Enter')addAlumno()">
+          <button class="btn-sm" onclick="addAlumno()">＋</button>
         </div>
         <div class="stu-list" id="stuList">
           <div class="empty">Sin alumnos cargados</div>
         </div>
         <div class="row-btw" style="margin-top:8px">
-          <span style="font-size:12px;color:var(--tx3)" id="stuCount">0 alumnos</span>
-          <button class="btn-ghost" onclick="clearStudents()">Limpiar</button>
+          <span style="font-size:12px;color:var(--text4)" id="stuCount">0 alumnos</span>
+          <button class="btn-ghost" onclick="clearAlumnos()">Limpiar</button>
         </div>
       </div>
 
-      <!-- CONFIG -->
-      <div class="tab-pane" id="tab-config">
+      <!-- CURSOS + PACIENTES -->
+      <div class="pane" id="pane-cursos">
+        <div class="sec-lbl">Seleccionar cursos</div>
+        <div class="crs-grid" id="crsGrid"></div>
+        <div class="row2" style="margin-top:10px">
+          <input class="inp" id="newCrs" placeholder="Agregar curso…" style="flex:1"
+            onkeydown="if(event.key==='Enter')addCurso()">
+          <button class="btn-sm" onclick="addCurso()">+</button>
+        </div>
+
+        <div class="sec-lbl" style="margin-top:18px">Pacientes por curso</div>
+        <div class="pac-config" id="pacConfig">
+          <div class="empty">Selecciona cursos arriba</div>
+        </div>
+      </div>
+
+      <!-- NOTAS CONFIG -->
+      <div class="pane" id="pane-notas">
         <div class="field">
           <label>Docente Clínico</label>
           <input class="inp" id="cfgDocente" placeholder="Nombre del docente">
         </div>
         <div class="field">
-          <label>Asignatura / Rotación</label>
+          <label>Asignatura</label>
           <input class="inp" id="cfgAsig" value="Técnicas y métodos de fisioterapia II">
         </div>
         <div class="row2">
-          <div class="field">
-            <label>Semestre</label>
-            <input class="inp" id="cfgSem" value="2025-I" style="width:100%">
-          </div>
-          <div class="field">
-            <label>Sección</label>
-            <input class="inp" id="cfgSec" value="MyT II" style="width:100%">
-          </div>
+          <div class="field"><label>Semestre</label><input class="inp" id="cfgSem" value="2025-I" style="width:100%"></div>
+          <div class="field"><label>Sección</label><input class="inp" id="cfgSec" value="MyT II" style="width:100%"></div>
         </div>
-        <div class="sec-lbl">Cursos disponibles</div>
-        <div class="crs-grid" id="crsGrid"></div>
-        <div class="row2" style="margin-top:10px">
-          <input class="inp" id="newCrs" placeholder="Nuevo curso…" style="flex:1"
-            onkeydown="if(event.key==='Enter')addCourse()">
-          <button class="btn-sm" onclick="addCourse()">Agregar</button>
+        <div class="field">
+          <label>Nombre de la hoja (pestaña)</label>
+          <input class="inp" id="cfgHoja" placeholder="Ej. MyT II · Fisioterapia 2025-I">
         </div>
-      </div>
-
-      <!-- SHEETS -->
-      <div class="tab-pane" id="tab-sheets">
-        <div id="sheetsContent">
-          <div class="hint">
-            <span>🔗</span>
-            <span>Conecta tu Apps Script Web App para ver y gestionar las hojas de tu Google Sheet.</span>
-          </div>
-        </div>
-        <div style="margin-top:10px">
-          <button class="btn-ghost" style="width:100%" onclick="loadSheets()">↺ Actualizar lista</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- CONTENT -->
-  <div style="display:flex;flex-direction:column;gap:18px">
-
-    <!-- CALIFICACIONES -->
-    <div class="card">
-      <div class="card-hdr">
-        <h2>⚙️ Configuración de Calificaciones</h2>
-        <span class="badge" id="notasBadge">12 base + 3 extra</span>
-      </div>
-      <div class="card-body">
-        <div class="scores-grid">
+        <div class="sec-lbl">Calificaciones</div>
+        <div class="sc-grid">
           <div class="sc-ctrl">
             <label>Notas base (100%)</label>
-            <div class="sc-wrap">
-              <input type="number" id="scBase" value="12" min="1" max="30" oninput="recalc()">
-              <span class="sc-unit">atenciones</span>
-            </div>
+            <div class="sc-wrap"><input type="number" id="scBase" value="12" min="1" max="30" oninput="recalc()"><span class="sc-unit">SS</span></div>
           </div>
           <div class="sc-ctrl">
             <label>% notas extra</label>
-            <div class="sc-wrap">
-              <input type="number" id="scExtraPct" value="20" min="0" max="50" oninput="recalc()">
-              <span class="sc-unit">%</span>
-            </div>
+            <div class="sc-wrap"><input type="number" id="scXpct" value="20" min="0" max="50" oninput="recalc()"><span class="sc-unit">%</span></div>
           </div>
           <div class="sc-ctrl">
             <label>Peso evaluación</label>
-            <div class="sc-wrap">
-              <input type="number" id="scEvalW" value="10" min="0" max="50" oninput="recalc()">
-              <span class="sc-unit">%</span>
-            </div>
-          </div>
-          <div class="sc-ctrl">
-            <label>Nota máxima</label>
-            <div class="sc-wrap">
-              <input type="number" id="scMax" value="20" min="10" max="20" oninput="recalc()">
-              <span class="sc-unit">pts</span>
-            </div>
+            <div class="sc-wrap"><input type="number" id="scEvalW" value="10" min="0" max="50" oninput="recalc()"><span class="sc-unit">%</span></div>
           </div>
           <div class="sc-ctrl">
             <label>Nota aprobatoria</label>
-            <div class="sc-wrap">
-              <input type="number" id="scMin" value="11" min="1" max="20" oninput="recalc()">
-              <span class="sc-unit">pts</span>
-            </div>
+            <div class="sc-wrap"><input type="number" id="scApro" value="11" min="1" max="20" oninput="recalc()"><span class="sc-unit">pts</span></div>
           </div>
           <div class="sc-ctrl">
             <label>Notas extra (auto)</label>
-            <div class="sc-wrap ro">
-              <span class="sc-val" id="scExtraVal">3</span>
-              <span class="sc-unit">atenciones</span>
-            </div>
+            <div class="sc-wrap sc-ro"><span class="sc-val" id="scXval">3</span><span class="sc-unit">SS</span></div>
           </div>
         </div>
-        <div class="formula">
-          <h4>📐 Fórmula del promedio final</h4>
-          <div id="formulaDisplay"></div>
+        <div class="formula-box" style="margin-top:14px">
+          <h4>📐 Fórmula</h4>
+          <div id="formulaDisp"></div>
+        </div>
+      </div>
+
+      <!-- HOJAS EXISTENTES -->
+      <div class="pane" id="pane-hojas">
+        <div id="hojasContent">
+          <div class="hint-blue"><span>🔗</span><span>Conecta la aplicación para ver las hojas de tu Google Sheet.</span></div>
+        </div>
+        <button class="btn-ghost" style="width:100%;margin-top:10px" onclick="loadHojas()">↺ Actualizar</button>
+      </div>
+
+    </div><!-- /card sidebar -->
+
+    <!-- GENERAR BUTTON -->
+    <button class="btn btn-primary" id="btnGenerar" onclick="generarPlanilla()" disabled style="width:100%;justify-content:center;padding:14px">
+      📊 Generar planilla en Google Sheets
+    </button>
+  </div><!-- /sidebar -->
+
+  <!-- ══ CONTENT ═══════════════════════════════════════════════ -->
+  <div class="content">
+
+    <!-- ESTADO CONEXIÓN -->
+    <div id="connCard" class="card">
+      <div class="card-body" style="padding:14px 18px">
+        <div class="hint" id="connHint">
+          <span>⚡</span>
+          <span>Aplicación cargando, verificando conexión con Google Sheets…</span>
         </div>
       </div>
     </div>
 
-    <!-- VISTA PREVIA -->
-    <div class="card">
+    <!-- VISTA PREVIA / EDITOR -->
+    <div class="card" id="editorCard" style="display:none">
       <div class="card-hdr">
-        <h2>👁 Vista Previa</h2>
+        <h2 id="editorTitle">Vista Previa · Editor de Notas</h2>
+        <span class="badge" id="editorBadge">0 alumnos</span>
+      </div>
+      <div class="card-body" id="editorBody" style="padding:14px">
+        <!-- se llena dinámicamente -->
+      </div>
+    </div>
+
+    <!-- PREVIEW GENERACIÓN (sin hoja cargada) -->
+    <div class="card" id="previewCard">
+      <div class="card-hdr">
+        <h2>👁 Vista Previa de Estructura</h2>
         <span class="badge" id="prevBadge">0 alumnos</span>
       </div>
-      <div class="card-body" style="padding:0">
-        <div class="tbl-wrap">
-          <table>
-            <thead><tr id="tHead"></tr></thead>
-            <tbody id="tBody"></tbody>
-          </table>
-        </div>
+      <div class="card-body" id="previewBody" style="padding:14px">
+        <div class="empty">Configura alumnos, cursos y pacientes para ver la estructura</div>
       </div>
     </div>
 
-    <!-- GENERAR -->
-    <div class="card">
-      <div class="card-hdr"><h2>📊 Generar en Google Sheets</h2></div>
-      <div class="card-body">
-        <div class="field">
-          <label>Nombre de la hoja (pestaña)</label>
-          <input class="inp" id="nombreHoja" placeholder="Ej. MyT II — Fisioterapia 2025-I">
-        </div>
-        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:4px">
-          <button class="btn btn-main" id="btnGenerar" onclick="generarPlanilla()" disabled>
-            📊 Generar planilla en Sheets
-          </button>
-          <div id="noConnHint" class="hint" style="font-size:12px;padding:8px 12px">
-            🔗 Conecta tu Apps Script primero
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
+  </div><!-- /content -->
+</div><!-- /wrap -->
 
 <div id="toast"><div class="t-title" id="tTitle"></div><div class="t-msg" id="tMsg"></div></div>
 
 <script>
-// ── STATE ─────────────────────────────────────────────────────────────────────
-let students  = [];
-let scriptUrl = localStorage.getItem('ftScriptUrl') || '';
-let connected = false;
-let courses = [
-  {id:'myt1',label:'MyT I',on:false},
-  {id:'myt2',label:'MyT II',on:true},
-  {id:'myt3',label:'MyT III',on:false},
-  {id:'fis1',label:'Fisio I',on:false},
-  {id:'fis2',label:'Fisio II',on:false},
-  {id:'kine',label:'Kinesiología',on:false},
-];
+// ═══════════════════════════════════════════════════════════════════════
+// ⚠️  CONFIGURACIÓN — SOLO CAMBIA ESTA LÍNEA
+//     Pega aquí la URL de tu Apps Script Web App
+// ═══════════════════════════════════════════════════════════════════════
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxDKimeMEZj_ojO3ZnH4xp0zFzghaAs2r4xUjVbGdKLiNIuPio7MaKG9MS_aqeIMLKBqg/exec';
+// ═══════════════════════════════════════════════════════════════════════
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
+// ── STATE ────────────────────────────────────────────────────────────
+let alumnos   = [];
+let cursos    = [
+  {id:'myt1', label:'MyT I',        on:false},
+  {id:'myt2', label:'MyT II',       on:true },
+  {id:'myt3', label:'MyT III',      on:false},
+  {id:'fis1', label:'Fisio I',      on:false},
+  {id:'fis2', label:'Fisio II',     on:false},
+  {id:'kine', label:'Kinesiología', on:false},
+];
+// pacientes por curso: { cursoLabel: [nombre, ...] }
+let pacientes = {};
+
+// hoja actualmente en edición
+let hojaActiva = null;
+let hojaData   = null;  // { alumnos: [...] }
+let savingTimer = {};
+
+const MINPASS = () => +g('scApro') || 11;
+
+// ── INIT ─────────────────────────────────────────────────────────────
 window.onload = () => {
-  if (scriptUrl) document.getElementById('urlInput').value = scriptUrl;
-  renderCourses();
+  renderCursos();
   recalc();
-  if (scriptUrl) conectar(true);
+  conectar();
 };
 
-// ── TABS ──────────────────────────────────────────────────────────────────────
-function switchTab(id, btn) {
-  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('on'));
-  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
-  document.getElementById('tab-' + id).classList.add('on');
-  btn.classList.add('on');
-  if (id === 'sheets' && connected) loadSheets();
-}
-
-// ── CONNECT ───────────────────────────────────────────────────────────────────
-async function conectar(silent = false) {
-  const url = document.getElementById('urlInput').value.trim();
-  if (!url) { toast('URL requerida', 'Pega la URL de tu Apps Script Web App', 'warn'); return; }
-  scriptUrl = url;
-  localStorage.setItem('ftScriptUrl', url);
-  if (!silent) showLoader('Verificando conexión…');
-  try {
-    const res = await apiGet('ping');
-    if (res.ok) {
-      connected = true;
-      setDot('ok');
-      document.getElementById('btnGenerar').disabled = false;
-      document.getElementById('noConnHint').style.display = 'none';
-      if (!silent) toast('Conectado ✓', 'Apps Script respondió correctamente', 'ok');
-      loadSheets();
-    } else throw new Error(res.error || 'Sin respuesta válida');
-  } catch(e) {
-    connected = false;
-    setDot('err');
-    toast('Error de conexión', e.message, 'err');
+// ── CONEXIÓN ─────────────────────────────────────────────────────────
+async function conectar() {
+  if (!GAS_URL || GAS_URL === 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT') {
+    setConnUI(false, 'URL no configurada — edita GAS_URL en el HTML');
+    return;
   }
-  if (!silent) hideLoader();
+  try {
+    const r = await apiGet('ping');
+    if (r.ok) {
+      setConnUI(true, 'Conectado con Google Sheets ✓');
+      document.getElementById('btnGenerar').disabled = false;
+      loadHojas();
+    } else throw new Error(r.error || 'Sin respuesta');
+  } catch(e) {
+    setConnUI(false, 'Error de conexión: ' + e.message);
+  }
 }
 
-function setDot(s) {
-  document.getElementById('connDot').className = 'dot ' + (s||'');
+function setConnUI(ok, msg) {
+  const dot   = document.getElementById('connDot');
+  const label = document.getElementById('connLabel');
+  const pill  = document.getElementById('connPill');
+  const hint  = document.getElementById('connHint');
+  dot.className   = 'dot ' + (ok ? 'ok' : 'err');
+  label.textContent = ok ? 'Conectado' : 'Sin conexión';
+  pill.className  = 'conn-pill ' + (ok ? 'ok' : '');
+  hint.className  = ok ? 'hint-blue' : 'hint';
+  hint.innerHTML  = `<span>${ok ? '✅' : '⚠️'}</span><span>${msg}</span>`;
 }
 
-// ── API ───────────────────────────────────────────────────────────────────────
+// ── API ───────────────────────────────────────────────────────────────
 async function apiGet(action, params={}) {
   const qs = new URLSearchParams({action,...params}).toString();
-  const r  = await fetch(`${scriptUrl}?${qs}`);
+  const r  = await fetch(`${GAS_URL}?${qs}`);
   return r.json();
 }
 async function apiPost(body) {
-  const r = await fetch(scriptUrl, {method:'POST', body:JSON.stringify(body)});
+  const r = await fetch(GAS_URL, {method:'POST', body: JSON.stringify(body)});
   return r.json();
 }
 
-// ── LOAD SHEETS ───────────────────────────────────────────────────────────────
-async function loadSheets() {
-  if (!connected) return;
-  const box = document.getElementById('sheetsContent');
-  box.innerHTML = '<div class="empty" style="padding:20px">Cargando hojas…</div>';
-  try {
-    const res = await apiGet('listarHojas');
-    if (!res.ok) throw new Error(res.error);
-    if (!res.hojas.length) {
-      box.innerHTML = '<div class="empty">No hay hojas todavía. ¡Genera tu primera planilla!</div>';
-      return;
-    }
-    box.innerHTML = res.hojas.map(h => `
-      <div class="sheet-card" onclick="verHoja('${esc(h.nombre)}')">
-        <div class="sheet-icon">📋</div>
-        <div class="sheet-info">
-          <div class="sheet-name">${h.nombre}</div>
-          <div class="sheet-meta">${h.filas} alumno${h.filas!==1?'s':''} · ${h.cols} col.</div>
+// ── TABS ──────────────────────────────────────────────────────────────
+function tab(id, btn) {
+  document.querySelectorAll('.pane').forEach(p => p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+  document.getElementById('pane-' + id).classList.add('on');
+  btn.classList.add('on');
+  if (id === 'hojas') loadHojas();
+  if (id === 'cursos') renderPacConfig();
+}
+
+// ── ALUMNOS ───────────────────────────────────────────────────────────
+function loadCSV(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const lines = ev.target.result.split('\n').filter(l=>l.trim());
+    let n = 0;
+    lines.forEach(l => {
+      const p = l.split(/[,;\t]/).map(x=>x.trim()).filter(Boolean);
+      if (p.length >= 2) { alumnos.push({code:p[0], name:p.slice(1).join(' ')}); n++; }
+      else if (p.length === 1) { alumnos.push({code:'', name:p[0]}); n++; }
+    });
+    renderAlumnos(); renderPreview();
+    toast(`${n} alumnos importados`, file.name);
+  };
+  reader.readAsText(file); e.target.value='';
+}
+function addAlumno() {
+  const code=g('mCode').trim(), name=g('mName').trim(); if (!name) return;
+  alumnos.push({code, name});
+  document.getElementById('mCode').value='';
+  document.getElementById('mName').value='';
+  renderAlumnos(); renderPreview();
+  document.getElementById('mCode').focus();
+}
+function removeAlumno(i) { alumnos.splice(i,1); renderAlumnos(); renderPreview(); }
+function clearAlumnos() {
+  if (!alumnos.length) return;
+  if (!confirm('¿Limpiar lista de alumnos?')) return;
+  alumnos=[]; renderAlumnos(); renderPreview();
+}
+function renderAlumnos() {
+  const list = document.getElementById('stuList');
+  list.innerHTML = alumnos.length ? alumnos.map((a,i)=>`
+    <div class="stu-item">
+      <span class="sn">${i+1}</span>
+      <span class="sname">${a.name}</span>
+      <span class="scode">${a.code||'—'}</span>
+      <button class="sdel" onclick="removeAlumno(${i})">✕</button>
+    </div>`).join('') : '<div class="empty">Sin alumnos cargados</div>';
+  document.getElementById('stuCount').textContent = `${alumnos.length} alumno${alumnos.length!==1?'s':''}`;
+  document.getElementById('prevBadge').textContent = `${alumnos.length} alumnos`;
+}
+
+// ── CURSOS ────────────────────────────────────────────────────────────
+function renderCursos() {
+  document.getElementById('crsGrid').innerHTML = cursos.map(c=>`
+    <div class="crs ${c.on?'on':''}" onclick="toggleCurso('${c.id}')">
+      <div class="ck">${c.on?'✓':''}</div><span>${c.label}</span>
+    </div>`).join('');
+  renderPacConfig();
+}
+function toggleCurso(id) {
+  cursos = cursos.map(c => c.id===id ? {...c, on:!c.on} : c);
+  renderCursos(); renderPreview();
+}
+function addCurso() {
+  const inp=document.getElementById('newCrs'), name=inp.value.trim(); if (!name) return;
+  cursos.push({id:'c_'+Date.now(), label:name, on:true}); inp.value='';
+  renderCursos(); renderPreview();
+}
+
+// ── PACIENTES CONFIG ──────────────────────────────────────────────────
+function renderPacConfig() {
+  const activos = cursos.filter(c=>c.on);
+  const box = document.getElementById('pacConfig');
+  if (!activos.length) { box.innerHTML='<div class="empty">Selecciona cursos arriba</div>'; return; }
+
+  box.innerHTML = activos.map(c => {
+    const pacs = pacientes[c.label] || [];
+    const items = pacs.map((p,i)=>`
+      <div class="pac-item">
+        <span class="pac-name">${p}</span>
+        <button class="pac-del" onclick="removePac('${esc(c.label)}',${i})">✕</button>
+      </div>`).join('');
+    return `
+      <div class="pac-curso-block">
+        <div class="pac-curso-title">${c.label}</div>
+        <div class="pac-list">${items||'<div class="empty" style="padding:8px">Sin pacientes</div>'}</div>
+        <div class="pac-add-row">
+          <input class="inp" id="pacInp_${c.id}" placeholder="Nombre del paciente…"
+            onkeydown="if(event.key==='Enter')addPac('${esc(c.label)}','${c.id}')">
+          <button class="btn-sm" onclick="addPac('${esc(c.label)}','${c.id}')">＋</button>
         </div>
-        <button class="sheet-del" title="Eliminar" onclick="event.stopPropagation();eliminarHoja('${esc(h.nombre)}')">🗑</button>
+      </div>`;
+  }).join('');
+}
+function addPac(cursoLabel, cursoId) {
+  const inp = document.getElementById('pacInp_' + cursoId);
+  const name = inp.value.trim(); if (!name) return;
+  if (!pacientes[cursoLabel]) pacientes[cursoLabel] = [];
+  pacientes[cursoLabel].push(name); inp.value='';
+  renderPacConfig(); renderPreview();
+}
+function removePac(cursoLabel, idx) {
+  pacientes[cursoLabel].splice(idx,1);
+  renderPacConfig(); renderPreview();
+}
+
+// ── RECALC / FÓRMULA ──────────────────────────────────────────────────
+function recalc() {
+  const base=+g('scBase')||12, xpct=+g('scXpct')||20;
+  const evalW=+g('scEvalW')||10, apro=+g('scApro')||11;
+  const extra=Math.round(base*xpct/100), ssW=100-evalW;
+  document.getElementById('scXval').textContent = extra;
+  document.getElementById('formulaDisp').innerHTML=`
+    <div class="fl"><span class="fl-lbl">Notas base:</span><span class="fl-a">${base} SS</span><span class="fl-c">= 100%</span></div>
+    <div class="fl"><span class="fl-lbl">Extra (+${xpct}%):</span><span class="fl-b">${extra} SS adicionales</span></div>
+    <div class="fl"><span class="fl-lbl">Peso SS / EV:</span><span class="fl-a">${ssW}%</span><span style="color:var(--n300)"> / </span><span class="fl-b">${evalW}%</span></div>
+    <div class="fl"><span class="fl-lbl">Aprobatorio:</span><span class="fl-c">≥ ${apro} pts</span></div>
+    <div class="formula-res"><strong>PROM</strong> = PROM(SS1…SS${base}) × ${ssW}% + EV × ${evalW}%</div>`;
+  renderPreview();
+}
+
+// ── VISTA PREVIA ESTRUCTURA ───────────────────────────────────────────
+function renderPreview() {
+  const base  = +g('scBase')||12;
+  const extra = +document.getElementById('scXval').textContent||3;
+  const activos = cursos.filter(c=>c.on);
+  const body = document.getElementById('previewBody');
+
+  if (!alumnos.length || !activos.length) {
+    body.innerHTML = '<div class="empty">Configura alumnos, cursos y pacientes para ver la estructura</div>';
+    return;
+  }
+
+  const thSS   = Array.from({length:base}, (_,i)=>`<th class="th-ss">${i+1}SS</th>`).join('');
+  const thEx   = Array.from({length:extra},(_,i)=>`<th class="th-ex">E${i+1}</th>`).join('');
+  const tdSS   = Array.from({length:base}, ()=>'<td class="ctr" style="color:var(--text4)">—</td>').join('');
+  const tdEx   = Array.from({length:extra},()=>'<td class="ctr" style="color:var(--text4)">—</td>').join('');
+
+  body.innerHTML = alumnos.map(a => {
+    const cursoBlocks = activos.map(c => {
+      const pacs = pacientes[c.label] || [];
+      const rows = pacs.length
+        ? pacs.map(p=>`<tr>
+            <td class="td-pac">📋 ${p}</td>
+            ${tdSS}${tdEx}
+            <td class="ctr" style="color:var(--text4)">—</td>
+            <td class="ctr"><span class="prom-cell">—</span></td>
+          </tr>`).join('')
+        : `<tr><td colspan="${2+base+extra+1+1}" class="empty" style="padding:8px 14px;font-size:11px">Sin pacientes configurados</td></tr>`;
+      return `
+        <div class="pa-curso-hdr">${c.label}</div>
+        <table class="pa-table">
+          <thead><tr><th class="th-pac">Paciente</th>${thSS}${thEx}<th class="th-ev">EV</th><th class="th-pr">PROM</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    }).join('');
+    return `<div class="preview-alumno">
+      <div class="pa-hdr"><span>👤 ${a.name}</span><span class="pa-code">${a.code||''}</span></div>
+      ${cursoBlocks}
+    </div>`;
+  }).join('');
+}
+
+// ── GENERAR PLANILLA ──────────────────────────────────────────────────
+async function generarPlanilla() {
+  if (!alumnos.length) { toast('Sin alumnos','Agrega alumnos primero','warn'); return; }
+  const activos = cursos.filter(c=>c.on);
+  if (!activos.length) { toast('Sin cursos','Selecciona al menos un curso','warn'); return; }
+
+  const base   = +g('scBase')||12;
+  const xpct   = +g('scXpct')||20;
+  const evalW  = (+g('scEvalW')||10)/100;
+  const extra  = Math.round(base*xpct/100);
+  const ssW    = parseFloat((1-evalW).toFixed(2));
+  const hoja   = g('cfgHoja') || (g('cfgSec')+' · '+g('cfgAsig').substring(0,18));
+
+  const payload = {
+    action: 'crearPlanilla',
+    nombreHoja: hoja,
+    config: {
+      docente:    g('cfgDocente')||'Docente',
+      asignatura: g('cfgAsig'),
+      semestre:   g('cfgSem'),
+      seccion:    g('cfgSec'),
+      notasBase:  base,
+      notasExtra: extra,
+      pesoSS:     ssW,
+      pesoEV:     evalW,
+      notaApro:   +g('scApro')||11,
+    },
+    alumnos: alumnos.map(a => ({
+      nombre:  a.name,
+      codigo:  a.code||'',
+      cursos:  activos.map(c => ({
+        nombre:    c.label,
+        pacientes: (pacientes[c.label]||[]).map(p=>({nombre:p})),
+      })),
+    })),
+  };
+
+  showLoader('Creando planilla en Google Sheets…');
+  try {
+    const r = await apiPost(payload);
+    hideLoader();
+    if (!r.ok) throw new Error(r.error);
+    toast('✅ Planilla creada', `Hoja: "${r.hoja}"`, 'ok');
+    window.open(r.url, '_blank');
+    // Cargar la hoja recién creada para edición
+    await abrirHojaEdicion(r.hoja);
+    loadHojas();
+  } catch(e) { hideLoader(); toast('Error', e.message, 'err'); }
+}
+
+// ── HOJAS ─────────────────────────────────────────────────────────────
+async function loadHojas() {
+  const box = document.getElementById('hojasContent');
+  box.innerHTML = '<div class="empty" style="padding:16px">Cargando…</div>';
+  try {
+    const r = await apiGet('listarHojas');
+    if (!r.ok) throw new Error(r.error);
+    if (!r.hojas.length) {
+      box.innerHTML = '<div class="empty">No hay hojas todavía</div>'; return;
+    }
+    box.innerHTML = r.hojas.map(h=>`
+      <div class="sheet-item" onclick="abrirHojaEdicion('${esc(h.nombre)}')">
+        <div class="si-icon">📋</div>
+        <div class="si-info">
+          <div class="si-name">${h.nombre}</div>
+          <div class="si-meta">${h.alumnos} alumno${h.alumnos!==1?'s':''}</div>
+        </div>
+        <button class="si-del" title="Eliminar" onclick="event.stopPropagation();delHoja('${esc(h.nombre)}')">🗑</button>
       </div>`).join('');
   } catch(e) {
     box.innerHTML = `<div class="hint">⚠️ ${e.message}</div>`;
   }
 }
 
-async function verHoja(nombre) {
-  showLoader('Cargando datos de la hoja…');
-  try {
-    const res = await apiGet('leerHoja', {hoja: nombre});
-    hideLoader();
-    if (!res.ok) throw new Error(res.error);
-    const w = window.open('', '_blank', 'width=960,height=640,scrollbars=yes');
-    const ths = res.cabeceras.map(h => `<th style="padding:8px 10px;background:#1f2937;color:#fff;font-size:11px;white-space:nowrap;border:1px solid #374151">${h}</th>`).join('');
-    const rows = res.alumnos.map((a,i) =>
-      `<tr style="background:${i%2===0?'#f9fafb':'#fff'}">${res.cabeceras.map(h=>`<td style="padding:6px 10px;border:1px solid #e5e7eb;font-size:12px">${a[h]??''}</td>`).join('')}</tr>`
-    ).join('');
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${nombre}</title></head>
-      <body style="font-family:sans-serif;padding:24px;background:#f3f4f6">
-      <h2 style="margin-bottom:6px;color:#111">${nombre}</h2>
-      <p style="color:#6b7280;font-size:13px;margin-bottom:18px">${res.meta||''}</p>
-      <div style="overflow-x:auto"><table style="border-collapse:collapse">
-      <thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table></div>
-      </body></html>`);
-  } catch(e) { hideLoader(); toast('Error', e.message, 'err'); }
-}
-
-async function eliminarHoja(nombre) {
+async function delHoja(nombre) {
   if (!confirm(`¿Eliminar la hoja "${nombre}"?`)) return;
   showLoader('Eliminando…');
   try {
-    const res = await apiPost({action:'eliminarHoja', hoja:nombre});
+    const r = await apiPost({action:'eliminarHoja', hoja:nombre});
     hideLoader();
-    if (!res.ok) throw new Error(res.error);
+    if (!r.ok) throw new Error(r.error);
     toast('Hoja eliminada', nombre, 'ok');
-    loadSheets();
+    if (hojaActiva === nombre) { hojaActiva=null; hojaData=null; showPreviewCard(); }
+    loadHojas();
   } catch(e) { hideLoader(); toast('Error', e.message, 'err'); }
 }
 
-// ── GENERATE ─────────────────────────────────────────────────────────────────
-async function generarPlanilla() {
-  if (!connected)         { toast('Sin conexión','Conecta Apps Script primero','warn'); return; }
-  if (!students.length)   { toast('Sin alumnos','Agrega alumnos antes de generar','warn'); return; }
-  const cursos = courses.filter(c=>c.on).map(c=>c.label);
-  if (!cursos.length)     { toast('Sin cursos','Selecciona al menos un curso','warn'); return; }
-
-  const base     = +v('scBase')     || 12;
-  const extraPct = +v('scExtraPct') || 20;
-  const evalW    = (+v('scEvalW')   || 10) / 100;
-  const extra    = Math.round(base * extraPct / 100);
-  const ssW      = parseFloat((1 - evalW).toFixed(2));
-  const nombre   = v('nombreHoja') || (v('cfgSec') + ' — ' + v('cfgAsig').substring(0,18));
-
-  showLoader('Creando planilla en Google Sheets…');
+// ── EDITOR DE NOTAS ───────────────────────────────────────────────────
+async function abrirHojaEdicion(nombre) {
+  showLoader('Cargando hoja…');
   try {
-    const res = await apiPost({
-      action:'crearPlanilla',
-      nombreHoja: nombre,
-      config:{
-        docente:    v('cfgDocente') || 'Docente',
-        asignatura: v('cfgAsig'),
-        semestre:   v('cfgSem'),
-        seccion:    v('cfgSec'),
-        notasBase:  base,
-        notasExtra: extra,
-        pesoSS:     ssW,
-        pesoEV:     evalW,
-        notaMax:    +v('scMax') || 20,
-        notaApro:   +v('scMin') || 11,
-      },
-      alumnos: students.map(s=>({nombre:s.name, codigo:s.code})),
-      cursos,
-    });
+    const r = await apiGet('leerHoja', {hoja:nombre});
     hideLoader();
-    if (!res.ok) throw new Error(res.error);
-    toast('✅ Planilla creada', `Hoja: "${res.hoja}"`, 'ok');
-    window.open(res.url, '_blank');
-    loadSheets();
-  } catch(e) { hideLoader(); toast('Error al generar', e.message, 'err'); }
+    if (!r.ok) throw new Error(r.error);
+    hojaActiva = nombre;
+    hojaData   = r;
+    renderEditor();
+  } catch(e) { hideLoader(); toast('Error', e.message, 'err'); }
 }
 
-// ── STUDENTS ─────────────────────────────────────────────────────────────────
-function loadCSV(e) {
-  const file = e.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const lines = ev.target.result.split('\n').filter(l=>l.trim());
-    let added = 0;
-    lines.forEach(line => {
-      const p = line.split(/[,;\t]/).map(x=>x.trim()).filter(Boolean);
-      if (p.length >= 2) { students.push({code:p[0], name:p.slice(1).join(' ')}); added++; }
-      else if (p.length === 1) { students.push({code:'', name:p[0]}); added++; }
-    });
-    renderStudents(); renderPreview();
-    toast(`${added} alumnos importados`, file.name);
-  };
-  reader.readAsText(file); e.target.value='';
-}
-function addManual() {
-  const code=document.getElementById('mCode').value.trim();
-  const name=document.getElementById('mName').value.trim();
-  if (!name) return;
-  students.push({code,name});
-  document.getElementById('mCode').value='';
-  document.getElementById('mName').value='';
-  renderStudents(); renderPreview();
-  document.getElementById('mCode').focus();
-}
-function removeStudent(i){ students.splice(i,1); renderStudents(); renderPreview(); }
-function clearStudents(){
-  if (!students.length) return;
-  if (!confirm('¿Limpiar toda la lista?')) return;
-  students=[]; renderStudents(); renderPreview();
-}
-function renderStudents(){
-  const list=document.getElementById('stuList');
-  list.innerHTML = students.length===0
-    ? '<div class="empty">Sin alumnos cargados</div>'
-    : students.map((s,i)=>`
-        <div class="stu-item">
-          <span class="stu-n">${i+1}</span>
-          <span class="stu-name">${s.name}</span>
-          <span class="stu-code">${s.code||'—'}</span>
-          <button class="stu-del" onclick="removeStudent(${i})">✕</button>
-        </div>`).join('');
-  document.getElementById('stuCount').textContent=`${students.length} alumno${students.length!==1?'s':''}`;
-  document.getElementById('prevBadge').textContent=`${students.length} alumnos`;
+function showPreviewCard() {
+  document.getElementById('previewCard').style.display = '';
+  document.getElementById('editorCard').style.display  = 'none';
 }
 
-// ── COURSES ───────────────────────────────────────────────────────────────────
-function renderCourses(){
-  document.getElementById('crsGrid').innerHTML=courses.map(c=>`
-    <div class="crs ${c.on?'on':''}" onclick="toggleCourse('${c.id}')">
-      <div class="ck">${c.on?'✓':''}</div><span>${c.label}</span>
-    </div>`).join('');
-}
-function toggleCourse(id){
-  courses=courses.map(c=>c.id===id?{...c,on:!c.on}:c); renderCourses();
-}
-function addCourse(){
-  const inp=document.getElementById('newCrs'), name=inp.value.trim(); if (!name) return;
-  courses.push({id:'c_'+Date.now(),label:name,on:true}); inp.value=''; renderCourses();
+function renderEditor() {
+  if (!hojaData) return;
+  const base   = +g('scBase')||12;
+  const extra  = +document.getElementById('scXval').textContent||3;
+  const apro   = MINPASS();
+
+  document.getElementById('previewCard').style.display = 'none';
+  document.getElementById('editorCard').style.display  = '';
+  document.getElementById('editorTitle').textContent   = `✏️ Editando: ${hojaActiva}`;
+  document.getElementById('editorBadge').textContent   = `${hojaData.alumnos.length} alumnos`;
+
+  const thSS = Array.from({length:base},  (_,i)=>`<th class="th-ss">${i+1}SS</th>`).join('');
+  const thEx = Array.from({length:extra}, (_,i)=>`<th class="th-ex">E${i+1}</th>`).join('');
+
+  const body = document.getElementById('editorBody');
+  body.innerHTML = hojaData.alumnos.map((al, ai) => {
+    const bloques = al.cursos.map((cu, ci) => {
+      const rows = cu.pacientes.map((pac, pi) => {
+        const ssCells = Array.from({length:base}, (_,ni) => {
+          const val = pac.notas[ni] !== undefined && pac.notas[ni] !== '' ? pac.notas[ni] : '';
+          return `<td class="ctr"><input type="number" class="nota-cell ${val!==''?'has-val':''}"
+            value="${val}" min="0" max="20" step="0.5"
+            data-alumno="${esc(al.nombre)}" data-curso="${esc(cu.nombre)}" data-pac="${esc(pac.nombre)}"
+            data-tipo="ss" data-idx="${ni}"
+            onchange="saveNota(this)" onfocus="this.select()"></td>`;
+        }).join('');
+        const exCells = Array.from({length:extra}, (_,ni) => {
+          const val = pac.notas[base+ni] !== undefined && pac.notas[base+ni] !== '' ? pac.notas[base+ni] : '';
+          return `<td class="ctr"><input type="number" class="nota-cell ${val!==''?'has-val':''}"
+            value="${val}" min="0" max="20" step="0.5"
+            data-alumno="${esc(al.nombre)}" data-curso="${esc(cu.nombre)}" data-pac="${esc(pac.nombre)}"
+            data-tipo="extra" data-idx="${ni}"
+            onchange="saveNota(this)" onfocus="this.select()"></td>`;
+        }).join('');
+        const evVal = pac.ev !== '' && pac.ev !== undefined ? pac.ev : '';
+        const evCell = `<td class="ctr"><input type="number" class="nota-cell ev ${evVal!==''?'has-val':''}"
+          value="${evVal}" min="0" max="20" step="0.5"
+          data-alumno="${esc(al.nombre)}" data-curso="${esc(cu.nombre)}" data-pac="${esc(pac.nombre)}"
+          data-tipo="ev" data-idx="0"
+          onchange="saveNota(this)" onfocus="this.select()"></td>`;
+        const prom = pac.prom;
+        let promClass = 'prom-cell';
+        if (prom !== '' && prom !== undefined) promClass += prom >= apro ? ' apro' : ' repr';
+        const promCell = `<td class="ctr"><span class="${promClass}" id="prom_${ai}_${ci}_${pi}">${prom !== '' && prom !== undefined ? prom : '—'}</span></td>`;
+
+        return `<tr>
+          <td class="td-pac">📋 ${pac.nombre}</td>
+          ${ssCells}${exCells}${evCell}${promCell}
+        </tr>`;
+      }).join('');
+
+      return `
+        <div class="pa-curso-hdr">${cu.nombre}</div>
+        <table class="pa-table">
+          <thead><tr><th class="th-pac">Paciente</th>${thSS}${thEx}<th class="th-ev">EV</th><th class="th-pr">PROM</th></tr></thead>
+          <tbody>${rows||'<tr><td colspan="99" class="empty" style="padding:8px">Sin pacientes</td></tr>'}</tbody>
+        </table>`;
+    }).join('');
+
+    return `<div class="preview-alumno">
+      <div class="pa-hdr"><span>👤 ${al.nombre}</span><span class="pa-code">${al.codigo||''}</span></div>
+      ${bloques}
+    </div>`;
+  }).join('');
 }
 
-// ── RECALC ────────────────────────────────────────────────────────────────────
-function recalc(){
-  const base=+v('scBase')||12, xpct=+v('scExtraPct')||20;
-  const evalW=+v('scEvalW')||10, maxG=+v('scMax')||20, minP=+v('scMin')||11;
-  const extra=Math.round(base*xpct/100), ssW=100-evalW;
-  document.getElementById('scExtraVal').textContent=extra;
-  document.getElementById('notasBadge').textContent=`${base} base + ${extra} extra`;
-  document.getElementById('formulaDisplay').innerHTML=`
-    <div class="fl"><span class="fl-lbl">Notas SS (base):</span><span class="or-t">${base} atenciones</span><span class="gn-t">= 100%</span></div>
-    <div class="fl"><span class="fl-lbl">Notas extra (+${xpct}%):</span><span class="bl-t">${extra} adicionales</span></div>
-    <div class="fl"><span class="fl-lbl">Peso atenciones / EV:</span><span class="or-t">${ssW}%</span> / <span class="bl-t">${evalW}%</span></div>
-    <div class="fl"><span class="fl-lbl">Nota máx / aprobatoria:</span><span class="or-t">${maxG} pts</span> / <span class="gn-t">≥ ${minP} pts</span></div>
-    <div class="formula-res"><strong>PROM FINAL</strong> = PROMEDIO(SS1…SS${base}) × ${ssW}% + EV × ${evalW}%</div>`;
-  renderPreview();
+// ── GUARDAR NOTA ──────────────────────────────────────────────────────
+async function saveNota(input) {
+  const alumno = input.dataset.alumno;
+  const curso  = input.dataset.curso;
+  const pac    = input.dataset.pac;
+  const tipo   = input.dataset.tipo;
+  const idx    = parseInt(input.dataset.idx);
+  const valor  = input.value.trim();
+  const key    = `${alumno}|${curso}|${pac}|${tipo}|${idx}`;
+
+  // marcar has-val
+  if (valor !== '') input.classList.add('has-val');
+  else input.classList.remove('has-val');
+
+  clearTimeout(savingTimer[key]);
+  savingTimer[key] = setTimeout(async () => {
+    try {
+      const r = await apiPost({
+        action: 'guardarNota',
+        hoja:    hojaActiva,
+        alumno, curso, paciente: pac, tipo, idx,
+        valor:   valor === '' ? '' : parseFloat(valor),
+        config: {
+          notasBase:  +g('scBase')||12,
+          notasExtra: +document.getElementById('scXval').textContent||3,
+        },
+      });
+      if (!r.ok) throw new Error(r.error);
+
+      // actualizar promedio en el DOM
+      const apro = MINPASS();
+      const cells = document.querySelectorAll(`[data-alumno="${alumno}"][data-curso="${curso}"][data-pac="${pac}"]`);
+      // encontrar índice relativo del alumno/curso/paciente para el ID
+      if (r.prom !== undefined && r.prom !== '') {
+        const allAlumnos = hojaData.alumnos;
+        const ai = allAlumnos.findIndex(a => a.nombre === alumno);
+        const ci = allAlumnos[ai]?.cursos.findIndex(c => c.nombre === curso);
+        const pi = allAlumnos[ai]?.cursos[ci]?.pacientes.findIndex(p => p.nombre === pac);
+        const cell = document.getElementById(`prom_${ai}_${ci}_${pi}`);
+        if (cell) {
+          cell.textContent = r.prom;
+          cell.className   = 'prom-cell ' + (r.prom >= apro ? 'apro' : 'repr');
+        }
+      }
+    } catch(e) {
+      toast('Error al guardar', e.message, 'err');
+    }
+  }, 600); // debounce 600ms
 }
 
-// ── PREVIEW ───────────────────────────────────────────────────────────────────
-function renderPreview(){
-  const base=+v('scBase')||12, extra=+document.getElementById('scExtraVal').textContent||3;
-  const crs=courses.filter(c=>c.on).map(c=>c.label).join(' / ')||'—';
-  document.getElementById('tHead').innerHTML=
-    `<th>N°</th><th>Curso</th><th>Apellidos y Nombres</th><th>Cód.</th>`
-    +Array.from({length:base},(_,i)=>`<th class="t-or">${i+1}SS</th>`).join('')
-    +Array.from({length:extra},(_,i)=>`<th class="t-bl">E${i+1}</th>`).join('')
-    +`<th>EV</th><th class="t-gn">PROM</th>`;
-  const body=document.getElementById('tBody');
-  if (!students.length){
-    body.innerHTML=`<tr><td colspan="${4+base+extra+2}" class="empty" style="padding:22px">Agrega alumnos para ver la vista previa</td></tr>`;
-    return;
-  }
-  body.innerHTML=students.map((s,i)=>`
-    <tr class="${i%2===1?'odd':''}">
-      <td class="mn">${i+1}</td><td class="mn">${crs}</td><td>${s.name}</td><td class="mn">${s.code||'—'}</td>
-      ${Array.from({length:base},()=>'<td class="ctr"><span class="sbox o">—</span></td>').join('')}
-      ${Array.from({length:extra},()=>'<td class="ctr"><span class="sbox b">—</span></td>').join('')}
-      <td class="ctr"><span class="sbox">—</span></td>
-      <td class="ctr"><span class="sbox g">—</span></td>
-    </tr>`).join('');
-}
+// ── HELPERS ───────────────────────────────────────────────────────────
+function g(id)  { return document.getElementById(id).value; }
+function esc(s) { return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;'); }
+function showLoader(msg) { document.getElementById('loaderMsg').textContent=msg; document.getElementById('loader').classList.add('show'); }
+function hideLoader()    { document.getElementById('loader').classList.remove('show'); }
 
-// ── HELPERS ───────────────────────────────────────────────────────────────────
-function v(id){ return document.getElementById(id).value; }
-function esc(s){ return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
-function showLoader(msg){ document.getElementById('loaderMsg').textContent=msg; document.getElementById('loader').classList.add('show'); }
-function hideLoader(){ document.getElementById('loader').classList.remove('show'); }
 let _tt;
-function toast(title,msg,type=''){
+function toast(title, msg, type='') {
   const el=document.getElementById('toast');
-  document.getElementById('tTitle').textContent=title;
-  document.getElementById('tMsg').textContent=msg||'';
-  el.className='show '+(type||'');
-  clearTimeout(_tt); _tt=setTimeout(()=>{ el.className=type||''; },3800);
+  document.getElementById('tTitle').textContent = title;
+  document.getElementById('tMsg').textContent   = msg||'';
+  el.className = 'show '+(type||'');
+  clearTimeout(_tt); _tt = setTimeout(()=>{ el.className=type||''; }, 3800);
 }
 </script>
 </body>
