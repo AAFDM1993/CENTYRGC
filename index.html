@@ -149,6 +149,24 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 .ring{width:44px;height:44px;border:3px solid var(--n700);border-top-color:var(--n400);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:900px){.wrap{grid-template-columns:1fr;padding:14px}.hdr{padding:0 14px}.est-wrap{padding:14px}#drawer{width:100%;max-width:100%}}
+
+/* ── EXPORTAR PDF ── */
+.exp-hoja-item{display:flex;align-items:center;gap:10px;background:var(--surf2);border:1px solid var(--bd2);border-radius:9px;padding:10px 14px;margin-bottom:7px;cursor:pointer;transition:all .15s}
+.exp-hoja-item:hover{border-color:var(--n400);background:var(--n050)}
+.exp-hoja-item.sel{border-color:var(--n500);background:var(--n050)}
+.exp-hoja-item .ck{width:17px;height:17px;border:2px solid var(--bd);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;transition:all .15s}
+.exp-hoja-item.sel .ck{background:var(--n500);border-color:var(--n500);color:#fff}
+.exp-hoja-name{flex:1;font-size:13px;font-weight:600;color:var(--tx)}
+.exp-hoja-meta{font-size:11px;color:var(--tx4);font-family:'DM Mono',monospace}
+.resumen-preview{margin-top:12px;border:1px solid var(--bd2);border-radius:10px;overflow:hidden}
+.resumen-preview table{width:100%;border-collapse:collapse;font-size:12px}
+.resumen-preview th{background:var(--n900);color:var(--n300);padding:8px 12px;text-align:left;font-family:'DM Mono',monospace;font-size:11px;font-weight:600}
+.resumen-preview td{padding:7px 12px;border-bottom:1px solid var(--bd2);vertical-align:middle}
+.resumen-preview tr:last-child td{border-bottom:none}
+.resumen-preview tr:nth-child(even) td{background:var(--bg2)}
+.resumen-preview .td-cod{font-family:'DM Mono',monospace;font-size:11px;color:var(--n500)}
+.resumen-preview .td-prom{font-family:'DM Mono',monospace;font-weight:700;text-align:center}
+.resumen-preview .td-prom.ok{color:var(--green)}.resumen-preview .td-prom.no{color:var(--red)}
 </style>
 </head>
 <body>
@@ -193,12 +211,13 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
     <div class="wrap">
       <div style="display:flex;flex-direction:column;gap:16px">
         <div class="card">
-          <div class="tabs t5" id="adminTabs">
+          <div class="tabs" id="adminTabs" style="grid-template-columns:repeat(6,1fr)">
             <button class="tab on" id="tabAl" onclick="showTab('al',this)">Alumnos</button>
             <button class="tab" id="tabCu" onclick="showTab('cu',this)">Cursos</button>
             <button class="tab" id="tabNt" onclick="showTab('nt',this)">Config</button>
             <button class="tab" id="tabUs" onclick="showTab('us',this)">Usuarios</button>
             <button class="tab" id="tabHo" onclick="showTab('ho',this)">Hojas</button>
+            <button class="tab" id="tabPdf" onclick="showTab('pdf',this)">PDF</button>
           </div>
 
           <div class="pane on" id="pane-al">
@@ -286,6 +305,18 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
             <div id="hojasBox"><div class="hint-b"><span>...</span><span>Cargando hojas...</span></div></div>
             <button class="btn-ghost" style="width:100%;margin-top:9px" onclick="loadHojas()">Actualizar lista</button>
           </div>
+          <div class="pane" id="pane-pdf">
+            <div class="slbl">Seleccionar hoja</div>
+            <div id="expHojasList"><div class="empty">Cargando...</div></div>
+            <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+              <button class="btn-sm green" onclick="exportarPDF()" style="flex:1">Exportar a PDF</button>
+              <button class="btn-ghost" onclick="cargarHojasExport()" style="padding:7px 12px">Recargar</button>
+            </div>
+            <div id="resumenPreviewBox" style="display:none">
+              <div class="slbl" style="margin-top:12px">Vista previa</div>
+              <div class="resumen-preview" id="resumenTable"></div>
+            </div>
+          </div>
         </div>
 
         <button class="btn btn-p" id="btnGen" onclick="generarPlanilla()" disabled style="width:100%">
@@ -335,7 +366,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 <script>
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyCvBMIynYm3WbhT0ZeVWnCAPg8wWHI-BwSfchZYChYaV_bvwNKxZB5uRTvNYWBSU5Ylw/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxiunRCpYJd91HZ8Byg1nxZ-SPP3cO1HmpP94S41KPrJ2vlE0B9PFgNWb3xX1J0ED9H_w/exec';
 // ====================================================
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
@@ -371,7 +402,7 @@ window.onload=function(){
 };
 
 async function doLogin(){
-  const code=vi('lgCode').trim(),pass=vi('lgPass').trim();
+  const code=vi('lgCode').trim().toLowerCase(),pass=vi('lgPass').trim();
   if(!code||!pass){lgErr('Completa codigo y contrasena');return}
   if(!GAS_URL||GAS_URL.indexOf('PEGA_AQUI')>=0){lgErr('Configura GAS_URL en el HTML');return}
   showLoader('Verificando...');
@@ -412,7 +443,7 @@ function setConn(ok,msg){
 function iniciarVistaAdmin(){
   const esA=session.rol==='admin';
   if(!esA){
-    ['tabAl','tabCu','tabNt','tabUs'].forEach(t=>{const el=g(t);if(el)el.style.display='none'});
+    ['tabAl','tabCu','tabNt','tabUs','tabPdf'].forEach(t=>{const el=g(t);if(el)el.style.display='none'});
     document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
     document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
     g('tabHo').classList.add('on');g('pane-ho').classList.add('on');
@@ -425,7 +456,7 @@ function showTab(tid,btn){
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
   g('pane-'+tid).classList.add('on');btn.classList.add('on');
-  if(tid==='ho')loadHojas();if(tid==='us')cargarUsuarios();
+  if(tid==='ho')loadHojas();if(tid==='us')cargarUsuarios();if(tid==='pdf')cargarHojasExport();
 }
 function openDrawer(i){
   drawerIdx=i;const a=alumnos[i];
@@ -742,6 +773,175 @@ function renderEstNotas(resultados){
     }).join('');
     return`<div class="est-hoja"><div class="est-hoja-hdr"><h3>${res.asignatura}</h3><p>${res.hoja}</p></div>${bl}</div>`;
   }).join('');
+}
+
+// ── EXPORTAR PDF ─────────────────────────────────────────────
+let expHojas=[],expSelHoja=null,expResumen=null;
+
+async function cargarHojasExport(){
+  const box=g('expHojasList');if(!box)return;
+  box.innerHTML='<div class="empty">Cargando...</div>';
+  expSelHoja=null;expResumen=null;
+  g('resumenPreviewBox').style.display='none';
+  try{
+    const r=await apiGet('listarHojas');if(!r.ok)throw new Error(r.error);
+    expHojas=r.hojas;
+    if(!expHojas.length){box.innerHTML='<div class="empty">Sin hojas creadas</div>';return}
+    renderExpHojas();
+  }catch(e){box.innerHTML=`<div class="hint">Error: ${e.message}</div>`}
+}
+
+function renderExpHojas(){
+  const box=g('expHojasList');if(!box)return;
+  box.innerHTML=expHojas.map((h,i)=>{
+    const sel=expSelHoja===h.nombre;
+    return `<div class="exp-hoja-item ${sel?'sel':''}" onclick="selExpHoja('${esc(h.nombre)}')">
+      <div class="ck">${sel?'v':' '}</div>
+      <span class="exp-hoja-name">${h.nombre}</span>
+      <span class="exp-hoja-meta">${h.alumnos} alumnos</span>
+    </div>`;
+  }).join('');
+}
+
+async function selExpHoja(nombre){
+  expSelHoja=nombre;renderExpHojas();
+  g('resumenPreviewBox').style.display='none';
+  showLoader('Cargando resumen...');
+  try{
+    const r=await apiGet('resumenHoja',{hoja:nombre});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    expResumen=r;renderResumenPreview(r);
+  }catch(e){hideLoader();toast('Error al cargar resumen',e.message,'err')}
+}
+
+function renderResumenPreview(r){
+  const box=g('resumenPreviewBox'),tbl=g('resumenTable');
+  if(!box||!tbl)return;
+  const cfg=r.config||{};
+  const apro=Number(cfg.notaApro)||11;
+  const curso=cfg.asignatura||r.hoja;
+  const semestre=cfg.semestre||'';
+  let rows=r.alumnos.map((al,i)=>{
+    const p=al.promFinal;
+    const cls=p!==''&&p!==undefined?(p>=apro?'ok':'no'):'';
+    return `<tr>
+      <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-size:12px;color:var(--tx3);text-align:center">${i+1}</td>
+      <td class="td-cod" style="padding:7px 12px;border-bottom:1px solid var(--bd2)">${al.codigo||'-'}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-size:12px;font-weight:600">${al.nombre}</td>
+      <td class="td-prom ${cls}" style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-family:'DM Mono',monospace;font-weight:700;text-align:center;color:${cls==='ok'?'var(--green)':cls==='no'?'var(--red)':'var(--tx3)'}">${p!==''&&p!==undefined?p:'-'}</td>
+    </tr>`;
+  }).join('');
+  tbl.innerHTML=`<table><thead><tr>
+    <th style="width:36px">#</th>
+    <th>Codigo</th>
+    <th>Apellidos y Nombres</th>
+    <th style="width:70px;text-align:center">Prom. Final</th>
+  </tr></thead><tbody>${rows}</tbody></table>`;
+  box.style.display='block';
+}
+
+async function exportarPDF(){
+  if(!expSelHoja||!expResumen){toast('Selecciona una hoja primero','','warn');return}
+  const cfg=expResumen.config||{};
+  const apro=Number(cfg.notaApro)||11;
+  const curso=cfg.asignatura||expSelHoja;
+  const semestre=cfg.semestre||'';
+  const seccion=cfg.seccion||'';
+  const fecha=new Date().toLocaleDateString('es-PE',{year:'numeric',month:'long',day:'numeric'});
+
+  // Construir HTML del PDF en ventana nueva
+  const filas=expResumen.alumnos.map((al,i)=>{
+    const p=al.promFinal;
+    const aprobado=p!==''&&p!==undefined&&p>=apro;
+    const color=p!==''&&p!==undefined?(aprobado?'#059669':'#dc2626'):'#64748b';
+    return `<tr>
+      <td style="text-align:center;color:#64748b;font-size:11px">${i+1}</td>
+      <td style="font-family:monospace;font-size:11px;color:#1d4ed8">${al.codigo||'-'}</td>
+      <td style="font-weight:600;font-size:12px">${al.nombre}</td>
+      <td style="text-align:center;font-family:monospace;font-weight:700;font-size:13px;color:${color}">${p!==''&&p!==undefined?p:'-'}</td>
+      <td style="text-align:center;font-size:11px;color:${color}">${p!==''&&p!==undefined?(aprobado?'APROBADO':'DESAPROBADO'):'-'}</td>
+    </tr>`;
+  }).join('');
+
+  const aprobados=expResumen.alumnos.filter(al=>al.promFinal!==''&&al.promFinal!==undefined&&al.promFinal>=apro).length;
+  const total=expResumen.alumnos.length;
+
+  const htmlPDF=`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Registro de Notas - ${curso}</title>
+<style>
+  @page{size:A4;margin:20mm 15mm}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#0f172a;background:#fff}
+  .header{border-bottom:3px solid #1d4ed8;padding-bottom:14px;margin-bottom:18px}
+  .inst{font-size:11px;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+  h1{font-size:18px;font-weight:800;color:#0a1628;margin-bottom:4px}
+  .meta{display:flex;gap:20px;font-size:11px;color:#334155;margin-top:8px;flex-wrap:wrap}
+  .meta span{background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:2px 10px}
+  .meta strong{color:#1d4ed8}
+  table{width:100%;border-collapse:collapse;margin-top:4px}
+  thead th{background:#0a1628;color:#fff;padding:9px 12px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.5px}
+  thead th.c{text-align:center}
+  tbody tr:nth-child(even){background:#f8faff}
+  tbody td{padding:8px 12px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
+  .footer{margin-top:24px;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #e2e8f0;padding-top:14px}
+  .stats{display:flex;gap:16px}
+  .stat{text-align:center;background:#f0f4ff;border-radius:8px;padding:8px 16px;min-width:80px}
+  .stat .n{font-size:22px;font-weight:800;color:#1d4ed8}
+  .stat .l{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.6px;margin-top:2px}
+  .stat.ok .n{color:#059669}.stat.no .n{color:#dc2626}
+  .firma{text-align:right}
+  .firma-line{border-top:1px solid #0a1628;width:200px;margin:30px 0 5px auto;display:block}
+  .firma p{font-size:11px;color:#334155}
+  @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="inst">Universidad / Escuela Profesional de Tecnologia Medica</div>
+  <h1>${curso}</h1>
+  <div class="meta">
+    <span><strong>Semestre:</strong> ${semestre}</span>
+    ${seccion?`<span><strong>Seccion:</strong> ${seccion}</span>`:''}
+    <span><strong>Nota aprobatoria:</strong> ${apro} pts</span>
+    <span><strong>Generado:</strong> ${fecha}</span>
+  </div>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th class="c" style="width:36px">#</th>
+      <th style="width:100px">Codigo</th>
+      <th>Apellidos y Nombres</th>
+      <th class="c" style="width:80px">Prom. Final</th>
+      <th class="c" style="width:100px">Estado</th>
+    </tr>
+  </thead>
+  <tbody>${filas}</tbody>
+</table>
+
+<div class="footer">
+  <div class="stats">
+    <div class="stat"><div class="n">${total}</div><div class="l">Total</div></div>
+    <div class="stat ok"><div class="n">${aprobados}</div><div class="l">Aprobados</div></div>
+    <div class="stat no"><div class="n">${total-aprobados}</div><div class="l">Desaprobados</div></div>
+  </div>
+  <div class="firma">
+    <span class="firma-line"></span>
+    <p><strong>Firma del Docente</strong></p>
+    <p style="margin-top:4px;color:#64748b">${curso}</p>
+  </div>
+</div>
+<script>window.onload=()=>{window.print()}<\/script>
+</body>
+</html>`;
+
+  const win=window.open('','_blank');
+  win.document.write(htmlPDF);
+  win.document.close();
 }
 </script>
 </body>
