@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow, noarchive">
     <meta name="googlebot" content="noindex, nofollow, noarchive">
     <meta name="bingbot" content="noindex, nofollow, noarchive">
-    <title>CENTYR | Gestión beta</title>
+    <title>CENTYR | Gestión</title>
     <style>
         :root { 
             --primary:  #1B2A4A;   /* azul marino profundo */
@@ -840,7 +840,74 @@
     ╚══════════════════════════════════════════════════════════════════╝
     -->
 
-<!-- ═══ centyr-core.js ═══ -->
+
+
+
+
+
+
+
+
+<!-- Modal Mis Notas (alumno) -->
+<div id="modalMisNotas" class="modal">
+    <div class="modal-content" style="max-width:920px; max-height:92vh; overflow-y:auto; position:relative;">
+        <div class="modal-header" style="background:var(--alumno); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0; position:relative;">
+            <button class="modal-close-x" onclick="document.getElementById('modalMisNotas').style.display='none'">✕</button>
+            <h2 style="margin:0; color:white; font-size:1.1rem;">📊 Mis Notas Académicas</h2>
+        </div>
+        <div id="mis-notas-body" style="padding:0 4px;"></div>
+    </div>
+</div>
+
+<!-- Modal Notas por Alumno (docente / admin) -->
+<div id="modalNotasAlumno" class="modal">
+    <div class="modal-content" style="max-width:920px; max-height:92vh; overflow-y:auto; position:relative;">
+        <div class="modal-header" style="background:var(--docente); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0; position:relative;">
+            <button class="modal-close-x" onclick="document.getElementById('modalNotasAlumno').style.display='none'">✕</button>
+            <h2 style="margin:0; color:white; font-size:1.1rem;">📊 Notas del Alumno</h2>
+        </div>
+        <div style="padding:0 4px;">
+            <div style="background:#F0F4FF; border-radius:10px; padding:12px; margin-bottom:14px;">
+                <label style="font-size:0.85rem; font-weight:700; color:var(--primary); display:block; margin-bottom:6px;">🔍 Buscar alumno por apellido:</label>
+                <input type="text" id="notas-alumno-buscar" placeholder="Escribe el apellido..." oninput="buscarAlumnoNotas(this.value)"
+                       style="margin-bottom:6px; border:1.5px solid var(--docente);">
+                <div id="notas-alumno-chips" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;"></div>
+            </div>
+            <div id="notas-alumno-body" style="color:#999; text-align:center; padding:30px 0;">
+                Busca y selecciona un alumno para ver sus notas.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ingreso de Notas por Curso -->
+<div id="modalCursos" class="modal">
+    <div class="modal-content" style="max-width:860px; max-height:92vh; overflow-y:auto; position:relative;">
+        <div class="modal-header" style="background:var(--primary); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0; position:relative;">
+            <button class="modal-close-x" onclick="document.getElementById('modalCursos').style.display='none'">✕</button>
+            <h2 id="modal-cursos-titulo" style="margin:0; color:white; font-size:1.1rem;">📝 Notas del Curso</h2>
+        </div>
+        <div id="modal-cursos-body" style="padding:0;"></div>
+    </div>
+</div>
+
+<style>
+    @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
+</style>
+
+<!-- SheetJS para leer Excel en importación de alumnos -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<!-- Pop-up pendientes docente -->
+<div id="popup-pendientes">
+    <div class="pp-header" onclick="togglePopupPendientes()">
+        <span>⏳ Sesiones Pendientes<span id="pp-badge">0</span></span>
+        <span id="pp-chevron">▲</span>
+    </div>
+    <div class="pp-body" id="pp-body"></div>
+</div>
+
 <script>
 /**
  * ╔══════════════════════════════════════════════════════════════════╗
@@ -1099,12 +1166,9 @@
         return { pass, fail };
     };
 
-    console.log('✅ centyr-core.js cargado — CENTYR disponible en window');
 })();
-
 </script>
 
-<!-- ═══ centyr-auth.js ═══ -->
 <script>
 /**
  * ╔══════════════════════════════════════════════════════════════════╗
@@ -1301,12 +1365,9 @@
         return { pass, fail };
     };
 
-    console.log('✅ centyr-auth.js cargado');
 })();
-
 </script>
 
-<!-- ═══ centyr-session.js ═══ -->
 <script>
 /**
  * ╔══════════════════════════════════════════════════════════════════╗
@@ -1945,12 +2006,9 @@ PLAN DE INTERVENCIÓN:
         return { pass, fail };
     };
 
-    console.log('✅ centyr-session.js cargado');
 })();
-
 </script>
 
-<!-- ═══ centyr-docente.js ═══ -->
 <script>
 /**
  * ╔══════════════════════════════════════════════════════════════════╗
@@ -2704,45 +2762,16 @@ function toggleAdmin() {
     // ADMIN TABS
     // ============================================
 
-
     // ── Registro ─────────────────────────────────────────────────────────────
     const _fns = { toggleAdmin, abrirModalNotaDocente, _cargarSelectAlumnos, filtrarAlumnosNota, seleccionarAlumnoNota, renderNotasPrevias, cargarPacientesAlumno, cargarDatosNota, setNotaCat, renderNotasSidebar, guardarNotaDocente, generarNotaDocentePDF, aprobarSesion, abrirEstadisticas, verificarPendientesDocente, aprobarDesdePopup, togglePopupPendientes, actualizarColorNota, actualizarPorcentajeBadge, actualizarInfoAlumnoEnNotas, abrirIngresoCursoConAlumno, abrirIngresoCursoConAlumno2 };
     Object.assign(CENTYR.fn, _fns);
     Object.assign(window,    _fns);
 
     // ── Tests ─────────────────────────────────────────────────────────────────
-    CENTYR.test['docente'] = function() {
-        console.group('🧪 centyr-docente tests');
-        let pass = 0, fail = 0;
-        function assert(desc, cond) {
-            if (cond) { console.log(`  ✅ ${desc}`); pass++; }
-            else       { console.error(`  ❌ ${desc}`); fail++; }
-        }
-        assert('CENTYR.fn.toggleAdmin registrado', typeof CENTYR.fn.toggleAdmin === 'function');
-        assert('CENTYR.fn.abrirModalNotaDocente registrado', typeof CENTYR.fn.abrirModalNotaDocente === 'function');
-        assert('CENTYR.fn._cargarSelectAlumnos registrado', typeof CENTYR.fn._cargarSelectAlumnos === 'function');
-        assert('CENTYR.fn.filtrarAlumnosNota registrado', typeof CENTYR.fn.filtrarAlumnosNota === 'function');
-        assert('CENTYR.fn.seleccionarAlumnoNota registrado', typeof CENTYR.fn.seleccionarAlumnoNota === 'function');
-        assert('CENTYR.fn.renderNotasPrevias registrado', typeof CENTYR.fn.renderNotasPrevias === 'function');
 
-        // Lógica de filtrado
-        CENTYR.db = { ...CENTYR.db, usuarios: [
-            { usuario:'d1', nombre_completo:'García Lopez', rol:'docente', colegiatura:'CTMP 001' },
-            { usuario:'d2', nombre_completo:'Perez Torres', rol:'docente', colegiatura:'CTMP 002' },
-        ]};
-        assert('db tiene 2 docentes de prueba', CENTYR.db.usuarios.filter(u=>u.rol==='docente').length === 2);
-        CENTYR.db = { pacientes:[], usuarios:[], citas:[], notas_docentes:[], estructuras_cursos:[], notas_cursos:{} };
-        console.groupEnd();
-        console.log(`  Resultado: ${pass} ✅  ${fail} ❌`);
-        return { pass, fail };
-    };
-
-    console.log('✅ centyr-docente.js cargado');
 })();
-
 </script>
 
-<!-- ═══ centyr-alumno.js ═══ -->
 <script>
 /**
  * ╔══════════════════════════════════════════════════════════════════╗
@@ -3018,39 +3047,16 @@ function abrirModalMisNotas() {
 
     // Helper: abrir modal cursos preseleccionando alumno
 
-
     // ── Registro ─────────────────────────────────────────────────────────────
     const _fns = { abrirModalMisNotas, renderMisNotas, abrirModalNotasAlumno, buscarAlumnoNotas, seleccionarAlumnoParaNotas, renderNotasAlumnoDetalle };
     Object.assign(CENTYR.fn, _fns);
     Object.assign(window,    _fns);
 
     // ── Tests ─────────────────────────────────────────────────────────────────
-    CENTYR.test['alumno'] = function() {
-        console.group('🧪 centyr-alumno tests');
-        let pass = 0, fail = 0;
-        function assert(desc, cond) {
-            if (cond) { console.log(`  ✅ ${desc}`); pass++; }
-            else       { console.error(`  ❌ ${desc}`); fail++; }
-        }
-        assert('CENTYR.fn.abrirModalMisNotas registrado', typeof CENTYR.fn.abrirModalMisNotas === 'function');
-        assert('CENTYR.fn.renderMisNotas registrado', typeof CENTYR.fn.renderMisNotas === 'function');
-        assert('CENTYR.fn.abrirModalNotasAlumno registrado', typeof CENTYR.fn.abrirModalNotasAlumno === 'function');
-        assert('CENTYR.fn.buscarAlumnoNotas registrado', typeof CENTYR.fn.buscarAlumnoNotas === 'function');
-        assert('CENTYR.fn.seleccionarAlumnoParaNotas registrado', typeof CENTYR.fn.seleccionarAlumnoParaNotas === 'function');
-        assert('CENTYR.fn.renderNotasAlumnoDetalle registrado', typeof CENTYR.fn.renderNotasAlumnoDetalle === 'function');
 
-        assert('funciones de alumno accesibles', ['abrirModalMisNotas','renderMisNotas','abrirModalNotasAlumno'].every(f=>typeof CENTYR.fn[f]==='function'));
-        console.groupEnd();
-        console.log(`  Resultado: ${pass} ✅  ${fail} ❌`);
-        return { pass, fail };
-    };
-
-    console.log('✅ centyr-alumno.js cargado');
 })();
-
 </script>
 
-<!-- ═══ centyr-admin.js ═══ -->
 <script>
 /**
  * ╔══════════════════════════════════════════════════════════════════════╗
@@ -5036,61 +5042,10 @@ function abrirModalMisNotas() {
     Object.assign(window,    _fns);
 
     // ─── Tests ─────────────────────────────────────
-    CENTYR.test['admin'] = function () {
-        console.group('🧪 centyr-admin v5 tests');
-        let pass=0,fail=0;
-        const assert=(desc,cond)=>{if(cond){console.log(`  ✅ ${desc}`);pass++;}else{console.error(`  ❌ ${desc}`);fail++;}};
 
-        assert('adminTab registrado',               typeof CENTYR.fn.adminTab               ==='function');
-        assert('nuevoCurso registrado',             typeof CENTYR.fn.nuevoCurso             ==='function');
-        assert('agregarGrupoCurso registrado',      typeof CENTYR.fn.agregarGrupoCurso      ==='function');
-        assert('guardarEstructuraCurso registrado', typeof CENTYR.fn.guardarEstructuraCurso ==='function');
-        assert('recalcularFilaGrupo registrado',    typeof CENTYR.fn.recalcularFilaGrupo    ==='function');
-        assert('cargarPanelNotasAlumno registrado', typeof CENTYR.fn.cargarPanelNotasAlumno ==='function');
-
-        // Test fórmula con promedio sobre total programado
-        // Grupo: nSS=16, nExt=4, pctExtra=20, pesoEV=20, pesoSS=80
-        // EV=15, SS: 10 atendidas (notas 14..14) de 16 programadas, Ext: 3 atendidas (18,18,18) de 4
-        // PromSS  = (14*10 + 0*6) / 16 = 140/16 = 8.75
-        // PromExt = (18*3 + 0*1) / 4  = 54/4   = 13.5
-        // Base = 15*0.2 + 8.75*0.8 = 3 + 7 = 10
-        // Bono = 13.5 * 0.2 = 2.7
-        // Nota = min(20, 10 + 2.7) = 12.7
-        const nSS=16,nExt=4,pctE=20,pesoEV=20,pesoSS=80;
-        let sumaSS=0; for(let i=0;i<10;i++) sumaSS+=14;      // 10 sesiones con nota 14
-        const promSS=sumaSS/nSS;  // 140/16 = 8.75
-        let sumaExt=0; for(let i=0;i<3;i++) sumaExt+=18;     // 3 extras con nota 18
-        const promExt=sumaExt/nExt; // 54/4 = 13.5
-        const base=15*pesoEV/100 + promSS*pesoSS/100;        // 3 + 7 = 10
-        const bono=promExt*pctE/100;                          // 2.7
-        const nota=Math.min(20,base+bono);                    // 12.7
-
-        assert('promSS divide sobre programadas (8.75)', Math.abs(promSS-8.75)<0.001);
-        assert('promExt divide sobre programadas (13.5)',Math.abs(promExt-13.5)<0.001);
-        assert('nota final correcta (12.7)',             Math.abs(nota-12.7)<0.001);
-        assert('nota nunca supera 20',                   Math.min(20,25)===20);
-
-        // Test modelo de grupos
-        const grupos=[
-            {id:'g0',nombre:'Grupo 1',nPacientes:3,nSesiones:16,nExtras:4,pctExtra:20},
-            {id:'g1',nombre:'Grupo 2',nPacientes:2,nSesiones:12,nExtras:6,pctExtra:20}
-        ];
-        const totPacs=grupos.reduce((s,g)=>s+g.nPacientes,0);
-        assert('total pacientes = 5',   totPacs===5);
-        assert('Grupo 1: 3 pacs 16 SS', grupos[0].nPacientes===3&&grupos[0].nSesiones===16);
-        assert('Grupo 2: 2 pacs 12 SS', grupos[1].nPacientes===2&&grupos[1].nSesiones===12);
-
-        console.groupEnd();
-        console.log(`  Resultado: ${pass} ✅  ${fail} ❌`);
-        return {pass,fail};
-    };
-
-    console.log('✅ centyr-admin.js v5.0 — Multi-grupo con promedio sobre total programado');
 })();
-
 </script>
 
-<!-- ═══ centyr-utils.js ═══ -->
 <script>
 /**
  * ╔══════════════════════════════════════════════════════════════════╗
@@ -5890,123 +5845,36 @@ function sincronizar() {
 
     window.onload = init;
 
-
     // ── Registro ─────────────────────────────────────────────────────────────
     const _fns = { sincronizar, exportarPDF, generarInformeFisioterapeutico, toggleCalendar, restaurarEstadoCalendar, renderCalendar, createDayElement, cambiarMes, selectDay, mostrarCitasDia, abrirModalCita, cerrarModalCita, buscarPacienteCita, agendarCita, eliminarCita, abrirModalEjercicios, cerrarModalEjercicios, previsualizarImagen, agregarEjercicio, eliminarEjercicio, limpiarEjercicios, renderizarEjercicios, generarPDFEjercicios };
     Object.assign(CENTYR.fn, _fns);
     Object.assign(window,    _fns);
 
     // ── Tests ─────────────────────────────────────────────────────────────────
-    CENTYR.test['utils'] = function() {
-        console.group('🧪 centyr-utils tests');
-        let pass = 0, fail = 0;
-        function assert(desc, cond) {
-            if (cond) { console.log(`  ✅ ${desc}`); pass++; }
-            else       { console.error(`  ❌ ${desc}`); fail++; }
-        }
-        assert('CENTYR.fn.sincronizar registrado', typeof CENTYR.fn.sincronizar === 'function');
-        assert('CENTYR.fn.exportarPDF registrado', typeof CENTYR.fn.exportarPDF === 'function');
-        assert('CENTYR.fn.generarInformeFisioterapeutico registrado', typeof CENTYR.fn.generarInformeFisioterapeutico === 'function');
-        assert('CENTYR.fn.toggleCalendar registrado', typeof CENTYR.fn.toggleCalendar === 'function');
-        assert('CENTYR.fn.restaurarEstadoCalendar registrado', typeof CENTYR.fn.restaurarEstadoCalendar === 'function');
-        assert('CENTYR.fn.renderCalendar registrado', typeof CENTYR.fn.renderCalendar === 'function');
 
-        assert('renderCalendar registrado',       typeof CENTYR.fn.renderCalendar === 'function');
-        assert('agendarCita registrado',          typeof CENTYR.fn.agendarCita === 'function');
-        assert('generarPDFEjercicios registrado', typeof CENTYR.fn.generarPDFEjercicios === 'function');
-        console.groupEnd();
-        console.log(`  Resultado: ${pass} ✅  ${fail} ❌`);
-        return { pass, fail };
-    };
-
-    console.log('✅ centyr-utils.js cargado');
 })();
-
 </script>
 
 <script>
-// ── Test runner + init ──────────────────────────────────────────
 if (window.CENTYR) {
     CENTYR.test.runAll = function () {
-        console.group('🧪 CENTYR — Suite completa de tests');
-        const results = {};
-        let totalPass = 0, totalFail = 0;
-        ['core','auth','session','docente','alumno','admin','utils'].forEach(function (m) {
+        console.group('CENTYR Tests');
+        let tp = 0, tf = 0;
+        ['core','auth','session','docente','alumno','admin','utils'].forEach(function(m) {
             if (typeof CENTYR.test[m] === 'function') {
-                results[m] = CENTYR.test[m]();
-                totalPass += results[m].pass;
-                totalFail += results[m].fail;
+                const r = CENTYR.test[m]();
+                tp += r.pass; tf += r.fail;
             }
         });
         console.groupEnd();
-        console.log('Total: ' + totalPass + ' ✅   ' + totalFail + ' ❌');
-        return results;
+        console.log('Total: ' + tp + ' OK  ' + tf + ' FAIL');
+        return { pass: tp, fail: tf };
     };
 }
-// Iniciar la aplicación
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof init === 'function') init();
 });
 </script>
 
-<!-- Modal Mis Notas (alumno) -->
-<div id="modalMisNotas" class="modal">
-    <div class="modal-content" style="max-width:920px; max-height:92vh; overflow-y:auto; position:relative;">
-        <div class="modal-header" style="background:var(--alumno); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0; position:relative;">
-            <button class="modal-close-x" onclick="document.getElementById('modalMisNotas').style.display='none'">✕</button>
-            <h2 style="margin:0; color:white; font-size:1.1rem;">📊 Mis Notas Académicas</h2>
-        </div>
-        <div id="mis-notas-body" style="padding:0 4px;"></div>
-    </div>
-</div>
-
-<!-- Modal Notas por Alumno (docente / admin) -->
-<div id="modalNotasAlumno" class="modal">
-    <div class="modal-content" style="max-width:920px; max-height:92vh; overflow-y:auto; position:relative;">
-        <div class="modal-header" style="background:var(--docente); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0; position:relative;">
-            <button class="modal-close-x" onclick="document.getElementById('modalNotasAlumno').style.display='none'">✕</button>
-            <h2 style="margin:0; color:white; font-size:1.1rem;">📊 Notas del Alumno</h2>
-        </div>
-        <div style="padding:0 4px;">
-            <div style="background:#F0F4FF; border-radius:10px; padding:12px; margin-bottom:14px;">
-                <label style="font-size:0.85rem; font-weight:700; color:var(--primary); display:block; margin-bottom:6px;">🔍 Buscar alumno por apellido:</label>
-                <input type="text" id="notas-alumno-buscar" placeholder="Escribe el apellido..." oninput="buscarAlumnoNotas(this.value)"
-                       style="margin-bottom:6px; border:1.5px solid var(--docente);">
-                <div id="notas-alumno-chips" style="display:flex; flex-wrap:wrap; gap:6px; margin-top:4px;"></div>
-            </div>
-            <div id="notas-alumno-body" style="color:#999; text-align:center; padding:30px 0;">
-                Busca y selecciona un alumno para ver sus notas.
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal Ingreso de Notas por Curso -->
-<div id="modalCursos" class="modal">
-    <div class="modal-content" style="max-width:860px; max-height:92vh; overflow-y:auto; position:relative;">
-        <div class="modal-header" style="background:var(--primary); color:white; margin:-30px -30px 20px -30px; padding:18px 30px; border-radius:12px 12px 0 0; position:relative;">
-            <button class="modal-close-x" onclick="document.getElementById('modalCursos').style.display='none'">✕</button>
-            <h2 id="modal-cursos-titulo" style="margin:0; color:white; font-size:1.1rem;">📝 Notas del Curso</h2>
-        </div>
-        <div id="modal-cursos-body" style="padding:0;"></div>
-    </div>
-</div>
-
-<style>
-    @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    @keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(400px); opacity: 0; } }
-</style>
-
-<!-- SheetJS para leer Excel en importación de alumnos -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-<!-- Pop-up pendientes docente -->
-<div id="popup-pendientes">
-    <div class="pp-header" onclick="togglePopupPendientes()">
-        <span>⏳ Sesiones Pendientes<span id="pp-badge">0</span></span>
-        <span id="pp-chevron">▲</span>
-    </div>
-    <div class="pp-body" id="pp-body"></div>
-</div>
 </body>
 </html>
