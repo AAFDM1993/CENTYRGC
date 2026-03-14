@@ -350,6 +350,19 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 .collapsible-arrow.open{transform:rotate(180deg)}
 .collapsible-body{overflow:hidden;transition:max-height .3s ease, opacity .3s;max-height:0;opacity:0;pointer-events:none}
 .collapsible-body.open{max-height:9999px;opacity:1;overflow:visible;pointer-events:auto}
+
+/* ── CUADRÍCULA CALENDARIO ── */
+.cal-grid-wrap{border:1px solid var(--bd2);border-radius:12px;overflow:hidden}
+.cal-slot{border-bottom:1px solid var(--bd2);border-right:1px solid var(--bd2)}
+.cal-slot-bloqueado{background:repeating-linear-gradient(45deg,#fee2e2,#fee2e2 4px,#fff5f5 4px,#fff5f5 10px)!important;cursor:not-allowed!important}
+.cal-hora-sep{background:var(--n050);border-top:2px solid var(--bd);font-size:10px;font-weight:700;color:var(--tx3);padding:2px 8px;letter-spacing:.5px}
+
+/* ── BLOQUEO CARD ── */
+.bloqueo-row{display:grid;grid-template-columns:80px 65px 1fr 1fr 28px;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--bd2);font-size:12px;background:var(--red2)}
+.bloqueo-row:hover{opacity:.9}
+
+/* ── MODAL RESERVA ALUMNO (fecha/hora libre) ── */
+.rsv-datetime{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -598,6 +611,40 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
               </div>
               <div id="listaReservasBox" style="max-height:300px;overflow-y:auto;border:1px solid var(--bd2);border-radius:9px"></div>
             </div>
+
+            <!-- Gestión de bloqueos -->
+            <div style="margin-top:12px" id="bloqueoSection">
+              <div class="slbl">Bloqueos de horario</div>
+              <div class="hint" style="margin-bottom:8px;font-size:11px"><span>&#128274;</span><span>Bloquea dias, horas o espacios especificos. Los alumnos y docentes no podran reservar en esos slots.</span></div>
+
+              <!-- Formulario de nuevo bloqueo -->
+              <div style="background:var(--surf2);border:1px solid var(--bd2);border-radius:12px;padding:12px;margin-bottom:8px">
+                <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Nuevo bloqueo</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+                  <div class="field" style="margin:0"><label>Fecha (o * para siempre)</label><input class="inp" id="bFecha" type="date" placeholder="YYYY-MM-DD"></div>
+                  <div class="field" style="margin:0"><label>Hora (o * para todo el dia)</label><input class="inp" id="bHora" type="time" placeholder="HH:MM"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+                  <div class="field" style="margin:0"><label>Area (o * para todas)</label>
+                    <select class="sel" id="bArea" style="font-size:12px">
+                      <option value="*">Todas las areas</option>
+                    </select>
+                  </div>
+                  <div class="field" style="margin:0"><label>Espacio (o * para todos)</label>
+                    <select class="sel" id="bCamilla" style="font-size:12px">
+                      <option value="*">Todos los espacios</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="field" style="margin-bottom:10px"><label>Motivo</label><input class="inp" id="bMotivo" placeholder="Ej. Feriado nacional, mantenimiento..."></div>
+                <button class="btn-sm" onclick="crearBloqueoUI()" style="width:100%;background:var(--red);color:#fff">&#128274; Crear bloqueo</button>
+              </div>
+
+              <!-- Lista de bloqueos activos -->
+              <div id="listaBloqueosBox" style="max-height:250px;overflow-y:auto;border:1px solid var(--bd2);border-radius:9px">
+                <div class="empty" style="padding:10px">Cargando bloqueos...</div>
+              </div>
+            </div>
           </div>
         </div><!-- end sidebar-inner -->
       <div class="sidebar-footer">
@@ -669,6 +716,9 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
       </button>
       <button id="btnEstAgenda" onclick="mostrarSecEst('agenda')" style="display:flex;align-items:center;gap:7px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--n300);font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap;transition:all .2s">
         &#128197; Agenda
+      </button>
+      <button onclick="abrirReservaAlumnoModal()" style="display:flex;align-items:center;gap:7px;background:var(--green);border:1px solid #047857;border-radius:10px;color:#fff;font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap;transition:all .2s">
+        &#43; Agendar
       </button>
       <div style="width:1px;height:28px;background:var(--n700);flex-shrink:0"></div>
       <button onclick="mostrarCambioPass()" style="display:flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--n300);font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;white-space:nowrap">
@@ -742,7 +792,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
     <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--n900);margin-bottom:3px" id="reservaModalTitle">Nueva Reserva</h3>
     <p style="font-size:11px;color:var(--tx3);margin-bottom:16px" id="reservaModalSub"></p>
     <div class="field"><label>Nombre del paciente</label><input class="inp" id="rsvPaciente" placeholder="Apellidos y nombres del paciente"></div>
-    <div class="field"><label>Docente responsable</label><input class="inp" id="rsvDocente" placeholder="Nombre del docente"></div>
+    <div class="field"><label>Responsable</label><input class="inp" id="rsvDocente" placeholder="Nombre del responsable"></div>
     <div class="field"><label>Observacion (opcional)</label><input class="inp" id="rsvObs" placeholder="Diagnostico, indicaciones..."></div>
     <div id="rsvErr" style="font-size:12px;color:var(--red);margin-bottom:10px;display:none"></div>
     <div style="display:flex;gap:8px">
@@ -777,12 +827,46 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
     </div>
   </div>
 </div>
+
+<!-- Modal reserva alumno - fecha/hora libre -->
+<div id="reservaAlumnoModal" style="position:fixed;inset:0;background:rgba(10,22,40,.65);z-index:800;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px);padding:16px">
+  <div style="background:var(--surf);border-radius:20px;padding:24px;width:100%;max-width:420px;box-shadow:0 24px 60px rgba(10,22,40,.4)">
+    <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--n900);margin-bottom:3px">&#128197; Reservar atencion</h3>
+    <p style="font-size:11px;color:var(--tx3);margin-bottom:16px">Elige la fecha, hora y espacio disponibles</p>
+    <div class="rsv-datetime">
+      <div class="field" style="margin:0"><label>Fecha</label><input class="inp" id="rsvAlFecha" type="date"></div>
+      <div class="field" style="margin:0"><label>Hora</label>
+        <select class="sel" id="rsvAlHora" style="font-size:13px">
+          <option value="">Selecciona...</option>
+        </select>
+      </div>
+    </div>
+    <div class="field"><label>Area</label>
+      <select class="sel" id="rsvAlArea" onchange="actualizarEspaciosAlumno()" style="font-size:13px">
+        <option value="">Selecciona un area...</option>
+      </select>
+    </div>
+    <div class="field"><label>Espacio</label>
+      <select class="sel" id="rsvAlEspacio" style="font-size:13px">
+        <option value="">Selecciona primero el area</option>
+      </select>
+    </div>
+    <div class="field"><label>Nombre del paciente</label><input class="inp" id="rsvAlPaciente" placeholder="Apellidos y nombres"></div>
+    <div class="field"><label>Responsable</label><input class="inp" id="rsvAlDocente" placeholder="Nombre del responsable"></div>
+    <div class="field" style="margin-bottom:14px"><label>Observacion (opcional)</label><input class="inp" id="rsvAlObs" placeholder="Diagnostico, indicaciones..."></div>
+    <div id="rsvAlErr" style="font-size:12px;color:var(--red);margin-bottom:10px;display:none"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-sm green" onclick="confirmarReservaAlumno()" style="flex:1;min-height:42px">Confirmar reserva</button>
+      <button class="btn-ghost" onclick="cerrarReservaAlumnoModal()" style="min-height:42px">Cancelar</button>
+    </div>
+  </div>
+</div>
 <div id="toast"><div class="tt" id="ttt"></div><div class="tm" id="ttm"></div></div>
 
 <script>
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxxI8tb4SuEN0zQ9vk12tWSBcAMPIYnk2g4DIK3ZxHvyyWWtvFMrAV3APImABxhsEEP1Q/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzdTgI39e5-lrwmwxFG9TwZayJ47pmVXqxugy187VjWoFiqgNyrS_ZmzxpXyQrbpnqRjA/exec';
 // ====================================================
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
@@ -1458,6 +1542,19 @@ tbody tr:last-child td{border-bottom:2px solid #0a1628}
 .collapsible-arrow.open{transform:rotate(180deg)}
 .collapsible-body{overflow:hidden;transition:max-height .3s ease, opacity .3s;max-height:0;opacity:0;pointer-events:none}
 .collapsible-body.open{max-height:9999px;opacity:1;overflow:visible;pointer-events:auto}
+
+/* ── CUADRÍCULA CALENDARIO ── */
+.cal-grid-wrap{border:1px solid var(--bd2);border-radius:12px;overflow:hidden}
+.cal-slot{border-bottom:1px solid var(--bd2);border-right:1px solid var(--bd2)}
+.cal-slot-bloqueado{background:repeating-linear-gradient(45deg,#fee2e2,#fee2e2 4px,#fff5f5 4px,#fff5f5 10px)!important;cursor:not-allowed!important}
+.cal-hora-sep{background:var(--n050);border-top:2px solid var(--bd);font-size:10px;font-weight:700;color:var(--tx3);padding:2px 8px;letter-spacing:.5px}
+
+/* ── BLOQUEO CARD ── */
+.bloqueo-row{display:grid;grid-template-columns:80px 65px 1fr 1fr 28px;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--bd2);font-size:12px;background:var(--red2)}
+.bloqueo-row:hover{opacity:.9}
+
+/* ── MODAL RESERVA ALUMNO (fecha/hora libre) ── */
+.rsv-datetime{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
 </style></head>
 <body>
 <!-- ENCABEZADO INSTITUCIONAL -->
@@ -1679,9 +1776,12 @@ async function iniciarAgenda(){
     actualizarFiltroArea();
     calFechaBase=getLunes(new Date());
     await cargarReservasSemana();
+    // Cargar bloqueos de la semana
+    const finSemB=new Date(calFechaBase);finSemB.setDate(finSemB.getDate()+4);
+    await cargarBloqueos(fmt(calFechaBase),fmt(finSemB));
     renderCalendario();
-    // También cargar lista de reservas si estamos en el pane-cal
-    setTimeout(cargarListaReservas, 500);
+    // También cargar lista de reservas y bloqueos
+    setTimeout(()=>{cargarListaReservas();renderListaBloqueos();actualizarSelectsBloqueo();}, 500);
   }catch(e){toast('Error al cargar agenda',e.message,'err')}
 }
 
@@ -1781,9 +1881,14 @@ function renderCalendario(){
             }
           } else if(!pasado&&puedeReservar){
             const fl=d.toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'long'});
+            const bloq=typeof esBloqueado==='function'&&esBloqueado(fechaStr,hora,area.nombre,esp.nombre);
+            if(bloq){
+              celdaHtml+=`<div style="background:repeating-linear-gradient(45deg,#fee2e2,#fee2e2 3px,#fff5f5 3px,#fff5f5 8px);border-radius:6px;padding:3px 5px;font-size:9px;color:#dc2626;text-align:center;font-weight:600" title="Bloqueado">&#128274; ${esp.nombre}</div>`;
+            } else {
             celdaHtml+=`<button onclick="abrirReservaEspacio('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}',${cap},'${esc(fl)}')" style="width:100%;background:transparent;border:1px dashed transparent;border-radius:4px;color:var(--tx4);font-size:10px;padding:3px 2px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:3px;transition:all .15s" onmouseover="this.style.borderColor='var(--n300)';this.style.color='var(--n500)';this.style.background='rgba(29,78,216,.05)'" onmouseout="this.style.borderColor='transparent';this.style.color='var(--tx4)';this.style.background='transparent'">
               <span style="font-size:11px">+</span> ${esp.nombre}
             </button>`;
+            } // fin else bloqueado
           } else if(pasado&&rsvEsp.length===0){
             celdaHtml+=`<div style="height:20px"></div>`;
           }
@@ -1961,6 +2066,8 @@ async function iniciarAgendaEstudiante(){
     }
     calEstFechaBase=getLunes(new Date());
     await cargarReservasEst();
+    const finSemEst2=new Date(calEstFechaBase);finSemEst2.setDate(finSemEst2.getDate()+4);
+    await cargarBloqueos(fmt(calEstFechaBase),fmt(finSemEst2));
     renderCalendarioEst();
   }catch(e){ console.warn('Agenda no disponible:',e.message); }
 }
@@ -2320,6 +2427,185 @@ function mostrarSecEst(sec){
     else renderCalendarioEst();
   }
 }
+
+
+// ════════════════════════════════════════════════════════
+// BLOQUEOS DE AGENDA
+// ════════════════════════════════════════════════════════
+let agendaBloqueos = [];
+
+async function cargarBloqueos(fechaInicio, fechaFin){
+  try{
+    const r=await apiGet('leerBloqueos',{fechaInicio:fechaInicio||'',fechaFin:fechaFin||''});
+    if(r.ok) agendaBloqueos=r.bloqueos;
+  }catch(e){ agendaBloqueos=[]; }
+}
+
+function esBloqueado(fecha, hora, area, camilla){
+  return agendaBloqueos.some(b=>{
+    const fOk = b.fecha==='*' || b.fecha===fecha;
+    const hOk = b.hora==='*'  || b.hora===hora;
+    const aOk = b.area==='*'  || b.area===area;
+    const cOk = b.camilla==='*' || b.camilla===camilla;
+    return fOk && hOk && aOk && cOk;
+  });
+}
+
+// UI de bloqueos
+function actualizarSelectsBloqueo(){
+  const bArea=g('bArea');const bCamilla=g('bCamilla');
+  if(bArea){
+    const val=bArea.value;
+    bArea.innerHTML='<option value="*">Todas las areas</option>'+
+      agendaCfg.areas.map(a=>`<option value="${esc2(a.nombre)}" ${a.nombre===val?'selected':''}>${a.nombre}</option>`).join('');
+  }
+  // Camillas según área seleccionada
+  actualizarCamillasBloqueo();
+}
+
+function actualizarCamillasBloqueo(){
+  const bCamilla=g('bCamilla');if(!bCamilla)return;
+  const areaVal=vi('bArea');
+  bCamilla.innerHTML='<option value="*">Todos los espacios</option>';
+  if(areaVal&&areaVal!=='*'){
+    const area=agendaCfg.areas.find(a=>a.nombre===areaVal);
+    if(area&&area.espacios){
+      area.espacios.forEach(e=>{
+        const opt=document.createElement('option');
+        opt.value=e.nombre;opt.textContent=e.nombre;
+        bCamilla.appendChild(opt);
+      });
+    }
+  }
+}
+
+async function crearBloqueoUI(){
+  const fecha=vi('bFecha')||'*';
+  const hora=vi('bHora')||'*';
+  const area=vi('bArea')||'*';
+  const camilla=vi('bCamilla')||'*';
+  const motivo=vi('bMotivo')||'Sin motivo';
+  if(fecha==='*'&&hora==='*'&&area==='*'){
+    if(!confirm('Esto bloqueará TODOS los horarios de TODAS las áreas. ¿Continuar?'))return;
+  }
+  showLoader('Creando bloqueo...');
+  try{
+    const r=await apiPost({action:'crearBloqueo',fecha,hora,area,camilla,motivo});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast('Bloqueo creado','','ok');
+    g('bFecha').value='';g('bHora').value='';g('bMotivo').value='';
+    await cargarBloqueos();renderListaBloqueos();
+    await cargarReservasSemana();renderCalendario();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+
+async function eliminarBloqueoUI(id){
+  if(!confirm('Eliminar este bloqueo?'))return;
+  showLoader('Eliminando...');
+  try{
+    const r=await apiPost({action:'eliminarBloqueo',id});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast('Bloqueo eliminado','','ok');
+    await cargarBloqueos();renderListaBloqueos();
+    await cargarReservasSemana();renderCalendario();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+
+function renderListaBloqueos(){
+  const box=g('listaBloqueosBox');if(!box)return;
+  if(!agendaBloqueos.length){box.innerHTML='<div class="empty" style="padding:12px">Sin bloqueos activos</div>';return;}
+  box.innerHTML=`<div style="background:var(--n900);padding:6px 12px;display:grid;grid-template-columns:80px 65px 1fr 1fr 28px;gap:6px;font-size:10px;font-weight:700;color:var(--n300);text-transform:uppercase">
+    <span>Fecha</span><span>Hora</span><span>Area</span><span>Motivo</span><span></span>
+  </div>`+agendaBloqueos.map(b=>`
+    <div style="display:grid;grid-template-columns:80px 65px 1fr 1fr 28px;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--bd2);background:var(--red2);font-size:12px">
+      <span style="font-family:'DM Mono',monospace;font-size:11px">${b.fecha}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px">${b.hora}</span>
+      <div><div style="font-weight:600">${b.area}</div><div style="font-size:10px;color:var(--tx3)">${b.camilla}</div></div>
+      <span style="color:var(--red);font-weight:600">${b.motivo}</span>
+      <button onclick="eliminarBloqueoUI(${b.id})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;padding:0" title="Eliminar">&#128465;</button>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════════
+// MODAL RESERVA ALUMNO (fecha/hora libre)
+// ════════════════════════════════════════════════════════
+function generarHorasSelect(){
+  const franjas=agendaCfg.franjas||[{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}];
+  const slots=generarSlots(franjas);
+  return slots.map(h=>`<option value="${h}">${h} hs</option>`).join('');
+}
+
+function abrirReservaAlumnoModal(){
+  // Poblar selects
+  const selArea=g('rsvAlArea');
+  if(selArea){
+    selArea.innerHTML='<option value="">Selecciona un area...</option>'+
+      agendaCfg.areas.map(a=>`<option value="${esc2(a.nombre)}">${a.nombre}</option>`).join('');
+  }
+  const selHora=g('rsvAlHora');
+  if(selHora) selHora.innerHTML='<option value="">Selecciona...</option>'+generarHorasSelect();
+  // Fecha mínima = hoy
+  const fechaInp=g('rsvAlFecha');
+  if(fechaInp){fechaInp.min=fmt(new Date());fechaInp.value=fmt(new Date());}
+  g('rsvAlPaciente').value=session&&session.nombre||'';
+  g('rsvAlDocente').value='';g('rsvAlObs').value='';
+  const err=g('rsvAlErr');if(err){err.style.display='none';err.textContent=''}
+  g('rsvAlEspacio').innerHTML='<option value="">Selecciona primero el area</option>';
+  g('reservaAlumnoModal').style.display='flex';
+  setTimeout(()=>g('rsvAlFecha').focus(),100);
+}
+
+function cerrarReservaAlumnoModal(){
+  g('reservaAlumnoModal').style.display='none';
+}
+
+function actualizarEspaciosAlumno(){
+  const areaVal=vi('rsvAlArea');
+  const sel=g('rsvAlEspacio');if(!sel)return;
+  sel.innerHTML='<option value="">Selecciona espacio...</option>';
+  if(!areaVal)return;
+  const area=agendaCfg.areas.find(a=>a.nombre===areaVal);
+  if(area&&area.espacios){
+    area.espacios.forEach(e=>{
+      const opt=document.createElement('option');
+      opt.value=e.nombre;opt.textContent=e.nombre+' (cap. '+( e.capacidad||1)+')';
+      sel.appendChild(opt);
+    });
+  }
+}
+
+async function confirmarReservaAlumno(){
+  const fecha=vi('rsvAlFecha');const hora=vi('rsvAlHora');
+  const area=vi('rsvAlArea');const espacio=vi('rsvAlEspacio');
+  const pac=vi('rsvAlPaciente').trim();const doc=vi('rsvAlDocente').trim();
+  const obs=vi('rsvAlObs').trim();
+  const err=g('rsvAlErr');
+  const showErr=m=>{err.textContent=m;err.style.display='block'};
+  if(!fecha){showErr('Selecciona una fecha');return}
+  if(!hora){showErr('Selecciona una hora');return}
+  if(!area){showErr('Selecciona un area');return}
+  if(!espacio){showErr('Selecciona un espacio');return}
+  if(!pac){showErr('El nombre del paciente es requerido');return}
+  // Verificar que no es fin de semana
+  const dSem=new Date(fecha+'T12:00:00').getDay();
+  if(dSem===0||dSem===6){showErr('Solo se puede agendar de lunes a viernes');return}
+  // Obtener capacidad del espacio
+  const areaObj=agendaCfg.areas.find(a=>a.nombre===area);
+  const espObj=areaObj&&areaObj.espacios?areaObj.espacios.find(e=>e.nombre===espacio):null;
+  const cap=espObj?espObj.capacidad:1;
+  showLoader('Reservando...');
+  try{
+    const r=await apiPost({action:'crearReserva',fecha,horaInicio:hora,area,camilla:espacio,
+      capacidad:cap,paciente:pac,docente:doc,observacion:obs});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    cerrarReservaAlumnoModal();toast('Reserva creada','','ok');
+    // Actualizar vista si estamos en agenda
+    await cargarReservasEst();renderCalendarioEst();
+  }catch(e){hideLoader();showErr(e.message);}
+}
+
+g('reservaAlumnoModal')&&g('reservaAlumnoModal').addEventListener('click',function(e){if(e.target===this)cerrarReservaAlumnoModal();});
+g('bArea')&&g('bArea').addEventListener('change',actualizarCamillasBloqueo);
 
 </script>
 </body>
