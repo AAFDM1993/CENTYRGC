@@ -688,6 +688,19 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 
     <div class="content-main">
       <div class="content">
+        <!-- PANEL CARD: contenido del admin (Alumnos, Cursos, Config, Usuarios, PDF, Log) -->
+        <div id="panelCard" style="display:none">
+          <div style="background:var(--surf);border:1px solid var(--bd2);border-radius:16px;overflow:hidden">
+            <!-- Header del panel con tabs -->
+            <div style="background:var(--n900);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+              <div id="panelCardTitle" style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:14px">Panel</div>
+              <button onclick="cerrarPanel()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:7px;font-size:16px;cursor:pointer;line-height:1">&#10005;</button>
+            </div>
+            <!-- El contenido del panel se inyecta aquí -->
+            <div id="panelCardBody" style="padding:16px;max-height:calc(100vh - 200px);overflow-y:auto"></div>
+          </div>
+        </div>
+
         <div class="card" id="connCard" style="display:none">
           <div class="cbody" style="padding:12px 16px">
             <div id="connHint" class="hint"><span>...</span><span>Conectando...</span></div>
@@ -707,7 +720,6 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
               </div>
               <div style="display:flex;align-items:center;gap:7px">
                 <select id="calAreaFiltro" style="background:var(--surf2);border:1px solid var(--bd);border-radius:10px;color:var(--tx);font-size:12px;padding:5px 10px;outline:none" onchange="renderCalendario()"><option value="">Todas las areas</option></select>
-                <button id="btnConfigAgenda" style="display:none;background:var(--n700);border:1px solid var(--n600);color:#fff;border-radius:9px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer" onclick="abrirConfigAgenda()">&#9881; Config</button>
               </div>
             </div>
             <div style="padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y">
@@ -1847,7 +1859,7 @@ function renderCalendario(){
   const esAdmin=session&&session.rol==='admin';
   const esDocente=session&&session.rol==='docente';
   const puedeElim=esAdmin||esDocente;
-  const dw=150;
+  const dw=200;
 
   let html='<div class="cal-grid-wrap"><div style="display:flex;flex-direction:column;min-width:max-content">';
 
@@ -2138,7 +2150,7 @@ function renderCalendarioEst(){
   for(let i=0;i<5;i++){const d=new Date(calEstFechaBase);d.setDate(d.getDate()+i);dias.push(d);}
 
   // Ancho de columna de días
-  const dw=150;
+  const dw=200;
 
   let html='<div class="cal-grid-wrap"><div style="display:flex;flex-direction:column;min-width:max-content">';
 
@@ -2357,7 +2369,7 @@ function renderCalendarioModal(){
   const esAdmin=session&&session.rol==='admin';
   const esDocente=session&&session.rol==='docente';
   const puedeElim=esAdmin||esDocente;
-  const dw=150;
+  const dw=200;
 
   let html='<div class="cal-grid-wrap"><div style="display:flex;flex-direction:column;min-width:max-content">';
   html+='<div style="display:flex;position:sticky;top:0;z-index:5;background:var(--surf)">';
@@ -2634,11 +2646,52 @@ function renderListaBloqueos(){
 
 
 // ── PANEL ADMIN DESDE TOPBAR ─────────────────────────────
+// Títulos de los paneles del admin
+var PANEL_TITLES = {
+  al:'&#128100; Alumnos', cu:'&#128218; Cursos', nt:'&#9881; Configuracion',
+  us:'&#128101; Usuarios', pdf:'&#128196; PDF', log:'&#128196; Log'
+};
+
 function abrirPanelAdmin(tab){
-  const sb=g('adminSidebar');
-  if(sb) sb.classList.remove('sidebar-hidden');
+  // Ocultar otras secciones
+  if(g('edCard'))  g('edCard').style.display='none';
+  if(g('agendaCard')) g('agendaCard').style.display='none';
+  if(g('prevCard')) g('prevCard').style.display='none';
+
+  // Activar el tab en el sidebar (para que los panes se muestren)
   showTab(tab, g('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)));
-  if(!_sidebarOpen) toggleSidebar();
+
+  // Mover el contenido del pane activo al panelCard
+  const pane = g('pane-'+tab);
+  if(!pane){ console.warn('pane-'+tab+' no encontrado'); return; }
+
+  const body = g('panelCardBody');
+  const title = g('panelCardTitle');
+  if(!body || !title) return;
+
+  // Clonar el pane y moverlo al body del panel card
+  title.innerHTML = PANEL_TITLES[tab] || tab;
+  body.innerHTML = '';
+  // Mover los hijos (no clonar — para que los inputs sigan funcionando)
+  while(pane.firstChild) body.appendChild(pane.firstChild);
+  body.setAttribute('data-tab', tab);
+
+  // Mostrar el panelCard
+  const pc = g('panelCard');
+  if(pc) pc.style.display='block';
+}
+
+function cerrarPanel(){
+  const pc = g('panelCard');
+  if(!pc) return;
+  const body = g('panelCardBody');
+  const tab = body && body.getAttribute('data-tab');
+  // Devolver contenido al pane original
+  if(tab){
+    const pane = g('pane-'+tab);
+    if(pane){ while(body.firstChild) pane.appendChild(body.firstChild); }
+  }
+  pc.style.display='none';
 }
 
 
