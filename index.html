@@ -661,13 +661,25 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
       </button>
     </div>
 
-    <!-- Topbar Docente -->
-    <div id="docenteTopbar" style="display:none;background:var(--n900);border-bottom:1px solid var(--n800);padding:0 16px;position:sticky;top:58px;z-index:100;overflow-x:auto">
-      <div style="display:flex;align-items:center;gap:6px;height:50px;min-width:max-content">
-        <span style="font-size:11px;font-weight:700;color:var(--n400);text-transform:uppercase;letter-spacing:.7px;margin-right:4px;white-space:nowrap">Hojas:</span>
-        <div id="docenteHojasBtns" style="display:flex;gap:6px;align-items:center"><span style="font-size:12px;color:var(--n500)">Cargando...</span></div>
-        <div style="width:1px;height:28px;background:var(--n700);margin:0 8px;flex-shrink:0"></div>
-        <button id="btnAgendaDocente" onclick="abrirAgendaPopup()" style="display:flex;align-items:center;gap:7px;background:var(--n700);border:1px solid var(--n600);border-radius:8px;color:#fff;font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap">
+    <!-- Topbar Admin + Docente (barra unificada) -->
+    <div id="docenteTopbar" style="display:none;background:var(--n900);border-bottom:1px solid var(--n800);padding:0 14px;position:sticky;top:58px;z-index:100;overflow-x:auto">
+      <div style="display:flex;align-items:center;gap:5px;height:50px;min-width:max-content">
+
+        <!-- Solo Admin: botones de configuración -->
+        <div id="adminOnlyBtns" style="display:none;display:flex;align-items:center;gap:5px">
+          <button onclick="abrirPanelAdmin('al')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128100; Alumnos</button>
+          <button onclick="abrirPanelAdmin('cu')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128218; Cursos</button>
+          <button onclick="abrirPanelAdmin('nt')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#9881; Config</button>
+          <button onclick="abrirPanelAdmin('us')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128101; Usuarios</button>
+          <button onclick="abrirPanelAdmin('pdf')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128196; PDF</button>
+          <div style="width:1px;height:24px;background:var(--n700);flex-shrink:0;margin:0 3px"></div>
+        </div>
+
+        <!-- Admin+Docente: hojas y agenda -->
+        <span style="font-size:10px;font-weight:700;color:var(--n500);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap">Hojas:</span>
+        <div id="docenteHojasBtns" style="display:flex;gap:5px;align-items:center"><span style="font-size:12px;color:var(--n500)">Cargando...</span></div>
+        <div style="width:1px;height:24px;background:var(--n700);margin:0 6px;flex-shrink:0"></div>
+        <button onclick="abrirAgendaPopup()" style="display:flex;align-items:center;gap:6px;background:var(--n600);border:1px solid var(--n500);border-radius:9px;color:#fff;font-size:12px;font-weight:700;padding:6px 13px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='var(--n500)'" onmouseout="this.style.background='var(--n600)'">
           &#128197; Agenda
         </button>
       </div>
@@ -832,7 +844,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 <script>
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzdTgI39e5-lrwmwxFG9TwZayJ47pmVXqxugy187VjWoFiqgNyrS_ZmzxpXyQrbpnqRjA/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz1Lf52L8ZUWgRDeMau2e58GMi-7VO7Pspgmrm7a4KBrduo5Z1bLh6SJUFWoO7ITKm65g/exec';
 // ====================================================
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
@@ -936,21 +948,21 @@ function setConn(ok,msg){
 function iniciarVistaAdmin(){
   const esA=session.rol==='admin';
   const esD=session.rol==='docente';
+
+  // Ambos roles: ocultar sidebar y toolbar clásica, mostrar topbar
+  if(g('adminSidebar'))g('adminSidebar').style.display='none';
+  if(g('contentToolbar'))g('contentToolbar').style.display='none';
+  if(g('docenteTopbar'))g('docenteTopbar').style.display='';
+
   if(esA){
-    // Admin: sidebar normal
-    g('btnGen').disabled=false;renderCursos();renderPreview();cargarUsuarios();cargarLog();
-    if(g('adminSidebar'))g('adminSidebar').style.display='';
-    if(g('contentToolbar'))g('contentToolbar').style.display='';
-    if(g('docenteTopbar'))g('docenteTopbar').style.display='none';
-  } else if(esD){
-    // Docente: ocultar sidebar, mostrar barra superior propia
-    if(g('adminSidebar'))g('adminSidebar').style.display='none';
-    if(g('contentToolbar'))g('contentToolbar').style.display='none';
-    if(g('docenteTopbar'))g('docenteTopbar').style.display='';
+    g('btnGen').disabled=false;
+    // Mostrar botones de admin en el topbar
+    ['adminOnlyBtns'].forEach(id=>{const el=g(id);if(el)el.style.display='';});
+    renderCursos();renderPreview();cargarUsuarios();cargarLog();
+  } else {
     if(g('btnGen'))g('btnGen').style.display='none';
+    ['adminOnlyBtns'].forEach(id=>{const el=g(id);if(el)el.style.display='none';});
     const uz=g('uploadZone');if(uz)uz.style.display='none';
-    // Ocultar tabs del sidebar que no aplican
-    ['tabAl','tabCu','tabNt','tabUs','tabPdf','tabLog'].forEach(t=>{const el=g(t);if(el)el.style.display='none'});
   }
   loadHojas();
 }
@@ -1781,13 +1793,13 @@ function renderCalendario(){
   const esAdmin=session&&session.rol==='admin';
   const esDocente=session&&session.rol==='docente';
   const puedeElim=esAdmin||esDocente;
-  const dw=130;
+  const dw=150;
 
   let html='<div class="cal-grid-wrap"><div style="display:flex;flex-direction:column;min-width:max-content">';
 
   // Cabecera días (sticky)
   html+='<div style="display:flex;position:sticky;top:0;z-index:5;background:var(--surf)">';
-  html+=`<div style="width:120px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);background:var(--surf2)"></div>`;
+  html+=`<div style="width:100px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);background:var(--surf2)"></div>`;
   dias.forEach(d=>{
     const esHoy=fmt(d)===hoy;
     html+=`<div style="width:${dw}px;flex-shrink:0"><div class="cal-day-hdr ${esHoy?'hoy':''}"><span class="dia-num">${d.getDate()}</span><span class="dia-nom">${DIAS_NOM[d.getDay()]}</span></div></div>`;
@@ -1813,7 +1825,7 @@ function renderCalendario(){
         html+=`<div style="display:flex;border-top:${borderTop}">`;
 
         // Columna fija: hora + espacio
-        html+=`<div style="width:120px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);background:var(--surf2);padding:5px 8px;display:flex;flex-direction:column;justify-content:center">`;
+        html+=`<div style="width:100px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);background:var(--surf2);padding:4px 7px;display:flex;flex-direction:column;justify-content:center">`;
         if(ei===0) html+=`<div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:var(--tx);margin-bottom:2px">${hora}</div>`;
         html+=`<div style="font-size:11px;font-weight:600;color:var(--n500)">${esp.nombre}</div>`;
         html+=`<div style="font-size:9px;color:var(--tx4)">${cap} lugar${cap!==1?'es':''}</div>`;
@@ -1848,7 +1860,7 @@ function renderCalendario(){
               celda=`<div style="min-height:32px;background:#f9fafb"></div>`;
             }
           }
-          html+=`<div style="width:${dw}px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);padding:4px 5px;min-height:44px;background:${pasado&&!bloq?'#f9fafb':'var(--surf)'}">${celda}</div>`;
+          html+=`<div style="width:${dw}px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);padding:4px 5px;min-height:34px;background:${pasado&&!bloq?'#f9fafb':'var(--surf)'}">${celda}</div>`;
         });
         html+='</div>';
       });
@@ -2069,13 +2081,13 @@ function renderCalendarioEst(){
   for(let i=0;i<5;i++){const d=new Date(calEstFechaBase);d.setDate(d.getDate()+i);dias.push(d);}
 
   // Ancho de columna de días
-  const dw=120;
+  const dw=150;
 
   let html='<div class="cal-grid-wrap"><div style="display:flex;flex-direction:column;min-width:max-content">';
 
   // Cabecera global de días (sticky)
   html+='<div style="display:flex;position:sticky;top:0;z-index:5;background:var(--n900)">';
-  html+=`<div style="width:120px;flex-shrink:0;border-right:1px solid var(--n700);border-bottom:1px solid var(--n700);background:var(--n900)"></div>`;
+  html+=`<div style="width:100px;flex-shrink:0;border-right:1px solid var(--n700);border-bottom:1px solid var(--n700);background:var(--n900)"></div>`;
   dias.forEach(d=>{
     const esHoy=fmt(d)===hoy;
     html+=`<div style="width:${dw}px;flex-shrink:0"><div class="cal-day-hdr ${esHoy?'hoy':''}"><span class="dia-num">${d.getDate()}</span><span class="dia-nom">${DIAS_NOM[d.getDay()]}</span></div></div>`;
@@ -2105,7 +2117,7 @@ function renderCalendarioEst(){
         html+=`<div style="display:flex;border-top:${borderTop}">`;
 
         // Columna fija: hora + nombre del espacio
-        html+=`<div style="width:120px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);background:var(--surf2);padding:5px 8px;display:flex;flex-direction:column;justify-content:center">`;
+        html+=`<div style="width:100px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);background:var(--surf2);padding:4px 7px;display:flex;flex-direction:column;justify-content:center">`;
         if(ei===0) html+=`<div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:var(--tx);margin-bottom:2px">${hora}</div>`;
         html+=`<div style="font-size:11px;font-weight:600;color:var(--n500)">${esp.nombre}</div>`;
         html+=`<div style="font-size:9px;color:var(--tx4)">${cap} lugar${cap!==1?'es':''}</div>`;
@@ -2144,7 +2156,7 @@ function renderCalendarioEst(){
             }
           }
 
-          html+=`<div style="width:${dw}px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);padding:4px 5px;min-height:44px;background:${pasado&&!bloq?'#f9fafb':'var(--surf)'}">${celda}</div>`;
+          html+=`<div style="width:${dw}px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);padding:4px 5px;min-height:34px;background:${pasado&&!bloq?'#f9fafb':'var(--surf)'}">${celda}</div>`;
         });
         html+='</div>'; // fin fila camilla
       });
@@ -2233,14 +2245,13 @@ function syncFiltroArea(){
 
 // Renderizar el calendario dentro del modal (misma lógica, diferente target)
 function renderCalendarioModal(){
-  // Actualizar label semana
+  const finD2=new Date(calFechaBase);finD2.setDate(finD2.getDate()+4);
   const lbl=g('calSemanaLabelModal');
-  if(lbl){const vier2=new Date(calFechaBase);vier2.setDate(vier2.getDate()+4);lbl.textContent=fmtDia(calFechaBase)+' – '+fmtDia(vier2)+' / '+vier2.getFullYear();}
+  if(lbl){const v=new Date(calFechaBase);v.setDate(v.getDate()+4);lbl.textContent=fmtDia(calFechaBase)+' \u2013 '+fmtDia(v)+' / '+v.getFullYear();}
 
   const areaFiltro=vi('calAreaFiltroModal');
   const areas=areaFiltro?agendaCfg.areas.filter(a=>a.nombre===areaFiltro):agendaCfg.areas;
   const modalGrid=g('calGridModal');if(!modalGrid)return;
-
   if(!areas.length){modalGrid.innerHTML='<div class="empty" style="padding:20px">Sin areas configuradas</div>';return;}
 
   const slots=generarSlots(agendaCfg.franjas);
@@ -2250,55 +2261,72 @@ function renderCalendarioModal(){
   const esAdmin=session&&session.rol==='admin';
   const esDocente=session&&session.rol==='docente';
   const puedeElim=esAdmin||esDocente;
+  const dw=150;
 
   let html='<div class="cal-grid-wrap"><div style="display:flex;flex-direction:column;min-width:max-content">';
   html+='<div style="display:flex;position:sticky;top:0;z-index:5;background:var(--surf)">';
-  html+='<div style="width:130px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);background:var(--surf2)"></div>';
+  html+=`<div style="width:100px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);background:var(--surf2)"></div>`;
   dias.forEach(d=>{
     const esHoy=fmt(d)===hoy;
-    html+=`<div style="width:130px;flex-shrink:0"><div class="cal-day-hdr ${esHoy?'hoy':''}"><span class="dia-num">${d.getDate()}</span><span class="dia-nom">${DIAS_NOM[d.getDay()]}</span></div></div>`;
+    html+=`<div style="width:${dw}px;flex-shrink:0"><div class="cal-day-hdr ${esHoy?'hoy':''}"><span class="dia-num">${d.getDate()}</span><span class="dia-nom">${DIAS_NOM[d.getDay()]}</span></div></div>`;
   });
   html+='</div>';
 
   areas.forEach(area=>{
-    html+=`<div style="background:var(--n700);color:var(--n200);padding:6px 12px;font-size:11px;font-weight:700">${area.nombre}</div>`;
-    slots.forEach(hora=>{
-      html+='<div style="display:flex">';
-      html+=`<div style="width:130px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);background:var(--surf2);padding:4px 8px">
-        <div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:var(--tx2)">${hora}</div>
-        ${(area.espacios||[]).map(esp=>`<div style="font-size:9px;color:var(--tx4)">${esp.nombre}(${esp.capacidad||1})</div>`).join('')}
-      </div>`;
-      dias.forEach(d=>{
-        const fechaStr=fmt(d);
-        const pasado=new Date(fechaStr+'T'+hora+':00')<new Date();
-        const reservasSlot=agendaReservas.filter(r=>r.fecha===fechaStr&&r.horaInicio===hora&&r.area===area.nombre);
-        let celdaHtml='';
-        (area.espacios||[]).forEach(esp=>{
-          const rsvEsp=reservasSlot.filter(r=>r.camilla===esp.nombre);
-          const cap=esp.capacidad||1;
-          rsvEsp.forEach(rsv=>{
-            celdaHtml+=`<div style="background:var(--n600);border-radius:4px;padding:3px 6px;margin-bottom:3px;position:relative">
-              <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esp.nombre}: ${rsv.paciente||'—'}</div>
-              <div style="font-size:9px;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rsv.docente||rsv.reservadoPor||''}</div>
-              ${puedeElim?`<button onclick="event.stopPropagation();pedirEliminarModal('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}')" style="position:absolute;top:2px;right:3px;background:none;border:none;color:rgba(255,255,255,.6);font-size:11px;cursor:pointer" title="Cancelar">&#10005;</button>`:''}
-            </div>`;
-          });
-          if(rsvEsp.length<cap&&!pasado){
-            const fl=d.toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'long'});
-            celdaHtml+=`<button onclick="abrirReservaEspModal('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}',${cap},'${esc(fl)}')" style="width:100%;background:transparent;border:1px dashed transparent;border-radius:4px;color:var(--tx4);font-size:10px;padding:3px 2px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--n300)';this.style.color='var(--n500)';this.style.background='rgba(29,78,216,.05)'" onmouseout="this.style.borderColor='transparent';this.style.color='var(--tx4)';this.style.background='transparent'">
-              <span>+</span> ${esp.nombre}${rsvEsp.length>0?' ('+rsvEsp.length+'/'+cap+')':''}
-            </button>`;
+    html+=`<div style="background:var(--n700);color:var(--n200);padding:7px 14px;font-size:11px;font-weight:700;letter-spacing:.5px;border-bottom:2px solid var(--n600)">${area.nombre}</div>`;
+    slots.forEach((hora,hi)=>{
+      if(hi>0){
+        const [hP]=slots[hi-1].split(':').map(Number);
+        const [hC]=hora.split(':').map(Number);
+        if(hC-hP>1) html+=`<div style="height:6px;background:var(--n050);border-top:2px solid var(--bd2);border-bottom:2px solid var(--bd2)"></div>`;
+      }
+      (area.espacios||[]).forEach((esp,ei)=>{
+        const cap=esp.capacidad||1;
+        const bt=ei===0?'2px solid var(--n300)':'1px dashed var(--bd2)';
+        html+=`<div style="display:flex;border-top:${bt}">`;
+        html+=`<div style="width:100px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);background:var(--surf2);padding:4px 7px;display:flex;flex-direction:column;justify-content:center">`;
+        if(ei===0) html+=`<div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:var(--tx);margin-bottom:2px">${hora}</div>`;
+        html+=`<div style="font-size:11px;font-weight:600;color:var(--n500)">${esp.nombre}</div>`;
+        html+=`<div style="font-size:9px;color:var(--tx4)">${cap} lugar${cap!==1?'es':''}</div></div>`;
+        dias.forEach(d=>{
+          const fechaStr=fmt(d);
+          const pasado=new Date(fechaStr+'T'+hora+':00')<new Date();
+          const rsvEsp=agendaReservas.filter(r=>r.fecha===fechaStr&&r.horaInicio===hora&&r.area===area.nombre&&r.camilla===esp.nombre);
+          const lleno=rsvEsp.length>=cap;
+          const bloq=typeof esBloqueado==='function'&&esBloqueado(fechaStr,hora,area.nombre,esp.nombre);
+          let celda='';
+          if(bloq){
+            celda=`<div style="height:100%;background:repeating-linear-gradient(45deg,#fee2e2,#fee2e2 3px,#fff5f5 3px,#fff5f5 8px);display:flex;align-items:center;justify-content:center;font-size:9px;color:#dc2626;font-weight:600">&#128274;</div>`;
+          } else {
+            rsvEsp.forEach(rsv=>{
+              celda+=`<div style="background:var(--n600);border-radius:6px;padding:3px 6px;margin-bottom:2px;position:relative">
+                <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:14px">${rsv.paciente||'\u2014'}</div>
+                <div style="font-size:9px;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rsv.docente||rsv.reservadoPor||''}</div>
+                ${puedeElim?`<button onclick="event.stopPropagation();pedirEliminarModal('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}')" style="position:absolute;top:2px;right:3px;background:none;border:none;color:rgba(255,255,255,.6);font-size:11px;cursor:pointer;line-height:1;padding:2px">&#10005;</button>`:''}
+              </div>`;
+            });
+            if(!pasado&&!lleno){
+              const fl=d.toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'long'});
+              celda+=`<button onclick="abrirReservaEspModal('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}',${cap},'${esc(fl)}')"
+                style="width:100%;background:transparent;border:1px dashed transparent;border-radius:6px;color:var(--tx4);font-size:10px;padding:4px 2px;cursor:pointer;transition:all .15s;min-height:32px;display:flex;align-items:center;justify-content:center"
+                onmouseover="this.style.borderColor='var(--n300)';this.style.color='var(--n500)';this.style.background='rgba(29,78,216,.06)'"
+                onmouseout="this.style.borderColor='transparent';this.style.color='var(--tx4)';this.style.background='transparent'"
+              ><span style="font-size:14px">+</span></button>`;
+            } else if(pasado&&rsvEsp.length===0){
+              celda=`<div style="min-height:32px;background:#f9fafb"></div>`;
+            }
           }
+          html+=`<div style="width:${dw}px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);padding:4px 5px;min-height:34px;background:${pasado&&!bloq?'#f9fafb':'var(--surf)'}">${celda}</div>`;
         });
-        html+=`<div style="width:130px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);padding:4px 5px;min-height:52px;background:${pasado?'#fafafa':'var(--surf)'}">${celdaHtml}</div>`;
+        html+='</div>';
       });
-      html+='</div>';
     });
-    html+='<div style="height:4px;background:var(--n800)"></div>';
+    html+='<div style="height:6px;background:var(--n800)"></div>';
   });
   html+='</div></div>';
   modalGrid.innerHTML=html;
 }
+
 
 function abrirReservaEspModal(fecha,hora,area,espacio,capacidad,fechaLabel){
   rsvPendiente={fecha,hora,area,camilla:espacio,capacidad,esEstudiante:false,fromModal:true};
@@ -2504,6 +2532,19 @@ function renderListaBloqueos(){
 }
 
 
+
+
+// ── PANEL ADMIN DESDE TOPBAR ─────────────────────────────
+function abrirPanelAdmin(tab){
+  // Mostrar sidebar y activar la pestaña solicitada
+  const sb=g('adminSidebar');
+  if(sb) sb.style.display='';
+  // Simular click en el tab
+  const tabEl=g('tab'+tab.charAt(0).toUpperCase()+tab.slice(1));
+  if(tabEl) tabEl.click();
+  // Si ya está visible, toggle
+  if(!_sidebarOpen) toggleSidebar();
+}
 
 </script>
 </body>
