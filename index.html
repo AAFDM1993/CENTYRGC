@@ -38,7 +38,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 .login-err{background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.35);border-radius:8px;padding:10px 14px;color:#fca5a5;font-size:13px;margin-top:12px;display:none}.login-err.show{display:block}
 .login-hint{text-align:center;font-size:11px;color:rgba(255,255,255,.3);margin-top:20px;line-height:1.7}
 #appPage{display:none}
-.wrap{max-width:1400px;margin:0 auto;padding:24px 28px;display:grid;grid-template-columns:390px 1fr;gap:22px;align-items:start}
+.wrap{max-width:100%;padding:0;display:block}
 .card{background:var(--surf);border:1px solid var(--bd2);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
 .chdr{background:var(--n900);padding:12px 18px;display:flex;align-items:center;justify-content:space-between}.chdr h2{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:#fff}
 .cbody{padding:18px}
@@ -104,17 +104,32 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 .row-btw{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .badge{font-family:'DM Mono',monospace;font-size:11px;padding:3px 10px;border-radius:20px;background:var(--n100);color:var(--n600);border:1px solid var(--n200);font-weight:600}
 .content{display:flex;flex-direction:column;gap:18px}
+/* ── SIDEBAR ADMIN/DOCENTE ── */
+#sideOverlay{position:fixed;inset:0;background:rgba(10,22,40,.5);z-index:200;display:none;backdrop-filter:blur(2px)}
+#sideOverlay.show{display:block}
+#adminSidebar{position:fixed;top:58px;left:0;width:380px;max-width:92vw;height:calc(100vh - 58px);background:var(--surf);z-index:201;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:4px 0 24px rgba(10,22,40,.18);overflow:hidden}
+#adminSidebar.open{transform:translateX(0)}
+.sidebar-inner{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:0}
+.sidebar-footer{padding:12px 16px;border-top:1px solid var(--bd2);flex-shrink:0}
+.btn-toggle-sidebar{display:flex;align-items:center;gap:8px;background:var(--n800);border:none;color:#fff;border-radius:9px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-toggle-sidebar:hover{background:var(--n700)}
+.btn-toggle-sidebar .ico{font-size:16px;transition:transform .3s}
+#adminSidebar.open ~ * .btn-toggle-sidebar .ico, .sidebar-open .btn-toggle-sidebar .ico{transform:rotate(90deg)}
+/* Barra de herramientas sobre el contenido */
+.content-toolbar{display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--surf);border-bottom:1px solid var(--bd2);position:sticky;top:58px;z-index:100}
+.content-main{padding:20px 24px;max-width:1600px;margin:0 auto}
+
 .ed-filter{background:var(--n800);padding:11px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--n700)}
 .ed-filter label{font-size:11px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap}
 .filter-inp{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:13px;padding:7px 12px;outline:none;font-family:'Plus Jakarta Sans',sans-serif;flex:1;min-width:140px;max-width:260px}.filter-inp:focus{border-color:var(--n400);background:rgba(255,255,255,.12)}.filter-inp::placeholder{color:rgba(255,255,255,.3)}
 .filter-sel{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:13px;padding:7px 12px;outline:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;flex:1;min-width:140px;max-width:260px}.filter-sel option{background:var(--n800);color:#fff}
 .filter-cnt{font-size:11px;color:var(--n300);white-space:nowrap;font-family:'DM Mono',monospace}
-.pv-al{border:1px solid var(--bd2);border-radius:10px;overflow:hidden;margin-bottom:14px;box-shadow:var(--sh)}.pv-al.hidden{display:none}
+.pv-al{border:1px solid var(--bd2);border-radius:10px;overflow:visible;margin-bottom:14px;box-shadow:var(--sh)}.pv-al.hidden{display:none}
 .pv-al-hdr{background:var(--n900);color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;font-family:'Syne',sans-serif;font-weight:700;font-size:13px}
 .pv-al-code{font-family:'DM Mono',monospace;font-size:11px;color:var(--n300)}
 .pv-cu-hdr{background:var(--n700);color:var(--n200);padding:7px 16px;font-size:12px;font-weight:600;font-style:italic;display:flex;align-items:center;gap:7px}.pv-cu-hdr::before{content:'';color:var(--n400)}
 .pv-sgr-hdr{background:var(--n500);color:#e0f2fe;padding:5px 20px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:8px}.pv-sgr-badge{font-family:'DM Mono',monospace;font-size:10px;background:rgba(255,255,255,.15);border-radius:4px;padding:1px 7px}
-.nt{width:100%;border-collapse:collapse;font-size:12px}
+.nt{width:100%;border-collapse:collapse;font-size:12px;min-width:600px}
 .nt th{padding:6px 8px;text-align:center;white-space:nowrap;font-family:'DM Mono',monospace;font-size:10px;font-weight:600;border-bottom:1px solid var(--bd2)}
 .nt th.th-pac{text-align:left;background:var(--surf2);color:var(--tx2);min-width:70px;padding-left:14px}.nt th.th-nom{text-align:left;background:var(--surf2);color:var(--tx2);min-width:140px;padding-left:8px}.nt th.th-ss{background:var(--n900);color:var(--n300);width:64px}.nt th.th-ex{background:var(--n700);color:var(--n200);width:64px}.nt th.th-pr{background:var(--n800);color:#7dd3fc;width:76px}
 .nt td{padding:8px 5px;border-bottom:1px solid var(--bd2);vertical-align:middle}
@@ -130,7 +145,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 .est-welcome{background:var(--n900);border-radius:14px;padding:24px 28px;margin-bottom:22px;display:flex;align-items:center;gap:18px}
 .est-avatar{width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,var(--n500),var(--n400));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#fff;flex-shrink:0}
 .est-info h2{font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:18px}.est-info p{color:var(--n300);font-size:13px;margin-top:3px}
-.est-hoja{background:var(--surf);border:1px solid var(--bd2);border-radius:12px;margin-bottom:18px;overflow:hidden;box-shadow:var(--sh)}
+.est-hoja{background:var(--surf);border:1px solid var(--bd2);border-radius:12px;margin-bottom:18px;overflow:visible;box-shadow:var(--sh)}
 .est-hoja-hdr{background:var(--n800);padding:14px 20px}.est-hoja-hdr h3{font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:15px}.est-hoja-hdr p{font-size:11px;color:var(--n300);margin-top:2px}
 .est-cu-hdr{background:var(--n700);color:var(--n200);padding:8px 20px;font-size:12px;font-weight:600;font-style:italic;display:flex;align-items:center;gap:7px}
 .est-sgr-hdr{background:var(--n600);color:#bfdbfe;padding:6px 24px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:8px}
@@ -148,7 +163,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 #loader.show{display:flex}#loader p{font-family:'Syne',sans-serif;font-size:14px;color:#fff}
 .ring{width:44px;height:44px;border:3px solid var(--n700);border-top-color:var(--n400);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:900px){.wrap{grid-template-columns:1fr;padding:14px}.hdr{padding:0 14px}.est-wrap{padding:14px}#drawer{width:100%;max-width:100%}}
+@media(max-width:900px){.wrap{padding:0}.hdr{padding:0 14px}.est-wrap{padding:14px}#drawer{width:100%;max-width:100%}#adminSidebar{width:100%;max-width:100%}.content-main{padding:14px}.content-toolbar{padding:8px 14px}}
 
 /* ── EXPORTAR PDF ── */
 .exp-hoja-item{display:flex;align-items:center;gap:10px;background:var(--surf2);border:1px solid var(--bd2);border-radius:9px;padding:10px 14px;margin-bottom:7px;cursor:pointer;transition:all .15s}
@@ -233,18 +248,23 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
   </header>
 
   <div id="viewAdmin" style="display:none">
-    <div class="wrap">
-      <div style="display:flex;flex-direction:column;gap:16px">
-        <div class="card">
-          <div class="tabs" id="adminTabs" style="grid-template-columns:repeat(7,1fr)">
-            <button class="tab on" id="tabAl" onclick="showTab('al',this)">Alumnos</button>
-            <button class="tab" id="tabCu" onclick="showTab('cu',this)">Cursos</button>
-            <button class="tab" id="tabNt" onclick="showTab('nt',this)">Config</button>
-            <button class="tab" id="tabUs" onclick="showTab('us',this)">Usuarios</button>
-            <button class="tab" id="tabHo" onclick="showTab('ho',this)">Hojas</button>
-            <button class="tab" id="tabPdf" onclick="showTab('pdf',this)">PDF</button>
-            <button class="tab" id="tabLog" onclick="showTab('log',this)">Log</button>
-          </div>
+    <!-- Overlay backdrop del sidebar -->
+    <div id="sideOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar deslizable -->
+    <div id="adminSidebar">
+      <div class="sidebar-inner">
+        <div class="tabs" id="adminTabs" style="grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--n700)">
+          <button class="tab on" id="tabAl" onclick="showTab('al',this)">Alumnos</button>
+          <button class="tab" id="tabCu" onclick="showTab('cu',this)">Cursos</button>
+          <button class="tab" id="tabNt" onclick="showTab('nt',this)">Config</button>
+          <button class="tab" id="tabUs" onclick="showTab('us',this)">Usuarios</button>
+        </div>
+        <div class="tabs" style="grid-template-columns:repeat(3,1fr)">
+          <button class="tab" id="tabHo" onclick="showTab('ho',this)">Hojas</button>
+          <button class="tab" id="tabPdf" onclick="showTab('pdf',this)">PDF</button>
+          <button class="tab" id="tabLog" onclick="showTab('log',this)">Log</button>
+        </div>
 
           <div class="pane on" id="pane-al">
             <div class="upload" id="uploadZone" onclick="document.getElementById('csvIn').click()">
@@ -296,8 +316,8 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
                 <span style="font-size:14px;font-weight:700;color:var(--tx3)">%</span>
               </div>
             </div>
-            <div class="hint-b" style="font-size:11px;margin-bottom:4px"><span>Ej.</span><span>Con 20%: si el alumno tiene PROM_SS = 14, y su extra promedia 18, la nota final = 14 + (18 x 0.20) = 14 + 3.6 = <strong>17.6</strong></span></div>
-            <div class="hint-g" style="font-size:11px;margin-bottom:4px"><span>&#128444;</span><span>El logo se carga automaticamente desde <strong>logo.png</strong> en la misma carpeta que <strong>index.html</strong> en tu repositorio de GitHub.</span></div>
+
+
             <div style="margin-top:2px;background:var(--n900);border-radius:10px;padding:13px 16px">
               <div style="font-size:11px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Formula por subgrupo</div>
               <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--n200);line-height:1.9">PROM = PROM(notas) x (ejecutadas / programadas)<br><span style="color:var(--n300)">ejecutadas = SS + Extra ingresados</span></div>
@@ -369,15 +389,25 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
             </div>
             <button class="btn-ghost" onclick="cargarHojasExport()" style="width:100%;margin-top:10px">Recargar hojas</button>
           </div>
-        </div>
-
-        <button class="btn btn-p" id="btnGen" onclick="generarPlanilla()" disabled style="width:100%">
+        </div><!-- end sidebar-inner -->
+      <div class="sidebar-footer">
+        <button class="btn btn-p" id="btnGen" onclick="generarPlanilla();toggleSidebar()" disabled style="width:100%">
           Generar planilla en Google Sheets
         </button>
       </div>
+    </div><!-- end adminSidebar -->
 
+    <!-- Toolbar + contenido principal -->
+    <div class="content-toolbar">
+      <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
+        <span class="ico">&#9776;</span><span id="sidebarBtnLabel">Panel</span>
+      </button>
+      <div class="cpill" id="cpill2" style="display:none"><div class="dot" id="cdot2"></div><span class="clabel" id="clabel2">-</span></div>
+    </div>
+
+    <div class="content-main">
       <div class="content">
-        <div class="card" id="connCard">
+        <div class="card" id="connCard" style="display:none">
           <div class="cbody" style="padding:12px 16px">
             <div id="connHint" class="hint"><span>...</span><span>Conectando...</span></div>
           </div>
@@ -392,15 +422,15 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
             </select>
             <span class="filter-cnt" id="filterCnt"></span>
           </div>
-          <div class="cbody" id="edBody" style="padding:14px"></div>
+          <div id="edBody" style="padding:14px;overflow-x:auto"></div>
         </div>
         <div class="card" id="prevCard">
           <div class="chdr"><h2>Vista Previa</h2><span class="badge" id="prevBadge">0 alumnos</span></div>
           <div class="cbody" id="prevBody" style="padding:14px"><div class="empty">Configura alumnos, cursos y subgrupos para ver la estructura</div></div>
         </div>
       </div>
-    </div>
-  </div>
+    </div><!-- content-main -->
+  </div><!-- viewAdmin -->
 
   <div id="viewEstudiante" style="display:none">
     <div class="est-wrap">
@@ -418,7 +448,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 <script>
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbz-M7KA7R8bDAE0TIjCVCh3GValBADTF-VXgjlugzCzsqtGslOMS1JV7WPVOLMsmyJhHg/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhOA8wurlHF5KU69ChGcFpgZV8ZqhIbjtXlAg5iYiCOd-_91rzZOf_EAOgHCs2YxIBnQ/exec';
 // ====================================================
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
@@ -488,6 +518,11 @@ async function pingConn(){
 function setConn(ok,msg){
   g('cdot').className='dot '+(ok?'ok':'err');g('clabel').textContent=ok?'Conectado':'Error';
   g('cpill').className='cpill '+(ok?'ok':'');
+  // También actualizar el indicador en la toolbar
+  const cpill2=g('cpill2');const cdot2=g('cdot2');const clabel2=g('clabel2');
+  if(cpill2){cpill2.style.display='flex';cpill2.className='cpill '+(ok?'ok':'');
+    if(cdot2)cdot2.className='dot '+(ok?'ok':'err');
+    if(clabel2)clabel2.textContent=ok?'Conectado':'Error';}
   const h=g('connHint');if(!h)return;
   h.className=ok?'hint-b':'hint';
   h.innerHTML='<span>'+(ok?'OK':'!')+'</span><span>'+msg+'</span>';
@@ -495,7 +530,7 @@ function setConn(ok,msg){
 function iniciarVistaAdmin(){
   const esA=session.rol==='admin';
   if(!esA){
-    ['tabAl','tabCu','tabNt','tabUs','tabPdf','tabLog'].forEach(t=>{const el=g(t);if(el)el.style.display='none'});
+    ['tabAl','tabCu','tabNt','tabUs','tabPdf','tabLog'].forEach(t=>{const el=g(t);if(el)el.style.display='none'});g('btnGen').style.display='none';
     document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
     document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
     g('tabHo').classList.add('on');g('pane-ho').classList.add('on');
@@ -508,7 +543,7 @@ function showTab(tid,btn){
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
   g('pane-'+tid).classList.add('on');btn.classList.add('on');
-  if(tid==='ho')loadHojas();if(tid==='us')cargarUsuarios();if(tid==='pdf')cargarHojasExport();if(tid==='log')cargarLog();
+  if(tid==='ho')loadHojas();if(tid==='us')cargarUsuarios();if(tid==='pdf')cargarHojasExport();if(tid==='log')cargarLog();if(window.innerWidth<=900)closeSidebar();
 }
 function openDrawer(i){
   drawerIdx=i;const a=alumnos[i];
@@ -709,6 +744,7 @@ async function delHoja(nombre){
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
 async function abrirHoja(nombre){
+  closeSidebar();
   showLoader('Cargando hoja...');
   try{
     const r=await apiGet('leerHoja',{hoja:nombre});hideLoader();if(!r.ok)throw new Error(r.error);
@@ -753,7 +789,7 @@ function renderAlBlock(al,ai,apro){
           <td style="text-align:center"><span class="${pc} nf" id="pc_${ai}_${ci}_${si}_${pi}">${p!==''&&p!==undefined?p:'-'}</span></td>
         </tr>`;
       }).join('')||'<tr><td colspan="99" class="empty" style="padding:8px">Sin pacientes</td></tr>';
-      return`<div class="pv-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${base}SS+${extra}E · ${pct}%extra</span></div><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-xp">Extra ${pct}%</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table>`;
+      return`<div class="pv-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${base}SS+${extra}E · ${pct}%extra</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-xp">Extra ${pct}%</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
     }).join('');
     return`<div class="pv-cu-hdr">${cu.nombre}</div>${sb}`;
   }).join('');
@@ -846,7 +882,7 @@ function renderEstNotas(resultados){
             <td style="text-align:center"><span class="${pc}">${p!==''&&p!==undefined?p:'-'}</span></td>
           </tr>`;
         }).join('');
-        return`<div class="est-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${base}SS+${extra}E</span></div><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-xp">Extra</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table>`;
+        return`<div class="est-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${base}SS+${extra}E</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-xp">Extra</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
       }).join('');
       return`<div class="est-cu-hdr">${cu.nombre}</div>${sb}`;
     }).join('');
@@ -1129,6 +1165,24 @@ async function cargarLog(){
       </div>`;
     }).join('');
   }catch(e){box.innerHTML=`<div class="hint">Error: ${e.message}</div>`}
+}
+
+
+// ── SIDEBAR DESLIZABLE ───────────────────────────────────────
+let _sidebarOpen = false;
+function toggleSidebar(){
+  _sidebarOpen = !_sidebarOpen;
+  const sb  = g('adminSidebar');
+  const ov  = g('sideOverlay');
+  const lbl = g('sidebarBtnLabel');
+  if(sb) sb.classList.toggle('open', _sidebarOpen);
+  if(ov) ov.classList.toggle('show', _sidebarOpen);
+  if(lbl) lbl.textContent = _sidebarOpen ? 'Cerrar panel' : 'Panel';
+  document.body.style.overflow = _sidebarOpen ? 'hidden' : '';
+}
+function closeSidebar(){
+  if(!_sidebarOpen) return;
+  toggleSidebar();
 }
 
 </script>
