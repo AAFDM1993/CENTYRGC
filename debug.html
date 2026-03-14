@@ -1,0 +1,2615 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CENTYR - Centro Docente de Terapia Fisica UPT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f0f4ff;--bg2:#e2e8f4;--surf:#fff;--surf2:#f5f7ff;--n900:#0a1628;--n800:#0f1e3d;--n700:#1a2f5a;--n600:#1e3a5f;--n500:#1d4ed8;--n400:#3b82f6;--n300:#93c5fd;--n200:#bfdbfe;--n100:#dbeafe;--n050:#eff6ff;--tx:#0f172a;--tx2:#334155;--tx3:#64748b;--tx4:#94a3b8;--bd:#cbd5e1;--bd2:#e2e8f0;--green:#059669;--green2:#d1fae5;--red:#dc2626;--red2:#fee2e2;--amber:#d97706;--amber2:#fef3c7;--r:16px;--sh:0 1px 3px rgba(15,22,40,.07),0 4px 12px rgba(15,22,40,.05)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
+header{background:var(--n900);border-bottom:1px solid var(--n800);position:sticky;top:0;z-index:300;box-shadow:0 2px 16px rgba(10,22,40,.4)}
+.hdr{max-width:1400px;margin:0 auto;padding:0 24px;height:58px;display:flex;align-items:center;gap:14px}
+.logo{display:flex;align-items:center;gap:11px;flex-shrink:0}
+.lmark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--n500),var(--n400));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:#fff}
+.logo h1{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#fff;letter-spacing:-.3px}
+.logo p{font-size:11px;color:var(--n300);margin-top:1px}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.rol-pill{display:flex;align-items:center;gap:6px;background:var(--n800);border:1px solid var(--n700);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;color:var(--n300)}
+.rdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.rdot.admin{background:#f59e0b;box-shadow:0 0 5px #f59e0b}.rdot.docente{background:var(--green);box-shadow:0 0 5px var(--green)}.rdot.estudiante{background:var(--n400);box-shadow:0 0 5px var(--n400)}
+.btn-logout{background:none;border:1px solid var(--n700);border-radius:8px;color:var(--tx4);font-size:12px;font-weight:600;padding:5px 12px;cursor:pointer;transition:all .2s}.btn-logout:hover{border-color:var(--red);color:var(--red)}
+.cpill{display:flex;align-items:center;gap:6px;background:var(--n800);border:1px solid var(--n700);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;color:var(--n300)}
+.cpill .dot{width:7px;height:7px;border-radius:50%;background:var(--tx4);flex-shrink:0;transition:all .3s}
+.dot.ok{background:var(--green);box-shadow:0 0 6px var(--green)}.dot.err{background:var(--red)}
+.cpill.ok{border-color:rgba(5,150,105,.35)}.cpill.ok .clabel{color:#6ee7b7}
+#loginPage{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--n900) 0%,#0d2347 60%,#162d5a 100%);padding:20px}
+.login-card{background:rgba(255,255,255,.06);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:44px 40px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.4)}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:28px;justify-content:center;flex-wrap:wrap}
+.login-logo .lmark{width:44px;height:44px;font-size:18px}
+.login-logo h2{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:#fff}.login-logo p{font-size:12px;color:var(--n300)}
+.login-field{margin-bottom:16px}.login-field label{display:block;font-size:11px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
+.login-inp{width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:14px;color:#fff;font-size:14px;padding:11px 15px;outline:none;transition:border-color .2s;font-family:'Plus Jakarta Sans',sans-serif}
+.login-inp:focus{border-color:var(--n400);background:rgba(255,255,255,.12)}.login-inp::placeholder{color:rgba(255,255,255,.3)}
+.btn-login{width:100%;background:var(--n500);color:#fff;border:none;border-radius:14px;padding:13px;font-family:'Syne',sans-serif;font-weight:700;font-size:15px;cursor:pointer;transition:all .2s;margin-top:8px}.btn-login:hover{background:var(--n400);transform:translateY(-1px);box-shadow:0 8px 24px rgba(29,78,216,.4)}
+.login-err{background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.35);border-radius:8px;padding:10px 14px;color:#fca5a5;font-size:13px;margin-top:12px;display:none}.login-err.show{display:block}
+.login-hint{text-align:center;font-size:11px;color:rgba(255,255,255,.3);margin-top:20px;line-height:1.7}
+#appPage{display:none}
+.wrap{max-width:100%;padding:0;display:block}
+.card{background:var(--surf);border:1px solid var(--bd2);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
+.chdr{background:var(--n900);padding:12px 18px;display:flex;align-items:center;justify-content:space-between}.chdr h2{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:#fff}
+.cbody{padding:18px}
+.tabs{display:grid;background:var(--n900)}.tabs.t5{grid-template-columns:repeat(5,1fr)}.tabs.t4{grid-template-columns:repeat(4,1fr)}
+.tab{background:none;border:none;border-bottom:2px solid transparent;color:var(--n300);font-family:'Syne',sans-serif;font-weight:700;font-size:10px;padding:11px 3px;cursor:pointer;transition:all .2s;white-space:nowrap}.tab:hover{color:#fff}.tab.on{color:#fff;border-bottom-color:var(--n400);background:rgba(59,130,246,.07)}
+.pane{display:none;padding:16px}.pane.on{display:block}
+.field{margin-bottom:12px}.field label{display:block;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
+.inp{width:100%;background:var(--surf2);border:1px solid var(--bd);border-radius:12px;color:var(--tx);font-size:13px;padding:8px 11px;outline:none;transition:border-color .2s;font-family:'Plus Jakarta Sans',sans-serif}.inp:focus{border-color:var(--n500);background:#fff}.inp::placeholder{color:var(--tx4)}
+.sel{width:100%;background:var(--surf2);border:1px solid var(--bd);border-radius:12px;color:var(--tx);font-size:13px;padding:8px 11px;outline:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif}
+.row2{display:flex;gap:9px}.row2 .field{flex:1;margin-bottom:0}
+.upload{border:2px dashed var(--bd);border-radius:16px;padding:14px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surf2)}.upload:hover{border-color:var(--n500);background:var(--n050)}.upload .ico{font-size:22px;margin-bottom:4px}.upload p{font-size:13px;color:var(--tx2)}.upload small{font-size:11px;color:var(--tx4);display:block;margin-top:2px}
+.slist{max-height:260px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;margin-top:10px}
+.al-row{display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--surf2);border:1px solid var(--bd2);border-radius:12px}.al-row:hover{background:var(--n050);border-color:var(--bd)}
+.sn{font-family:'DM Mono',monospace;font-size:10px;color:var(--tx4);min-width:18px;flex-shrink:0}
+.sname{flex:1;font-size:12px;font-weight:600;color:var(--tx);line-height:1.3}.scode{font-family:'DM Mono',monospace;font-size:10px;color:var(--n500);flex-shrink:0}
+.al-badge{font-family:'DM Mono',monospace;font-size:10px;padding:2px 8px;border-radius:10px;background:var(--n100);color:var(--n600);border:1px solid var(--n200);white-space:nowrap;flex-shrink:0;cursor:pointer;transition:all .15s}.al-badge:hover{background:var(--n500);color:#fff;border-color:var(--n500)}.al-badge.none{background:var(--bd2);color:var(--tx4);border-color:var(--bd)}
+.sdel{background:none;border:none;color:var(--tx4);font-size:11px;cursor:pointer;padding:0 3px;line-height:1;transition:color .15s;flex-shrink:0}.sdel:hover{color:var(--red)}
+#drawer-overlay{position:fixed;inset:0;background:rgba(10,22,40,.55);z-index:400;display:none;backdrop-filter:blur(2px)}#drawer-overlay.show{display:block}
+#drawer{position:fixed;top:0;right:0;width:340px;max-width:95vw;height:100vh;background:var(--surf);box-shadow:-8px 0 32px rgba(10,22,40,.25);z-index:401;transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;border-radius:0 0 0 20px}#drawer.open{transform:translateX(0)}
+.drawer-hdr{background:var(--n900);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}.drawer-hdr h3{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#fff}.drawer-hdr p{font-size:11px;color:var(--n300);margin-top:2px}
+.drawer-close{background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:6px;font-size:16px;cursor:pointer;line-height:1}.drawer-close:hover{background:rgba(255,255,255,.2)}
+.drawer-body{padding:18px 20px;flex:1;overflow-y:auto}
+.drawer-label{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;display:flex;align-items:center;gap:7px}.drawer-label::after{content:'';flex:1;height:1px;background:var(--bd2)}
+.cck-grid{display:flex;flex-direction:column;gap:8px}
+.cck{display:flex;align-items:center;gap:10px;background:var(--surf2);border:1px solid var(--bd2);border-radius:14px;padding:11px 14px;cursor:pointer;transition:all .15s;user-select:none}.cck:hover{border-color:var(--n400);background:var(--n050)}.cck.on{border-color:var(--n500);background:var(--n050)}
+.cck .ck{width:18px;height:18px;border:2px solid var(--bd);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}.cck.on .ck{background:var(--n500);border-color:var(--n500);color:#fff}.cck span{font-size:13px;font-weight:600;color:var(--tx2)}.cck.on span{color:var(--n500)}
+.empty{text-align:center;padding:14px;color:var(--tx4);font-size:13px}
+.slbl{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.8px;margin:12px 0 8px;display:flex;align-items:center;gap:7px}.slbl::after{content:'';flex:1;height:1px;background:var(--bd2)}
+.crs-list{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.crs-item{border:1px solid var(--bd2);border-radius:14px;overflow:hidden;background:var(--surf2)}.crs-item.on{border-color:var(--n400)}
+.crs-header{display:flex;align-items:center;gap:8px;padding:9px 12px;cursor:pointer}.crs-header:hover{background:var(--n050)}
+.crs-chk{width:16px;height:16px;border:2px solid var(--bd);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}.crs-item.on .crs-chk{background:var(--n500);border-color:var(--n500);color:#fff}
+.crs-label{flex:1;font-size:13px;font-weight:600;color:var(--tx)}.crs-item.on .crs-label{color:var(--n500)}
+.crs-arrow{font-size:10px;color:var(--tx4);transition:transform .2s}.crs-item.expanded .crs-arrow{transform:rotate(90deg);color:var(--n400)}
+.crs-del{background:none;border:none;color:var(--tx4);font-size:13px;cursor:pointer;padding:0 3px}.crs-del:hover{color:var(--red)}
+.crs-body{display:none;padding:0 12px 12px;border-top:1px solid var(--bd2)}.crs-item.expanded .crs-body{display:block}
+.sgr-lbl{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin:10px 0 7px;display:flex;align-items:center;gap:7px}.sgr-lbl::after{content:'';flex:1;height:1px;background:var(--bd2)}
+.sgr-list{display:flex;flex-direction:column;gap:7px;margin-bottom:8px}
+.sgr-card{background:var(--surf);border:1px solid var(--n200);border-radius:14px;padding:10px 13px}
+.sgr-card-top{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+.sgr-name-inp{flex:1;background:var(--surf2);border:1px solid var(--bd);border-radius:7px;padding:5px 9px;font-size:12px;font-weight:600;color:var(--tx);outline:none;font-family:'Plus Jakarta Sans',sans-serif}.sgr-name-inp:focus{border-color:var(--n500)}
+.sgr-del{background:none;border:none;color:var(--tx4);font-size:13px;cursor:pointer;padding:0 3px}.sgr-del:hover{color:var(--red)}
+.sgr-controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.sgr-ctrl label{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px}
+.counter{display:flex;align-items:center;border:1px solid var(--bd);border-radius:7px;overflow:hidden;background:#fff}.counter button{background:var(--surf2);border:none;width:27px;height:30px;font-size:15px;color:var(--n500);cursor:pointer;font-weight:700;flex-shrink:0}.counter button:hover{background:var(--n100)}.counter span{font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--tx);min-width:30px;text-align:center;line-height:30px}
+.add-sgr-btn{width:100%;background:var(--n050);border:1px dashed var(--n300);border-radius:8px;padding:7px;font-size:12px;font-weight:700;color:var(--n500);cursor:pointer}.add-sgr-btn:hover{background:var(--n100)}
+.usr-list{display:flex;flex-direction:column;gap:5px;max-height:280px;overflow-y:auto;margin-bottom:10px}
+.usr-row{display:grid;grid-template-columns:95px 1fr 70px 85px 28px 28px;gap:5px;align-items:center;background:var(--surf2);border:1px solid var(--bd2);border-radius:8px;padding:8px 11px;font-size:12px}.usr-row:hover{border-color:var(--bd)}
+.usr-codigo{font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:var(--n500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.usr-nombre{color:var(--tx);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.usr-pass{font-family:'DM Mono',monospace;font-size:11px;color:var(--tx4);text-align:center;letter-spacing:1px}
+.rol-tag{display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.rol-tag.admin{background:#fef3c7;color:#92400e;border:1px solid #fde68a}.rol-tag.docente{background:var(--green2);color:#065f46;border:1px solid #a7f3d0}.rol-tag.estudiante{background:var(--n100);color:var(--n600);border:1px solid var(--n200)}
+.usr-del{background:none;border:none;color:var(--tx4);font-size:13px;cursor:pointer;padding:0}.usr-del:hover{color:var(--red)}.usr-edit{background:none;border:none;color:var(--tx4);font-size:13px;cursor:pointer;padding:0;transition:color .15s}.usr-edit:hover{color:var(--n500)}
+.form-usr{background:var(--surf2);border:1px solid var(--bd2);border-radius:10px;padding:13px}
+.import-box{background:var(--n050);border:1px solid var(--n200);border-radius:10px;padding:13px;margin-top:10px}
+.import-box h4{font-size:12px;font-weight:700;color:var(--n600);margin-bottom:7px}.import-box p{font-size:11px;color:var(--tx3);margin-bottom:9px;line-height:1.6}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:14px;padding:12px 24px;font-family:'Syne',sans-serif;font-weight:700;font-size:14px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-p{background:var(--n600);color:#fff}.btn-p:hover:not(:disabled){background:var(--n500);transform:translateY(-1px);box-shadow:0 6px 20px rgba(29,78,216,.3)}.btn-p:disabled{opacity:.4;cursor:not-allowed}
+.btn-sm{background:var(--n600);color:#fff;border:none;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}.btn-sm:hover{background:var(--n500)}.btn-sm.green{background:var(--green)}.btn-sm.green:hover{background:#047857}
+.btn-ghost{background:transparent;border:1px solid var(--bd);color:var(--tx3);border-radius:12px;padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer}.btn-ghost:hover{border-color:var(--n500);color:var(--n500)}
+.btn-save{background:var(--green);color:#fff;border:none;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer}.btn-save:hover{background:#047857}
+.row-btw{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.badge{font-family:'DM Mono',monospace;font-size:11px;padding:3px 10px;border-radius:20px;background:var(--n100);color:var(--n600);border:1px solid var(--n200);font-weight:600}
+.content{display:flex;flex-direction:column;gap:18px}
+/* ── SIDEBAR ADMIN/DOCENTE ── */
+#sideOverlay{position:fixed;inset:0;background:rgba(10,22,40,.5);z-index:200;display:none;backdrop-filter:blur(2px)}
+#sideOverlay.show{display:block}
+#adminSidebar{position:fixed;top:58px;left:0;width:380px;max-width:92vw;height:calc(100vh - 58px);background:var(--surf);z-index:201;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:4px 0 24px rgba(10,22,40,.18);overflow:hidden}
+#adminSidebar.sidebar-hidden{transform:translateX(-100%)!important;pointer-events:none;visibility:hidden}
+#adminSidebar.open{transform:translateX(0)}
+.sidebar-inner{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:0}
+.sidebar-footer{padding:12px 16px;border-top:1px solid var(--bd2);flex-shrink:0}
+.btn-toggle-sidebar{display:flex;align-items:center;gap:8px;background:var(--n800);border:none;color:#fff;border-radius:9px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-toggle-sidebar:hover{background:var(--n700)}
+.btn-toggle-sidebar .ico{font-size:16px;transition:transform .3s}
+#adminSidebar.open ~ * .btn-toggle-sidebar .ico, .sidebar-open .btn-toggle-sidebar .ico{transform:rotate(90deg)}
+/* Barra de herramientas sobre el contenido */
+.content-toolbar{display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--surf);border-bottom:1px solid var(--bd2);position:sticky;top:58px;z-index:100}
+.content-main{padding:20px 24px;max-width:1600px;margin:0 auto}
+
+.ed-filter{background:var(--n800);padding:11px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--n700)}
+.ed-filter label{font-size:11px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap}
+.filter-inp{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:13px;padding:7px 12px;outline:none;font-family:'Plus Jakarta Sans',sans-serif;flex:1;min-width:140px;max-width:260px}.filter-inp:focus{border-color:var(--n400);background:rgba(255,255,255,.12)}.filter-inp::placeholder{color:rgba(255,255,255,.3)}
+.filter-sel{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;font-size:13px;padding:7px 12px;outline:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;flex:1;min-width:140px;max-width:260px}.filter-sel option{background:#0f1e3d;color:#fff}
+.filter-cnt{font-size:11px;color:var(--n300);white-space:nowrap;font-family:'DM Mono',monospace}
+.pv-al{border:1px solid var(--bd2);border-radius:16px;overflow:visible;margin-bottom:14px;box-shadow:var(--sh)}.pv-al.hidden{display:none}
+.pv-al-hdr{background:var(--n900);color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;font-family:'Syne',sans-serif;font-weight:700;font-size:13px}
+.pv-al-code{font-family:'DM Mono',monospace;font-size:11px;color:var(--n300)}
+.pv-cu-hdr{background:var(--n700);color:var(--n200);padding:7px 16px;font-size:12px;font-weight:600;font-style:italic;display:flex;align-items:center;gap:7px}.pv-cu-hdr::before{content:'';color:var(--n400)}
+.pv-sgr-hdr{background:var(--n500);color:#e0f2fe;padding:5px 20px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:8px}.pv-sgr-badge{font-family:'DM Mono',monospace;font-size:10px;background:rgba(255,255,255,.15);border-radius:4px;padding:1px 7px}
+.nt{width:100%;border-collapse:collapse;font-size:12px;min-width:600px}
+.nt th{padding:5px 6px;text-align:center;white-space:nowrap;font-family:'DM Mono',monospace;font-size:10px;font-weight:600;border-bottom:1px solid var(--bd2)}
+.nt th.th-pac{text-align:left;background:var(--surf2);color:var(--tx2);min-width:70px;padding-left:14px}.nt th.th-nom{text-align:left;background:var(--surf2);color:var(--tx2);min-width:140px;padding-left:8px}.nt th.th-ss{background:var(--n900);color:var(--n300);width:64px}.nt th.th-ex{background:var(--n700);color:var(--n200);width:64px}.nt th.th-pr{background:var(--n800);color:#7dd3fc;width:76px}
+.nt td{padding:6px 4px;border-bottom:1px solid var(--bd2);vertical-align:middle}
+.nt td.td-pac{background:var(--surf2);color:var(--tx);font-size:11px;font-weight:600;padding-left:12px;font-family:'DM Mono',monospace}
+.nt tr:last-child td{border-bottom:none}.nt tr:nth-child(even) td{background:var(--bg2)}.nt tr:nth-child(even) td.td-pac{background:var(--bg2)}
+.nc{width:100%;border:1px solid transparent;background:transparent;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;text-align:center;color:var(--tx2);outline:none;padding:5px 2px;cursor:pointer;border-radius:5px;transition:all .15s;-moz-appearance:textfield;min-width:54px}
+.nc::-webkit-inner-spin-button,.nc::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.nc:hover{background:var(--n100);border-color:var(--n200);color:var(--n600)}.nc:focus{background:var(--n600);color:#fff;cursor:text;border-color:var(--n500);font-size:13px}.nc.v{color:var(--n600);font-weight:700}.nc.ex{color:#1d4ed8}.nc.ex:focus{background:#1d4ed8;color:#fff}.nc.ex.v{color:#1d4ed8}
+.nn{width:100%;border:1px solid transparent;background:transparent;font-size:12px;color:var(--tx);outline:none;padding:5px 6px;border-radius:5px;transition:all .15s;font-family:'Plus Jakarta Sans',sans-serif}
+.nn:hover{border-color:var(--bd);background:var(--surf2)}.nn:focus{border-color:var(--n500);background:#fff}.nn.has-val{font-weight:600}
+.pc{font-family:'DM Mono',monospace;font-size:13px;font-weight:700;display:inline-block;min-width:52px;padding:4px 8px;border-radius:10px;background:var(--n800);color:var(--n300);text-align:center}.pc.ok{background:var(--green2);color:var(--green)}.pc.no{background:var(--red2);color:var(--red)}
+.est-wrap{max-width:100%;margin:0 auto;padding:20px 28px;box-sizing:border-box}
+.est-welcome{background:var(--n900);border-radius:20px;padding:24px 28px;margin-bottom:22px;display:flex;align-items:center;gap:18px}
+.est-avatar{width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,var(--n500),var(--n400));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#fff;flex-shrink:0}
+.est-info h2{font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:18px}.est-info p{color:var(--n300);font-size:13px;margin-top:3px}
+.est-hoja{background:var(--surf);border:1px solid var(--bd2);border-radius:18px;margin-bottom:18px;overflow:visible;box-shadow:var(--sh);width:100%}
+.est-hoja-hdr{background:var(--n800);padding:14px 20px}.est-hoja-hdr h3{font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:15px}.est-hoja-hdr p{font-size:11px;color:var(--n300);margin-top:2px}
+.est-cu-hdr{background:var(--n700);color:var(--n200);padding:8px 20px;font-size:12px;font-weight:600;font-style:italic;display:flex;align-items:center;gap:7px}
+.est-sgr-hdr{background:var(--n600);color:#bfdbfe;padding:6px 24px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:8px}
+.est-no-data{text-align:center;padding:40px;color:var(--tx4)}.est-no-data .ico{font-size:40px;margin-bottom:10px}
+.hi{display:flex;align-items:center;gap:11px;background:var(--surf2);border:1px solid var(--bd2);border-radius:9px;padding:10px 13px;margin-bottom:7px;cursor:pointer;transition:all .2s}.hi:hover{border-color:var(--n500);background:var(--n050)}
+.hi-ico{font-size:18px;flex-shrink:0}.hi-info{flex:1}.hi-name{font-weight:700;font-size:13px}.hi-meta{font-size:11px;color:var(--tx4);font-family:'DM Mono',monospace;margin-top:1px}
+.hi-del{background:none;border:none;color:var(--tx4);font-size:14px;cursor:pointer;padding:4px}.hi-del:hover{color:var(--red)}
+.hint{display:flex;align-items:flex-start;gap:8px;background:var(--amber2);border:1px solid rgba(217,119,6,.3);border-radius:14px;padding:10px 13px;font-size:12px;color:#92400e;line-height:1.6}
+.hint-b{display:flex;align-items:flex-start;gap:8px;background:var(--n050);border:1px solid var(--n200);border-radius:14px;padding:10px 13px;font-size:12px;color:var(--n600);line-height:1.6}
+.hint-g{display:flex;align-items:flex-start;gap:8px;background:var(--green2);border:1px solid #a7f3d0;border-radius:14px;padding:10px 13px;font-size:12px;color:#065f46;line-height:1.6}
+#toast{position:fixed;bottom:22px;right:22px;background:var(--n900);border:1px solid var(--n700);border-left:3px solid var(--n400);border-radius:16px;padding:11px 17px;max-width:340px;color:#fff;font-size:13px;z-index:999;opacity:0;transform:translateY(50px);transition:all .3s cubic-bezier(.175,.885,.32,1.275);pointer-events:none}
+#toast.show{opacity:1;transform:translateY(0)}#toast.ok{border-left-color:var(--green)}#toast.err{border-left-color:var(--red)}#toast.warn{border-left-color:var(--amber)}
+.tt{font-weight:700;margin-bottom:2px}.tm{color:var(--n300);font-size:12px}
+#loader{position:fixed;inset:0;background:rgba(10,22,40,.8);display:none;align-items:center;justify-content:center;z-index:500;flex-direction:column;gap:14px}
+#loader.show{display:flex}#loader p{font-family:'Syne',sans-serif;font-size:14px;color:#fff}
+.ring{width:44px;height:44px;border:3px solid var(--n700);border-top-color:var(--n400);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE - Mobile First
+   ══════════════════════════════════════════════ */
+
+/* Tablet */
+@media(max-width:1024px){
+  .content-main{padding:14px}
+  .wrap{padding:0}
+}
+
+/* Tablet pequeño / Mobile grande */
+@media(max-width:768px){
+  /* Header */
+  .hdr{padding:0 14px;height:54px}
+  .hdr h1{font-size:14px}
+  .hdr p{display:none}
+  .logo .lmark{width:30px;height:30px;font-size:12px}
+  .btn-logout{font-size:12px;padding:6px 12px;min-height:36px}
+  .rol-pill{padding:4px 10px;font-size:11px}
+  /* Login */
+  .login-card{padding:32px 22px;border-radius:20px;margin:12px}
+  /* Contenido */
+  .content-main{padding:10px}
+  /* Sidebar admin */
+  #adminSidebar{width:100%;max-width:100%;border-radius:0;top:54px;height:calc(100vh - 54px)}
+  /* Topbar docente */
+  #docenteTopbar{padding:0 10px}
+  /* Tablas de notas */
+  .nt th,.nt td{padding:6px 4px}
+  .nc{font-size:11px;padding:4px 1px;min-width:44px}
+  .pv-al-hdr{font-size:12px;padding:8px 12px}
+  .pv-sgr-hdr{padding:5px 10px;font-size:10px}
+  /* Bienvenida estudiante */
+  .est-wrap{padding:10px}
+  .est-welcome{padding:14px 16px;border-radius:16px}
+  .est-info h2{font-size:16px}
+  /* Calendarios */
+  .cal-day-col{min-width:80px;width:80px!important}
+  [style*="width:130px"]{min-width:80px!important;width:80px!important}
+  .cal-day-hdr .dia-num{font-size:15px}
+  .cal-time-lbl{font-size:9px;padding-right:4px}
+  /* Modal agenda */
+  #agendaModal{padding:54px 6px 6px;align-items:flex-start}
+  #agendaModal>div{border-radius:14px;max-height:calc(100vh - 60px)}
+  /* Cards */
+  .card{border-radius:14px}
+  .chdr{padding:10px 14px}
+  /* Hint boxes */
+  .hint,.hint-b,.hint-g{font-size:11px;padding:8px 11px}
+  /* Toast */
+  #toast{bottom:14px;right:14px;left:14px;max-width:100%}
+}
+
+/* Mobile */
+@media(max-width:480px){
+  .hdr{height:50px}
+  .hdr h1{font-size:13px;letter-spacing:0}
+  .logo .lmark{width:28px;height:28px;font-size:11px}
+  /* Login pantalla completa */
+  #loginPage{align-items:flex-end;padding-bottom:0}
+  .login-card{border-radius:24px 24px 0 0;max-width:100%;padding:28px 20px 36px;margin:0}
+  /* Sidebar */
+  #adminSidebar{top:50px;height:calc(100vh - 50px)}
+  /* Botones táctiles más grandes */
+  .btn-sm,.btn-ghost,.btn-save{min-height:40px;font-size:13px}
+  .btn-login{padding:15px;font-size:16px;min-height:52px}
+  .tab{padding:10px 2px;font-size:9.5px}
+  /* Calendarios compactos */
+  .cal-day-col{min-width:64px;width:64px!important}
+  [style*="width:130px"]{min-width:64px!important;width:64px!important}
+  .cal-day-hdr .dia-num{font-size:13px}
+  .cal-day-hdr .dia-nom{font-size:9px}
+  /* Est notas */
+  .est-hoja{border-radius:14px}
+  .est-hoja-hdr{padding:12px 14px}
+  /* Bienvenida */
+  .est-welcome{flex-direction:column;align-items:flex-start;gap:10px}
+  /* Rows */
+  .row2{flex-direction:column}
+  .row2 .field{width:100%}
+  /* Badges */
+  .al-badge{font-size:9px;padding:2px 6px}
+  /* nc inputs */
+  .nc{font-size:11px;padding:3px 1px;min-width:40px}
+  /* Texto menor en tablas */
+  .nt th{font-size:9px}
+  .nt td.td-pac{font-size:10px;padding-left:8px}
+  /* pc badge */
+  .pc{font-size:11px;min-width:42px;padding:3px 5px}
+}
+
+/* Evitar zoom en inputs iOS */
+@media(max-width:768px){
+  input[type="text"],input[type="password"],input[type="number"],input[type="email"],input[type="time"],select,textarea{font-size:16px!important}
+}
+
+
+/* ── EXPORTAR PDF ── */
+.exp-hoja-item{display:flex;align-items:center;gap:10px;background:var(--surf2);border:1px solid var(--bd2);border-radius:9px;padding:10px 14px;margin-bottom:7px;cursor:pointer;transition:all .15s}
+.exp-hoja-item:hover{border-color:var(--n400);background:var(--n050)}
+.exp-hoja-item.sel{border-color:var(--n500);background:var(--n050)}
+.exp-hoja-item .ck{width:17px;height:17px;border:2px solid var(--bd);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;transition:all .15s}
+.exp-hoja-item.sel .ck{background:var(--n500);border-color:var(--n500);color:#fff}
+.exp-hoja-name{flex:1;font-size:13px;font-weight:600;color:var(--tx)}
+.exp-hoja-meta{font-size:11px;color:var(--tx4);font-family:'DM Mono',monospace}
+.resumen-preview{margin-top:12px;border:1px solid var(--bd2);border-radius:10px;overflow:hidden}
+.resumen-preview table{width:100%;border-collapse:collapse;font-size:12px}
+.resumen-preview th{background:var(--n900);color:var(--n300);padding:8px 12px;text-align:left;font-family:'DM Mono',monospace;font-size:11px;font-weight:600}
+.resumen-preview td{padding:7px 12px;border-bottom:1px solid var(--bd2);vertical-align:middle}
+.resumen-preview tr:last-child td{border-bottom:none}
+.resumen-preview tr:nth-child(even) td{background:var(--bg2)}
+.resumen-preview .td-cod{font-family:'DM Mono',monospace;font-size:11px;color:var(--n500)}
+.resumen-preview .td-prom{font-family:'DM Mono',monospace;font-weight:700;text-align:center}
+.resumen-preview .td-prom.ok{color:var(--green)}.resumen-preview .td-prom.no{color:var(--red)}
+
+/* ── LOG ── */
+.log-row{display:grid;grid-template-columns:110px 90px 1fr 60px 40px 55px;gap:5px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--bd2);font-size:11px}
+.log-row:hover{background:var(--n050)}
+.log-row:last-child{border-bottom:none}
+.log-ts{font-family:'DM Mono',monospace;font-size:10px;color:var(--tx4)}
+.log-doc{font-weight:600;color:var(--n500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-info{color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-tipo{font-family:'DM Mono',monospace;font-size:10px;font-weight:700;text-align:center;padding:1px 6px;border-radius:4px}
+.log-tipo.ss{background:var(--n100);color:var(--n600)}.log-tipo.ex{background:var(--green2);color:var(--green)}
+.log-val-old{font-family:'DM Mono',monospace;color:var(--tx4);text-align:center}
+.log-val-new{font-family:'DM Mono',monospace;font-weight:700;color:var(--n500);text-align:center}
+/* columna extra ponderado */
+.nt th.th-xp{background:#064e3b;color:#6ee7b7;width:76px}
+.nt th.th-nf{background:#1d4ed8;color:#fff;width:82px;font-weight:800}
+.nc.nf{color:#1d4ed8;font-weight:800}
+.pc.nf{background:#1e3a8a;color:#fff}
+
+/* Ocultar columna ID en editor de docente/admin */
+#edBody .nt th.th-pac,
+#edBody .nt td.td-pac { display:none }
+
+/* ── MODAL CAMBIO DE CONTRASEÑA ── */
+#passModal{position:fixed;inset:0;background:rgba(10,22,40,.65);z-index:600;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+#passModal.show{display:flex}
+.pass-card{background:var(--surf);border-radius:20px;padding:28px 28px 24px;width:100%;max-width:360px;box-shadow:0 24px 60px rgba(10,22,40,.4)}
+.pass-card h3{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--n900);margin-bottom:4px}
+.pass-card p{font-size:12px;color:var(--tx3);margin-bottom:18px}
+
+/* ── AGENDA / CALENDARIO ── */
+.cal-day-col{min-width:110px;flex-shrink:0}
+.cal-day-hdr{background:var(--n800);color:#fff;text-align:center;padding:7px 4px;font-size:11px;font-weight:700;position:sticky;top:0;z-index:2;border-right:1px solid var(--n700)}
+.cal-day-hdr.hoy{background:var(--n500)}
+.cal-day-hdr .dia-num{font-size:18px;font-weight:800;display:block;line-height:1.1}
+.cal-day-hdr .dia-nom{font-size:10px;color:var(--n300);text-transform:uppercase;letter-spacing:.6px}
+.cal-time-col{width:52px;flex-shrink:0}
+.cal-time-lbl{height:52px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-family:'DM Mono',monospace;font-size:10px;color:var(--tx4);border-right:1px solid var(--bd2)}
+.cal-slot{height:52px;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);position:relative;cursor:pointer;transition:background .15s}
+.cal-slot:hover{background:var(--n050)}
+.cal-slot.ocupado{background:var(--n100);cursor:default}
+.cal-slot.ocupado:hover{background:var(--n100)}
+.cal-reserva{position:absolute;inset:2px;border-radius:10px;background:var(--n600);color:#fff;font-size:10px;padding:3px 6px;overflow:hidden;cursor:pointer;transition:opacity .15s;display:flex;flex-direction:column;justify-content:space-between}
+.cal-reserva:hover{opacity:.85}
+.cal-reserva .rsv-pac{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}
+.cal-reserva .rsv-doc{opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px}
+.cal-reserva .rsv-del{position:absolute;top:2px;right:4px;background:none;border:none;color:rgba(255,255,255,.7);font-size:12px;cursor:pointer;line-height:1;padding:0}
+.cal-reserva .rsv-del:hover{color:#fff}
+.cal-libre-btn{position:absolute;inset:3px;border-radius:5px;background:transparent;border:1px dashed transparent;display:flex;align-items:center;justify-content:center;color:var(--tx4);font-size:10px;opacity:0;transition:all .15s;cursor:pointer}
+.cal-slot:hover .cal-libre-btn{opacity:1;border-color:var(--n300);color:var(--n500);background:rgba(29,78,216,.05)}
+.cal-grid-wrap{display:flex;overflow-x:auto;border:1px solid var(--bd2);border-radius:9px;overflow:hidden}
+.cal-grid-body{flex:1;overflow-y:auto;max-height:calc(100vh - 340px)}
+
+/* area card en config */
+.area-card{background:var(--surf2);border:1px solid var(--bd2);border-radius:9px;padding:10px 12px;margin-bottom:7px}
+.area-card-top{display:grid;grid-template-columns:1fr 80px 28px;gap:7px;align-items:center;margin-bottom:8px}
+.espacio-row{display:grid;grid-template-columns:1fr 70px 28px;gap:6px;align-items:center;margin-bottom:5px;padding-left:8px}
+.espacio-row input{background:#fff;border:1px solid var(--bd);border-radius:6px;padding:4px 8px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;width:100%}
+.espacio-row input:focus{border-color:var(--n500)}
+.espacio-row label{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:2px}
+.area-card input{background:#fff;border:1px solid var(--bd);border-radius:6px;padding:5px 8px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;width:100%}
+.area-card input:focus{border-color:var(--n500)}
+.area-card label{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:3px}
+.area-del{background:none;border:none;color:var(--tx4);cursor:pointer;font-size:14px;padding:0;transition:color .15s}
+.area-del:hover{color:var(--red)}
+
+/* ── COLLAPSIBLE (estudiante) ── */
+.collapsible-hdr{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between}
+.collapsible-hdr:hover{opacity:.9}
+.collapsible-arrow{font-size:14px;transition:transform .25s;display:inline-block;margin-left:8px}
+.collapsible-arrow.open{transform:rotate(180deg)}
+.collapsible-body{overflow:hidden;transition:max-height .3s ease, opacity .3s;max-height:0;opacity:0;pointer-events:none}
+.collapsible-body.open{max-height:9999px;opacity:1;overflow:visible;pointer-events:auto}
+
+/* ── CUADRÍCULA CALENDARIO ── */
+.cal-grid-wrap{border:1px solid var(--bd2);border-radius:12px;overflow:hidden}
+.cal-slot{border-bottom:1px solid var(--bd2);border-right:1px solid var(--bd2)}
+.cal-slot-bloqueado{background:repeating-linear-gradient(45deg,#fee2e2,#fee2e2 4px,#fff5f5 4px,#fff5f5 10px)!important;cursor:not-allowed!important}
+.cal-hora-sep{background:var(--n050);border-top:2px solid var(--bd);font-size:10px;font-weight:700;color:var(--tx3);padding:2px 8px;letter-spacing:.5px}
+
+/* ── BLOQUEO CARD ── */
+.bloqueo-row{display:grid;grid-template-columns:80px 65px 1fr 1fr 28px;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--bd2);font-size:12px;background:var(--red2)}
+.bloqueo-row:hover{opacity:.9}
+
+/* ── MODAL RESERVA ALUMNO (fecha/hora libre) ── */
+.rsv-datetime{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div id="loader"><div class="ring"></div><p id="lmsg">Cargando...</p></div>
+
+<div id="drawer-overlay" onclick="closeDrawer()"></div>
+<div id="drawer">
+  <div class="drawer-hdr">
+    <div><h3 id="drawerTitle">Cursos</h3><p id="drawerSub"></p></div>
+    <button class="drawer-close" onclick="closeDrawer()">X</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-label">Marcar cursos del alumno</div>
+    <div class="cck-grid" id="drawerChecks"></div>
+  </div>
+</div>
+
+<div id="loginPage">
+  <div class="login-card">
+    <div class="login-logo" style="flex-direction:column;gap:16px;text-align:center">
+      <img id="logoLogin" src="" alt="CENTYR" style="width:250px;height:auto;object-fit:contain;display:none;border-radius:10px;margin:0 auto">
+      <div class="lmark" id="logoLoginFallback" style="width:60px;height:60px;font-size:22px;margin:0 auto">FT</div>
+      <div><h2>CENTYR</h2><p>Centro Docente de Terapia Fisica - UPT</p></div>
+    </div>
+    <div class="login-field"><label>Codigo</label><input class="login-inp" id="lgCode" placeholder="Codigo de usuario" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="login-field"><label>Contrasena</label><input class="login-inp" id="lgPass" type="password" placeholder="**********" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn-login" onclick="doLogin()">Ingresar</button>
+    <div class="login-err" id="lgErr"></div>
+    <div class="login-hint">Usuarios administrados en la hoja <strong>_usuarios</strong></div>
+  </div>
+</div>
+
+<div id="appPage">
+  <header>
+    <div class="hdr">
+      <div class="logo">
+        <img id="logoImg" src="" alt="CENTYR" style="height:38px;width:auto;object-fit:contain;border-radius:6px;display:none">
+        <div class="lmark" id="logoFallback">FT</div>
+        <div><h1>CENTYR</h1><p>Centro Docente de Terapia Fisica - UPT</p></div>
+      </div>
+      <div class="hdr-right">
+        <div class="cpill" id="cpill"><div class="dot" id="cdot"></div><span class="clabel" id="clabel">-</span></div>
+        <div class="rol-pill"><div class="rdot" id="rolDot"></div><span id="rolLabel">-</span></div>
+        <button class="btn-logout" onclick="mostrarCambioPass()" style="border-color:var(--n600);color:var(--n300)" title="Cambiar contrasena">&#128274;</button>
+        <button class="btn-logout" onclick="logout()">Salir</button>
+      </div>
+    </div>
+  </header>
+
+  <div id="viewAdmin" style="display:none">
+    <!-- Overlay backdrop del sidebar -->
+    <div id="sideOverlay" onclick="toggleSidebar()"></div>
+
+    <!-- Sidebar deslizable -->
+    <div id="adminSidebar">
+      <div class="sidebar-inner">
+        <div class="tabs" id="adminTabs" style="grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--n700)">
+          <button class="tab on" id="tabAl" onclick="showTab('al',this)">Alumnos</button>
+          <button class="tab" id="tabCu" onclick="showTab('cu',this)">Cursos</button>
+          <button class="tab" id="tabNt" onclick="showTab('nt',this)">Config</button>
+          <button class="tab" id="tabUs" onclick="showTab('us',this)">Usuarios</button>
+        </div>
+        <div class="tabs" style="grid-template-columns:repeat(4,1fr)">
+          <button class="tab" id="tabHo"  onclick="showTab('ho',this)">Hojas</button>
+          <button class="tab" id="tabPdf" onclick="showTab('pdf',this)">PDF</button>
+          <button class="tab" id="tabLog" onclick="showTab('log',this)">Log</button>
+          <button class="tab" id="tabCal" onclick="showTab('cal',this)">Agenda</button>
+        </div>
+
+          <div class="pane on" id="pane-al">
+            <div class="upload" id="uploadZone" onclick="document.getElementById('csvIn').click()">
+              <div class="ico">&#128194;</div><p>Subir CSV / TXT</p><small>CODIGO, APELLIDOS Y NOMBRES</small>
+            </div>
+            <input id="csvIn" type="file" accept=".csv,.txt" style="display:none" onchange="loadCSV(event)">
+            <div class="row2" style="margin-top:10px">
+              <input class="inp" id="mCode" placeholder="Codigo" style="width:82px">
+              <input class="inp" id="mName" placeholder="Apellidos y Nombres" style="flex:1" onkeydown="if(event.key==='Enter')addAlumno()">
+              <button class="btn-sm" onclick="addAlumno()">+</button>
+            </div>
+            <div class="slist" id="slist"><div class="empty">Sin alumnos</div></div>
+            <div class="row-btw" style="margin-top:7px">
+              <span style="font-size:12px;color:var(--tx4)" id="scnt">0 alumnos</span>
+              <button class="btn-ghost" onclick="clearAlumnos()">Limpiar</button>
+            </div>
+            <div class="hint-b" style="margin-top:10px;font-size:11px"><span>Tip:</span><span>Clic en el badge de cursos para asignarlos individualmente.</span></div>
+          </div>
+
+          <div class="pane" id="pane-cu">
+            <div class="slbl">Cursos activos</div>
+            <div id="crsList" class="crs-list"></div>
+            <div class="row2">
+              <input class="inp" id="newCrs" placeholder="Nombre del curso..." style="flex:1" onkeydown="if(event.key==='Enter')addCurso()">
+              <button class="btn-sm" onclick="addCurso()">+</button>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:10px">
+              <button class="btn-save" onclick="guardarCursos()" style="flex:1">Guardar cursos</button>
+              <button class="btn-ghost" onclick="resetCursos()">Reset</button>
+            </div>
+          </div>
+
+          <div class="pane" id="pane-nt">
+            <div class="field"><label>Asignatura</label><input class="inp" id="cfgAsig" placeholder="Ej. Tecnicas de Fisioterapia II"></div>
+            <div class="row2">
+              <div class="field"><label>Semestre</label><input class="inp" id="cfgSem" placeholder="Ej. 2025-I" style="width:100%"></div>
+              <div class="field"><label>Seccion</label><input class="inp" id="cfgSec" placeholder="Ej. Seccion A" style="width:100%"></div>
+            </div>
+            <div class="field"><label>Nombre de la hoja</label><input class="inp" id="cfgHoja" placeholder="Ej. MyT II 2025-I"></div>
+            <input type="hidden" id="scApro" value="11">
+            <div class="slbl" style="margin-top:4px">Porcentaje de puntaje extra</div>
+            <div style="display:flex;align-items:center;gap:10px;background:var(--surf2);border:1px solid var(--bd);border-radius:9px;padding:10px 14px;margin-bottom:6px">
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:600;color:var(--tx)">Peso del puntaje extra</div>
+                <div style="font-size:11px;color:var(--tx3);margin-top:2px">Porcentaje del promedio SS que se suma como bonificacion extra</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <input type="number" id="cfgPctExtra" value="20" min="0" max="100" style="background:#fff;border:1px solid var(--bd);color:var(--tx);font-family:'DM Mono',monospace;font-size:18px;font-weight:700;width:60px;outline:none;text-align:center;border-radius:7px;padding:5px">
+                <span style="font-size:14px;font-weight:700;color:var(--tx3)">%</span>
+              </div>
+            </div>
+
+
+            <div style="margin-top:2px;background:var(--n900);border-radius:10px;padding:13px 16px">
+              <div style="font-size:11px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Formula por subgrupo</div>
+              <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--n200);line-height:1.9">PROM = PROM(notas) x (ejecutadas / programadas)<br><span style="color:var(--n300)">ejecutadas = SS + Extra ingresados</span></div>
+            </div>
+          </div>
+
+          <div class="pane" id="pane-us">
+            <div class="row-btw" style="margin-bottom:8px">
+              <span style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px">Usuarios registrados</span>
+              <button class="btn-ghost" onclick="cargarUsuarios()" style="font-size:11px;padding:4px 10px">Recargar</button>
+            </div>
+            <div id="usrList" class="usr-list"><div class="empty">Cargando...</div></div>
+            <div class="slbl">Agregar / Editar / Cambiar contrasena</div>
+            <div class="hint-b" style="font-size:11px;margin-bottom:8px"><span>&#9998;</span><span>Para cambiar la contrasena de un usuario, haz clic en el icono de lapiz en la lista, modifica la contrasena y guarda.</span></div>
+            <div class="form-usr">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+                <div class="field" style="margin:0"><label>Codigo</label><input class="inp" id="usCod" placeholder="Ej. 20210001"></div>
+                <div class="field" style="margin:0"><label>Contrasena</label><input class="inp" id="usPass" placeholder="Ej. clave123"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 100px;gap:8px;margin-bottom:10px">
+                <div class="field" style="margin:0"><label>Nombre</label><input class="inp" id="usNom" placeholder="Apellidos y Nombres"></div>
+                <div class="field" style="margin:0"><label>Rol</label>
+                  <select class="sel" id="usRol">
+                    <option value="estudiante">Estudiante</option>
+                    <option value="docente">Docente</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+              </div>
+              <button class="btn-sm green" onclick="guardarUsuarioDB()" style="width:100%">Guardar usuario</button>
+            </div>
+            <div class="import-box">
+              <h4>Importar desde lista de alumnos</h4>
+              <p>Crea accesos para todos los alumnos cargados. La contrasena inicial sera igual al codigo. No sobreescribe usuarios existentes.</p>
+              <button class="btn-sm green" onclick="importarDesdeAlumnos()" style="width:100%">Importar alumnos como estudiantes</button>
+              <div id="importResult" style="margin-top:8px;display:none"></div>
+            </div>
+          </div>
+
+          <div class="pane" id="pane-ho">
+            <div id="hojasBox"><div class="hint-b"><span>...</span><span>Cargando hojas...</span></div></div>
+            <button class="btn-ghost" style="width:100%;margin-top:9px" onclick="loadHojas()">Actualizar lista</button>
+          </div>
+
+          <div class="pane" id="pane-log">
+            <div class="row-btw" style="margin-bottom:8px">
+              <span style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px">Registro de notas</span>
+              <button class="btn-ghost" onclick="cargarLog()" style="font-size:11px;padding:4px 10px">Recargar</button>
+            </div>
+            <div id="logFiltroBox" style="margin-bottom:8px;display:flex;gap:7px;align-items:center">
+              <select class="sel" id="logFiltroHoja" style="flex:1;font-size:12px" onchange="cargarLog()">
+                <option value="">Todas las planillas</option>
+              </select>
+            </div>
+            <div id="logList" style="max-height:340px;overflow-y:auto;font-size:11px">
+              <div class="empty">Cargando...</div>
+            </div>
+          </div>
+          <div class="pane" id="pane-pdf">
+            <div class="slbl">1. Selecciona la hoja</div>
+            <div id="expHojasList"><div class="empty">Cargando...</div></div>
+            <div id="expCursosBox" style="display:none">
+              <div class="slbl" style="margin-top:10px">2. Selecciona el curso</div>
+              <div id="expCursosList"></div>
+              <div id="resumenPreviewBox" style="display:none">
+                <div class="slbl" style="margin-top:10px">3. Vista previa</div>
+                <div class="resumen-preview" id="resumenTable"></div>
+                <button class="btn-sm green" onclick="exportarPDF()" style="width:100%;margin-top:10px">Exportar PDF este curso</button>
+              </div>
+            </div>
+            <button class="btn-ghost" onclick="cargarHojasExport()" style="width:100%;margin-top:10px">Recargar hojas</button>
+          </div>
+
+          <!-- AGENDA / CALENDARIO -->
+          <div class="pane" id="pane-cal">
+
+            <!-- Config de áreas (solo admin) -->
+            <div id="calConfigBox">
+              <div class="slbl">Configuracion de areas</div>
+              <div id="areasConfigList"></div>
+              <div class="row2" style="margin-bottom:8px">
+                <input class="inp" id="newAreaNom" placeholder="Nombre del area" style="flex:1" onkeydown="if(event.key==='Enter')addArea()">
+                <button class="btn-sm" onclick="addArea()">+ Area</button>
+              </div>
+              <div class="slbl" style="margin-top:6px">Franjas horarias</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px">
+                <div class="field" style="margin:0"><label>Turno 1 inicio</label><input class="inp" id="calFranja1Ini" value="08:00" type="time"></div>
+                <div class="field" style="margin:0"><label>Turno 1 fin</label><input class="inp" id="calFranja1Fin" value="13:00" type="time"></div>
+                <div class="field" style="margin:0"><label>Turno 2 inicio</label><input class="inp" id="calFranja2Ini" value="14:00" type="time"></div>
+                <div class="field" style="margin:0"><label>Turno 2 fin</label><input class="inp" id="calFranja2Fin" value="19:00" type="time"></div>
+              </div>
+              <button class="btn-sm green" onclick="guardarAgendaConfig()" style="width:100%;margin-bottom:10px">Guardar configuracion</button>
+              <div style="height:1px;background:var(--bd2);margin-bottom:10px"></div>
+            </div>
+
+            <!-- Navegacion semanal -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:6px">
+              <button class="btn-ghost" onclick="semanaAnterior()" style="padding:6px 11px;font-size:16px">&#8249;</button>
+              <span id="calSemanaLabel" style="font-size:12px;font-weight:700;color:var(--tx);flex:1;text-align:center"></span>
+              <button class="btn-ghost" onclick="semanaSiguiente()" style="padding:6px 11px;font-size:16px">&#8250;</button>
+              <button class="btn-ghost" onclick="irHoy()" style="font-size:11px;padding:5px 10px">Hoy</button>
+            </div>
+
+            <!-- Selector de area -->
+            <div class="field" style="margin-bottom:8px">
+              <label>Filtrar por area</label>
+              <select class="sel" id="calAreaFiltro" onchange="renderCalendario()" style="font-size:12px"></select>
+            </div>
+
+            <!-- Grid del calendario (días de la semana) -->
+            <div id="calGrid" style="overflow-x:auto;-webkit-overflow-scrolling:touch"></div>
+
+            <!-- Sección: Ver y gestionar reservas -->
+            <div style="margin-top:12px">
+              <div class="slbl">Reservas registradas</div>
+              <div style="display:flex;gap:7px;margin-bottom:8px;flex-wrap:wrap">
+                <select class="sel" id="calFiltroHojaRes" style="flex:1;font-size:12px" onchange="cargarListaReservas()">
+                  <option value="">Esta semana</option>
+                  <option value="todas">Todas</option>
+                </select>
+                <select class="sel" id="calFiltroAreaRes" style="flex:1;font-size:12px" onchange="cargarListaReservas()">
+                  <option value="">Todas las areas</option>
+                </select>
+                <button class="btn-ghost" onclick="cargarListaReservas()" style="padding:6px 12px;font-size:12px">&#8635; Actualizar</button>
+              </div>
+              <div id="listaReservasBox" style="max-height:300px;overflow-y:auto;border:1px solid var(--bd2);border-radius:9px"></div>
+            </div>
+
+            <!-- Gestión de bloqueos -->
+            <div style="margin-top:12px" id="bloqueoSection">
+              <div class="slbl">Bloqueos de horario</div>
+              <div class="hint" style="margin-bottom:8px;font-size:11px"><span>&#128274;</span><span>Bloquea dias, horas o espacios especificos. Los alumnos y docentes no podran reservar en esos slots.</span></div>
+
+              <!-- Formulario de nuevo bloqueo -->
+              <div style="background:var(--surf2);border:1px solid var(--bd2);border-radius:12px;padding:12px;margin-bottom:8px">
+                <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Nuevo bloqueo</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+                  <div class="field" style="margin:0"><label>Fecha (o * para siempre)</label><input class="inp" id="bFecha" type="date" placeholder="YYYY-MM-DD"></div>
+                  <div class="field" style="margin:0"><label>Hora (o * para todo el dia)</label><input class="inp" id="bHora" type="time" placeholder="HH:MM"></div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+                  <div class="field" style="margin:0"><label>Area (o * para todas)</label>
+                    <select class="sel" id="bArea" style="font-size:12px">
+                      <option value="*">Todas las areas</option>
+                    </select>
+                  </div>
+                  <div class="field" style="margin:0"><label>Espacio (o * para todos)</label>
+                    <select class="sel" id="bCamilla" style="font-size:12px">
+                      <option value="*">Todos los espacios</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="field" style="margin-bottom:10px"><label>Motivo</label><input class="inp" id="bMotivo" placeholder="Ej. Feriado nacional, mantenimiento..."></div>
+                <button class="btn-sm" onclick="crearBloqueoUI()" style="width:100%;background:var(--red);color:#fff">&#128274; Crear bloqueo</button>
+              </div>
+
+              <!-- Lista de bloqueos activos -->
+              <div id="listaBloqueosBox" style="max-height:250px;overflow-y:auto;border:1px solid var(--bd2);border-radius:9px">
+                <div class="empty" style="padding:10px">Cargando bloqueos...</div>
+              </div>
+            </div>
+          </div>
+        </div><!-- end sidebar-inner -->
+      <div class="sidebar-footer">
+        <button class="btn btn-p" id="btnGen" onclick="generarPlanilla();toggleSidebar()" disabled style="width:100%">
+          Generar planilla en Google Sheets
+        </button>
+      </div>
+    </div><!-- end adminSidebar -->
+
+    <!-- Toolbar Admin (con id para poder ocultar) -->
+    <div class="content-toolbar" id="contentToolbar">
+      <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
+        <span class="ico">&#9776;</span><span id="sidebarBtnLabel">Panel</span>
+      </button>
+    </div>
+
+    <!-- Topbar Admin + Docente (barra unificada) -->
+    <div id="docenteTopbar" style="display:none;background:var(--n900);border-bottom:1px solid var(--n800);padding:0 14px;position:sticky;top:58px;z-index:100;overflow-x:auto">
+      <div style="display:flex;align-items:center;gap:5px;height:50px;min-width:max-content">
+
+        <!-- Solo Admin: botones de configuración -->
+        <div id="adminOnlyBtns" style="display:none;display:flex;align-items:center;gap:5px">
+          <button onclick="abrirPanelAdmin('al')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128100; Alumnos</button>
+          <button onclick="abrirPanelAdmin('cu')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128218; Cursos</button>
+          <button onclick="abrirPanelAdmin('nt')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#9881; Config</button>
+          <button onclick="abrirPanelAdmin('us')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128101; Usuarios</button>
+          <button onclick="abrirPanelAdmin('pdf')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128196; PDF</button>
+          <div style="width:1px;height:24px;background:var(--n700);flex-shrink:0;margin:0 3px"></div>
+        </div>
+
+        <!-- Admin+Docente: hojas y agenda -->
+        <span style="font-size:10px;font-weight:700;color:var(--n500);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap">Hojas:</span>
+        <div id="docenteHojasBtns" style="display:flex;gap:5px;align-items:center"><span style="font-size:12px;color:var(--n500)">Cargando...</span></div>
+        <div style="width:1px;height:24px;background:var(--n700);margin:0 6px;flex-shrink:0"></div>
+        <button onclick="abrirAgendaPopup()" style="display:flex;align-items:center;gap:6px;background:var(--n600);border:1px solid var(--n500);border-radius:9px;color:#fff;font-size:12px;font-weight:700;padding:6px 13px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='var(--n500)'" onmouseout="this.style.background='var(--n600)'">
+          &#128197; Agenda
+        </button>
+      </div>
+    </div>
+
+    <div class="content-main">
+      <div class="content">
+        <div class="card" id="connCard" style="display:none">
+          <div class="cbody" style="padding:12px 16px">
+            <div id="connHint" class="hint"><span>...</span><span>Conectando...</span></div>
+          </div>
+        </div>
+        <div class="card" id="edCard" style="display:none">
+          <div class="chdr"><h2 id="edTitle">Editor</h2><span class="badge" id="edBadge">-</span></div>
+          <div class="ed-filter" id="edFilter" style="display:none">
+            <label>Buscar alumno:</label>
+            <input class="filter-inp" id="filterText" placeholder="Escribe el nombre..." oninput="aplicarFiltro()">
+            <select class="filter-sel" id="filterSelect" onchange="aplicarFiltroSelect()">
+              <option value="">- Todos los alumnos -</option>
+            </select>
+            <span class="filter-cnt" id="filterCnt"></span>
+          </div>
+          <div id="edBody" style="padding:14px;overflow-x:auto"></div>
+        </div>
+        <div class="card" id="prevCard">
+          <div class="chdr"><h2>Vista Previa</h2><span class="badge" id="prevBadge">0 alumnos</span></div>
+          <div class="cbody" id="prevBody" style="padding:14px"><div class="empty">Configura alumnos, cursos y subgrupos para ver la estructura</div></div>
+        </div>
+      </div>
+    </div><!-- content-main -->
+  </div><!-- viewAdmin -->
+
+  <div id="viewEstudiante" style="display:none">
+  <!-- Barra superior del estudiante -->
+  <div style="background:var(--n900);border-bottom:1px solid var(--n800);padding:0 16px;position:sticky;top:58px;z-index:100;overflow-x:auto">
+    <div style="display:flex;align-items:center;gap:6px;height:50px;min-width:max-content">
+      <!-- Info del usuario -->
+      <div style="margin-right:8px;flex-shrink:0">
+        <div id="estNombre" style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:14px;line-height:1.2">Estudiante</div>
+        <div id="estCodigo" style="font-size:11px;color:var(--n300)">Codigo: -</div>
+      </div>
+      <div style="width:1px;height:28px;background:var(--n700);flex-shrink:0"></div>
+      <!-- Botones de navegación -->
+      <button id="btnEstNotas" onclick="mostrarSecEst('notas')" style="display:flex;align-items:center;gap:7px;background:var(--n500);border:1px solid var(--n400);border-radius:10px;color:#fff;font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap;transition:all .2s">
+        &#128203; Mis Notas
+      </button>
+      <button id="btnEstAgenda" onclick="mostrarSecEst('agenda')" style="display:flex;align-items:center;gap:7px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--n300);font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap;transition:all .2s">
+        &#128197; Agenda
+      </button>
+
+      <div style="width:1px;height:28px;background:var(--n700);flex-shrink:0"></div>
+      <button onclick="mostrarCambioPass()" style="display:flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--n300);font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;white-space:nowrap">
+        &#128274; Contrasena
+      </button>
+    </div>
+  </div>
+
+  <!-- Sección NOTAS -->
+  <div id="secEstNotas" style="display:block">
+    <div class="est-wrap">
+      <div id="estNotas">
+        <div class="est-no-data"><div class="ico">&#128203;</div><p>Cargando notas...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección AGENDA -->
+  <div id="secEstAgenda" style="display:none">
+    <div class="est-wrap">
+      <!-- Barra de la agenda -->
+      <div class="est-hoja" style="overflow:visible">
+        <div class="est-hoja-hdr" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <div>
+            <h3>&#128197; Mi Agenda</h3>
+            <p id="calEstReservaInfo" style="font-size:11px;color:#6ee7b7;margin-top:2px"></p>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button onclick="semanaAnteriorEst()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;line-height:1">&#8249;</button>
+            <span id="calEstLabel" style="font-size:12px;color:var(--n300);min-width:110px;text-align:center;font-family:'DM Mono',monospace"></span>
+            <button onclick="semanaSiguienteEst()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;line-height:1">&#8250;</button>
+            <button onclick="irHoyEst()" style="background:rgba(255,255,255,.1);border:none;color:var(--n300);border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;font-weight:700">Hoy</button>
+          </div>
+        </div>
+        <!-- Filtro de área con mejor legibilidad -->
+        <div style="padding:10px 16px;background:var(--n700);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <label style="font-size:11px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap">Area:</label>
+          <select id="calEstAreaFiltro" onchange="renderCalendarioEst()" style="background:var(--n600);border:1px solid var(--n500);border-radius:10px;color:#fff;font-size:13px;padding:6px 12px;outline:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;flex:1;max-width:260px">
+            <option value="" style="background:var(--n800)">Todas las areas</option>
+          </select>
+        </div>
+        <!-- Grid del calendario -->
+        <div style="padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y">
+          <div id="calEstGrid"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal cambio de contraseña -->
+<div id="passModal">
+  <div class="pass-card">
+    <h3>&#128274; Cambiar contrasena</h3>
+    <p>Introduce tu contrasena actual y la nueva contrasena.</p>
+    <div class="field"><label>Contrasena actual</label><input class="inp" id="passActual" type="password" placeholder="Contrasena actual"></div>
+    <div class="field"><label>Nueva contrasena</label><input class="inp" id="passNueva" type="password" placeholder="Nueva contrasena" onkeydown="if(event.key==='Enter')guardarNuevaPass()"></div>
+    <div class="field"><label>Confirmar nueva contrasena</label><input class="inp" id="passConfirm" type="password" placeholder="Repetir nueva contrasena" onkeydown="if(event.key==='Enter')guardarNuevaPass()"></div>
+    <div id="passErr" style="font-size:12px;color:var(--red);margin-bottom:10px;display:none"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-sm green" onclick="guardarNuevaPass()" style="flex:1">Guardar nueva contrasena</button>
+      <button class="btn-ghost" onclick="cerrarPassModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de reserva de agenda -->
+<div id="reservaModal" style="position:fixed;inset:0;background:rgba(10,22,40,.65);z-index:800;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+  <div style="background:var(--surf);border-radius:14px;padding:24px;width:100%;max-width:400px;box-shadow:0 24px 60px rgba(10,22,40,.4)">
+    <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--n900);margin-bottom:3px" id="reservaModalTitle">Nueva Reserva</h3>
+    <p style="font-size:11px;color:var(--tx3);margin-bottom:16px" id="reservaModalSub"></p>
+    <div class="field"><label>Nombre del paciente</label><input class="inp" id="rsvPaciente" placeholder="Apellidos y nombres del paciente"></div>
+    <div class="field"><label>Responsable</label><input class="inp" id="rsvDocente" placeholder="Nombre del responsable"></div>
+    <div class="field"><label>Observacion (opcional)</label><input class="inp" id="rsvObs" placeholder="Diagnostico, indicaciones..."></div>
+    <div id="rsvErr" style="font-size:12px;color:var(--red);margin-bottom:10px;display:none"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-sm green" onclick="confirmarReserva()" style="flex:1">Confirmar reserva</button>
+      <button class="btn-ghost" onclick="cerrarReservaModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Agenda Popup (docente y para referencia del alumno) -->
+<div id="agendaModal" style="position:fixed;inset:0;background:rgba(10,22,40,.7);z-index:700;display:none;align-items:flex-start;justify-content:center;padding:70px 16px 16px;backdrop-filter:blur(3px);overflow-y:auto">
+  <div style="background:var(--surf);border-radius:14px;width:100%;max-width:1100px;box-shadow:0 24px 60px rgba(10,22,40,.5);overflow:hidden">
+    <!-- Header del modal -->
+    <div style="background:var(--n900);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:2">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:15px">&#128197; Agenda</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button onclick="semanaAnterior()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:7px;font-size:16px;cursor:pointer;line-height:1">&#8249;</button>
+          <span id="calSemanaLabelModal" style="font-size:12px;color:var(--n300);min-width:130px;text-align:center"></span>
+          <button onclick="semanaSiguiente()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:7px;font-size:16px;cursor:pointer;line-height:1">&#8250;</button>
+          <button onclick="irHoy()" style="background:rgba(255,255,255,.1);border:none;color:var(--n300);border-radius:7px;padding:5px 10px;font-size:11px;cursor:pointer;font-weight:700">Hoy</button>
+        </div>
+        <select id="calAreaFiltroModal" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:7px;color:#fff;font-size:12px;padding:5px 10px;cursor:pointer" onchange="syncFiltroArea();renderCalendario()">
+          <option value="">Todas las areas</option>
+        </select>
+      </div>
+      <button onclick="cerrarAgendaModal()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:18px;cursor:pointer;line-height:1">&#10005;</button>
+    </div>
+    <!-- Contenido del calendario en el modal -->
+    <div style="padding:16px;overflow-x:auto;max-height:70vh;overflow-y:auto">
+      <div id="calGridModal"></div>
+    </div>
+  </div>
+</div>
+
+
+<div id="toast"><div class="tt" id="ttt"></div><div class="tm" id="ttm"></div></div>
+
+<script>
+// ====================================================
+// PEGA AQUI TU URL DE APPS SCRIPT WEB APP
+const GAS_URL = 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT';
+// ====================================================
+
+let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
+let cursos=JSON.parse(localStorage.getItem('ft_cursos_v6')||'[]');
+const APRO=()=>+(document.getElementById('scApro')||{}).value||11;
+const g=s=>document.getElementById(s);
+const vi=s=>(g(s)||{}).value||'';
+const esc=s=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+const esc2=s=>String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+function showLoader(m){g('lmsg').textContent=m;g('loader').classList.add('show')}
+function hideLoader(){g('loader').classList.remove('show')}
+let _tt;
+function toast(t,m,tp){const el=g('toast');g('ttt').textContent=t;g('ttm').textContent=m||'';el.className='show '+(tp||'');clearTimeout(_tt);_tt=setTimeout(()=>{el.className=tp||''},3800)}
+
+async function apiGet(action,params){
+  const p=Object.assign({action},params||{});
+  if(session&&session.token)p.token=session.token;
+  const r=await fetch(GAS_URL+'?'+new URLSearchParams(p));
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  if(session)saveSession(session); // renovar timestamp al hacer actividad
+  return r.json();
+}
+async function apiPost(body){
+  if(session&&session.token)body.token=session.token;
+  const r=await fetch(GAS_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(body)});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+  return r.json();
+}
+
+const SESSION_KEY='ft_session_v2';
+const SESSION_TTL=6*60*60*1000; // 6 horas en ms
+
+function saveSession(data){
+  const payload={data:data,ts:Date.now()};
+  localStorage.setItem(SESSION_KEY,JSON.stringify(payload));
+}
+function loadSession(){
+  try{
+    const raw=localStorage.getItem(SESSION_KEY);
+    if(!raw)return null;
+    const payload=JSON.parse(raw);
+    if(Date.now()-payload.ts>SESSION_TTL){
+      localStorage.removeItem(SESSION_KEY);return null;
+    }
+    return payload.data;
+  }catch(e){return null;}
+}
+function clearSession(){
+  localStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem('ft_session'); // limpiar legacy
+}
+
+window.onload=function(){
+  // Migrar sesión legacy de sessionStorage si existe
+  const legacy=sessionStorage.getItem('ft_session');
+  if(legacy){try{const d=JSON.parse(legacy);saveSession(d);sessionStorage.removeItem('ft_session')}catch(e){}}
+  const saved=loadSession();
+  if(saved){session=saved;startApp();return;}
+  g('loginPage').style.display='flex';
+};
+
+async function doLogin(){
+  const code=vi('lgCode').trim().toLowerCase(),pass=vi('lgPass').trim();
+  if(!code||!pass){lgErr('Completa codigo y contrasena');return}
+  if(!GAS_URL||GAS_URL.indexOf('PEGA_AQUI')>=0){lgErr('Configura GAS_URL en el HTML');return}
+  showLoader('Verificando...');
+  try{
+    const r=await apiGet('login',{codigo:code,password:pass});
+    hideLoader();
+    if(!r.ok){lgErr(r.error||'Error de autenticacion');return}
+    session={token:r.token,rol:r.rol,nombre:r.nombre,codigo:code};
+    saveSession(session);startApp();
+  }catch(e){hideLoader();lgErr('Error: '+e.message)}
+}
+function lgErr(m){const el=g('lgErr');el.textContent=m;el.classList.add('show')}
+function logout(){
+  session=null;clearSession();hojaActiva=null;hojaData=null;
+  g('appPage').style.display='none';g('loginPage').style.display='flex';
+  g('lgCode').value='';g('lgPass').value='';g('lgErr').classList.remove('show');
+}
+function startApp(){
+  g('loginPage').style.display='none';g('appPage').style.display='block';
+  const rl={admin:'Admin',docente:'Docente',estudiante:'Estudiante'};
+  g('rolLabel').textContent=rl[session.rol]||session.rol;
+  g('rolDot').className='rdot '+session.rol;
+  pingConn();
+  if(session.rol==='estudiante'){g('viewAdmin').style.display='none';g('viewEstudiante').style.display='block';iniciarVistaEstudiante();}
+  else{g('viewAdmin').style.display='block';g('viewEstudiante').style.display='none';iniciarVistaAdmin();}
+}
+async function pingConn(){
+  try{const r=await apiGet('ping');setConn(r.ok,r.ok?'Conectado':'Sin respuesta')}
+  catch(e){setConn(false,e.message)}
+}
+function setConn(ok,msg){
+  g('cdot').className='dot '+(ok?'ok':'err');g('clabel').textContent=ok?'Conectado':'Error';
+  g('cpill').className='cpill '+(ok?'ok':'');
+  const h=g('connHint');if(!h)return;
+  h.className=ok?'hint-b':'hint';
+  h.innerHTML='<span>'+(ok?'OK':'!')+'</span><span>'+msg+'</span>';
+}
+function iniciarVistaAdmin(){
+  const esA=session.rol==='admin';
+  const esD=session.rol==='docente';
+
+  // Ambos roles: ocultar sidebar y toolbar clásica, mostrar topbar
+  const sb=g('adminSidebar');
+  if(sb){sb.classList.add('sidebar-hidden');sb.classList.remove('open');}
+  if(g('sideOverlay'))g('sideOverlay').classList.remove('show');
+  _sidebarOpen=false;
+  if(g('contentToolbar'))g('contentToolbar').style.display='none';
+  if(g('docenteTopbar'))g('docenteTopbar').style.display='';
+
+  if(esA){
+    g('btnGen').disabled=false;
+    // Mostrar botones de admin en el topbar
+    ['adminOnlyBtns'].forEach(id=>{const el=g(id);if(el)el.style.display='';});
+    renderCursos();renderPreview();cargarUsuarios();cargarLog();
+  } else {
+    if(g('btnGen'))g('btnGen').style.display='none';
+    ['adminOnlyBtns'].forEach(id=>{const el=g(id);if(el)el.style.display='none';});
+    const uz=g('uploadZone');if(uz)uz.style.display='none';
+  }
+  loadHojas();
+}
+function showTab(tid,btn){
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  g('pane-'+tid).classList.add('on');btn.classList.add('on');
+  if(tid==='ho')loadHojas();if(tid==='us')cargarUsuarios();if(tid==='pdf')cargarHojasExport();if(tid==='log')cargarLog();if(tid==='cal'){iniciarAgenda();setTimeout(cargarListaReservas,600);}if(window.innerWidth<=900)closeSidebar();
+}
+function openDrawer(i){
+  drawerIdx=i;const a=alumnos[i];
+  g('drawerTitle').textContent=a.name;g('drawerSub').textContent='Codigo: '+(a.code||'-');
+  renderDrawerChecks();
+  g('drawer-overlay').classList.add('show');g('drawer').classList.add('open');
+}
+function closeDrawer(){g('drawer-overlay').classList.remove('show');g('drawer').classList.remove('open');drawerIdx=-1}
+function renderDrawerChecks(){
+  const box=g('drawerChecks'),activos=cursos.filter(c=>c.on);
+  if(!activos.length){box.innerHTML='<div style="color:var(--tx4);font-size:13px;font-style:italic">Sin cursos configurados</div>';return}
+  if(drawerIdx<0)return;
+  const a=alumnos[drawerIdx];
+  box.innerHTML=activos.map(c=>{
+    const on=a.cursos[c.label]===true;
+    return `<div class="cck ${on?'on':''}" onclick="toggleDrawerCurso('${esc(c.label)}')"><div class="ck">${on?'v':' '}</div><span>${c.label}</span></div>`;
+  }).join('');
+}
+function toggleDrawerCurso(lbl){
+  if(drawerIdx<0)return;alumnos[drawerIdx].cursos[lbl]=!alumnos[drawerIdx].cursos[lbl];
+  renderDrawerChecks();updBadge(drawerIdx);renderPreview();
+}
+function updBadge(i){
+  const a=alumnos[i],activos=cursos.filter(c=>c.on);
+  const n=activos.filter(c=>a.cursos[c.label]===true).length;
+  const el=g('albadge_'+i);
+  if(el){el.textContent=n+'/'+activos.length+' cursos';el.className='al-badge '+(n===0?'none':'')}
+}
+function makeAlumno(code,name){const c={};cursos.forEach(cu=>{c[cu.label]=false});return{code,name,cursos:c}}
+function loadCSV(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const lines=ev.target.result.split('\n').filter(l=>l.trim());let n=0;
+    lines.forEach(l=>{
+      const p=l.split(/[,;\t]/).map(x=>x.trim()).filter(Boolean);
+      if(p.length>=2){alumnos.push(makeAlumno(p[0],p.slice(1).join(' ')));n++}
+      else if(p.length===1){alumnos.push(makeAlumno('',p[0]));n++}
+    });
+    renderAlumnos();renderPreview();toast(n+' alumnos importados',file.name);
+  };
+  reader.readAsText(file);e.target.value='';
+}
+function addAlumno(){
+  const code=vi('mCode').trim(),name=vi('mName').trim();if(!name)return;
+  alumnos.push(makeAlumno(code,name));g('mCode').value='';g('mName').value='';
+  renderAlumnos();renderPreview();g('mCode').focus();
+}
+function remAlumno(i){alumnos.splice(i,1);renderAlumnos();renderPreview()}
+function clearAlumnos(){if(!alumnos.length||!confirm('Limpiar lista?'))return;alumnos=[];renderAlumnos();renderPreview()}
+function renderAlumnos(){
+  const list=g('slist'),activos=cursos.filter(c=>c.on);
+  if(!alumnos.length){list.innerHTML='<div class="empty">Sin alumnos</div>'}
+  else list.innerHTML=alumnos.map((a,i)=>{
+    const n=activos.filter(c=>a.cursos[c.label]===true).length;
+    return `<div class="al-row"><span class="sn">${i+1}</span><span class="sname">${a.name}</span><span class="scode">${a.code||'-'}</span><span class="al-badge ${n===0?'none':''}" id="albadge_${i}" onclick="openDrawer(${i})">${n}/${activos.length} cursos</span><button class="sdel" onclick="remAlumno(${i})">x</button></div>`;
+  }).join('');
+  g('scnt').textContent=alumnos.length+' alumno'+(alumnos.length!==1?'s':'');
+  g('prevBadge').textContent=alumnos.length+' alumnos';
+}
+function renderCursos(){
+  const el=g('crsList');if(!el)return;
+  if(!cursos.length){el.innerHTML='<div class="empty" style="padding:8px">Agrega cursos abajo</div>';return}
+  el.innerHTML=cursos.map((c,ci)=>{
+    const sh=c.subgrupos.length?c.subgrupos.map((sg,si)=>renderSgrCard(ci,si,sg)).join(''):'<div style="font-size:11px;color:var(--tx4);padding:4px 0">Sin subgrupos</div>';
+    return `<div class="crs-item ${c.on?'on':''}" id="crsitem_${ci}">
+      <div class="crs-header"><div class="crs-chk" onclick="toggleCurso(${ci})">${c.on?'v':' '}</div><span class="crs-label" onclick="toggleCursoExpand(${ci})">${c.label}</span><span class="crs-arrow" onclick="toggleCursoExpand(${ci})">&#9658;</span><button class="crs-del" onclick="delCurso(${ci})">&#128465;</button></div>
+      <div class="crs-body" id="crsbody_${ci}"><div class="sgr-lbl">Subgrupos</div><div class="sgr-list" id="sgrlist_${ci}">${sh}</div><button class="add-sgr-btn" onclick="addSubgrupo(${ci})">+ Agregar subgrupo</button></div>
+    </div>`;
+  }).join('');
+}
+function renderSgrCard(ci,si,sg){
+  return `<div class="sgr-card"><div class="sgr-card-top"><input class="sgr-name-inp" value="${esc2(sg.nombre)}" placeholder="Nombre" oninput="updateSgrNombre(${ci},${si},this.value)"><button class="sgr-del" onclick="delSubgrupo(${ci},${si})">&#128465;</button></div>
+    <div class="sgr-controls">
+      <div class="sgr-ctrl"><label>Pacientes</label><div class="counter"><button onclick="changeSgr(${ci},${si},'numPacientes',-1)">-</button><span id="sgr_pac_${ci}_${si}">${sg.numPacientes||1}</span><button onclick="changeSgr(${ci},${si},'numPacientes',+1)">+</button></div></div>
+      <div class="sgr-ctrl"><label>Atenciones</label><div class="counter"><button onclick="changeSgr(${ci},${si},'notasBase',-1)">-</button><span id="sgr_base_${ci}_${si}">${sg.notasBase||15}</span><button onclick="changeSgr(${ci},${si},'notasBase',+1)">+</button></div></div>
+      <div class="sgr-ctrl"><label>Extras</label><div class="counter"><button onclick="changeSgr(${ci},${si},'notasExtra',-1)">-</button><span id="sgr_extra_${ci}_${si}">${sg.notasExtra||0}</span><button onclick="changeSgr(${ci},${si},'notasExtra',+1)">+</button></div></div>
+    </div></div>`;
+}
+function toggleCurso(ci){cursos[ci].on=!cursos[ci].on;renderCursos();renderAlumnos();renderPreview()}
+function toggleCursoExpand(ci){const el=g('crsitem_'+ci);if(el)el.classList.toggle('expanded')}
+function addCurso(){
+  const inp=g('newCrs'),name=inp.value.trim();if(!name)return;
+  if(cursos.find(c=>c.label===name)){toast('Ya existe ese curso','','warn');return}
+  cursos.push({label:name,on:true,subgrupos:[{nombre:'Subgrupo 1',notasBase:15,notasExtra:0,numPacientes:5}]});
+  inp.value='';renderCursos();renderAlumnos();renderPreview();
+}
+function delCurso(ci){if(!confirm(`Eliminar "${cursos[ci].label}"?`))return;cursos.splice(ci,1);renderCursos();renderAlumnos();renderPreview()}
+function addSubgrupo(ci){const n=cursos[ci].subgrupos.length+1;cursos[ci].subgrupos.push({nombre:'Subgrupo '+n,notasBase:15,notasExtra:0,numPacientes:5});renderSgrList(ci);renderPreview()}
+function delSubgrupo(ci,si){cursos[ci].subgrupos.splice(si,1);renderSgrList(ci);renderPreview()}
+function renderSgrList(ci){const el=g('sgrlist_'+ci);if(!el)return;el.innerHTML=cursos[ci].subgrupos.length?cursos[ci].subgrupos.map((sg,si)=>renderSgrCard(ci,si,sg)).join(''):'<div style="font-size:11px;color:var(--tx4)">Sin subgrupos</div>'}
+function updateSgrNombre(ci,si,val){cursos[ci].subgrupos[si].nombre=val;renderPreview()}
+function changeSgr(ci,si,f,d){
+  const sg=cursos[ci].subgrupos[si];sg[f]=Math.max(f==='notasExtra'?0:1,(sg[f]||0)+d);
+  const ids={numPacientes:'pac',notasBase:'base',notasExtra:'extra'};
+  const el=g('sgr_'+ids[f]+'_'+ci+'_'+si);if(el)el.textContent=sg[f];renderPreview();
+}
+function guardarCursos(){localStorage.setItem('ft_cursos_v6',JSON.stringify(cursos));toast('Cursos guardados','','ok')}
+function resetCursos(){if(!confirm('Borrar todos los cursos?'))return;cursos=[];localStorage.removeItem('ft_cursos_v6');renderCursos();renderAlumnos();renderPreview()}
+
+async function cargarUsuarios(){
+  const box=g('usrList');if(!box)return;box.innerHTML='<div class="empty">Cargando...</div>';
+  try{
+    const r=await apiGet('listarUsuarios');if(!r.ok)throw new Error(r.error);
+    if(!r.usuarios.length){box.innerHTML='<div class="empty">Sin usuarios registrados</div>';return}
+    box.innerHTML=r.usuarios.map(u=>{
+      const dots='*'.repeat(Math.min(String(u.password).length,8));
+      return `<div class="usr-row"><span class="usr-codigo" title="${u.codigo}">${u.codigo}</span><span class="usr-nombre" title="${u.nombre||''}">${u.nombre||'-'}</span><span class="usr-pass">${dots}</span><span class="rol-tag ${u.rol}">${u.rol}</span><button class="usr-edit" onclick="editarUsuario('${esc(u.codigo)}','${esc(String(u.password))}','${esc(u.rol)}','${esc(u.nombre||'')}')" title="Editar / cambiar contrasena">&#9998;</button><button class="usr-del" onclick="eliminarUsuarioDB('${esc(u.codigo)}')" title="Eliminar">&#128465;</button></div>`;
+    }).join('');
+  }catch(e){box.innerHTML=`<div class="hint">Error: ${e.message}</div>`}
+}
+
+function editarUsuario(codigo, password, rol, nombre){
+  const c=g('usCod'),p=g('usPass'),n=g('usNom'),r=g('usRol');
+  if(c)c.value=codigo;
+  if(p)p.value=password;
+  if(n)n.value=nombre;
+  if(r)r.value=rol;
+  // Scroll al formulario
+  const form=g('usCod');if(form)form.scrollIntoView({behavior:'smooth',block:'center'});
+  form&&form.focus();
+  toast('Usuario cargado para editar','Cambia los datos y pulsa Guardar','');
+}
+async function guardarUsuarioDB(){
+  const cod=vi('usCod').trim(),pass=vi('usPass').trim(),nom=vi('usNom').trim(),rol=vi('usRol');
+  if(!cod||!pass){toast('Codigo y contrasena requeridos','','warn');return}
+  showLoader('Guardando...');
+  try{
+    const r=await apiPost({action:'guardarUsuario',codigo:cod,password:pass,rol,nombre:nom});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast(r.accion==='creado'?'Usuario creado':'Actualizado',cod+' - '+rol,'ok');
+    g('usCod').value='';g('usPass').value='';g('usNom').value='';cargarUsuarios();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+async function eliminarUsuarioDB(codigo){
+  if(!confirm(`Eliminar usuario "${codigo}"?`))return;showLoader('Eliminando...');
+  try{
+    const r=await apiPost({action:'eliminarUsuario',codigo});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast('Usuario eliminado','','ok');cargarUsuarios();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+async function importarDesdeAlumnos(){
+  if(!alumnos.length){toast('No hay alumnos cargados','Ve a la pestana Alumnos','warn');return}
+  const usuarios=alumnos.filter(a=>a.code).map(a=>({codigo:a.code,password:a.code,rol:'estudiante',nombre:a.name}));
+  if(!usuarios.length){toast('Sin codigos','Los alumnos no tienen codigo asignado','warn');return}
+  if(!confirm(`Importar ${usuarios.length} alumnos como estudiantes?\nContrasena inicial = codigo.\nNo sobreescribe existentes.`))return;
+  showLoader('Importando...');
+  try{
+    const r=await apiPost({action:'importarUsuarios',usuarios});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    const res=g('importResult');res.style.display='block';
+    res.innerHTML=`<div class="hint-g"><span>OK</span><span><strong>${r.agregados}</strong> creados, <strong>${r.omitidos}</strong> omitidos (ya existian)</span></div>`;
+    toast(`${r.agregados} usuarios creados`,`${r.omitidos} omitidos`,'ok');cargarUsuarios();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+
+function renderPreview(){
+  const activos=cursos.filter(c=>c.on),body=g('prevBody');if(!body)return;
+  if(!alumnos.length||!activos.length){body.innerHTML='<div class="empty">Configura alumnos, cursos y subgrupos</div>';return}
+  body.innerHTML=alumnos.map(a=>{
+    const al=activos.filter(c=>a.cursos[c.label]===true);
+    if(!al.length)return`<div class="pv-al"><div class="pv-al-hdr"><span>${a.name}</span><span class="pv-al-code">${a.code||''}</span></div><div class="empty" style="padding:10px">Sin cursos - clic en el badge</div></div>`;
+    const bl=al.map(c=>{
+      const sb=c.subgrupos.map(sg=>{
+        let thS='',thE='',tdS='',tdE='';
+        for(let i=0;i<(sg.notasBase||0);i++){const lbl=i===0?'EV':'S'+i;thS+=`<th class="th-ss">${lbl}</th>`;tdS+='<td style="color:var(--tx4);text-align:center">.</td>'}
+        for(let i=0;i<(sg.notasExtra||0);i++){thE+=`<th class="th-ex">E${i+1}</th>`;tdE+='<td style="color:#93c5fd;text-align:center">.</td>'}
+        let rows='';for(let pi=0;pi<(sg.numPacientes||1);pi++)rows+=`<tr><td class="td-pac">PAC${pi+1}</td><td>-</td>${tdS}${tdE}<td><span class="pc">-</span></td></tr>`;
+        return`<div class="pv-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${sg.notasBase||0}SS+${sg.notasExtra||0}E</span><span class="pv-sgr-badge">${sg.numPacientes||1} pac.</span></div><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre</th>${thS}${thE}<th class="th-pr">PROM</th></tr></thead><tbody>${rows}</tbody></table>`;
+      }).join('');
+      return`<div class="pv-cu-hdr">${c.label}</div>${sb}`;
+    }).join('');
+    return`<div class="pv-al"><div class="pv-al-hdr"><span>${a.name}</span><span class="pv-al-code">${a.code||''}</span></div>${bl}</div>`;
+  }).join('');
+}
+
+async function generarPlanilla(){
+  if(!alumnos.length){toast('Sin alumnos','','warn');return}
+  const activos=cursos.filter(c=>c.on);if(!activos.length){toast('Sin cursos activos','','warn');return}
+  const hoja=vi('cfgHoja')||(vi('cfgSec')+' - '+vi('cfgAsig').substring(0,18));
+  const pctExtra=+(vi('cfgPctExtra')||20);
+  const aP=alumnos.map(a=>({nombre:a.name,codigo:a.code||'',cursos:activos.filter(c=>a.cursos[c.label]===true).map(c=>({nombre:c.label,subgrupos:c.subgrupos.map(sg=>({nombre:sg.nombre,notasBase:sg.notasBase||15,notasExtra:sg.notasExtra||0,numPacientes:sg.numPacientes||1,pctExtra:sg.pctExtra!==undefined?sg.pctExtra:pctExtra}))})) }));
+  if(!aP.some(a=>a.cursos.length)){toast('Sin cursos asignados','Asigna cursos a los alumnos','warn');return}
+  showLoader('Creando planilla...');
+  try{
+    const r=await apiPost({action:'crearPlanilla',nombreHoja:hoja,config:{asignatura:vi('cfgAsig'),semestre:vi('cfgSem'),seccion:vi('cfgSec'),notaApro:+vi('scApro')||11,pctExtra:+(vi('cfgPctExtra')||20)},alumnos:aP});
+    hideLoader();if(!r.ok)throw new Error(r.error||JSON.stringify(r));
+    toast('Planilla creada',`"${r.hoja}"`,'ok');window.open(r.url,'_blank');
+    await abrirHoja(r.hoja);loadHojas();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+
+async function loadHojas(){
+  const box=g('hojasBox');if(!box)return;box.innerHTML='<div class="empty">Cargando...</div>';
+  try{
+    const r=await apiGet('listarHojas');if(!r.ok)throw new Error(r.error);
+    // Poblar botones del topbar del docente
+    renderDocenteHojasBtns(r.hojas);
+    if(!r.hojas.length){box.innerHTML='<div class="empty">Sin hojas creadas</div>';return}
+    const esA=session&&session.rol==='admin';
+    box.innerHTML=r.hojas.map(h=>`<div class="hi" onclick="abrirHoja('${esc(h.nombre)}')"><div class="hi-ico">&#128203;</div><div class="hi-info"><div class="hi-name">${h.nombre}</div><div class="hi-meta">${h.alumnos} alumno${h.alumnos!==1?'s':''}</div></div>${esA?`<button class="hi-del" onclick="event.stopPropagation();delHoja('${esc(h.nombre)}')">&#128465;</button>`:''}</div>`).join('');
+  }catch(e){box.innerHTML=`<div class="hint">Error: ${e.message}</div>`}
+}
+async function delHoja(nombre){
+  if(!confirm(`Eliminar "${nombre}"?`))return;showLoader('Eliminando...');
+  try{
+    const r=await apiPost({action:'eliminarHoja',hoja:nombre});hideLoader();if(!r.ok)throw new Error(r.error);
+    toast('Hoja eliminada','','ok');
+    if(hojaActiva===nombre){hojaActiva=null;hojaData=null;g('prevCard').style.display='';g('edCard').style.display='none'}
+    loadHojas();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+async function abrirHoja(nombre){
+  closeSidebar();
+  showLoader('Cargando hoja...');
+  try{
+    const r=await apiGet('leerHoja',{hoja:nombre});hideLoader();if(!r.ok)throw new Error(r.error);
+    hojaActiva=nombre;hojaData=r;renderEditor();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+function renderEditor(){
+  if(!hojaData)return;
+  const cfg=hojaData.config||{},apro=Number(cfg.notaApro)||APRO();
+  const esD=session&&session.rol==='docente';
+  g('prevCard').style.display='none';g('edCard').style.display='';
+  g('edTitle').textContent='Editor: '+hojaActiva;
+  g('edBadge').textContent=hojaData.alumnos.length+' alumnos';
+  const fb=g('edFilter');fb.style.display=esD?'flex':'none';
+  const sel=g('filterSelect');
+  sel.innerHTML='<option value="">- Todos los alumnos -</option>';
+  hojaData.alumnos.forEach((al,ai)=>{const o=document.createElement('option');o.value=String(ai);o.textContent=al.nombre+' ('+al.codigo+')';sel.appendChild(o)});
+  g('filterText').value='';g('filterCnt').textContent='';
+  g('edBody').innerHTML=hojaData.alumnos.map((al,ai)=>renderAlBlock(al,ai,apro)).join('');
+}
+function renderAlBlock(al,ai,apro){
+  const bl=al.cursos.map((cu,ci)=>{
+    const sb=cu.subgrupos.map((sg,si)=>{
+      const base=sg.notasBase||0,extra=sg.notasExtra||0;
+      let thS='',thE='';
+      for(let i=0;i<base;i++){const lbl=i===0?'EV':'S'+i;thS+=`<th class="th-ss">${lbl}</th>`;}
+      for(let i=0;i<extra;i++)thE+=`<th class="th-ex">E${i+1}</th>`;
+      const pct=sg.pctExtra!==undefined?sg.pctExtra:20;
+      const rows=sg.pacientes.map((pac,pi)=>{
+        const nv=pac.nombre||'';
+        let sc='',ec='';
+        for(let ni=0;ni<base;ni++){const v=pac.notas[ni]!==undefined&&pac.notas[ni]!==''?pac.notas[ni]:'';sc+=`<td><input type="number" class="nc ${v!==''?'v':''}" value="${v}" min="0" max="20" step="0.5" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" data-tipo="ss" data-idx="${ni}" data-base="${base}" data-extra="${extra}" onchange="saveNota(this)" onfocus="this.select()"></td>`}
+        for(let ni=0;ni<extra;ni++){const v=pac.xNotas&&pac.xNotas[ni]!==undefined&&pac.xNotas[ni]!==''?pac.xNotas[ni]:'';ec+=`<td><input type="number" class="nc ex ${v!==''?'v':''}" value="${v}" min="0" max="20" step="0.5" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" data-tipo="extra" data-idx="${ni}" data-base="${base}" data-extra="${extra}" onchange="saveNota(this)" onfocus="this.select()"></td>`}
+        const ps=pac.promSS;const pe=pac.extraPond;const p=pac.prom;
+        const pc='pc'+(p!==''&&p!==undefined?(p>=apro?' ok':' no'):'');
+        return`<tr>
+          <td class="td-pac">${pac.label}</td>
+          <td><input class="nn ${nv?'has-val':''}" value="${esc2(nv)}" placeholder="Nombre paciente" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" onchange="saveNombrePac(this)" onfocus="this.select()"></td>
+          ${sc}${ec}
+          <td style="text-align:center"><span class="pc" id="ps_${ai}_${ci}_${si}_${pi}" style="background:var(--n800);color:var(--n300)">${ps!==''&&ps!==undefined?ps:'-'}</span></td>
+          <td style="text-align:center"><span class="pc" id="pe_${ai}_${ci}_${si}_${pi}" style="background:#064e3b;color:#6ee7b7">${pe!==''&&pe!==undefined?pe:'-'}</span></td>
+          <td style="text-align:center"><span class="${pc} nf" id="pc_${ai}_${ci}_${si}_${pi}">${p!==''&&p!==undefined?p:'-'}</span></td>
+        </tr>`;
+      }).join('')||'<tr><td colspan="99" class="empty" style="padding:8px">Sin pacientes</td></tr>';
+      return`<div class="pv-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${base}SS+${extra}E · ${pct}%extra</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-xp">Extra ${pct}%</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    }).join('');
+    return`<div class="pv-cu-hdr">${cu.nombre}</div>${sb}`;
+  }).join('');
+  return`<div class="pv-al" data-idx="${ai}" data-nombre="${al.nombre.toLowerCase()}"><div class="pv-al-hdr"><span>${al.nombre}</span><span class="pv-al-code">${al.codigo||''}</span></div>${bl}</div>`;
+}
+function aplicarFiltro(){
+  const txt=vi('filterText').toLowerCase().trim();
+  g('filterSelect').value='';
+  const bloques=g('edBody').querySelectorAll('.pv-al');let vis=0;
+  bloques.forEach(b=>{const m=!txt||b.dataset.nombre.indexOf(txt)>=0;b.classList.toggle('hidden',!m);if(m)vis++});
+  g('filterCnt').textContent=txt?vis+' resultado'+(vis!==1?'s':''):'';
+}
+function aplicarFiltroSelect(){
+  const val=vi('filterSelect');g('filterText').value='';
+  const bloques=g('edBody').querySelectorAll('.pv-al');let vis=0;
+  bloques.forEach((b,i)=>{const m=val===''||String(i)===val;b.classList.toggle('hidden',!m);if(m){vis++;if(val!=='')setTimeout(()=>b.scrollIntoView({behavior:'smooth',block:'start'}),50)}});
+  g('filterCnt').textContent=val?'1 alumno':'';
+}
+async function saveNombrePac(inp){
+  const{al:alumno,cu:curso,sgr,pac}=inp.dataset,nombre=inp.value.trim();
+  const key='nom|'+alumno+'|'+curso+'|'+sgr+'|'+pac;
+  nombre?inp.classList.add('has-val'):inp.classList.remove('has-val');
+  clearTimeout(saveTimers[key]);
+  saveTimers[key]=setTimeout(async()=>{
+    try{const r=await apiPost({action:'guardarNombre',hoja:hojaActiva,alumno,curso,subgrupo:sgr,pacLabel:pac,nombre});if(!r.ok)throw new Error(r.error)}
+    catch(e){toast('Error al guardar nombre',e.message,'err')}
+  },600);
+}
+async function saveNota(inp){
+  const{al:alumno,cu:curso,sgr,pac}=inp.dataset;
+  const tipo=inp.dataset.tipo,idx=+inp.dataset.idx,base=+inp.dataset.base,extra=+inp.dataset.extra;
+  const valor=inp.value.trim();
+  const key=alumno+'|'+curso+'|'+sgr+'|'+pac+'|'+tipo+'|'+idx;
+  valor!==''?inp.classList.add('v'):inp.classList.remove('v');
+  clearTimeout(saveTimers[key]);
+  saveTimers[key]=setTimeout(async()=>{
+    try{
+      const r=await apiPost({action:'guardarNota',hoja:hojaActiva,alumno,curso,subgrupo:sgr,pacLabel:pac,tipo,idx,valor:valor===''?'':parseFloat(valor),notasBase:base,notasExtra:extra});
+      if(!r.ok)throw new Error(r.error);
+      if(r.prom!==undefined&&hojaData){
+        const apro=Number((hojaData.config||{}).notaApro)||APRO();
+        const ai=hojaData.alumnos.findIndex(a=>a.nombre===alumno);
+        if(ai>=0){const ci=hojaData.alumnos[ai].cursos.findIndex(c=>c.nombre===curso);
+          if(ci>=0){const si=hojaData.alumnos[ai].cursos[ci].subgrupos.findIndex(s=>s.nombre===sgr);
+            if(si>=0){const pi=hojaData.alumnos[ai].cursos[ci].subgrupos[si].pacientes.findIndex(p=>p.label===pac);
+              if(pi>=0){
+                const cellNF=g(`pc_${ai}_${ci}_${si}_${pi}`);
+                const cellPS=g(`ps_${ai}_${ci}_${si}_${pi}`);
+                const cellPE=g(`pe_${ai}_${ci}_${si}_${pi}`);
+                if(cellNF){cellNF.textContent=r.prom!==''&&r.prom!==undefined?r.prom:'-';cellNF.className='pc nf'+(r.prom!==''&&r.prom!==undefined?(r.prom>=apro?' ok':' no'):'');}
+                if(cellPS&&r.promSS!==undefined){cellPS.textContent=r.promSS!==''&&r.promSS!==undefined?r.promSS:'-';}
+                if(cellPE&&r.extraPond!==undefined){cellPE.textContent=r.extraPond!==''&&r.extraPond!==undefined?r.extraPond:'-';}
+              }
+            }
+          }
+        }
+      }
+    }catch(e){toast('Error al guardar nota',e.message,'err')}
+  },500);
+}
+async function iniciarVistaEstudiante(){
+  // Actualizar barra superior
+  const nomEl=g('estNombre');const codEl=g('estCodigo');
+  if(nomEl)nomEl.textContent=session.nombre||'Estudiante';
+  if(codEl)codEl.textContent='Cod: '+(session.codigo||'-');
+  showLoader('Cargando notas...');
+  try{
+    const r=await apiGet('misNotas',{codigo:session.codigo});
+    hideLoader();if(!r.ok)throw new Error(r.error);renderEstNotas(r.resultados);
+  }catch(e){hideLoader();g('estNotas').innerHTML=`<div class="hint">Error: ${e.message}</div>`}
+  // Cargar la agenda en background
+  iniciarAgendaEstudiante();
+}
+function renderEstNotas(resultados){
+  const box=g('estNotas');
+  if(!resultados.length){box.innerHTML='<div class="est-no-data"><div class="ico">&#128203;</div><p>No se encontraron notas para tu codigo.</p></div>';return}
+  box.innerHTML=resultados.map(res=>{
+    const bl=res.cursos.map(cu=>{
+      const sb=cu.subgrupos.map(sg=>{
+        const base=sg.notasBase||0,extra=sg.notasExtra||0;
+        let thS='',thE='';
+        for(let i=0;i<base;i++){const lbl=i===0?'EV':'S'+i;thS+=`<th class="th-ss">${lbl}</th>`;}
+        for(let i=0;i<extra;i++)thE+=`<th class="th-ex">E${i+1}</th>`;
+        const rows=sg.pacientes.map(pac=>{
+          const tSS=pac.notas.map(v=>`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;padding:5px 3px;color:${v!==''?'var(--n600)':'var(--tx4)'}">${v!==''?v:'.'}</td>`).join('');
+          const tEx=pac.xNotas.map(v=>`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;padding:5px 3px;color:${v!==''?'#1d4ed8':'var(--tx4)'}">${v!==''?v:'.'}</td>`).join('');
+          const ps=pac.promSS;const pe=pac.extraPond;const p=pac.prom;
+          const pc='pc'+(p!==''&&p!==undefined?(p>=11?' ok':' no'):'');
+          return`<tr>
+            <td class="td-pac">${pac.label}</td>
+            <td style="font-size:12px;font-weight:500;padding:7px 8px;color:var(--tx2)">${pac.nombre||'-'}</td>
+            ${tSS}${tEx}
+            <td style="text-align:center"><span class="pc" style="background:var(--n800);color:var(--n300)">${ps!==''&&ps!==undefined?ps:'-'}</span></td>
+            <td style="text-align:center"><span class="pc" style="background:#064e3b;color:#6ee7b7">${pe!==''&&pe!==undefined?pe:'-'}</span></td>
+            <td style="text-align:center"><span class="${pc}">${p!==''&&p!==undefined?p:'-'}</span></td>
+          </tr>`;
+        }).join('');
+        return`<div class="est-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${base}SS+${extra}E</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-xp">Extra</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      }).join('');
+      return`<div class="est-cu-hdr">${cu.nombre}</div>${sb}`;
+    }).join('');
+    return`<div class="est-hoja"><div class="est-hoja-hdr"><h3>${res.asignatura}</h3><p>${res.hoja}</p></div>${bl}</div>`;
+  }).join('');
+}
+
+// ── EXPORTAR PDF ─────────────────────────────────────────────
+let expHojas=[], expSelHoja=null, expResumen=null, expSelCurso=null;
+
+async function cargarHojasExport(){
+  const box=g('expHojasList');if(!box)return;
+  box.innerHTML='<div class="empty">Cargando...</div>';
+  expSelHoja=null;expResumen=null;expSelCurso=null;
+  const cb=g('expCursosBox');if(cb)cb.style.display='none';
+  try{
+    const r=await apiGet('listarHojas');if(!r.ok)throw new Error(r.error);
+    expHojas=r.hojas||[];
+    if(!expHojas.length){box.innerHTML='<div class="empty">Sin hojas creadas</div>';return}
+    renderExpHojas();
+  }catch(e){box.innerHTML=`<div class="hint">Error: ${e.message}</div>`}
+}
+
+function renderExpHojas(){
+  const box=g('expHojasList');if(!box)return;
+  box.innerHTML=expHojas.map((h,i)=>{
+    const sel=expSelHoja===h.nombre;
+    return `<div class="exp-hoja-item ${sel?'sel':''}" onclick="selExpHoja('${esc(h.nombre)}')">
+      <div class="ck">${sel?'v':' '}</div>
+      <span class="exp-hoja-name">${h.nombre}</span>
+      <span class="exp-hoja-meta">${h.alumnos} alumnos</span>
+    </div>`;
+  }).join('');
+}
+
+async function selExpHoja(nombre){
+  expSelHoja=nombre;expSelCurso=null;expResumen=null;
+  renderExpHojas();
+  const cb=g('expCursosBox');if(cb)cb.style.display='none';
+  const pb=g('resumenPreviewBox');if(pb)pb.style.display='none';
+  showLoader('Cargando resumen...');
+  try{
+    const r=await apiGet('resumenHoja',{hoja:nombre});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    expResumen=r;
+    renderExpCursos();
+    if(cb)cb.style.display='block';
+  }catch(e){hideLoader();toast('Error al cargar resumen',e.message,'err')}
+}
+
+function renderExpCursos(){
+  const box=g('expCursosList');if(!box||!expResumen)return;
+  const cursos=expResumen.cursos||[];
+  if(!cursos.length){box.innerHTML='<div class="empty">Sin cursos en esta hoja</div>';return}
+  box.innerHTML=cursos.map((cu,i)=>{
+    const sel=expSelCurso===cu.nombre;
+    return `<div class="exp-hoja-item ${sel?'sel':''}" onclick="selExpCurso('${esc(cu.nombre)}')">
+      <div class="ck">${sel?'v':' '}</div>
+      <span class="exp-hoja-name">${cu.nombre}</span>
+      <span class="exp-hoja-meta">${cu.alumnos.length} alumnos</span>
+    </div>`;
+  }).join('');
+}
+
+function selExpCurso(nombre){
+  expSelCurso=nombre;renderExpCursos();
+  const pb=g('resumenPreviewBox');if(pb)pb.style.display='none';
+  if(!expResumen)return;
+  const curso=expResumen.cursos.find(c=>c.nombre===nombre);
+  if(!curso)return;
+  renderResumenPreview(curso);
+  if(pb)pb.style.display='block';
+}
+
+function renderResumenPreview(curso){
+  const tbl=g('resumenTable');if(!tbl)return;
+  const cfg=expResumen.config||{};
+  const apro=Number(cfg.notaApro)||11;
+  const filas=curso.alumnos.map((al,i)=>{
+    const p=al.promFinal;
+    const cls=p!==''&&p!==undefined?(p>=apro?'ok':'no'):'';
+    const color=cls==='ok'?'var(--green)':cls==='no'?'var(--red)':'var(--tx3)';
+    return `<tr>
+      <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-size:12px;color:var(--tx3);text-align:center">${i+1}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-family:'DM Mono',monospace;font-size:11px;color:var(--n500)">${al.codigo||'-'}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-size:12px;font-weight:600">${al.nombre}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-family:'DM Mono',monospace;font-weight:700;text-align:center;color:${color}">${p!==''&&p!==undefined?p:'-'}</td>
+    </tr>`;
+  }).join('');
+  tbl.innerHTML=`<table><thead><tr>
+    <th style="width:36px">#</th><th>Codigo</th>
+    <th>Apellidos y Nombres</th>
+    <th style="width:80px;text-align:center">Prom.</th>
+  </tr></thead><tbody>${filas}</tbody></table>`;
+}
+
+function exportarPDF(){
+  if(!expResumen||!expSelCurso){toast('Selecciona hoja y curso','','warn');return}
+  const cfg=expResumen.config||{};
+  const curso=expResumen.cursos.find(c=>c.nombre===expSelCurso);
+  if(!curso){toast('Curso no encontrado','','err');return}
+  const asignatura=cfg.asignatura||expSelHoja;
+  const semestre=cfg.semestre||'';
+  const fecha=new Date().toLocaleDateString('es-PE',{year:'numeric',month:'long',day:'numeric'});
+  const logoUrl=getLogoUrl();
+
+  const filas=curso.alumnos.map((al,i)=>{
+    const p=al.promFinal;
+    return `<tr>
+      <td style="text-align:center;color:#64748b;font-size:11px;padding:8px 10px">${i+1}</td>
+      <td style="font-family:monospace;font-size:11px;color:#1d4ed8;padding:8px 10px">${al.codigo||'-'}</td>
+      <td style="font-weight:600;font-size:12px;padding:8px 10px">${al.nombre}</td>
+      <td style="text-align:center;font-family:monospace;font-weight:700;font-size:13px;color:#0a1628;padding:8px 10px">${p!==''&&p!==undefined?p:'-'}</td>
+    </tr>`;
+  }).join('');
+
+  const htmlPDF=`<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<title>Registro de Notas - ${asignatura} - ${curso.nombre}</title>
+<style>
+@page{size:A4;margin:15mm 14mm 18mm 14mm}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#0f172a}
+/* HEADER */
+.hdr-pdf{display:flex;align-items:center;gap:18px;padding-bottom:14px;border-bottom:2px solid #0a1628;margin-bottom:18px}
+.logo-box{width:80px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.logo-box img{max-width:80px;max-height:70px;object-fit:contain}
+.inst-info{flex:1}
+.inst-univ{font-size:10px;font-weight:700;color:#0a1628;text-transform:uppercase;letter-spacing:.6px;line-height:1.5}
+.inst-fac{font-size:9.5px;color:#334155;text-transform:uppercase;letter-spacing:.5px;line-height:1.5}
+.inst-esc{font-size:9.5px;color:#1d4ed8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;line-height:1.5}
+/* TITULO */
+.titulo{margin-bottom:14px}
+.titulo h1{font-size:15px;font-weight:800;color:#0a1628;margin-bottom:3px}
+.titulo h2{font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:8px}
+.meta{display:flex;gap:18px;font-size:11px;color:#334155;flex-wrap:wrap}
+.meta-item{display:flex;gap:5px}
+.meta-item strong{color:#0a1628}
+/* TABLA */
+table{width:100%;border-collapse:collapse;margin-top:6px}
+thead th{background:#0a1628;color:#fff;padding:9px 10px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.3px}
+thead th.c{text-align:center}
+tbody tr:nth-child(even){background:#f8faff}
+tbody tr:nth-child(odd){background:#fff}
+tbody td{border-bottom:1px solid #e2e8f0;vertical-align:middle}
+tbody tr:last-child td{border-bottom:2px solid #0a1628}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+
+/* ── AGENDA / CALENDARIO ── */
+.cal-day-col{min-width:110px;flex-shrink:0}
+.cal-day-hdr{background:var(--n800);color:#fff;text-align:center;padding:7px 4px;font-size:11px;font-weight:700;position:sticky;top:0;z-index:2;border-right:1px solid var(--n700)}
+.cal-day-hdr.hoy{background:var(--n500)}
+.cal-day-hdr .dia-num{font-size:18px;font-weight:800;display:block;line-height:1.1}
+.cal-day-hdr .dia-nom{font-size:10px;color:var(--n300);text-transform:uppercase;letter-spacing:.6px}
+.cal-time-col{width:52px;flex-shrink:0}
+.cal-time-lbl{height:52px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-family:'DM Mono',monospace;font-size:10px;color:var(--tx4);border-right:1px solid var(--bd2)}
+.cal-slot{height:52px;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);position:relative;cursor:pointer;transition:background .15s}
+.cal-slot:hover{background:var(--n050)}
+.cal-slot.ocupado{background:var(--n100);cursor:default}
+.cal-slot.ocupado:hover{background:var(--n100)}
+.cal-reserva{position:absolute;inset:2px;border-radius:10px;background:var(--n600);color:#fff;font-size:10px;padding:3px 6px;overflow:hidden;cursor:pointer;transition:opacity .15s;display:flex;flex-direction:column;justify-content:space-between}
+.cal-reserva:hover{opacity:.85}
+.cal-reserva .rsv-pac{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11px}
+.cal-reserva .rsv-doc{opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px}
+.cal-reserva .rsv-del{position:absolute;top:2px;right:4px;background:none;border:none;color:rgba(255,255,255,.7);font-size:12px;cursor:pointer;line-height:1;padding:0}
+.cal-reserva .rsv-del:hover{color:#fff}
+.cal-libre-btn{position:absolute;inset:3px;border-radius:5px;background:transparent;border:1px dashed transparent;display:flex;align-items:center;justify-content:center;color:var(--tx4);font-size:10px;opacity:0;transition:all .15s;cursor:pointer}
+.cal-slot:hover .cal-libre-btn{opacity:1;border-color:var(--n300);color:var(--n500);background:rgba(29,78,216,.05)}
+.cal-grid-wrap{display:flex;overflow-x:auto;border:1px solid var(--bd2);border-radius:9px;overflow:hidden}
+.cal-grid-body{flex:1;overflow-y:auto;max-height:calc(100vh - 340px)}
+
+/* area card en config */
+.area-card{background:var(--surf2);border:1px solid var(--bd2);border-radius:9px;padding:10px 12px;margin-bottom:7px}
+.area-card-top{display:grid;grid-template-columns:1fr 80px 28px;gap:7px;align-items:center;margin-bottom:8px}
+.espacio-row{display:grid;grid-template-columns:1fr 70px 28px;gap:6px;align-items:center;margin-bottom:5px;padding-left:8px}
+.espacio-row input{background:#fff;border:1px solid var(--bd);border-radius:6px;padding:4px 8px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;width:100%}
+.espacio-row input:focus{border-color:var(--n500)}
+.espacio-row label{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:2px}
+.area-card input{background:#fff;border:1px solid var(--bd);border-radius:6px;padding:5px 8px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;width:100%}
+.area-card input:focus{border-color:var(--n500)}
+.area-card label{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:3px}
+.area-del{background:none;border:none;color:var(--tx4);cursor:pointer;font-size:14px;padding:0;transition:color .15s}
+.area-del:hover{color:var(--red)}
+
+/* ── COLLAPSIBLE (estudiante) ── */
+.collapsible-hdr{cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between}
+.collapsible-hdr:hover{opacity:.9}
+.collapsible-arrow{font-size:14px;transition:transform .25s;display:inline-block;margin-left:8px}
+.collapsible-arrow.open{transform:rotate(180deg)}
+.collapsible-body{overflow:hidden;transition:max-height .3s ease, opacity .3s;max-height:0;opacity:0;pointer-events:none}
+.collapsible-body.open{max-height:9999px;opacity:1;overflow:visible;pointer-events:auto}
+
+/* ── CUADRÍCULA CALENDARIO ── */
+.cal-grid-wrap{border:1px solid var(--bd2);border-radius:12px;overflow:hidden}
+.cal-slot{border-bottom:1px solid var(--bd2);border-right:1px solid var(--bd2)}
+.cal-slot-bloqueado{background:repeating-linear-gradient(45deg,#fee2e2,#fee2e2 4px,#fff5f5 4px,#fff5f5 10px)!important;cursor:not-allowed!important}
+.cal-hora-sep{background:var(--n050);border-top:2px solid var(--bd);font-size:10px;font-weight:700;color:var(--tx3);padding:2px 8px;letter-spacing:.5px}
+
+/* ── BLOQUEO CARD ── */
+.bloqueo-row{display:grid;grid-template-columns:80px 65px 1fr 1fr 28px;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--bd2);font-size:12px;background:var(--red2)}
+.bloqueo-row:hover{opacity:.9}
+
+/* ── MODAL RESERVA ALUMNO (fecha/hora libre) ── */
+.rsv-datetime{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+</style></head>
+<body>
+<!-- ENCABEZADO INSTITUCIONAL -->
+<div class="hdr-pdf">
+  <div class="logo-box">
+    <img src="${logoUrl}" alt="Logo UPT" onerror="this.style.display='none'">
+  </div>
+  <div class="inst-info">
+    <div class="inst-univ">Universidad Privada de Tacna</div>
+    <div class="inst-fac">Facultad de Ciencias de la Salud</div>
+    <div class="inst-esc">Escuela Profesional de Tecnologia Medica</div>
+  </div>
+</div>
+<!-- TITULO Y METADATOS -->
+<div class="titulo">
+  <h1>${asignatura}</h1>
+  <h2>${curso.nombre}</h2>
+  <div class="meta">
+    ${semestre?`<div class="meta-item"><strong>Semestre:</strong><span>${semestre}</span></div>`:''}
+    <div class="meta-item"><strong>Fecha:</strong><span>${fecha}</span></div>
+  </div>
+</div>
+<!-- TABLA DE NOTAS -->
+<table>
+  <thead><tr>
+    <th class="c" style="width:34px">#</th>
+    <th style="width:100px">Codigo</th>
+    <th>Apellidos y Nombres</th>
+    <th class="c" style="width:90px">Promedio Final</th>
+  </tr></thead>
+  <tbody>${filas}</tbody>
+</table>
+<script>window.onload=function(){window.print()}<\/script>
+</body></html>`;
+
+  const win=window.open('','_blank');
+  if(!win){toast('Habilita popups en el navegador','','warn');return}
+  win.document.write(htmlPDF);
+  win.document.close();
+}
+
+
+// ── LOGO ─────────────────────────────────────────────────────
+// El logo se carga automáticamente desde logo.png en la misma carpeta
+// que index.html (en el repo de GitHub Pages: /main/logo.png)
+function getLogoUrl(){
+  // Construye la URL de logo.png relativa al index.html actual
+  // Funciona tanto en GitHub Pages (https://user.github.io/repo/) como en local
+  const base = window.location.href.replace(/[^/]*$/, '');
+  return base + 'logo.png';
+}
+
+function applyLogo(url){
+  const show = url && url.length > 0;
+  ['logoImg','logoLogin'].forEach(id=>{
+    const el=g(id);if(!el)return;
+    if(show){
+      el.src=url;
+      el.style.display='';
+      el.onerror=function(){
+        el.style.display='none';
+        const fbId=id==='logoImg'?'logoFallback':'logoLoginFallback';
+        const fb=g(fbId);if(fb)fb.style.display='';
+      };
+    } else {
+      el.src='';el.style.display='none';
+    }
+  });
+  ['logoFallback','logoLoginFallback'].forEach(id=>{
+    const el=g(id);if(!el)return;
+    el.style.display=show?'none':'';
+  });
+}
+
+// Cargar logo automáticamente al iniciar
+(function(){
+  applyLogo(getLogoUrl());
+})();
+
+// ── LOG DE NOTAS ──────────────────────────────────────────────
+async function cargarLog(){
+  const box=g('logList');if(!box)return;
+  box.innerHTML='<div class="empty">Cargando...</div>';
+  const hojaFiltro=vi('logFiltroHoja');
+  // Poblar select de hojas en el filtro
+  const sel=g('logFiltroHoja');
+  if(sel&&sel.options.length<=1&&hojaData){
+    // Añadir hojas conocidas
+    try{const rh=await apiGet('listarHojas');if(rh.ok)rh.hojas.forEach(h=>{if(![...sel.options].find(o=>o.value===h.nombre)){const o=document.createElement('option');o.value=h.nombre;o.textContent=h.nombre;sel.appendChild(o)}})}catch(e){}
+  }
+  try{
+    const r=await apiGet('leerLog',{hoja:hojaFiltro,limite:200});
+    if(!r.ok)throw new Error(r.error);
+    if(!r.registros.length){box.innerHTML='<div class="empty">Sin registros</div>';return}
+    box.innerHTML=`<div style="background:var(--n900);padding:6px 10px;position:sticky;top:0;display:grid;grid-template-columns:110px 90px 1fr 60px 40px 55px;gap:5px;font-size:10px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.6px">
+      <span>Fecha/Hora</span><span>Docente</span><span>Alumno / Curso / Pac.</span><span>Tipo</span><span>N°</span><span>Valor</span>
+    </div>`+r.registros.map(reg=>{
+      const tipo=reg.tipo==='SS'?'ss':'ex';
+      const antStr=reg.anterior!==null&&reg.anterior!==undefined&&reg.anterior!=='-'?reg.anterior:'-';
+      const nuevoStr=reg.nuevo!==null&&reg.nuevo!==undefined&&reg.nuevo!=='-'?reg.nuevo:'-';
+      return`<div class="log-row">
+        <span class="log-ts">${reg.ts}</span>
+        <span class="log-doc" title="${reg.docente}">${reg.docente}</span>
+        <span class="log-info" title="${reg.alumno} | ${reg.curso} | ${reg.subgrupo} | ${reg.paciente}">${reg.alumno} &rsaquo; ${reg.curso} &rsaquo; ${reg.paciente}</span>
+        <span class="log-tipo ${tipo}">${reg.tipo}</span>
+        <span style="text-align:center;font-family:'DM Mono',monospace;font-weight:700">${reg.nro}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:11px;text-align:center;color:var(--n500);font-weight:700">${antStr}&#8594;${nuevoStr}</span>
+      </div>`;
+    }).join('');
+  }catch(e){box.innerHTML=`<div class="hint">Error: ${e.message}</div>`}
+}
+
+
+// ── SIDEBAR DESLIZABLE ───────────────────────────────────────
+let _sidebarOpen = false;
+function toggleSidebar(){
+  _sidebarOpen = !_sidebarOpen;
+  const sb  = g('adminSidebar');
+  const ov  = g('sideOverlay');
+  const lbl = g('sidebarBtnLabel');
+  if(sb) sb.classList.toggle('open', _sidebarOpen);
+  if(ov) ov.classList.toggle('show', _sidebarOpen);
+  if(lbl) lbl.textContent = _sidebarOpen ? 'Cerrar panel' : 'Panel';
+  document.body.style.overflow = _sidebarOpen ? 'hidden' : '';
+}
+function closeSidebar(){
+  if(!_sidebarOpen) return;
+  toggleSidebar();
+}
+
+
+// ── CAMBIO DE CONTRASEÑA ─────────────────────────────────────
+function mostrarCambioPass(){
+  g('passActual').value='';g('passNueva').value='';g('passConfirm').value='';
+  const err=g('passErr');if(err){err.style.display='none';err.textContent=''}
+  g('passModal').classList.add('show');
+  setTimeout(()=>g('passActual').focus(),100);
+}
+function cerrarPassModal(){
+  g('passModal').classList.remove('show');
+}
+async function guardarNuevaPass(){
+  const actual=g('passActual').value.trim();
+  const nueva=g('passNueva').value.trim();
+  const confirm=g('passConfirm').value.trim();
+  const err=g('passErr');
+  const showErr=m=>{err.textContent=m;err.style.display='block'};
+  if(!actual||!nueva||!confirm){showErr('Completa todos los campos');return}
+  if(nueva!==confirm){showErr('Las contrasenas nuevas no coinciden');return}
+  if(nueva.length<4){showErr('La contrasena debe tener al menos 4 caracteres');return}
+  if(!session){showErr('No hay sesion activa');return}
+  // Verificar contraseña actual haciendo login
+  showLoader('Verificando...');
+  try{
+    const vr=await apiGet('login',{codigo:session.codigo,password:actual});
+    if(!vr.ok){hideLoader();showErr('La contrasena actual es incorrecta');return}
+    // Guardar nueva contraseña usando guardarUsuario
+    const r=await apiPost({action:'guardarUsuario',codigo:session.codigo,password:nueva,rol:session.rol,nombre:session.nombre||''});
+    hideLoader();
+    if(!r.ok)throw new Error(r.error);
+    // Actualizar token de sesión con nueva contraseña
+    session.token=btoa(session.codigo+':'+nueva+':'+session.rol);
+    saveSession(session);
+    cerrarPassModal();
+    toast('Contrasena actualizada','Usa tu nueva contrasena en el proximo inicio de sesion','ok');
+  }catch(e){hideLoader();showErr('Error: '+e.message)}
+}
+// Cerrar modal al hacer clic fuera
+g('passModal')&&g('passModal').addEventListener('click',function(e){
+  if(e.target===this)cerrarPassModal();
+});
+
+
+// ════════════════════════════════════════════════════════
+// AGENDA / CALENDARIO
+// ════════════════════════════════════════════════════════
+let agendaCfg   = { areas:[], franjas:[{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}] };
+let agendaReservas = [];
+let calFechaBase   = new Date();
+let rsvPendiente   = null;
+
+const DIAS_NOM = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+
+function getLunes(d){
+  const dt=new Date(d); const dia=dt.getDay();
+  const diff=dia===0?-6:1-dia; dt.setDate(dt.getDate()+diff); dt.setHours(0,0,0,0); return dt;
+}
+function fmt(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function fmtDia(d){ return String(d.getDate()).padStart(2,'0')+'/'+(d.getMonth()+1); }
+
+// Genera slots de hora a partir de las franjas (sin overlap en la pausa)
+function generarSlots(franjas){
+  const slots=[];
+  (franjas||[]).forEach(fr=>{
+    const [hI]=fr.inicio.split(':').map(Number);
+    const [hF]=fr.fin.split(':').map(Number);
+    for(let h=hI;h<hF;h++) slots.push(String(h).padStart(2,'0')+':00');
+  });
+  return slots;
+}
+
+// ── Carga inicial ─────────────────────────────────────────
+async function iniciarAgenda(){
+  try{
+    const r=await apiGet('leerAgendaConfig');
+    if(r.ok) agendaCfg=r.config;
+    // Migrar config antigua (camillas → espacios)
+    agendaCfg.areas=agendaCfg.areas.map(a=>{
+      if(!a.espacios&&a.camillas){
+        a.espacios=Array.from({length:a.camillas},(_,i)=>({nombre:'Camilla '+(i+1),capacidad:1}));
+      }
+      if(!a.espacios) a.espacios=[{nombre:'Espacio 1',capacidad:1}];
+      return a;
+    });
+    if(!agendaCfg.franjas) agendaCfg.franjas=[{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}];
+    renderAreasConfig();
+    actualizarFiltroArea();
+    calFechaBase=getLunes(new Date());
+    await cargarReservasSemana();
+    // Cargar bloqueos de la semana
+    const finSemB=new Date(calFechaBase);finSemB.setDate(finSemB.getDate()+4);
+    await cargarBloqueos(fmt(calFechaBase),fmt(finSemB));
+    renderCalendario();
+    // También cargar lista de reservas y bloqueos
+    setTimeout(()=>{cargarListaReservas();renderListaBloqueos();actualizarSelectsBloqueo();}, 500);
+  }catch(e){toast('Error al cargar agenda',e.message,'err')}
+}
+
+function _recargarCalendarios(){
+  const finSem=new Date(calFechaBase);finSem.setDate(finSem.getDate()+4);
+  return cargarReservasSemana().then(()=>{
+    cargarBloqueos(fmt(calFechaBase),fmt(finSem)).then(()=>{
+      // Renderizar el que esté visible
+      if(g('agendaModal')&&g('agendaModal').style.display!=='none') renderCalendarioModal();
+      else renderCalendario();
+      // Actualizar label del modal
+      const v=new Date(calFechaBase);v.setDate(v.getDate()+4);
+      const lbl=g('calSemanaLabelModal');
+      if(lbl)lbl.textContent=fmtDia(calFechaBase)+' – '+fmtDia(v)+' / '+v.getFullYear();
+    });
+  });
+}
+function semanaAnterior(){ calFechaBase.setDate(calFechaBase.getDate()-7); _recargarCalendarios(); }
+function semanaSiguiente(){ calFechaBase.setDate(calFechaBase.getDate()+7); _recargarCalendarios(); }
+function irHoy(){ calFechaBase=getLunes(new Date()); _recargarCalendarios(); }
+
+async function cargarReservasSemana(){
+  const ini=fmt(calFechaBase);
+  const finSem=new Date(calFechaBase); finSem.setDate(finSem.getDate()+4); // viernes
+  try{
+    const r=await apiGet('leerReservas',{fechaInicio:ini,fechaFin:fmt(finSem)});
+    if(r.ok) agendaReservas=r.reservas;
+  }catch(e){ agendaReservas=[]; }
+}
+
+// ── Renderizar calendario (admin + docente) ───────────────
+function renderCalendario(){
+  const finD=new Date(calFechaBase);finD.setDate(finD.getDate()+4);
+  const vier=new Date(calFechaBase);vier.setDate(vier.getDate()+4);
+  g('calSemanaLabel').textContent=fmtDia(calFechaBase)+' \u2013 '+fmtDia(vier)+' / '+vier.getFullYear();
+
+  const areaFiltro=vi('calAreaFiltro');
+  const areas=areaFiltro?agendaCfg.areas.filter(a=>a.nombre===areaFiltro):agendaCfg.areas;
+  if(!areas.length){g('calGrid').innerHTML='<div class="empty" style="padding:20px">Sin areas configuradas. Configura las areas arriba.</div>';return;}
+
+  const slots=generarSlots(agendaCfg.franjas);
+  const hoy=fmt(new Date());
+  const dias=[];
+  for(let i=0;i<5;i++){const d=new Date(calFechaBase);d.setDate(d.getDate()+i);dias.push(d);}
+  const esAdmin=session&&session.rol==='admin';
+  const esDocente=session&&session.rol==='docente';
+  const puedeElim=esAdmin||esDocente;
+  const dw=150;
+
+  let html='<div class="cal-grid-wrap"><div style="display:flex;flex-direction:column;min-width:max-content">';
+
+  // Cabecera días (sticky)
+  html+='<div style="display:flex;position:sticky;top:0;z-index:5;background:var(--surf)">';
+  html+=`<div style="width:100px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);background:var(--surf2)"></div>`;
+  dias.forEach(d=>{
+    const esHoy=fmt(d)===hoy;
+    html+=`<div style="width:${dw}px;flex-shrink:0"><div class="cal-day-hdr ${esHoy?'hoy':''}"><span class="dia-num">${d.getDate()}</span><span class="dia-nom">${DIAS_NOM[d.getDay()]}</span></div></div>`;
+  });
+  html+='</div>';
+
+  areas.forEach(area=>{
+    html+=`<div style="background:var(--n700);color:var(--n200);padding:7px 14px;font-size:11px;font-weight:700;letter-spacing:.5px;border-bottom:2px solid var(--n600)">${area.nombre}</div>`;
+
+    slots.forEach((hora,hi)=>{
+      // Separador de receso entre franjas
+      if(hi>0){
+        const [hPrev]=slots[hi-1].split(':').map(Number);
+        const [hCurr]=hora.split(':').map(Number);
+        if(hCurr-hPrev>1){
+          html+=`<div style="height:8px;background:var(--n050);border-top:2px solid var(--bd2);border-bottom:2px solid var(--bd2);display:flex;align-items:center;padding-left:8px"><span style="font-size:9px;color:var(--tx4);font-weight:700">RECESO</span></div>`;
+        }
+      }
+
+      (area.espacios||[]).forEach((esp,ei)=>{
+        const cap=esp.capacidad||1;
+        const borderTop=ei===0?'2px solid var(--n300)':'1px dashed var(--bd2)';
+        html+=`<div style="display:flex;border-top:${borderTop}">`;
+
+        // Columna fija: hora + espacio
+        html+=`<div style="width:100px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);background:var(--surf2);padding:4px 7px;display:flex;flex-direction:column;justify-content:center">`;
+        if(ei===0) html+=`<div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:var(--tx);margin-bottom:2px">${hora}</div>`;
+        html+=`<div style="font-size:11px;font-weight:600;color:var(--n500)">${esp.nombre}</div>`;
+        html+=`<div style="font-size:9px;color:var(--tx4)">${cap} lugar${cap!==1?'es':''}</div>`;
+        html+='</div>';
+
+        dias.forEach(d=>{
+          const fechaStr=fmt(d);
+          const pasado=new Date(fechaStr+'T'+hora+':00')<new Date();
+          const rsvEsp=agendaReservas.filter(r=>r.fecha===fechaStr&&r.horaInicio===hora&&r.area===area.nombre&&r.camilla===esp.nombre);
+          const lleno=rsvEsp.length>=cap;
+          const bloq=typeof esBloqueado==='function'&&esBloqueado(fechaStr,hora,area.nombre,esp.nombre);
+
+          let celda='';
+          if(bloq){
+            celda=`<div style="height:100%;background:repeating-linear-gradient(45deg,#fee2e2,#fee2e2 3px,#fff5f5 3px,#fff5f5 8px);display:flex;align-items:center;justify-content:center;font-size:9px;color:#dc2626;font-weight:600">&#128274; Bloqueado</div>`;
+          } else {
+            rsvEsp.forEach(rsv=>{
+              celda+=`<div style="background:var(--n600);border-radius:6px;padding:3px 6px;margin-bottom:2px;position:relative">
+                <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:14px">${rsv.paciente||'\u2014'}</div>
+                <div style="font-size:9px;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rsv.docente||rsv.reservadoPor||''}</div>
+                ${puedeElim?`<button onclick="event.stopPropagation();pedirEliminar('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}')" style="position:absolute;top:2px;right:3px;background:none;border:none;color:rgba(255,255,255,.6);font-size:11px;cursor:pointer;line-height:1;padding:2px" title="Cancelar">&#10005;</button>`:''}
+              </div>`;
+            });
+            if(!pasado&&!lleno){
+              const fl=d.toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'long'});
+              celda+=`<button onclick="abrirReservaEspacio('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}',${cap},'${esc(fl)}')"
+                style="width:100%;background:transparent;border:1px dashed transparent;border-radius:6px;color:var(--tx4);font-size:10px;padding:4px 2px;cursor:pointer;transition:all .15s;min-height:32px;display:flex;align-items:center;justify-content:center"
+                onmouseover="this.style.borderColor='var(--n300)';this.style.color='var(--n500)';this.style.background='rgba(29,78,216,.06)'"
+                onmouseout="this.style.borderColor='transparent';this.style.color='var(--tx4)';this.style.background='transparent'"
+              ><span style="font-size:14px">+</span></button>`;
+            } else if(pasado&&rsvEsp.length===0){
+              celda=`<div style="min-height:32px;background:#f9fafb"></div>`;
+            }
+          }
+          html+=`<div style="width:${dw}px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);padding:4px 5px;min-height:34px;background:${pasado&&!bloq?'#f9fafb':'var(--surf)'}">${celda}</div>`;
+        });
+        html+='</div>';
+      });
+    });
+    html+='<div style="height:6px;background:var(--n800)"></div>';
+  });
+  html+='</div></div>';
+  g('calGrid').innerHTML=html;
+}
+
+
+// ── Configuración de áreas ────────────────────────────────
+function renderAreasConfig(){
+  const esA=session&&session.rol==='admin';
+  const box=g('calConfigBox');
+  if(box) box.style.display=esA?'block':'none';
+  if(!esA)return;
+  const list=g('areasConfigList');if(!list)return;
+  if(!agendaCfg.areas.length){list.innerHTML='<div class="empty" style="padding:8px">Sin areas. Agrega una abajo.</div>';return;}
+
+  list.innerHTML=agendaCfg.areas.map((a,i)=>{
+    const espaciosHtml=(a.espacios||[]).map((esp,ei)=>`
+      <div class="espacio-row">
+        <div><label>Nombre del espacio</label><input value="${esc2(esp.nombre)}" placeholder="Ej. Camilla 1" oninput="agendaCfg.areas[${i}].espacios[${ei}].nombre=this.value"></div>
+        <div><label>Capacidad (pac.)</label><input type="number" min="1" max="20" value="${esp.capacidad||1}" oninput="agendaCfg.areas[${i}].espacios[${ei}].capacidad=+this.value||1"></div>
+        <button class="area-del" onclick="delEspacio(${i},${ei})" title="Eliminar espacio">&#128465;</button>
+      </div>`).join('');
+
+    return `<div class="area-card">
+      <div class="area-card-top">
+        <div><label style="font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:3px">Area</label>
+          <input value="${esc2(a.nombre)}" oninput="agendaCfg.areas[${i}].nombre=this.value;actualizarFiltroArea()" placeholder="Nombre del area" style="background:#fff;border:1px solid var(--bd);border-radius:6px;padding:5px 8px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;width:100%">
+        </div>
+        <div><label style="font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:3px">Durac.(min)</label>
+          <input type="number" min="15" max="240" step="15" value="${a.duracion||60}" oninput="agendaCfg.areas[${i}].duracion=+this.value||60" style="background:#fff;border:1px solid var(--bd);border-radius:6px;padding:5px 8px;font-size:12px;outline:none;width:100%;text-align:center">
+        </div>
+        <button class="area-del" onclick="delArea(${i})" title="Eliminar area">&#128465;</button>
+      </div>
+      <div style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;padding-left:8px">Espacios / Camillas / Colchonetas</div>
+      ${espaciosHtml}
+      <button onclick="addEspacio(${i})" style="margin-left:8px;background:var(--n050);border:1px dashed var(--n300);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--n500);cursor:pointer">+ Agregar espacio</button>
+    </div>`;
+  }).join('');
+
+  // Sync franjas
+  const f=agendaCfg.franjas||[{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}];
+  ['calFranja1Ini','calFranja1Fin','calFranja2Ini','calFranja2Fin'].forEach((id,i)=>{
+    const el=g(id); if(!el)return;
+    const frIdx=Math.floor(i/2); const tipo=i%2===0?'inicio':'fin';
+    el.value=(f[frIdx]||{})[tipo]||'';
+  });
+}
+
+function addArea(){
+  const nom=vi('newAreaNom').trim();if(!nom)return;
+  agendaCfg.areas.push({nombre:nom,espacios:[{nombre:'Espacio 1',capacidad:1}],duracion:60});
+  g('newAreaNom').value='';renderAreasConfig();actualizarFiltroArea();
+}
+function delArea(i){ agendaCfg.areas.splice(i,1);renderAreasConfig();actualizarFiltroArea(); }
+function addEspacio(areaIdx){ agendaCfg.areas[areaIdx].espacios.push({nombre:'Espacio '+(agendaCfg.areas[areaIdx].espacios.length+1),capacidad:1}); renderAreasConfig(); }
+function delEspacio(areaIdx,espIdx){ agendaCfg.areas[areaIdx].espacios.splice(espIdx,1); renderAreasConfig(); }
+
+function actualizarFiltroArea(){
+  ['calAreaFiltro','calAreaFiltroModal'].forEach(selId=>{
+    const sel=g(selId);if(!sel)return;
+    const val=sel.value;
+    sel.innerHTML='<option value="">Todas las areas</option>'+
+      agendaCfg.areas.map(a=>`<option value="${esc2(a.nombre)}" ${a.nombre===val?'selected':''}>${a.nombre}</option>`).join('');
+  });
+  // Actualizar separado el del estudiante
+  actualizarFiltroAreaEst();
+}
+
+async function guardarAgendaConfig(){
+  const f=agendaCfg.franjas=[];
+  const pares=[['calFranja1Ini','calFranja1Fin'],['calFranja2Ini','calFranja2Fin']];
+  pares.forEach(([iId,fId])=>{
+    const ini=vi(iId);const fin=vi(fId);
+    if(ini&&fin) f.push({inicio:ini,fin:fin});
+  });
+  if(!f.length) f.push({inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'});
+  showLoader('Guardando configuracion...');
+  try{
+    const r=await apiPost({action:'guardarAgendaConfig',config:agendaCfg});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast('Configuracion guardada','','ok');
+    await cargarReservasSemana();renderCalendario();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+
+// ── Reservar slot ─────────────────────────────────────────
+function abrirReservaEspacio(fecha,hora,area,espacio,capacidad,fechaLabel){
+  rsvPendiente={fecha,hora,area,camilla:espacio,capacidad,esEstudiante:false};
+  g('reservaModalTitle').textContent='Reservar \xb7 '+area+' \xb7 '+espacio;
+  g('reservaModalSub').textContent=fechaLabel+' \xb7 '+hora+' hs';
+  g('rsvPaciente').value='';
+  g('rsvDocente').value=session&&session.nombre||'';
+  g('rsvObs').value='';
+  const err=g('rsvErr');if(err){err.style.display='none';err.textContent=''}
+  g('reservaModal').style.display='flex';
+  setTimeout(()=>g('rsvPaciente').focus(),100);
+}
+
+// Alias para compatibilidad con código anterior
+function abrirReserva(fecha,hora,area,camilla,fechaLabel){
+  const area_obj=agendaCfg.areas.find(a=>a.nombre===area);
+  const esp=area_obj&&area_obj.espacios?area_obj.espacios.find(e=>e.nombre===camilla):null;
+  const cap=esp?esp.capacidad:1;
+  abrirReservaEspacio(fecha,hora,area,camilla,cap,fechaLabel);
+}
+
+function cerrarReservaModal(){ g('reservaModal').style.display='none'; rsvPendiente=null; }
+
+async function confirmarReserva(){
+  if(!rsvPendiente)return;
+  const pac=vi('rsvPaciente').trim();
+  if(!pac){const e=g('rsvErr');e.textContent='El nombre del paciente es requerido';e.style.display='block';return}
+  showLoader('Guardando reserva...');
+  const esEst=rsvPendiente.esEstudiante||false;
+  const fromModal=rsvPendiente.fromModal||false;
+  try{
+    const r=await apiPost({
+      action:'crearReserva',
+      fecha:rsvPendiente.fecha, horaInicio:rsvPendiente.hora,
+      area:rsvPendiente.area, camilla:rsvPendiente.camilla,
+      capacidad:rsvPendiente.capacidad||1,
+      paciente:pac, docente:vi('rsvDocente'), observacion:vi('rsvObs')
+    });
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    cerrarReservaModal();toast('Reserva creada','','ok');
+    if(esEst){ await cargarReservasEst();renderCalendarioEst(); }
+    else if(fromModal){ const finM=new Date(calFechaBase);finM.setDate(finM.getDate()+4); await cargarReservasSemana(); await cargarBloqueos(fmt(calFechaBase),fmt(finM)); renderCalendarioModal(); }
+    else { await cargarReservasSemana();renderCalendario(); }
+  }catch(e){hideLoader();const er=g('rsvErr');er.textContent=e.message;er.style.display='block';}
+}
+
+async function pedirEliminar(fecha,hora,area,camilla){
+  if(!confirm('Cancelar esta reserva?'))return;
+  showLoader('Cancelando...');
+  try{
+    const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast('Reserva cancelada','','ok');
+    await cargarReservasSemana();renderCalendario();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+
+g('reservaModal')&&g('reservaModal').addEventListener('click',function(e){if(e.target===this)cerrarReservaModal();});
+
+
+// ── AGENDA DEL ESTUDIANTE ────────────────────────────────────
+let calEstFechaBase = getLunes ? getLunes(new Date()) : new Date();
+let agendaEstReservas = [];
+
+async function iniciarAgendaEstudiante(){
+  try{
+    const rc=await apiGet('leerAgendaConfig');
+    if(rc.ok){
+      agendaCfg=rc.config;
+      // Migrar config antigua
+      agendaCfg.areas=agendaCfg.areas.map(a=>{
+        if(!a.espacios&&a.camillas) a.espacios=Array.from({length:a.camillas},(_,i)=>({nombre:'Camilla '+(i+1),capacidad:1}));
+        if(!a.espacios) a.espacios=[{nombre:'Espacio 1',capacidad:1}];
+        return a;
+      });
+      if(!agendaCfg.franjas) agendaCfg.franjas=[{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}];
+      actualizarFiltroAreaEst();
+    }
+    calEstFechaBase=getLunes(new Date());
+    await cargarReservasEst();
+    const finSemEst2=new Date(calEstFechaBase);finSemEst2.setDate(finSemEst2.getDate()+4);
+    await cargarBloqueos(fmt(calEstFechaBase),fmt(finSemEst2));
+    renderCalendarioEst();
+  }catch(e){ console.warn('Agenda no disponible:',e.message); }
+}
+
+function actualizarFiltroAreaEst(){
+  const sel=g('calEstAreaFiltro');if(!sel)return;
+  const val=sel.value;
+  sel.innerHTML='<option value="" style="background:var(--n800);color:#fff">Todas las areas</option>'+
+    agendaCfg.areas.map(a=>`<option value="${esc2(a.nombre)}" style="background:var(--n800);color:#fff" ${a.nombre===val?'selected':''}>${a.nombre}</option>`).join('');
+}
+
+async function cargarReservasEst(){
+  const ini=fmt(calEstFechaBase);
+  const finSemEst=new Date(calEstFechaBase);finSemEst.setDate(finSemEst.getDate()+4);
+  try{
+    const r=await apiGet('leerReservas',{fechaInicio:ini,fechaFin:fmt(finSemEst)});
+    if(r.ok) agendaEstReservas=r.reservas;
+  }catch(e){ agendaEstReservas=[]; }
+}
+
+function semanaAnteriorEst(){ calEstFechaBase.setDate(calEstFechaBase.getDate()-7); cargarReservasEst().then(renderCalendarioEst); }
+function semanaSiguienteEst(){ calEstFechaBase.setDate(calEstFechaBase.getDate()+7); cargarReservasEst().then(renderCalendarioEst); }
+function irHoyEst(){ calEstFechaBase=getLunes(new Date()); cargarReservasEst().then(renderCalendarioEst); }
+
+function renderCalendarioEst(){
+  const finD=new Date(calEstFechaBase);finD.setDate(finD.getDate()+4); // viernes
+  const lbl=g('calEstLabel');
+  const vier3=new Date(calEstFechaBase);vier3.setDate(vier3.getDate()+4);
+  if(lbl) lbl.textContent=fmtDia(calEstFechaBase)+' \u2013 '+fmtDia(vier3);
+
+  const areaFiltro=vi('calEstAreaFiltro');
+  const areas=areaFiltro?agendaCfg.areas.filter(a=>a.nombre===areaFiltro):agendaCfg.areas;
+  const grid=g('calEstGrid');if(!grid)return;
+  if(!areas.length){ grid.innerHTML='<div class="empty" style="padding:20px">Sin areas configuradas</div>'; return; }
+
+  const miNombre=session&&(session.nombre||session.codigo)||'';
+  const miCodigo=session&&session.codigo||'';
+  const iniStr=fmt(calEstFechaBase);
+  const finStr=fmt(finD);
+  const misReservas=agendaEstReservas.filter(r=>(r.reservadoPor===miNombre||r.reservadoPor===miCodigo)&&r.fecha>=iniStr&&r.fecha<=finStr);
+  const info=g('calEstReservaInfo');
+  if(info) info.textContent=misReservas.length>0?('\u2713 '+misReservas.length+' reserva'+(misReservas.length!==1?'s':'')+' esta semana'):'';
+
+  const slots=generarSlots(agendaCfg.franjas);
+  const hoy=fmt(new Date());
+  const dias=[];
+  for(let i=0;i<5;i++){const d=new Date(calEstFechaBase);d.setDate(d.getDate()+i);dias.push(d);}
+
+  // Ancho de columna de días
+  const dw=150;
+
+  let html='<div class="cal-grid-wrap"><div style="display:flex;flex-direction:column;min-width:max-content">';
+
+  // Cabecera global de días (sticky)
+  html+='<div style="display:flex;position:sticky;top:0;z-index:5;background:var(--n900)">';
+  html+=`<div style="width:100px;flex-shrink:0;border-right:1px solid var(--n700);border-bottom:1px solid var(--n700);background:var(--n900)"></div>`;
+  dias.forEach(d=>{
+    const esHoy=fmt(d)===hoy;
+    html+=`<div style="width:${dw}px;flex-shrink:0"><div class="cal-day-hdr ${esHoy?'hoy':''}"><span class="dia-num">${d.getDate()}</span><span class="dia-nom">${DIAS_NOM[d.getDay()]}</span></div></div>`;
+  });
+  html+='</div>';
+
+  areas.forEach(area=>{
+    // Cabecera del área
+    html+=`<div style="background:var(--n700);color:var(--n200);padding:7px 14px;font-size:11px;font-weight:700;letter-spacing:.5px;border-bottom:2px solid var(--n600)">${area.nombre}</div>`;
+
+    slots.forEach((hora,hi)=>{
+      // Separador visual entre franjas (entre 13:00 y 14:00)
+      if(hi>0){
+        const [hPrev]=slots[hi-1].split(':').map(Number);
+        const [hCurr]=hora.split(':').map(Number);
+        if(hCurr-hPrev>1){
+          html+=`<div style="height:8px;background:var(--n050);border-top:2px solid var(--bd2);border-bottom:2px solid var(--bd2);display:flex;align-items:center;padding-left:8px"><span style="font-size:9px;color:var(--tx4);font-weight:700">RECESO</span></div>`;
+        }
+      }
+
+      // Por cada espacio — fila separada con borde superior entre camillas
+      (area.espacios||[]).forEach((esp,ei)=>{
+        const cap=esp.capacidad||1;
+        // Borde superior más grueso para separar visualmente cada camilla
+        const borderTop = ei===0 ? '2px solid var(--n300)' : '1px dashed var(--bd2)';
+
+        html+=`<div style="display:flex;border-top:${borderTop}">`;
+
+        // Columna fija: hora + nombre del espacio
+        html+=`<div style="width:100px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);background:var(--surf2);padding:4px 7px;display:flex;flex-direction:column;justify-content:center">`;
+        if(ei===0) html+=`<div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:var(--tx);margin-bottom:2px">${hora}</div>`;
+        html+=`<div style="font-size:11px;font-weight:600;color:var(--n500)">${esp.nombre}</div>`;
+        html+=`<div style="font-size:9px;color:var(--tx4)">${cap} lugar${cap!==1?'es':''}</div>`;
+        html+='</div>';
+
+        // Celdas por día
+        dias.forEach(d=>{
+          const fechaStr=fmt(d);
+          const pasado=new Date(fechaStr+'T'+hora+':00')<new Date();
+          const rsvEsp=agendaEstReservas.filter(r=>r.fecha===fechaStr&&r.horaInicio===hora&&r.area===area.nombre&&r.camilla===esp.nombre);
+          const lleno=rsvEsp.length>=cap;
+          const bloq=typeof esBloqueado==='function'&&esBloqueado(fechaStr,hora,area.nombre,esp.nombre);
+
+          let celda='';
+          if(bloq){
+            celda=`<div style="height:100%;background:repeating-linear-gradient(45deg,#fee2e2,#fee2e2 3px,#fff5f5 3px,#fff5f5 8px);display:flex;align-items:center;justify-content:center;font-size:9px;color:#dc2626;font-weight:600">&#128274;</div>`;
+          } else {
+            // Mostrar reservas existentes
+            rsvEsp.forEach(rsv=>{
+              const esMia=rsv.reservadoPor===miNombre||rsv.reservadoPor===miCodigo;
+              celda+=`<div style="background:${esMia?'var(--green)':'var(--n600)'};border-radius:6px;padding:3px 6px;margin-bottom:2px">
+                <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rsv.paciente||'\u2014'}</div>
+                <div style="font-size:9px;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rsv.docente||rsv.reservadoPor||''}</div>
+              </div>`;
+            });
+            // Botón de reservar si hay capacidad y no está en el pasado
+            if(!pasado&&!lleno){
+              const fl=d.toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'long'});
+              celda+=`<button onclick="abrirReservaEstEsp('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}',${cap},'${esc(fl)}')"
+                style="width:100%;background:transparent;border:1px dashed transparent;border-radius:6px;color:var(--tx4);font-size:10px;padding:4px 2px;cursor:pointer;transition:all .15s;min-height:32px;display:flex;align-items:center;justify-content:center;gap:3px"
+                onmouseover="this.style.borderColor='var(--n300)';this.style.color='var(--n500)';this.style.background='rgba(29,78,216,.06)'"
+                onmouseout="this.style.borderColor='transparent';this.style.color='var(--tx4)';this.style.background='transparent'"
+              ><span style="font-size:13px">+</span></button>`;
+            } else if(pasado&&rsvEsp.length===0){
+              celda=`<div style="height:32px;background:#f9fafb"></div>`;
+            }
+          }
+
+          html+=`<div style="width:${dw}px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);padding:4px 5px;min-height:34px;background:${pasado&&!bloq?'#f9fafb':'var(--surf)'}">${celda}</div>`;
+        });
+        html+='</div>'; // fin fila camilla
+      });
+    });
+
+    // Separador entre áreas
+    html+='<div style="height:6px;background:var(--n800)"></div>';
+  });
+
+  html+='</div></div>';
+  grid.innerHTML=html;
+}
+
+
+function abrirReservaEstEsp(fecha,hora,area,espacio,capacidad,fechaLabel){
+  rsvPendiente={fecha,hora,area,camilla:espacio,capacidad,esEstudiante:true};
+  g('reservaModalTitle').textContent='Reservar \xb7 '+area+' \xb7 '+espacio;
+  g('reservaModalSub').textContent=fechaLabel+' \xb7 '+hora+' hs';
+  g('rsvPaciente').value='';
+  g('rsvDocente').value='';
+  g('rsvObs').value='';
+  const err=g('rsvErr');if(err){err.style.display='none';err.textContent=''}
+  g('reservaModal').style.display='flex';
+  setTimeout(()=>g('rsvPaciente').focus(),100);
+}
+
+// Alias
+function abrirReservaEst(fecha,hora,area,camilla,fechaLabel){
+  const ao=agendaCfg.areas.find(a=>a.nombre===area);
+  const esp=ao&&ao.espacios?ao.espacios.find(e=>e.nombre===camilla):null;
+  abrirReservaEstEsp(fecha,hora,area,camilla,esp?esp.capacidad:1,fechaLabel);
+}
+
+
+// ── EXPAND/COLAPSAR secciones ──────────────────────────────
+function toggleSection(id, arrowOrHdr){
+  const body=g(id);if(!body)return;
+  // arrowOrHdr puede ser el arrow directamente (por id) o el hdr (para buscar en hijos)
+  let arrow=arrowOrHdr;
+  if(arrowOrHdr&&arrowOrHdr.classList&&!arrowOrHdr.classList.contains('collapsible-arrow')){
+    arrow=arrowOrHdr.querySelector('.collapsible-arrow')||arrowOrHdr;
+  }
+  const open=body.classList.toggle('open');
+  if(arrow&&arrow.classList) arrow.classList.toggle('open', open);
+}
+
+
+// ── DOCENTE TOPBAR ───────────────────────────────────────
+let calGridTarget = 'calGrid'; // 'calGrid' o 'calGridModal'
+
+function renderDocenteHojasBtns(hojas){
+  const box=g('docenteHojasBtns');if(!box)return;
+  if(!hojas||!hojas.length){box.innerHTML='<span style="font-size:12px;color:var(--n400)">Sin hojas</span>';return;}
+  box.innerHTML=hojas.map(h=>`
+    <button onclick="abrirHoja('${esc(h.nombre)}')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;white-space:nowrap;transition:all .2s;max-width:180px;overflow:hidden;text-overflow:ellipsis" onmouseover="this.style.background='rgba(255,255,255,.18)'" onmouseout="this.style.background='rgba(255,255,255,.08)'" title="${h.nombre}">
+      ${h.nombre.length>20?h.nombre.substring(0,18)+'…':h.nombre}
+    </button>`).join('');
+}
+
+// Abrir/cerrar modal agenda
+async function abrirAgendaPopup(){
+  g('agendaModal').style.display='flex';
+  // Siempre cargar config y reservas al abrir
+  showLoader('Cargando agenda...');
+  try{
+    const rc=await apiGet('leerAgendaConfig');
+    if(rc.ok){
+      agendaCfg=rc.config;
+      // Migrar config antigua si tiene 'camillas' en vez de 'espacios'
+      agendaCfg.areas=(agendaCfg.areas||[]).map(a=>{
+        if(!a.espacios&&a.camillas) a.espacios=Array.from({length:a.camillas},(_,i)=>({nombre:'Camilla '+(i+1),capacidad:1}));
+        if(!a.espacios) a.espacios=[{nombre:'Espacio 1',capacidad:1}];
+        return a;
+      });
+      if(!agendaCfg.franjas) agendaCfg.franjas=[{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}];
+    }
+    calFechaBase=getLunes(calFechaBase||new Date());
+    const finSem=new Date(calFechaBase);finSem.setDate(finSem.getDate()+4);
+    await cargarReservasSemana();
+    await cargarBloqueos(fmt(calFechaBase),fmt(finSem));
+  }catch(e){console.warn('Error cargando agenda:',e);}
+  hideLoader();
+
+  // Poblar filtro de área en el modal
+  const filtSel=g('calAreaFiltroModal');
+  if(filtSel){
+    filtSel.innerHTML='<option value="">Todas las areas</option>'+
+      agendaCfg.areas.map(a=>`<option value="${esc2(a.nombre)}">${a.nombre}</option>`).join('');
+  }
+  // Actualizar label de semana
+  const vier=new Date(calFechaBase);vier.setDate(vier.getDate()+4);
+  const lbl=g('calSemanaLabelModal');
+  if(lbl)lbl.textContent=fmtDia(calFechaBase)+' – '+fmtDia(vier)+' / '+vier.getFullYear();
+
+  renderCalendarioModal();
+}
+
+function cerrarAgendaModal(){
+  g('agendaModal').style.display='none';
+  calGridTarget='calGrid';
+}
+
+function syncFiltroArea(){
+  const val=vi('calAreaFiltroModal');
+  const main=g('calAreaFiltro');if(main)main.value=val;
+}
+
+// Renderizar el calendario dentro del modal (misma lógica, diferente target)
+function renderCalendarioModal(){
+  const finD2=new Date(calFechaBase);finD2.setDate(finD2.getDate()+4);
+  const lbl=g('calSemanaLabelModal');
+  if(lbl){const v=new Date(calFechaBase);v.setDate(v.getDate()+4);lbl.textContent=fmtDia(calFechaBase)+' \u2013 '+fmtDia(v)+' / '+v.getFullYear();}
+
+  const areaFiltro=vi('calAreaFiltroModal');
+  const areas=areaFiltro?agendaCfg.areas.filter(a=>a.nombre===areaFiltro):agendaCfg.areas;
+  const modalGrid=g('calGridModal');if(!modalGrid)return;
+  if(!areas.length){modalGrid.innerHTML='<div class="empty" style="padding:20px">Sin areas configuradas</div>';return;}
+
+  const slots=generarSlots(agendaCfg.franjas);
+  const hoy=fmt(new Date());
+  const dias=[];
+  for(let i=0;i<5;i++){const d=new Date(calFechaBase);d.setDate(d.getDate()+i);dias.push(d);}
+  const esAdmin=session&&session.rol==='admin';
+  const esDocente=session&&session.rol==='docente';
+  const puedeElim=esAdmin||esDocente;
+  const dw=150;
+
+  let html='<div class="cal-grid-wrap"><div style="display:flex;flex-direction:column;min-width:max-content">';
+  html+='<div style="display:flex;position:sticky;top:0;z-index:5;background:var(--surf)">';
+  html+=`<div style="width:100px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);background:var(--surf2)"></div>`;
+  dias.forEach(d=>{
+    const esHoy=fmt(d)===hoy;
+    html+=`<div style="width:${dw}px;flex-shrink:0"><div class="cal-day-hdr ${esHoy?'hoy':''}"><span class="dia-num">${d.getDate()}</span><span class="dia-nom">${DIAS_NOM[d.getDay()]}</span></div></div>`;
+  });
+  html+='</div>';
+
+  areas.forEach(area=>{
+    html+=`<div style="background:var(--n700);color:var(--n200);padding:7px 14px;font-size:11px;font-weight:700;letter-spacing:.5px;border-bottom:2px solid var(--n600)">${area.nombre}</div>`;
+    slots.forEach((hora,hi)=>{
+      if(hi>0){
+        const [hP]=slots[hi-1].split(':').map(Number);
+        const [hC]=hora.split(':').map(Number);
+        if(hC-hP>1) html+=`<div style="height:6px;background:var(--n050);border-top:2px solid var(--bd2);border-bottom:2px solid var(--bd2)"></div>`;
+      }
+      (area.espacios||[]).forEach((esp,ei)=>{
+        const cap=esp.capacidad||1;
+        const bt=ei===0?'2px solid var(--n300)':'1px dashed var(--bd2)';
+        html+=`<div style="display:flex;border-top:${bt}">`;
+        html+=`<div style="width:100px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);background:var(--surf2);padding:4px 7px;display:flex;flex-direction:column;justify-content:center">`;
+        if(ei===0) html+=`<div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:var(--tx);margin-bottom:2px">${hora}</div>`;
+        html+=`<div style="font-size:11px;font-weight:600;color:var(--n500)">${esp.nombre}</div>`;
+        html+=`<div style="font-size:9px;color:var(--tx4)">${cap} lugar${cap!==1?'es':''}</div></div>`;
+        dias.forEach(d=>{
+          const fechaStr=fmt(d);
+          const pasado=new Date(fechaStr+'T'+hora+':00')<new Date();
+          const rsvEsp=agendaReservas.filter(r=>r.fecha===fechaStr&&r.horaInicio===hora&&r.area===area.nombre&&r.camilla===esp.nombre);
+          const lleno=rsvEsp.length>=cap;
+          const bloq=typeof esBloqueado==='function'&&esBloqueado(fechaStr,hora,area.nombre,esp.nombre);
+          let celda='';
+          if(bloq){
+            celda=`<div style="height:100%;background:repeating-linear-gradient(45deg,#fee2e2,#fee2e2 3px,#fff5f5 3px,#fff5f5 8px);display:flex;align-items:center;justify-content:center;font-size:9px;color:#dc2626;font-weight:600">&#128274;</div>`;
+          } else {
+            rsvEsp.forEach(rsv=>{
+              celda+=`<div style="background:var(--n600);border-radius:6px;padding:3px 6px;margin-bottom:2px;position:relative">
+                <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:14px">${rsv.paciente||'\u2014'}</div>
+                <div style="font-size:9px;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rsv.docente||rsv.reservadoPor||''}</div>
+                ${puedeElim?`<button onclick="event.stopPropagation();pedirEliminarModal('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}')" style="position:absolute;top:2px;right:3px;background:none;border:none;color:rgba(255,255,255,.6);font-size:11px;cursor:pointer;line-height:1;padding:2px">&#10005;</button>`:''}
+              </div>`;
+            });
+            if(!pasado&&!lleno){
+              const fl=d.toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'long'});
+              celda+=`<button onclick="abrirReservaEspModal('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}',${cap},'${esc(fl)}')"
+                style="width:100%;background:transparent;border:1px dashed transparent;border-radius:6px;color:var(--tx4);font-size:10px;padding:4px 2px;cursor:pointer;transition:all .15s;min-height:32px;display:flex;align-items:center;justify-content:center"
+                onmouseover="this.style.borderColor='var(--n300)';this.style.color='var(--n500)';this.style.background='rgba(29,78,216,.06)'"
+                onmouseout="this.style.borderColor='transparent';this.style.color='var(--tx4)';this.style.background='transparent'"
+              ><span style="font-size:14px">+</span></button>`;
+            } else if(pasado&&rsvEsp.length===0){
+              celda=`<div style="min-height:32px;background:#f9fafb"></div>`;
+            }
+          }
+          html+=`<div style="width:${dw}px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);padding:4px 5px;min-height:34px;background:${pasado&&!bloq?'#f9fafb':'var(--surf)'}">${celda}</div>`;
+        });
+        html+='</div>';
+      });
+    });
+    html+='<div style="height:6px;background:var(--n800)"></div>';
+  });
+  html+='</div></div>';
+  modalGrid.innerHTML=html;
+}
+
+
+function abrirReservaEspModal(fecha,hora,area,espacio,capacidad,fechaLabel){
+  rsvPendiente={fecha,hora,area,camilla:espacio,capacidad,esEstudiante:false,fromModal:true};
+  g('reservaModalTitle').textContent='Reservar · '+area+' · '+espacio;
+  g('reservaModalSub').textContent=fechaLabel+' · '+hora+' hs';
+  g('rsvPaciente').value='';
+  g('rsvDocente').value=session&&session.nombre||'';
+  g('rsvObs').value='';
+  const err=g('rsvErr');if(err){err.style.display='none';err.textContent=''}
+  g('reservaModal').style.display='flex';
+  setTimeout(()=>g('rsvPaciente').focus(),100);
+}
+
+async function pedirEliminarModal(fecha,hora,area,camilla){
+  if(!confirm('Cancelar esta reserva?'))return;
+  showLoader('Cancelando...');
+  try{
+    const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast('Reserva cancelada','','ok');
+    const finSemEM=new Date(calFechaBase);finSemEM.setDate(finSemEM.getDate()+4);
+    await cargarReservasSemana();
+    await cargarBloqueos(fmt(calFechaBase),fmt(finSemEM));
+    renderCalendarioModal();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+
+// Cerrar modal agenda al click fuera
+g('agendaModal')&&g('agendaModal').addEventListener('click',function(e){if(e.target===this)cerrarAgendaModal();});
+
+
+// ── LISTA DE RESERVAS (admin) ─────────────────────────────
+async function cargarListaReservas(){
+  const box=g('listaReservasBox');if(!box)return;
+  box.innerHTML='<div class="empty">Cargando...</div>';
+  // Actualizar filtro de áreas
+  const selArea=g('calFiltroAreaRes');
+  if(selArea){
+    const val=selArea.value;
+    selArea.innerHTML='<option value="">Todas las areas</option>'+
+      agendaCfg.areas.map(a=>`<option value="${esc2(a.nombre)}" ${a.nombre===val?'selected':''}>${a.nombre}</option>`).join('');
+  }
+  try{
+    const modo=vi('calFiltroHojaRes');
+    let ini='',fin='';
+    if(modo!=='todas'){
+      const lun=getLunes(calFechaBase);
+      const dom=new Date(lun);dom.setDate(dom.getDate()+6);
+      ini=fmt(lun);fin=fmt(dom);
+    }
+    const r=await apiGet('leerReservas',{fechaInicio:ini,fechaFin:fin});
+    if(!r.ok)throw new Error(r.error);
+    let reservas=r.reservas;
+    const areaF=vi('calFiltroAreaRes');
+    if(areaF) reservas=reservas.filter(rv=>rv.area===areaF);
+    if(!reservas.length){box.innerHTML='<div class="empty" style="padding:12px">Sin reservas</div>';return;}
+    // Ordenar por fecha desc
+    reservas.sort((a,b)=>b.fecha.localeCompare(a.fecha)||b.horaInicio.localeCompare(a.horaInicio));
+    box.innerHTML=reservas.map(rv=>`
+      <div style="display:grid;grid-template-columns:85px 85px 1fr 1fr 32px;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--bd2);font-size:12px">
+        <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--tx3)">${rv.fecha}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--tx3)">${rv.horaInicio}</span>
+        <div>
+          <div style="font-weight:600;color:var(--tx)">${rv.paciente||'—'}</div>
+          <div style="font-size:11px;color:var(--tx4)">${rv.area} · ${rv.camilla}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--n500)">${rv.docente||rv.reservadoPor||'—'}</div>
+          <div style="font-size:10px;color:var(--tx4)">${rv.observacion||''}</div>
+        </div>
+        <button onclick="eliminarReservaLista('${esc(rv.fecha)}','${esc(rv.horaInicio)}','${esc(rv.area)}','${esc(rv.camilla)}')" style="background:none;border:none;color:var(--tx4);cursor:pointer;font-size:13px;padding:0;transition:color .15s" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--tx4)'" title="Eliminar">&#128465;</button>
+      </div>`).join('');
+  }catch(e){box.innerHTML=`<div class="hint" style="margin:8px">Error: ${e.message}</div>`}
+}
+
+async function eliminarReservaLista(fecha,hora,area,camilla){
+  if(!confirm('Cancelar reserva de '+camilla+' el '+fecha+' a las '+hora+'?'))return;
+  showLoader('Cancelando...');
+  try{
+    const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast('Reserva cancelada','','ok');
+    await cargarReservasSemana();renderCalendario();cargarListaReservas();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+
+
+// ── NAVEGACIÓN ESTUDIANTE ────────────────────────────────
+function mostrarSecEst(sec){
+  const secNotas=g('secEstNotas');
+  const secAgenda=g('secEstAgenda');
+  const btnNotas=g('btnEstNotas');
+  const btnAgenda=g('btnEstAgenda');
+  if(sec==='notas'){
+    if(secNotas)secNotas.style.display='block';
+    if(secAgenda)secAgenda.style.display='none';
+    if(btnNotas){btnNotas.style.background='var(--n500)';btnNotas.style.borderColor='var(--n400)';btnNotas.style.color='#fff';}
+    if(btnAgenda){btnAgenda.style.background='transparent';btnAgenda.style.borderColor='rgba(255,255,255,.2)';btnAgenda.style.color='var(--n300)';}
+  } else {
+    if(secNotas)secNotas.style.display='none';
+    if(secAgenda)secAgenda.style.display='block';
+    if(btnAgenda){btnAgenda.style.background='var(--n500)';btnAgenda.style.borderColor='var(--n400)';btnAgenda.style.color='#fff';}
+    if(btnNotas){btnNotas.style.background='transparent';btnNotas.style.borderColor='rgba(255,255,255,.2)';btnNotas.style.color='var(--n300)';}
+    // Cargar agenda si no tiene datos
+    if(!agendaEstReservas.length||!agendaCfg.areas.length) iniciarAgendaEstudiante();
+    else renderCalendarioEst();
+  }
+}
+
+
+// ════════════════════════════════════════════════════════
+// BLOQUEOS DE AGENDA
+// ════════════════════════════════════════════════════════
+let agendaBloqueos = [];
+
+async function cargarBloqueos(fechaInicio, fechaFin){
+  try{
+    const r=await apiGet('leerBloqueos',{fechaInicio:fechaInicio||'',fechaFin:fechaFin||''});
+    if(r.ok) agendaBloqueos=r.bloqueos;
+  }catch(e){ agendaBloqueos=[]; }
+}
+
+function esBloqueado(fecha, hora, area, camilla){
+  return agendaBloqueos.some(b=>{
+    const fOk = b.fecha==='*' || b.fecha===fecha;
+    const hOk = b.hora==='*'  || b.hora===hora;
+    const aOk = b.area==='*'  || b.area===area;
+    const cOk = b.camilla==='*' || b.camilla===camilla;
+    return fOk && hOk && aOk && cOk;
+  });
+}
+
+// UI de bloqueos
+function actualizarSelectsBloqueo(){
+  const bArea=g('bArea');const bCamilla=g('bCamilla');
+  if(bArea){
+    const val=bArea.value;
+    bArea.innerHTML='<option value="*">Todas las areas</option>'+
+      agendaCfg.areas.map(a=>`<option value="${esc2(a.nombre)}" ${a.nombre===val?'selected':''}>${a.nombre}</option>`).join('');
+  }
+  // Camillas según área seleccionada
+  actualizarCamillasBloqueo();
+}
+
+function actualizarCamillasBloqueo(){
+  const bCamilla=g('bCamilla');if(!bCamilla)return;
+  const areaVal=vi('bArea');
+  bCamilla.innerHTML='<option value="*">Todos los espacios</option>';
+  if(areaVal&&areaVal!=='*'){
+    const area=agendaCfg.areas.find(a=>a.nombre===areaVal);
+    if(area&&area.espacios){
+      area.espacios.forEach(e=>{
+        const opt=document.createElement('option');
+        opt.value=e.nombre;opt.textContent=e.nombre;
+        bCamilla.appendChild(opt);
+      });
+    }
+  }
+}
+
+async function crearBloqueoUI(){
+  const fecha=vi('bFecha')||'*';
+  const hora=vi('bHora')||'*';
+  const area=vi('bArea')||'*';
+  const camilla=vi('bCamilla')||'*';
+  const motivo=vi('bMotivo')||'Sin motivo';
+  if(fecha==='*'&&hora==='*'&&area==='*'){
+    if(!confirm('Esto bloqueará TODOS los horarios de TODAS las áreas. ¿Continuar?'))return;
+  }
+  showLoader('Creando bloqueo...');
+  try{
+    const r=await apiPost({action:'crearBloqueo',fecha,hora,area,camilla,motivo});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast('Bloqueo creado','','ok');
+    g('bFecha').value='';g('bHora').value='';g('bMotivo').value='';
+    await cargarBloqueos();renderListaBloqueos();
+    await cargarReservasSemana();renderCalendario();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+
+async function eliminarBloqueoUI(id){
+  if(!confirm('Eliminar este bloqueo?'))return;
+  showLoader('Eliminando...');
+  try{
+    const r=await apiPost({action:'eliminarBloqueo',id});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast('Bloqueo eliminado','','ok');
+    await cargarBloqueos();renderListaBloqueos();
+    await cargarReservasSemana();renderCalendario();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+
+function renderListaBloqueos(){
+  const box=g('listaBloqueosBox');if(!box)return;
+  if(!agendaBloqueos.length){box.innerHTML='<div class="empty" style="padding:12px">Sin bloqueos activos</div>';return;}
+  box.innerHTML=`<div style="background:var(--n900);padding:6px 12px;display:grid;grid-template-columns:80px 65px 1fr 1fr 28px;gap:6px;font-size:10px;font-weight:700;color:var(--n300);text-transform:uppercase">
+    <span>Fecha</span><span>Hora</span><span>Area</span><span>Motivo</span><span></span>
+  </div>`+agendaBloqueos.map(b=>`
+    <div style="display:grid;grid-template-columns:80px 65px 1fr 1fr 28px;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--bd2);background:var(--red2);font-size:12px">
+      <span style="font-family:'DM Mono',monospace;font-size:11px">${b.fecha}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px">${b.hora}</span>
+      <div><div style="font-weight:600">${b.area}</div><div style="font-size:10px;color:var(--tx3)">${b.camilla}</div></div>
+      <span style="color:var(--red);font-weight:600">${b.motivo}</span>
+      <button onclick="eliminarBloqueoUI(${b.id})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;padding:0" title="Eliminar">&#128465;</button>
+    </div>`).join('');
+}
+
+
+
+
+// ── PANEL ADMIN DESDE TOPBAR ─────────────────────────────
+function abrirPanelAdmin(tab){
+  const sb=g('adminSidebar');
+  if(sb) sb.classList.remove('sidebar-hidden');
+  showTab(tab, g('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)));
+  if(!_sidebarOpen) toggleSidebar();
+}
+
+
+// ── DEBUG AGENDA ─────────────────────────────────────────
+async function debugAgendaBtn(){
+  showLoader('Leyendo datos crudos...');
+  try{
+    const r = await apiGet('debugAgenda');
+    hideLoader();
+    if(!r.ok){ alert('Error: ' + r.error); return; }
+    let msg = 'Total filas en _agenda: ' + r.totalFilas + '\n\n';
+    if(!r.rows.length){ msg += 'Sin filas'; }
+    else {
+      r.rows.forEach(function(row){
+        msg += '--- Fila ' + row.fila + ' ---\n';
+        msg += 'Fecha tipo: ' + row.r0_tipo + ' | valor: ' + row.r0_valor + '\n';
+        msg += 'Fecha formateada: ' + row.r0_format + '\n';
+        msg += 'Hora tipo: ' + row.r1_tipo + ' | valor: ' + row.r1_valor + '\n';
+        msg += 'Hora parseada: ' + row.r1_hora + '\n';
+        msg += 'Area: ' + row.r2_area + ' | Camilla: ' + row.r3_camilla + '\n';
+        msg += 'Paciente: ' + row.r4_pac + '\n\n';
+      });
+    }
+    alert(msg);
+  }catch(e){ hideLoader(); alert('Error: '+e.message); }
+}
+
+</script>
+</body>
+</html>
