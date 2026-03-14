@@ -674,7 +674,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
       <div style="display:flex;align-items:center;gap:5px;height:50px;min-width:max-content">
 
         <!-- Solo Admin: botones de configuración -->
-        <div id="adminOnlyBtns" style="display:none;display:flex;align-items:center;gap:5px">
+        <div id="adminOnlyBtns" style="display:none;align-items:center;gap:5px">
           <button onclick="abrirPanelAdmin('al')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128100; Alumnos</button>
           <button onclick="abrirPanelAdmin('cu')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128218; Cursos</button>
           <button onclick="abrirPanelAdmin('nt')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#9881; Config</button>
@@ -888,7 +888,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 <script>
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbw8WddxhO6XOO5APXXLpc9P2SLO8YUHFzHx-Q71XpzWnKDNFgsK6wDmhpl7sDVcahUKWA/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyLR6xBY_JNhcnnGwK0PIoyZMMlCo7bEW44uzautkybEiiqUAba7VWPDGMdXt8oxB2Zcw/exec';
 // ====================================================
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
