@@ -1826,10 +1826,8 @@ function _recargarCalendarios(){
   const finSem=new Date(calFechaBase);finSem.setDate(finSem.getDate()+4);
   return cargarReservasSemana().then(()=>{
     cargarBloqueos(fmt(calFechaBase),fmt(finSem)).then(()=>{
-      // Renderizar el que esté visible
       renderCalendario();
-      else renderCalendario();
-      // Actualizar label del modal
+      // Actualizar label de la semana
       const v=new Date(calFechaBase);v.setDate(v.getDate()+4);
       const lbl=g('calSemanaLabel');
       if(lbl)lbl.textContent=fmtDia(calFechaBase)+' – '+fmtDia(v)+' / '+v.getFullYear();
@@ -2006,12 +2004,21 @@ function getAreaFiltro(divId){
 function renderAreaBtns(divId, onChangeFn){
   var d=g(divId); if(!d) return;
   var current=getAreaFiltro(divId);
-  var btns='<button class="area-pill'+(current===''?' active':'')+'" data-area="" onclick="'+onChangeFn+'('')" >Todas</button>';
+  d.innerHTML='';
+  var btn0=document.createElement('button');
+  btn0.className='area-pill'+(current===''?' active':'');
+  btn0.setAttribute('data-area','');
+  btn0.textContent='Todas';
+  btn0.onclick=function(){ window[onChangeFn](''); };
+  d.appendChild(btn0);
   agendaCfg.areas.forEach(function(a){
-    var active=current===a.nombre?' active':'';
-    btns+='<button class="area-pill'+active+'" data-area="'+esc2(a.nombre)+'" onclick="'+onChangeFn+'(''+esc(a.nombre)+'')">' +a.nombre+'</button>';
+    var btn=document.createElement('button');
+    btn.className='area-pill'+(current===a.nombre?' active':'');
+    btn.setAttribute('data-area',a.nombre);
+    btn.textContent=a.nombre;
+    btn.onclick=function(){ window[onChangeFn](a.nombre); };
+    d.appendChild(btn);
   });
-  d.innerHTML=btns;
 }
 
 function setAreaFiltro(divId, area, onChangeFn){
