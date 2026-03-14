@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <title>CENTYR - Centro Docente de Terapia Fisica UPT</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -371,6 +371,112 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 
 /* ── MODAL RESERVA ALUMNO (fecha/hora libre) ── */
 .rsv-datetime{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE MOBILE — Docentes y Alumnos
+   ═══════════════════════════════════════════════════════ */
+
+/* iOS: evitar zoom en inputs (SIEMPRE activo) */
+input,select,textarea{font-size:16px!important}
+@media(min-width:769px){
+  input,select,textarea{font-size:13px!important}
+  .nc{font-size:12px!important}
+}
+
+/* 1024px: tablet landscape */
+@media(max-width:1024px){
+  .content-main{padding:14px}
+  .wrap{padding:0}
+}
+
+/* 768px: tablet portrait / móvil grande */
+@media(max-width:768px){
+  .hdr{padding:0 12px;height:52px}
+  .hdr h1{font-size:13px;letter-spacing:0}
+  .hdr p{display:none}
+  .logo .lmark{width:28px;height:28px;font-size:11px}
+  .btn-logout{font-size:12px;padding:6px 10px}
+  .rol-pill{padding:4px 8px;font-size:10px}
+  .login-card{padding:28px 20px}
+  .content-main{padding:10px}
+  .nc{font-size:11px!important;padding:3px 1px;min-width:36px}
+  .nt th{font-size:9px;padding:4px 3px}
+  .nt td{font-size:10px}
+  .card{border-radius:14px}
+  .chdr{padding:12px 14px}
+  .cbody{padding:12px}
+  .btn-sm{min-height:40px;font-size:12px;padding:8px 12px}
+  .btn-ghost{min-height:38px;font-size:12px}
+  .row2{flex-direction:column}
+  .row2 .field{width:100%}
+  #adminSidebar{width:100%;max-width:100%}
+  .cal-day-hdr .dia-num{font-size:13px}
+  .cal-day-hdr .dia-nom{font-size:9px}
+  #estTopbarWrap{overflow-x:auto}
+  #agendaCard .chdr{flex-wrap:wrap;gap:8px;padding:10px 12px}
+}
+
+/* 480px: móvil */
+@media(max-width:480px){
+  /* Header compacto */
+  .hdr{height:48px;padding:0 10px}
+  .hdr h1{font-size:12px}
+  .logo .lmark{width:26px;height:26px;font-size:10px}
+  #logoImg{height:28px!important}
+  .rol-pill{display:none}
+
+  /* Login: bottom sheet */
+  #loginPage{align-items:flex-end;padding:0}
+  .login-card{border-radius:22px 22px 0 0;max-width:100%;width:100%;padding:28px 20px 40px;margin:0;max-height:92vh;overflow-y:auto}
+  .btn-login{padding:16px;font-size:16px;min-height:52px;border-radius:14px}
+
+  /* Sidebar */
+  #adminSidebar{top:48px;height:calc(100vh - 48px)}
+
+  /* Topbar docente: scroll horizontal compacto */
+  #docenteTopbar{padding:0 8px;overflow-x:auto}
+  .docente-inner{height:auto!important;min-height:44px;padding:4px 0;flex-wrap:nowrap;gap:4px!important}
+  #adminOnlyBtns button{font-size:10px!important;padding:4px 7px!important;border-radius:7px!important}
+  #docenteHojasBtns button{font-size:10px!important;padding:4px 8px!important}
+
+  /* Topbar estudiante: ocultar, usar bottom nav */
+  #estTopbarWrap{display:none!important}
+
+  /* Bottom nav estudiante */
+  #estBottomNav{display:flex!important}
+  .content-main{padding-bottom:72px}
+
+  /* Modales: bottom sheet */
+  #reservaModal{align-items:flex-end!important}
+  #reservaModal>div{border-radius:20px 20px 0 0!important;max-width:100%!important;max-height:88vh;overflow-y:auto}
+  #passModal{align-items:flex-end!important}
+  #passModal>div{border-radius:20px 20px 0 0!important;max-width:100%!important;max-height:88vh;overflow-y:auto}
+  #configAgendaModal>div{border-radius:20px 20px 0 0!important;max-width:100%!important;max-height:88vh}
+
+  /* Agenda header */
+  #agendaCard .chdr{flex-direction:column;align-items:flex-start;gap:8px}
+  #calAreaFiltro{flex-wrap:wrap}
+  .area-pill{font-size:11px;padding:4px 10px}
+
+  /* Botones táctiles */
+  .btn-sm,.btn-ghost,.btn-save{min-height:44px;font-size:13px}
+  .tab{padding:10px 2px;font-size:9px}
+  .tabs{gap:2px}
+  .field{margin-bottom:12px}
+  label{font-size:11px;margin-bottom:3px}
+
+  /* Notas */
+  .nc{font-size:10px!important;min-width:34px;padding:2px 1px}
+  .nt th{font-size:8px;padding:3px 2px}
+  .pc{font-size:10px;min-width:38px}
+  .al-badge{font-size:9px;padding:2px 5px}
+  .est-hoja{border-radius:12px}
+  .est-hoja-hdr{padding:10px 12px}
+  #panelCard>div>div:last-child{max-height:calc(100vh - 160px)!important}
+
+  /* safe area iPhone notch */
+  #estBottomNav{padding-bottom:max(env(safe-area-inset-bottom),8px)}
+}
 </style>
 </head>
 <body>
@@ -671,7 +777,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 
     <!-- Topbar Admin + Docente (barra unificada) -->
     <div id="docenteTopbar" style="display:none;background:var(--n900);border-bottom:1px solid var(--n800);padding:0 14px;position:sticky;top:58px;z-index:100;overflow-x:auto">
-      <div style="display:flex;align-items:center;gap:5px;height:50px;min-width:max-content">
+      <div class="docente-inner" style="display:flex;align-items:center;gap:5px;height:50px;min-width:max-content">
 
         <!-- Solo Admin: botones de configuración -->
         <div id="adminOnlyBtns" style="display:none;align-items:center;gap:5px">
@@ -757,7 +863,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 
   <div id="viewEstudiante" style="display:none">
   <!-- Barra superior del estudiante -->
-  <div style="background:var(--n900);border-bottom:1px solid var(--n800);padding:0 16px;position:sticky;top:58px;z-index:100;overflow-x:auto">
+  <div id="estTopbarWrap" style="background:var(--n900);border-bottom:1px solid var(--n800);padding:0 16px;position:sticky;top:58px;z-index:100;overflow-x:auto">
     <div style="display:flex;align-items:center;gap:6px;height:50px;min-width:max-content">
       <!-- Info del usuario -->
       <div style="margin-right:8px;flex-shrink:0">
@@ -882,6 +988,24 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 </div>
 
 
+
+<!-- Bottom Navigation estudiante (móvil ≤480px) -->
+<div id="estBottomNav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--n900);border-top:1px solid var(--n700);z-index:200">
+  <div style="display:flex;height:58px">
+    <button id="estBnNotas" onclick="mostrarSecEst('notas')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:#fff;cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:20px;line-height:1">&#128203;</span><span>Notas</span>
+    </button>
+    <button id="estBnAgenda" onclick="mostrarSecEst('agenda')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:20px;line-height:1">&#128197;</span><span>Agenda</span>
+    </button>
+    <button onclick="abrirPassModal()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:20px;line-height:1">&#128274;</span><span>Clave</span>
+    </button>
+    <button onclick="logout()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:20px;line-height:1">&#128682;</span><span>Salir</span>
+    </button>
+  </div>
+</div>
 
 <div id="toast"><div class="tt" id="ttt"></div><div class="tm" id="ttm"></div></div>
 
@@ -1339,6 +1463,11 @@ async function saveNota(inp){
   },500);
 }
 async function iniciarVistaEstudiante(){
+  // Móvil: activar bottom nav
+  if(window.innerWidth<=480){
+    var bn=g('estBottomNav');if(bn)bn.style.display='flex';
+    var tw=g('estTopbarWrap');if(tw)tw.style.display='none';
+  }
   // Actualizar barra superior
   const nomEl=g('estNombre');const codEl=g('estCodigo');
   if(nomEl)nomEl.textContent=session.nombre||'Estudiante';
@@ -1864,7 +1993,7 @@ function renderCalendario(){
   const esAdmin=session&&session.rol==='admin';
   const esDocente=session&&session.rol==='docente';
   const puedeElim=esAdmin||esDocente;
-  const dw=200;
+  const dw=window.innerWidth<=480?110:window.innerWidth<=768?140:200;
 
   let html='<div class="cal-grid-wrap"><div style="display:flex;flex-direction:column;min-width:max-content">';
 
@@ -2190,7 +2319,7 @@ function renderCalendarioEst(){
   for(let i=0;i<5;i++){const d=new Date(calEstFechaBase);d.setDate(d.getDate()+i);dias.push(d);}
 
   // Ancho de columna de días
-  const dw=200;
+  const dw=window.innerWidth<=480?110:window.innerWidth<=768?140:200;
 
   let html='<div class="cal-grid-wrap"><div style="display:flex;flex-direction:column;min-width:max-content">';
 
@@ -2466,21 +2595,23 @@ async function eliminarReservaLista(fecha,hora,area,camilla){
 
 // ── NAVEGACIÓN ESTUDIANTE ────────────────────────────────
 function mostrarSecEst(sec){
-  const secNotas=g('secEstNotas');
-  const secAgenda=g('secEstAgenda');
-  const btnNotas=g('btnEstNotas');
-  const btnAgenda=g('btnEstAgenda');
+  const secNotas=g('secEstNotas'),secAgenda=g('secEstAgenda');
+  const btnNotas=g('btnEstNotas'),btnAgenda=g('btnEstAgenda');
+  const bnNotas=g('estBnNotas'),bnAgenda=g('estBnAgenda');
   if(sec==='notas'){
     if(secNotas)secNotas.style.display='block';
     if(secAgenda)secAgenda.style.display='none';
     if(btnNotas){btnNotas.style.background='var(--n500)';btnNotas.style.borderColor='var(--n400)';btnNotas.style.color='#fff';}
     if(btnAgenda){btnAgenda.style.background='transparent';btnAgenda.style.borderColor='rgba(255,255,255,.2)';btnAgenda.style.color='var(--n300)';}
+    if(bnNotas)bnNotas.style.color='#fff';
+    if(bnAgenda)bnAgenda.style.color='var(--n400)';
   } else {
     if(secNotas)secNotas.style.display='none';
     if(secAgenda)secAgenda.style.display='block';
     if(btnAgenda){btnAgenda.style.background='var(--n500)';btnAgenda.style.borderColor='var(--n400)';btnAgenda.style.color='#fff';}
     if(btnNotas){btnNotas.style.background='transparent';btnNotas.style.borderColor='rgba(255,255,255,.2)';btnNotas.style.color='var(--n300)';}
-    // Cargar agenda si no tiene datos
+    if(bnAgenda)bnAgenda.style.color='#fff';
+    if(bnNotas)bnNotas.style.color='var(--n400)';
     if(!agendaEstReservas.length||!agendaCfg.areas.length) iniciarAgendaEstudiante();
     else renderCalendarioEst();
   }
