@@ -108,6 +108,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 #sideOverlay{position:fixed;inset:0;background:rgba(10,22,40,.5);z-index:200;display:none;backdrop-filter:blur(2px)}
 #sideOverlay.show{display:block}
 #adminSidebar{position:fixed;top:58px;left:0;width:380px;max-width:92vw;height:calc(100vh - 58px);background:var(--surf);z-index:201;transform:translateX(-100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;box-shadow:4px 0 24px rgba(10,22,40,.18);overflow:hidden}
+#adminSidebar.sidebar-hidden{transform:translateX(-100%)!important;pointer-events:none;visibility:hidden}
 #adminSidebar.open{transform:translateX(0)}
 .sidebar-inner{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:0}
 .sidebar-footer{padding:12px 16px;border-top:1px solid var(--bd2);flex-shrink:0}
@@ -950,7 +951,10 @@ function iniciarVistaAdmin(){
   const esD=session.rol==='docente';
 
   // Ambos roles: ocultar sidebar y toolbar clásica, mostrar topbar
-  if(g('adminSidebar'))g('adminSidebar').style.display='none';
+  const sb=g('adminSidebar');
+  if(sb){sb.classList.add('sidebar-hidden');sb.classList.remove('open');}
+  if(g('sideOverlay'))g('sideOverlay').classList.remove('show');
+  _sidebarOpen=false;
   if(g('contentToolbar'))g('contentToolbar').style.display='none';
   if(g('docenteTopbar'))g('docenteTopbar').style.display='';
 
@@ -1763,9 +1767,23 @@ async function iniciarAgenda(){
   }catch(e){toast('Error al cargar agenda',e.message,'err')}
 }
 
-function semanaAnterior(){ calFechaBase.setDate(calFechaBase.getDate()-7); cargarReservasSemana().then(renderCalendario); }
-function semanaSiguiente(){ calFechaBase.setDate(calFechaBase.getDate()+7); cargarReservasSemana().then(renderCalendario); }
-function irHoy(){ calFechaBase=getLunes(new Date()); cargarReservasSemana().then(renderCalendario); }
+function _recargarCalendarios(){
+  const finSem=new Date(calFechaBase);finSem.setDate(finSem.getDate()+4);
+  return cargarReservasSemana().then(()=>{
+    cargarBloqueos(fmt(calFechaBase),fmt(finSem)).then(()=>{
+      // Renderizar el que esté visible
+      if(g('agendaModal')&&g('agendaModal').style.display!=='none') renderCalendarioModal();
+      else renderCalendario();
+      // Actualizar label del modal
+      const v=new Date(calFechaBase);v.setDate(v.getDate()+4);
+      const lbl=g('calSemanaLabelModal');
+      if(lbl)lbl.textContent=fmtDia(calFechaBase)+' – '+fmtDia(v)+' / '+v.getFullYear();
+    });
+  });
+}
+function semanaAnterior(){ calFechaBase.setDate(calFechaBase.getDate()-7); _recargarCalendarios(); }
+function semanaSiguiente(){ calFechaBase.setDate(calFechaBase.getDate()+7); _recargarCalendarios(); }
+function irHoy(){ calFechaBase=getLunes(new Date()); _recargarCalendarios(); }
 
 async function cargarReservasSemana(){
   const ini=fmt(calFechaBase);
@@ -1992,7 +2010,7 @@ async function confirmarReserva(){
     hideLoader();if(!r.ok)throw new Error(r.error);
     cerrarReservaModal();toast('Reserva creada','','ok');
     if(esEst){ await cargarReservasEst();renderCalendarioEst(); }
-    else if(fromModal){ await cargarReservasSemana();renderCalendarioModal(); }
+    else if(fromModal){ const finM=new Date(calFechaBase);finM.setDate(finM.getDate()+4); await cargarReservasSemana(); await cargarBloqueos(fmt(calFechaBase),fmt(finM)); renderCalendarioModal(); }
     else { await cargarReservasSemana();renderCalendario(); }
   }catch(e){hideLoader();const er=g('rsvErr');er.textContent=e.message;er.style.display='block';}
 }
@@ -2069,9 +2087,10 @@ function renderCalendarioEst(){
   if(!areas.length){ grid.innerHTML='<div class="empty" style="padding:20px">Sin areas configuradas</div>'; return; }
 
   const miNombre=session&&(session.nombre||session.codigo)||'';
+  const miCodigo=session&&session.codigo||'';
   const iniStr=fmt(calEstFechaBase);
   const finStr=fmt(finD);
-  const misReservas=agendaEstReservas.filter(r=>r.reservadoPor===miNombre&&r.fecha>=iniStr&&r.fecha<=finStr);
+  const misReservas=agendaEstReservas.filter(r=>(r.reservadoPor===miNombre||r.reservadoPor===miCodigo)&&r.fecha>=iniStr&&r.fecha<=finStr);
   const info=g('calEstReservaInfo');
   if(info) info.textContent=misReservas.length>0?('\u2713 '+misReservas.length+' reserva'+(misReservas.length!==1?'s':'')+' esta semana'):'';
 
@@ -2137,7 +2156,7 @@ function renderCalendarioEst(){
           } else {
             // Mostrar reservas existentes
             rsvEsp.forEach(rsv=>{
-              const esMia=rsv.reservadoPor===miNombre;
+              const esMia=rsv.reservadoPor===miNombre||rsv.reservadoPor===miCodigo;
               celda+=`<div style="background:${esMia?'var(--green)':'var(--n600)'};border-radius:6px;padding:3px 6px;margin-bottom:2px">
                 <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rsv.paciente||'\u2014'}</div>
                 <div style="font-size:9px;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rsv.docente||rsv.reservadoPor||''}</div>
@@ -2219,18 +2238,39 @@ function renderDocenteHojasBtns(hojas){
 // Abrir/cerrar modal agenda
 async function abrirAgendaPopup(){
   g('agendaModal').style.display='flex';
-  calGridTarget='calGridModal';
-  // Sincronizar filtro de área
+  // Siempre cargar config y reservas al abrir
+  showLoader('Cargando agenda...');
+  try{
+    const rc=await apiGet('leerAgendaConfig');
+    if(rc.ok){
+      agendaCfg=rc.config;
+      // Migrar config antigua si tiene 'camillas' en vez de 'espacios'
+      agendaCfg.areas=(agendaCfg.areas||[]).map(a=>{
+        if(!a.espacios&&a.camillas) a.espacios=Array.from({length:a.camillas},(_,i)=>({nombre:'Camilla '+(i+1),capacidad:1}));
+        if(!a.espacios) a.espacios=[{nombre:'Espacio 1',capacidad:1}];
+        return a;
+      });
+      if(!agendaCfg.franjas) agendaCfg.franjas=[{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}];
+    }
+    calFechaBase=getLunes(calFechaBase||new Date());
+    const finSem=new Date(calFechaBase);finSem.setDate(finSem.getDate()+4);
+    await cargarReservasSemana();
+    await cargarBloqueos(fmt(calFechaBase),fmt(finSem));
+  }catch(e){console.warn('Error cargando agenda:',e);}
+  hideLoader();
+
+  // Poblar filtro de área en el modal
   const filtSel=g('calAreaFiltroModal');
   if(filtSel){
     filtSel.innerHTML='<option value="">Todas las areas</option>'+
       agendaCfg.areas.map(a=>`<option value="${esc2(a.nombre)}">${a.nombre}</option>`).join('');
   }
-  if(!agendaReservas.length) await cargarReservasSemana();
+  // Actualizar label de semana
+  const vier=new Date(calFechaBase);vier.setDate(vier.getDate()+4);
+  const lbl=g('calSemanaLabelModal');
+  if(lbl)lbl.textContent=fmtDia(calFechaBase)+' – '+fmtDia(vier)+' / '+vier.getFullYear();
+
   renderCalendarioModal();
-  // Sincronizar label
-  const finD=new Date(calFechaBase);finD.setDate(finD.getDate()+6);
-  const lbl=g('calSemanaLabelModal');if(lbl)lbl.textContent=fmtDia(calFechaBase)+' – '+fmtDia(finD)+' / '+finD.getFullYear();
 }
 
 function cerrarAgendaModal(){
@@ -2347,7 +2387,10 @@ async function pedirEliminarModal(fecha,hora,area,camilla){
     const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Reserva cancelada','','ok');
-    await cargarReservasSemana();renderCalendarioModal();
+    const finSemEM=new Date(calFechaBase);finSemEM.setDate(finSemEM.getDate()+4);
+    await cargarReservasSemana();
+    await cargarBloqueos(fmt(calFechaBase),fmt(finSemEM));
+    renderCalendarioModal();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
 
@@ -2536,13 +2579,9 @@ function renderListaBloqueos(){
 
 // ── PANEL ADMIN DESDE TOPBAR ─────────────────────────────
 function abrirPanelAdmin(tab){
-  // Mostrar sidebar y activar la pestaña solicitada
   const sb=g('adminSidebar');
-  if(sb) sb.style.display='';
-  // Simular click en el tab
-  const tabEl=g('tab'+tab.charAt(0).toUpperCase()+tab.slice(1));
-  if(tabEl) tabEl.click();
-  // Si ya está visible, toggle
+  if(sb) sb.classList.remove('sidebar-hidden');
+  showTab(tab, g('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)));
   if(!_sidebarOpen) toggleSidebar();
 }
 
