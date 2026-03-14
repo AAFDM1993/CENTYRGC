@@ -122,7 +122,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 .ed-filter{background:var(--n800);padding:11px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--n700)}
 .ed-filter label{font-size:11px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap}
 .filter-inp{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:13px;padding:7px 12px;outline:none;font-family:'Plus Jakarta Sans',sans-serif;flex:1;min-width:140px;max-width:260px}.filter-inp:focus{border-color:var(--n400);background:rgba(255,255,255,.12)}.filter-inp::placeholder{color:rgba(255,255,255,.3)}
-.filter-sel{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:13px;padding:7px 12px;outline:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;flex:1;min-width:140px;max-width:260px}.filter-sel option{background:var(--n800);color:#fff}
+.filter-sel{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:10px;color:#fff;font-size:13px;padding:7px 12px;outline:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;flex:1;min-width:140px;max-width:260px}.filter-sel option{background:#0f1e3d;color:#fff}
 .filter-cnt{font-size:11px;color:var(--n300);white-space:nowrap;font-family:'DM Mono',monospace}
 .pv-al{border:1px solid var(--bd2);border-radius:16px;overflow:visible;margin-bottom:14px;box-shadow:var(--sh)}.pv-al.hidden{display:none}
 .pv-al-hdr{background:var(--n900);color:#fff;padding:10px 16px;display:flex;align-items:center;justify-content:space-between;font-family:'Syne',sans-serif;font-weight:700;font-size:13px}
@@ -654,52 +654,65 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
   </div><!-- viewAdmin -->
 
   <div id="viewEstudiante" style="display:none">
-    <div class="est-wrap">
-      <div class="est-welcome" style="justify-content:space-between;align-items:center">
-        <div class="est-info"><h2 id="estNombre">Estudiante</h2><p id="estCodigo">Codigo: -</p></div>
-        <button class="btn-sm" onclick="mostrarCambioPass()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);font-size:12px;padding:7px 14px">&#128274; Cambiar contrasena</button>
+  <!-- Barra superior del estudiante -->
+  <div style="background:var(--n900);border-bottom:1px solid var(--n800);padding:0 16px;position:sticky;top:58px;z-index:100;overflow-x:auto">
+    <div style="display:flex;align-items:center;gap:6px;height:50px;min-width:max-content">
+      <!-- Info del usuario -->
+      <div style="margin-right:8px;flex-shrink:0">
+        <div id="estNombre" style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:14px;line-height:1.2">Estudiante</div>
+        <div id="estCodigo" style="font-size:11px;color:var(--n300)">Codigo: -</div>
       </div>
-      <!-- Notas (collapsible) -->
-      <div class="est-hoja" style="margin-bottom:12px">
-        <div class="est-hoja-hdr collapsible-hdr" onclick="toggleSection('secNotas',this)">
-          <div><h3>&#128203; Mis Notas</h3><p>Historial de sesiones y promedios</p></div>
-          <span class="collapsible-arrow open">&#9660;</span>
-        </div>
-        <div class="collapsible-body open" id="secNotas">
-          <div id="estNotas"><div class="est-no-data"><div class="ico">&#128203;</div><p>Cargando notas...</p></div></div>
-        </div>
-      </div>
+      <div style="width:1px;height:28px;background:var(--n700);flex-shrink:0"></div>
+      <!-- Botones de navegación -->
+      <button id="btnEstNotas" onclick="mostrarSecEst('notas')" style="display:flex;align-items:center;gap:7px;background:var(--n500);border:1px solid var(--n400);border-radius:10px;color:#fff;font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap;transition:all .2s">
+        &#128203; Mis Notas
+      </button>
+      <button id="btnEstAgenda" onclick="mostrarSecEst('agenda')" style="display:flex;align-items:center;gap:7px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--n300);font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap;transition:all .2s">
+        &#128197; Agenda
+      </button>
+      <div style="width:1px;height:28px;background:var(--n700);flex-shrink:0"></div>
+      <button onclick="mostrarCambioPass()" style="display:flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--n300);font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;white-space:nowrap">
+        &#128274; Contrasena
+      </button>
+    </div>
+  </div>
 
-      <!-- Agenda del estudiante (collapsible) -->
-      <div class="est-hoja" style="margin-top:4px">
-        <div class="est-hoja-hdr collapsible-hdr" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px" onclick="toggleSection('secAgendaEst',this)">
+  <!-- Sección NOTAS -->
+  <div id="secEstNotas" style="display:block">
+    <div class="est-wrap">
+      <div id="estNotas">
+        <div class="est-no-data"><div class="ico">&#128203;</div><p>Cargando notas...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sección AGENDA -->
+  <div id="secEstAgenda" style="display:none">
+    <div class="est-wrap">
+      <!-- Barra de la agenda -->
+      <div class="est-hoja" style="overflow:visible">
+        <div class="est-hoja-hdr" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
           <div>
             <h3>&#128197; Mi Agenda</h3>
-            <p>Reserva tu espacio de practica clinica.</p>
+            <p id="calEstReservaInfo" style="font-size:11px;color:#6ee7b7;margin-top:2px"></p>
           </div>
-          <div style="display:flex;align-items:center;gap:8px">
-          <div style="display:flex;align-items:center;gap:7px">
-            <button class="btn-ghost" style="border-color:rgba(255,255,255,.2);color:var(--n300);padding:5px 10px;font-size:12px" onclick="semanaAnteriorEst()">&#8249;</button>
-            <span id="calEstLabel" style="font-size:12px;color:var(--n300);min-width:120px;text-align:center"></span>
-            <button class="btn-ghost" style="border-color:rgba(255,255,255,.2);color:var(--n300);padding:5px 10px;font-size:12px" onclick="semanaSiguienteEst()">&#8250;</button>
-            <button class="btn-ghost" style="border-color:rgba(255,255,255,.2);color:var(--n300);padding:5px 9px;font-size:11px" onclick="irHoyEst()">Hoy</button>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button onclick="semanaAnteriorEst()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;line-height:1">&#8249;</button>
+            <span id="calEstLabel" style="font-size:12px;color:var(--n300);min-width:110px;text-align:center;font-family:'DM Mono',monospace"></span>
+            <button onclick="semanaSiguienteEst()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:16px;cursor:pointer;line-height:1">&#8250;</button>
+            <button onclick="irHoyEst()" style="background:rgba(255,255,255,.1);border:none;color:var(--n300);border-radius:8px;padding:6px 10px;font-size:11px;cursor:pointer;font-weight:700">Hoy</button>
           </div>
         </div>
-        <!-- Filtro de area -->
+        <!-- Filtro de área con mejor legibilidad -->
         <div style="padding:10px 16px;background:var(--n700);display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <label style="font-size:11px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.6px">Area:</label>
-          <select class="filter-sel" id="calEstAreaFiltro" onchange="renderCalendarioEst()" style="max-width:220px;font-size:12px"></select>
-          <span id="calEstReservaInfo" style="font-size:11px;color:#6ee7b7;font-weight:600"></span>
+          <label style="font-size:11px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap">Area:</label>
+          <select id="calEstAreaFiltro" onchange="renderCalendarioEst()" style="background:var(--n600);border:1px solid var(--n500);border-radius:10px;color:#fff;font-size:13px;padding:6px 12px;outline:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;flex:1;max-width:260px">
+            <option value="" style="background:var(--n800)">Todas las areas</option>
+          </select>
         </div>
-        <div class="collapsible-body open" id="secAgendaEst">
-          <div style="padding:10px 14px 4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--n700)">
-            <label style="font-size:11px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.6px">Area:</label>
-            <select class="filter-sel" id="calEstAreaFiltro" onchange="renderCalendarioEst()" style="max-width:220px;font-size:12px"></select>
-            <span id="calEstReservaInfo" style="font-size:11px;color:#6ee7b7;font-weight:600"></span>
-          </div>
-          <div style="padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y">
-            <div id="calEstGrid"></div>
-          </div>
+        <!-- Grid del calendario -->
+        <div style="padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y">
+          <div id="calEstGrid"></div>
         </div>
       </div>
     </div>
@@ -1217,13 +1230,16 @@ async function saveNota(inp){
   },500);
 }
 async function iniciarVistaEstudiante(){
-  g('estNombre').textContent=session.nombre||'Estudiante';
-  g('estCodigo').textContent='Codigo: '+session.codigo;
+  // Actualizar barra superior
+  const nomEl=g('estNombre');const codEl=g('estCodigo');
+  if(nomEl)nomEl.textContent=session.nombre||'Estudiante';
+  if(codEl)codEl.textContent='Cod: '+(session.codigo||'-');
   showLoader('Cargando notas...');
   try{
     const r=await apiGet('misNotas',{codigo:session.codigo});
     hideLoader();if(!r.ok)throw new Error(r.error);renderEstNotas(r.resultados);
   }catch(e){hideLoader();g('estNotas').innerHTML=`<div class="hint">Error: ${e.message}</div>`}
+  // Cargar la agenda en background
   iniciarAgendaEstudiante();
 }
 function renderEstNotas(resultados){
@@ -1838,12 +1854,14 @@ function addEspacio(areaIdx){ agendaCfg.areas[areaIdx].espacios.push({nombre:'Es
 function delEspacio(areaIdx,espIdx){ agendaCfg.areas[areaIdx].espacios.splice(espIdx,1); renderAreasConfig(); }
 
 function actualizarFiltroArea(){
-  ['calAreaFiltro','calEstAreaFiltro'].forEach(selId=>{
+  ['calAreaFiltro','calAreaFiltroModal'].forEach(selId=>{
     const sel=g(selId);if(!sel)return;
     const val=sel.value;
     sel.innerHTML='<option value="">Todas las areas</option>'+
       agendaCfg.areas.map(a=>`<option value="${esc2(a.nombre)}" ${a.nombre===val?'selected':''}>${a.nombre}</option>`).join('');
   });
+  // Actualizar separado el del estudiante
+  actualizarFiltroAreaEst();
 }
 
 async function guardarAgendaConfig(){
@@ -1950,8 +1968,8 @@ async function iniciarAgendaEstudiante(){
 function actualizarFiltroAreaEst(){
   const sel=g('calEstAreaFiltro');if(!sel)return;
   const val=sel.value;
-  sel.innerHTML='<option value="">Todas las areas</option>'+
-    agendaCfg.areas.map(a=>`<option value="${esc2(a.nombre)}" ${a.nombre===val?'selected':''}>${a.nombre}</option>`).join('');
+  sel.innerHTML='<option value="" style="background:var(--n800);color:#fff">Todas las areas</option>'+
+    agendaCfg.areas.map(a=>`<option value="${esc2(a.nombre)}" style="background:var(--n800);color:#fff" ${a.nombre===val?'selected':''}>${a.nombre}</option>`).join('');
 }
 
 async function cargarReservasEst(){
@@ -2278,6 +2296,29 @@ async function eliminarReservaLista(fecha,hora,area,camilla){
     toast('Reserva cancelada','','ok');
     await cargarReservasSemana();renderCalendario();cargarListaReservas();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+
+
+// ── NAVEGACIÓN ESTUDIANTE ────────────────────────────────
+function mostrarSecEst(sec){
+  const secNotas=g('secEstNotas');
+  const secAgenda=g('secEstAgenda');
+  const btnNotas=g('btnEstNotas');
+  const btnAgenda=g('btnEstAgenda');
+  if(sec==='notas'){
+    if(secNotas)secNotas.style.display='block';
+    if(secAgenda)secAgenda.style.display='none';
+    if(btnNotas){btnNotas.style.background='var(--n500)';btnNotas.style.borderColor='var(--n400)';btnNotas.style.color='#fff';}
+    if(btnAgenda){btnAgenda.style.background='transparent';btnAgenda.style.borderColor='rgba(255,255,255,.2)';btnAgenda.style.color='var(--n300)';}
+  } else {
+    if(secNotas)secNotas.style.display='none';
+    if(secAgenda)secAgenda.style.display='block';
+    if(btnAgenda){btnAgenda.style.background='var(--n500)';btnAgenda.style.borderColor='var(--n400)';btnAgenda.style.color='#fff';}
+    if(btnNotas){btnNotas.style.background='transparent';btnNotas.style.borderColor='rgba(255,255,255,.2)';btnNotas.style.color='var(--n300)';}
+    // Cargar agenda si no tiene datos
+    if(!agendaEstReservas.length||!agendaCfg.areas.length) iniciarAgendaEstudiante();
+    else renderCalendarioEst();
+  }
 }
 
 </script>
