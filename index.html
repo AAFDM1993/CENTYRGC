@@ -86,13 +86,13 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 .counter{display:flex;align-items:center;border:1px solid var(--bd);border-radius:7px;overflow:hidden;background:#fff}.counter button{background:var(--surf2);border:none;width:27px;height:30px;font-size:15px;color:var(--n500);cursor:pointer;font-weight:700;flex-shrink:0}.counter button:hover{background:var(--n100)}.counter span{font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:var(--tx);min-width:30px;text-align:center;line-height:30px}
 .add-sgr-btn{width:100%;background:var(--n050);border:1px dashed var(--n300);border-radius:8px;padding:7px;font-size:12px;font-weight:700;color:var(--n500);cursor:pointer}.add-sgr-btn:hover{background:var(--n100)}
 .usr-list{display:flex;flex-direction:column;gap:5px;max-height:280px;overflow-y:auto;margin-bottom:10px}
-.usr-row{display:grid;grid-template-columns:95px 1fr 70px 85px 32px;gap:6px;align-items:center;background:var(--surf2);border:1px solid var(--bd2);border-radius:8px;padding:8px 11px;font-size:12px}.usr-row:hover{border-color:var(--bd)}
+.usr-row{display:grid;grid-template-columns:95px 1fr 70px 85px 28px 28px;gap:5px;align-items:center;background:var(--surf2);border:1px solid var(--bd2);border-radius:8px;padding:8px 11px;font-size:12px}.usr-row:hover{border-color:var(--bd)}
 .usr-codigo{font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:var(--n500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .usr-nombre{color:var(--tx);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .usr-pass{font-family:'DM Mono',monospace;font-size:11px;color:var(--tx4);text-align:center;letter-spacing:1px}
 .rol-tag{display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
 .rol-tag.admin{background:#fef3c7;color:#92400e;border:1px solid #fde68a}.rol-tag.docente{background:var(--green2);color:#065f46;border:1px solid #a7f3d0}.rol-tag.estudiante{background:var(--n100);color:var(--n600);border:1px solid var(--n200)}
-.usr-del{background:none;border:none;color:var(--tx4);font-size:13px;cursor:pointer;padding:0}.usr-del:hover{color:var(--red)}
+.usr-del{background:none;border:none;color:var(--tx4);font-size:13px;cursor:pointer;padding:0}.usr-del:hover{color:var(--red)}.usr-edit{background:none;border:none;color:var(--tx4);font-size:13px;cursor:pointer;padding:0;transition:color .15s}.usr-edit:hover{color:var(--n500)}
 .form-usr{background:var(--surf2);border:1px solid var(--bd2);border-radius:10px;padding:13px}
 .import-box{background:var(--n050);border:1px solid var(--n200);border-radius:10px;padding:13px;margin-top:10px}
 .import-box h4{font-size:12px;font-weight:700;color:var(--n600);margin-bottom:7px}.import-box p{font-size:11px;color:var(--tx3);margin-bottom:9px;line-height:1.6}
@@ -130,15 +130,15 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 .pv-cu-hdr{background:var(--n700);color:var(--n200);padding:7px 16px;font-size:12px;font-weight:600;font-style:italic;display:flex;align-items:center;gap:7px}.pv-cu-hdr::before{content:'';color:var(--n400)}
 .pv-sgr-hdr{background:var(--n500);color:#e0f2fe;padding:5px 20px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:8px}.pv-sgr-badge{font-family:'DM Mono',monospace;font-size:10px;background:rgba(255,255,255,.15);border-radius:4px;padding:1px 7px}
 .nt{width:100%;border-collapse:collapse;font-size:12px;min-width:600px}
-.nt th{padding:6px 8px;text-align:center;white-space:nowrap;font-family:'DM Mono',monospace;font-size:10px;font-weight:600;border-bottom:1px solid var(--bd2)}
+.nt th{padding:5px 6px;text-align:center;white-space:nowrap;font-family:'DM Mono',monospace;font-size:10px;font-weight:600;border-bottom:1px solid var(--bd2)}
 .nt th.th-pac{text-align:left;background:var(--surf2);color:var(--tx2);min-width:70px;padding-left:14px}.nt th.th-nom{text-align:left;background:var(--surf2);color:var(--tx2);min-width:140px;padding-left:8px}.nt th.th-ss{background:var(--n900);color:var(--n300);width:64px}.nt th.th-ex{background:var(--n700);color:var(--n200);width:64px}.nt th.th-pr{background:var(--n800);color:#7dd3fc;width:76px}
-.nt td{padding:8px 5px;border-bottom:1px solid var(--bd2);vertical-align:middle}
-.nt td.td-pac{background:var(--surf2);color:var(--tx);font-size:12px;font-weight:600;padding-left:14px;font-family:'DM Mono',monospace}
+.nt td{padding:6px 4px;border-bottom:1px solid var(--bd2);vertical-align:middle}
+.nt td.td-pac{background:var(--surf2);color:var(--tx);font-size:11px;font-weight:600;padding-left:12px;font-family:'DM Mono',monospace}
 .nt tr:last-child td{border-bottom:none}.nt tr:nth-child(even) td{background:var(--bg2)}.nt tr:nth-child(even) td.td-pac{background:var(--bg2)}
-.nc{width:100%;border:1px solid transparent;background:transparent;font-family:'DM Mono',monospace;font-size:14px;font-weight:600;text-align:center;color:var(--tx2);outline:none;padding:7px 3px;cursor:pointer;border-radius:6px;transition:all .15s;-moz-appearance:textfield;min-width:52px}
+.nc{width:100%;border:1px solid transparent;background:transparent;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;text-align:center;color:var(--tx2);outline:none;padding:5px 2px;cursor:pointer;border-radius:5px;transition:all .15s;-moz-appearance:textfield;min-width:54px}
 .nc::-webkit-inner-spin-button,.nc::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
-.nc:hover{background:var(--n100);border-color:var(--n200);color:var(--n600)}.nc:focus{background:var(--n600);color:#fff;cursor:text;border-color:var(--n500);font-size:15px}.nc.v{color:var(--n600);font-weight:700}.nc.ex{color:#1d4ed8}.nc.ex:focus{background:#1d4ed8;color:#fff}.nc.ex.v{color:#1d4ed8}
-.nn{width:100%;border:1px solid transparent;background:transparent;font-size:12px;color:var(--tx);outline:none;padding:7px 6px;border-radius:5px;transition:all .15s;font-family:'Plus Jakarta Sans',sans-serif}
+.nc:hover{background:var(--n100);border-color:var(--n200);color:var(--n600)}.nc:focus{background:var(--n600);color:#fff;cursor:text;border-color:var(--n500);font-size:13px}.nc.v{color:var(--n600);font-weight:700}.nc.ex{color:#1d4ed8}.nc.ex:focus{background:#1d4ed8;color:#fff}.nc.ex.v{color:#1d4ed8}
+.nn{width:100%;border:1px solid transparent;background:transparent;font-size:12px;color:var(--tx);outline:none;padding:5px 6px;border-radius:5px;transition:all .15s;font-family:'Plus Jakarta Sans',sans-serif}
 .nn:hover{border-color:var(--bd);background:var(--surf2)}.nn:focus{border-color:var(--n500);background:#fff}.nn.has-val{font-weight:600}
 .pc{font-family:'DM Mono',monospace;font-size:13px;font-weight:700;display:inline-block;min-width:52px;padding:4px 8px;border-radius:6px;background:var(--n800);color:var(--n300);text-align:center}.pc.ok{background:var(--green2);color:var(--green)}.pc.no{background:var(--red2);color:var(--red)}
 .est-wrap{max-width:900px;margin:0 auto;padding:24px 28px}
@@ -199,6 +199,10 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 .nt th.th-nf{background:#1d4ed8;color:#fff;width:82px;font-weight:800}
 .nc.nf{color:#1d4ed8;font-weight:800}
 .pc.nf{background:#1e3a8a;color:#fff}
+
+/* Ocultar columna ID en editor de docente/admin */
+#edBody .nt th.th-pac,
+#edBody .nt td.td-pac { display:none }
 </style>
 </head>
 <body>
@@ -330,7 +334,8 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
               <button class="btn-ghost" onclick="cargarUsuarios()" style="font-size:11px;padding:4px 10px">Recargar</button>
             </div>
             <div id="usrList" class="usr-list"><div class="empty">Cargando...</div></div>
-            <div class="slbl">Agregar / Editar usuario</div>
+            <div class="slbl">Agregar / Editar / Cambiar contrasena</div>
+            <div class="hint-b" style="font-size:11px;margin-bottom:8px"><span>&#9998;</span><span>Para cambiar la contrasena de un usuario, haz clic en el icono de lapiz en la lista, modifica la contrasena y guarda.</span></div>
             <div class="form-usr">
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
                 <div class="field" style="margin:0"><label>Codigo</label><input class="inp" id="usCod" placeholder="Ej. 20210001"></div>
@@ -448,7 +453,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 <script>
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwhOA8wurlHF5KU69ChGcFpgZV8ZqhIbjtXlAg5iYiCOd-_91rzZOf_EAOgHCs2YxIBnQ/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxrDH3Z27TKDClJ0dUiQwXocEUnqDOeQ34ihx9iDdwNeRqb6oje8ej9xp50CaBwhDXN2Q/exec';
 // ====================================================
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
@@ -651,9 +656,21 @@ async function cargarUsuarios(){
     if(!r.usuarios.length){box.innerHTML='<div class="empty">Sin usuarios registrados</div>';return}
     box.innerHTML=r.usuarios.map(u=>{
       const dots='*'.repeat(Math.min(String(u.password).length,8));
-      return `<div class="usr-row"><span class="usr-codigo" title="${u.codigo}">${u.codigo}</span><span class="usr-nombre" title="${u.nombre||''}">${u.nombre||'-'}</span><span class="usr-pass">${dots}</span><span class="rol-tag ${u.rol}">${u.rol}</span><button class="usr-del" onclick="eliminarUsuarioDB('${esc(u.codigo)}')" title="Eliminar">&#128465;</button></div>`;
+      return `<div class="usr-row"><span class="usr-codigo" title="${u.codigo}">${u.codigo}</span><span class="usr-nombre" title="${u.nombre||''}">${u.nombre||'-'}</span><span class="usr-pass">${dots}</span><span class="rol-tag ${u.rol}">${u.rol}</span><button class="usr-edit" onclick="editarUsuario('${esc(u.codigo)}','${esc(String(u.password))}','${esc(u.rol)}','${esc(u.nombre||'')}')" title="Editar / cambiar contrasena">&#9998;</button><button class="usr-del" onclick="eliminarUsuarioDB('${esc(u.codigo)}')" title="Eliminar">&#128465;</button></div>`;
     }).join('');
   }catch(e){box.innerHTML=`<div class="hint">Error: ${e.message}</div>`}
+}
+
+function editarUsuario(codigo, password, rol, nombre){
+  const c=g('usCod'),p=g('usPass'),n=g('usNom'),r=g('usRol');
+  if(c)c.value=codigo;
+  if(p)p.value=password;
+  if(n)n.value=nombre;
+  if(r)r.value=rol;
+  // Scroll al formulario
+  const form=g('usCod');if(form)form.scrollIntoView({behavior:'smooth',block:'center'});
+  form&&form.focus();
+  toast('Usuario cargado para editar','Cambia los datos y pulsa Guardar','');
 }
 async function guardarUsuarioDB(){
   const cod=vi('usCod').trim(),pass=vi('usPass').trim(),nom=vi('usNom').trim(),rol=vi('usRol');
@@ -698,7 +715,7 @@ function renderPreview(){
     const bl=al.map(c=>{
       const sb=c.subgrupos.map(sg=>{
         let thS='',thE='',tdS='',tdE='';
-        for(let i=0;i<(sg.notasBase||0);i++){thS+=`<th class="th-ss">${i+1}</th>`;tdS+='<td style="color:var(--tx4);text-align:center">.</td>'}
+        for(let i=0;i<(sg.notasBase||0);i++){const lbl=i===0?'EV':'S'+i;thS+=`<th class="th-ss">${lbl}</th>`;tdS+='<td style="color:var(--tx4);text-align:center">.</td>'}
         for(let i=0;i<(sg.notasExtra||0);i++){thE+=`<th class="th-ex">E${i+1}</th>`;tdE+='<td style="color:#93c5fd;text-align:center">.</td>'}
         let rows='';for(let pi=0;pi<(sg.numPacientes||1);pi++)rows+=`<tr><td class="td-pac">PAC${pi+1}</td><td>-</td>${tdS}${tdE}<td><span class="pc">-</span></td></tr>`;
         return`<div class="pv-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${sg.notasBase||0}SS+${sg.notasExtra||0}E</span><span class="pv-sgr-badge">${sg.numPacientes||1} pac.</span></div><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre</th>${thS}${thE}<th class="th-pr">PROM</th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -770,7 +787,7 @@ function renderAlBlock(al,ai,apro){
     const sb=cu.subgrupos.map((sg,si)=>{
       const base=sg.notasBase||0,extra=sg.notasExtra||0;
       let thS='',thE='';
-      for(let i=0;i<base;i++)thS+=`<th class="th-ss">${i+1}</th>`;
+      for(let i=0;i<base;i++){const lbl=i===0?'EV':'S'+i;thS+=`<th class="th-ss">${lbl}</th>`;}
       for(let i=0;i<extra;i++)thE+=`<th class="th-ex">E${i+1}</th>`;
       const pct=sg.pctExtra!==undefined?sg.pctExtra:20;
       const rows=sg.pacientes.map((pac,pi)=>{
@@ -866,11 +883,11 @@ function renderEstNotas(resultados){
       const sb=cu.subgrupos.map(sg=>{
         const base=sg.notasBase||0,extra=sg.notasExtra||0;
         let thS='',thE='';
-        for(let i=0;i<base;i++)thS+=`<th class="th-ss">${i+1}</th>`;
+        for(let i=0;i<base;i++){const lbl=i===0?'EV':'S'+i;thS+=`<th class="th-ss">${lbl}</th>`;}
         for(let i=0;i<extra;i++)thE+=`<th class="th-ex">E${i+1}</th>`;
         const rows=sg.pacientes.map(pac=>{
-          const tSS=pac.notas.map(v=>`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:14px;font-weight:600;padding:7px 4px;color:${v!==''?'var(--n600)':'var(--tx4)'}">${v!==''?v:'.'}</td>`).join('');
-          const tEx=pac.xNotas.map(v=>`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:14px;font-weight:600;padding:7px 4px;color:${v!==''?'#1d4ed8':'var(--tx4)'}">${v!==''?v:'.'}</td>`).join('');
+          const tSS=pac.notas.map(v=>`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;padding:5px 3px;color:${v!==''?'var(--n600)':'var(--tx4)'}">${v!==''?v:'.'}</td>`).join('');
+          const tEx=pac.xNotas.map(v=>`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;padding:5px 3px;color:${v!==''?'#1d4ed8':'var(--tx4)'}">${v!==''?v:'.'}</td>`).join('');
           const ps=pac.promSS;const pe=pac.extraPond;const p=pac.prom;
           const pc='pc'+(p!==''&&p!==undefined?(p>=11?' ok':' no'):'');
           return`<tr>
@@ -1052,6 +1069,10 @@ tbody td{padding:7px 11px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
 .nt th.th-nf{background:#1d4ed8;color:#fff;width:82px;font-weight:800}
 .nc.nf{color:#1d4ed8;font-weight:800}
 .pc.nf{background:#1e3a8a;color:#fff}
+
+/* Ocultar columna ID en editor de docente/admin */
+#edBody .nt th.th-pac,
+#edBody .nt td.td-pac { display:none }
 </style></head>
 <body>
 <div class="top">
