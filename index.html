@@ -167,6 +167,23 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 .resumen-preview .td-cod{font-family:'DM Mono',monospace;font-size:11px;color:var(--n500)}
 .resumen-preview .td-prom{font-family:'DM Mono',monospace;font-weight:700;text-align:center}
 .resumen-preview .td-prom.ok{color:var(--green)}.resumen-preview .td-prom.no{color:var(--red)}
+
+/* ── LOG ── */
+.log-row{display:grid;grid-template-columns:110px 90px 1fr 60px 40px 55px;gap:5px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--bd2);font-size:11px}
+.log-row:hover{background:var(--n050)}
+.log-row:last-child{border-bottom:none}
+.log-ts{font-family:'DM Mono',monospace;font-size:10px;color:var(--tx4)}
+.log-doc{font-weight:600;color:var(--n500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-info{color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-tipo{font-family:'DM Mono',monospace;font-size:10px;font-weight:700;text-align:center;padding:1px 6px;border-radius:4px}
+.log-tipo.ss{background:var(--n100);color:var(--n600)}.log-tipo.ex{background:var(--green2);color:var(--green)}
+.log-val-old{font-family:'DM Mono',monospace;color:var(--tx4);text-align:center}
+.log-val-new{font-family:'DM Mono',monospace;font-weight:700;color:var(--n500);text-align:center}
+/* columna extra ponderado */
+.nt th.th-xp{background:#064e3b;color:#6ee7b7;width:58px}
+.nt th.th-nf{background:#1d4ed8;color:#fff;width:72px;font-weight:800}
+.nc.nf{color:#1d4ed8;font-weight:800}
+.pc.nf{background:#1e3a8a;color:#fff}
 </style>
 </head>
 <body>
@@ -219,13 +236,14 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
     <div class="wrap">
       <div style="display:flex;flex-direction:column;gap:16px">
         <div class="card">
-          <div class="tabs" id="adminTabs" style="grid-template-columns:repeat(6,1fr)">
+          <div class="tabs" id="adminTabs" style="grid-template-columns:repeat(7,1fr)">
             <button class="tab on" id="tabAl" onclick="showTab('al',this)">Alumnos</button>
             <button class="tab" id="tabCu" onclick="showTab('cu',this)">Cursos</button>
             <button class="tab" id="tabNt" onclick="showTab('nt',this)">Config</button>
             <button class="tab" id="tabUs" onclick="showTab('us',this)">Usuarios</button>
             <button class="tab" id="tabHo" onclick="showTab('ho',this)">Hojas</button>
             <button class="tab" id="tabPdf" onclick="showTab('pdf',this)">PDF</button>
+            <button class="tab" id="tabLog" onclick="showTab('log',this)">Log</button>
           </div>
 
           <div class="pane on" id="pane-al">
@@ -267,19 +285,35 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
             </div>
             <div class="field"><label>Nombre de la hoja</label><input class="inp" id="cfgHoja" placeholder="Ej. MyT II 2025-I"></div>
             <input type="hidden" id="scApro" value="11">
-            <div class="slbl" style="margin-top:4px">Logo institucional</div>
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-              <div style="width:80px;height:50px;border:1px dashed var(--bd);border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--surf2);flex-shrink:0;overflow:hidden" id="logoPreviewBox">
-                <img id="logoPreview" style="max-width:100%;max-height:100%;object-fit:contain;display:none" alt="Logo">
-                <span style="font-size:10px;color:var(--tx4);text-align:center" id="logoPreviewTxt">Sin logo</span>
-              </div>
+            <div class="slbl" style="margin-top:4px">Porcentaje de puntaje extra</div>
+            <div style="display:flex;align-items:center;gap:10px;background:var(--surf2);border:1px solid var(--bd);border-radius:9px;padding:10px 14px;margin-bottom:6px">
               <div style="flex:1">
-                <button class="btn-ghost" style="width:100%;margin-bottom:6px" onclick="document.getElementById('logoFileIn').click()">Subir logo (PNG/JPG)</button>
-                <button class="btn-ghost" style="width:100%;font-size:11px;color:var(--red)" onclick="clearLogo()">Quitar logo</button>
+                <div style="font-size:13px;font-weight:600;color:var(--tx)">Peso del puntaje extra</div>
+                <div style="font-size:11px;color:var(--tx3);margin-top:2px">Porcentaje del promedio SS que se suma como bonificacion extra</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <input type="number" id="cfgPctExtra" value="20" min="0" max="100" style="background:#fff;border:1px solid var(--bd);color:var(--tx);font-family:'DM Mono',monospace;font-size:18px;font-weight:700;width:60px;outline:none;text-align:center;border-radius:7px;padding:5px">
+                <span style="font-size:14px;font-weight:700;color:var(--tx3)">%</span>
               </div>
             </div>
-            <input id="logoFileIn" type="file" accept="image/png,image/jpeg,image/jpg,image/svg+xml,image/webp" style="display:none" onchange="loadLogo(event)">
-            <div class="hint-b" style="font-size:11px;margin-bottom:10px"><span>i</span><span>El logo se guardara localmente en el navegador. Tamano recomendado: 250px de ancho.</span></div>
+            <div class="hint-b" style="font-size:11px;margin-bottom:4px"><span>Ej.</span><span>Con 20%: si el alumno tiene PROM_SS = 14, y su extra promedia 18, la nota final = 14 + (18 x 0.20) = 14 + 3.6 = <strong>17.6</strong></span></div>
+            <div class="slbl" style="margin-top:4px">Logo institucional</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+              <div style="width:80px;height:50px;border:1px dashed var(--bd);border-radius:8px;display:flex;align-items:center;justify-content:center;background:var(--surf2);flex-shrink:0;overflow:hidden">
+                <img id="logoPreview" style="max-width:100%;max-height:100%;object-fit:contain;display:none" alt="Logo">
+                <span style="font-size:10px;color:var(--tx4);text-align:center" id="logoPreviewTxt">Vista previa</span>
+              </div>
+              <div style="flex:1">
+                <div class="field" style="margin:0"><label>URL del logo (GitHub raw)</label>
+                  <input class="inp" id="logoUrl" placeholder="https://raw.githubusercontent.com/..." oninput="previewLogoUrl()">
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:7px;margin-bottom:10px">
+              <button class="btn-sm green" onclick="saveLogoUrl()" style="flex:1">Aplicar logo</button>
+              <button class="btn-ghost" onclick="clearLogo()" style="font-size:11px">Quitar</button>
+            </div>
+            <div class="hint-b" style="font-size:11px;margin-bottom:10px"><span>i</span><span>Usa la URL raw de GitHub. Ejemplo: <strong>https://raw.githubusercontent.com/usuario/repo/main/logo.png</strong></span></div>
             <div style="margin-top:2px;background:var(--n900);border-radius:10px;padding:13px 16px">
               <div style="font-size:11px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Formula por subgrupo</div>
               <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--n200);line-height:1.9">PROM = PROM(notas) x (ejecutadas / programadas)<br><span style="color:var(--n300)">ejecutadas = SS + Extra ingresados</span></div>
@@ -321,6 +355,21 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
           <div class="pane" id="pane-ho">
             <div id="hojasBox"><div class="hint-b"><span>...</span><span>Cargando hojas...</span></div></div>
             <button class="btn-ghost" style="width:100%;margin-top:9px" onclick="loadHojas()">Actualizar lista</button>
+          </div>
+
+          <div class="pane" id="pane-log">
+            <div class="row-btw" style="margin-bottom:8px">
+              <span style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px">Registro de notas</span>
+              <button class="btn-ghost" onclick="cargarLog()" style="font-size:11px;padding:4px 10px">Recargar</button>
+            </div>
+            <div id="logFiltroBox" style="margin-bottom:8px;display:flex;gap:7px;align-items:center">
+              <select class="sel" id="logFiltroHoja" style="flex:1;font-size:12px" onchange="cargarLog()">
+                <option value="">Todas las planillas</option>
+              </select>
+            </div>
+            <div id="logList" style="max-height:340px;overflow-y:auto;font-size:11px">
+              <div class="empty">Cargando...</div>
+            </div>
           </div>
           <div class="pane" id="pane-pdf">
             <div class="slbl">1. Selecciona la hoja</div>
@@ -385,7 +434,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 <script>
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwMlikwKaOBJwt0Vjn6DQr8yXCzRAHEnIcrdDz5n7BqsIysgr9XojZI6Wl095s288aXYQ/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxWkfluof4dXTPKwTA6rCKKFebiFx98t6sW0ciTi5Dm6MenLpcxVhDb8PHZm0wO0WXSKQ/exec';
 // ====================================================
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
@@ -462,20 +511,20 @@ function setConn(ok,msg){
 function iniciarVistaAdmin(){
   const esA=session.rol==='admin';
   if(!esA){
-    ['tabAl','tabCu','tabNt','tabUs','tabPdf'].forEach(t=>{const el=g(t);if(el)el.style.display='none'});
+    ['tabAl','tabCu','tabNt','tabUs','tabPdf','tabLog'].forEach(t=>{const el=g(t);if(el)el.style.display='none'});
     document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
     document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
     g('tabHo').classList.add('on');g('pane-ho').classList.add('on');
     g('btnGen').style.display='none';
     const uz=g('uploadZone');if(uz)uz.style.display='none';
-  }else{g('btnGen').disabled=false;renderCursos();renderPreview();cargarUsuarios();}
+  }else{g('btnGen').disabled=false;renderCursos();renderPreview();cargarUsuarios();cargarLog();}
   loadHojas();
 }
 function showTab(tid,btn){
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
   g('pane-'+tid).classList.add('on');btn.classList.add('on');
-  if(tid==='ho')loadHojas();if(tid==='us')cargarUsuarios();if(tid==='pdf')cargarHojasExport();
+  if(tid==='ho')loadHojas();if(tid==='us')cargarUsuarios();if(tid==='pdf')cargarHojasExport();if(tid==='log')cargarLog();
 }
 function openDrawer(i){
   drawerIdx=i;const a=alumnos[i];
@@ -645,11 +694,12 @@ async function generarPlanilla(){
   if(!alumnos.length){toast('Sin alumnos','','warn');return}
   const activos=cursos.filter(c=>c.on);if(!activos.length){toast('Sin cursos activos','','warn');return}
   const hoja=vi('cfgHoja')||(vi('cfgSec')+' - '+vi('cfgAsig').substring(0,18));
-  const aP=alumnos.map(a=>({nombre:a.name,codigo:a.code||'',cursos:activos.filter(c=>a.cursos[c.label]===true).map(c=>({nombre:c.label,subgrupos:c.subgrupos.map(sg=>({nombre:sg.nombre,notasBase:sg.notasBase||15,notasExtra:sg.notasExtra||0,numPacientes:sg.numPacientes||1}))})) }));
+  const pctExtra=+(vi('cfgPctExtra')||20);
+  const aP=alumnos.map(a=>({nombre:a.name,codigo:a.code||'',cursos:activos.filter(c=>a.cursos[c.label]===true).map(c=>({nombre:c.label,subgrupos:c.subgrupos.map(sg=>({nombre:sg.nombre,notasBase:sg.notasBase||15,notasExtra:sg.notasExtra||0,numPacientes:sg.numPacientes||1,pctExtra:sg.pctExtra!==undefined?sg.pctExtra:pctExtra}))})) }));
   if(!aP.some(a=>a.cursos.length)){toast('Sin cursos asignados','Asigna cursos a los alumnos','warn');return}
   showLoader('Creando planilla...');
   try{
-    const r=await apiPost({action:'crearPlanilla',nombreHoja:hoja,config:{asignatura:vi('cfgAsig'),semestre:vi('cfgSem'),seccion:vi('cfgSec'),notaApro:+vi('scApro')||11},alumnos:aP});
+    const r=await apiPost({action:'crearPlanilla',nombreHoja:hoja,config:{asignatura:vi('cfgAsig'),semestre:vi('cfgSem'),seccion:vi('cfgSec'),notaApro:+vi('scApro')||11,pctExtra:+(vi('cfgPctExtra')||20)},alumnos:aP});
     hideLoader();if(!r.ok)throw new Error(r.error||JSON.stringify(r));
     toast('Planilla creada',`"${r.hoja}"`,'ok');window.open(r.url,'_blank');
     await abrirHoja(r.hoja);loadHojas();
@@ -702,15 +752,24 @@ function renderAlBlock(al,ai,apro){
       let thS='',thE='';
       for(let i=0;i<base;i++)thS+=`<th class="th-ss">${i+1}</th>`;
       for(let i=0;i<extra;i++)thE+=`<th class="th-ex">E${i+1}</th>`;
+      const pct=sg.pctExtra!==undefined?sg.pctExtra:20;
       const rows=sg.pacientes.map((pac,pi)=>{
         const nv=pac.nombre||'';
         let sc='',ec='';
         for(let ni=0;ni<base;ni++){const v=pac.notas[ni]!==undefined&&pac.notas[ni]!==''?pac.notas[ni]:'';sc+=`<td><input type="number" class="nc ${v!==''?'v':''}" value="${v}" min="0" max="20" step="0.5" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" data-tipo="ss" data-idx="${ni}" data-base="${base}" data-extra="${extra}" onchange="saveNota(this)" onfocus="this.select()"></td>`}
         for(let ni=0;ni<extra;ni++){const v=pac.xNotas&&pac.xNotas[ni]!==undefined&&pac.xNotas[ni]!==''?pac.xNotas[ni]:'';ec+=`<td><input type="number" class="nc ex ${v!==''?'v':''}" value="${v}" min="0" max="20" step="0.5" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" data-tipo="extra" data-idx="${ni}" data-base="${base}" data-extra="${extra}" onchange="saveNota(this)" onfocus="this.select()"></td>`}
-        const p=pac.prom;const pc='pc'+(p!==''&&p!==undefined?(p>=apro?' ok':' no'):'');
-        return`<tr><td class="td-pac">${pac.label}</td><td><input class="nn ${nv?'has-val':''}" value="${esc2(nv)}" placeholder="Nombre paciente" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" onchange="saveNombrePac(this)" onfocus="this.select()"></td>${sc}${ec}<td style="text-align:center"><span class="${pc}" id="pc_${ai}_${ci}_${si}_${pi}">${p!==''&&p!==undefined?p:'-'}</span></td></tr>`;
+        const ps=pac.promSS;const pe=pac.extraPond;const p=pac.prom;
+        const pc='pc'+(p!==''&&p!==undefined?(p>=apro?' ok':' no'):'');
+        return`<tr>
+          <td class="td-pac">${pac.label}</td>
+          <td><input class="nn ${nv?'has-val':''}" value="${esc2(nv)}" placeholder="Nombre paciente" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" onchange="saveNombrePac(this)" onfocus="this.select()"></td>
+          ${sc}${ec}
+          <td style="text-align:center"><span class="pc" id="ps_${ai}_${ci}_${si}_${pi}" style="background:var(--n800);color:var(--n300)">${ps!==''&&ps!==undefined?ps:'-'}</span></td>
+          <td style="text-align:center"><span class="pc" id="pe_${ai}_${ci}_${si}_${pi}" style="background:#064e3b;color:#6ee7b7">${pe!==''&&pe!==undefined?pe:'-'}</span></td>
+          <td style="text-align:center"><span class="${pc} nf" id="pc_${ai}_${ci}_${si}_${pi}">${p!==''&&p!==undefined?p:'-'}</span></td>
+        </tr>`;
       }).join('')||'<tr><td colspan="99" class="empty" style="padding:8px">Sin pacientes</td></tr>';
-      return`<div class="pv-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${base}SS+${extra}E</span></div><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM</th></tr></thead><tbody>${rows}</tbody></table>`;
+      return`<div class="pv-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${base}SS+${extra}E · ${pct}%extra</span></div><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-xp">Extra ${pct}%</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table>`;
     }).join('');
     return`<div class="pv-cu-hdr">${cu.nombre}</div>${sb}`;
   }).join('');
@@ -756,8 +815,17 @@ async function saveNota(inp){
         if(ai>=0){const ci=hojaData.alumnos[ai].cursos.findIndex(c=>c.nombre===curso);
           if(ci>=0){const si=hojaData.alumnos[ai].cursos[ci].subgrupos.findIndex(s=>s.nombre===sgr);
             if(si>=0){const pi=hojaData.alumnos[ai].cursos[ci].subgrupos[si].pacientes.findIndex(p=>p.label===pac);
-              if(pi>=0){const cell=g(`pc_${ai}_${ci}_${si}_${pi}`);
-                if(cell){cell.textContent=r.prom!==''&&r.prom!==undefined?r.prom:'-';cell.className='pc'+(r.prom!==''&&r.prom!==undefined?(r.prom>=apro?' ok':' no'):'');}}}}}
+              if(pi>=0){
+                const cellNF=g(`pc_${ai}_${ci}_${si}_${pi}`);
+                const cellPS=g(`ps_${ai}_${ci}_${si}_${pi}`);
+                const cellPE=g(`pe_${ai}_${ci}_${si}_${pi}`);
+                if(cellNF){cellNF.textContent=r.prom!==''&&r.prom!==undefined?r.prom:'-';cellNF.className='pc nf'+(r.prom!==''&&r.prom!==undefined?(r.prom>=apro?' ok':' no'):'');}
+                if(cellPS&&r.promSS!==undefined){cellPS.textContent=r.promSS!==''&&r.promSS!==undefined?r.promSS:'-';}
+                if(cellPE&&r.extraPond!==undefined){cellPE.textContent=r.extraPond!==''&&r.extraPond!==undefined?r.extraPond:'-';}
+              }
+            }
+          }
+        }
       }
     }catch(e){toast('Error al guardar nota',e.message,'err')}
   },500);
@@ -783,10 +851,18 @@ function renderEstNotas(resultados){
         const rows=sg.pacientes.map(pac=>{
           const tSS=pac.notas.map(v=>`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;color:${v!==''?'var(--n600)':'var(--tx4)'}">${v!==''?v:'.'}</td>`).join('');
           const tEx=pac.xNotas.map(v=>`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;color:${v!==''?'#1d4ed8':'var(--tx4)'}">${v!==''?v:'.'}</td>`).join('');
-          const p=pac.prom;const pc='pc'+(p!==''&&p!==undefined?(p>=11?' ok':' no'):'');
-          return`<tr><td class="td-pac">${pac.label}</td><td style="font-size:12px;padding-left:8px;color:var(--tx2)">${pac.nombre||'-'}</td>${tSS}${tEx}<td style="text-align:center"><span class="${pc}">${p!==''&&p!==undefined?p:'-'}</span></td></tr>`;
+          const ps=pac.promSS;const pe=pac.extraPond;const p=pac.prom;
+          const pc='pc'+(p!==''&&p!==undefined?(p>=11?' ok':' no'):'');
+          return`<tr>
+            <td class="td-pac">${pac.label}</td>
+            <td style="font-size:12px;padding-left:8px;color:var(--tx2)">${pac.nombre||'-'}</td>
+            ${tSS}${tEx}
+            <td style="text-align:center"><span class="pc" style="background:var(--n800);color:var(--n300)">${ps!==''&&ps!==undefined?ps:'-'}</span></td>
+            <td style="text-align:center"><span class="pc" style="background:#064e3b;color:#6ee7b7">${pe!==''&&pe!==undefined?pe:'-'}</span></td>
+            <td style="text-align:center"><span class="${pc}">${p!==''&&p!==undefined?p:'-'}</span></td>
+          </tr>`;
         }).join('');
-        return`<div class="est-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${base}SS+${extra}E</span></div><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Paciente</th>${thS}${thE}<th class="th-pr">PROM</th></tr></thead><tbody>${rows}</tbody></table>`;
+        return`<div class="est-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${base}SS+${extra}E</span></div><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-xp">Extra</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table>`;
       }).join('');
       return`<div class="est-cu-hdr">${cu.nombre}</div>${sb}`;
     }).join('');
@@ -939,6 +1015,23 @@ tbody td{padding:7px 11px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
 .firma-line{border-top:1px solid #0a1628;width:190px;margin:28px 0 4px auto;display:block}
 .firma p{font-size:11px;color:#334155}
 @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+
+/* ── LOG ── */
+.log-row{display:grid;grid-template-columns:110px 90px 1fr 60px 40px 55px;gap:5px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--bd2);font-size:11px}
+.log-row:hover{background:var(--n050)}
+.log-row:last-child{border-bottom:none}
+.log-ts{font-family:'DM Mono',monospace;font-size:10px;color:var(--tx4)}
+.log-doc{font-weight:600;color:var(--n500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-info{color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-tipo{font-family:'DM Mono',monospace;font-size:10px;font-weight:700;text-align:center;padding:1px 6px;border-radius:4px}
+.log-tipo.ss{background:var(--n100);color:var(--n600)}.log-tipo.ex{background:var(--green2);color:var(--green)}
+.log-val-old{font-family:'DM Mono',monospace;color:var(--tx4);text-align:center}
+.log-val-new{font-family:'DM Mono',monospace;font-weight:700;color:var(--n500);text-align:center}
+/* columna extra ponderado */
+.nt th.th-xp{background:#064e3b;color:#6ee7b7;width:58px}
+.nt th.th-nf{background:#1d4ed8;color:#fff;width:72px;font-weight:800}
+.nc.nf{color:#1d4ed8;font-weight:800}
+.pc.nf{background:#1e3a8a;color:#fff}
 </style></head>
 <body>
 <div class="top">
@@ -985,34 +1078,89 @@ tbody td{padding:7px 11px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
 
 
 // ── LOGO ─────────────────────────────────────────────────────
-function loadLogo(e){
-  const file=e.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    const dataUrl=ev.target.result;
-    localStorage.setItem('centyr_logo',dataUrl);
-    applyLogo(dataUrl);
-  };
-  reader.readAsDataURL(file);
-  e.target.value='';
-}
-function clearLogo(){
-  localStorage.removeItem('centyr_logo');
-  applyLogo(null);
-}
-function applyLogo(dataUrl){
-  // Header
-  const img=g('logoImg'),fb=g('logoFallback');
-  if(img&&fb){if(dataUrl){img.src=dataUrl;img.style.display='';fb.style.display='none'}else{img.src='';img.style.display='none';fb.style.display=''}}
-  // Login
-  const limg=g('logoLogin'),lfb=g('logoLoginFallback');
-  if(limg&&lfb){if(dataUrl){limg.src=dataUrl;limg.style.display='';lfb.style.display='none'}else{limg.src='';limg.style.display='none';lfb.style.display=''}}
-  // Preview en config
+const LOGO_URL_GITHUB = 'https://raw.githubusercontent.com/';  // base reference
+
+function previewLogoUrl(){
+  const url=vi('logoUrl').trim();
   const prev=g('logoPreview'),prevTxt=g('logoPreviewTxt');
-  if(prev&&prevTxt){if(dataUrl){prev.src=dataUrl;prev.style.display='';prevTxt.style.display='none'}else{prev.src='';prev.style.display='none';prevTxt.style.display=''}}
+  if(!url){if(prev)prev.style.display='none';if(prevTxt)prevTxt.style.display='';return}
+  if(prev){prev.src=url;prev.style.display='';prev.onerror=()=>{prev.style.display='none';if(prevTxt)prevTxt.style.display='';}}
+  if(prevTxt)prevTxt.style.display='none';
 }
+
+function saveLogoUrl(){
+  const url=vi('logoUrl').trim();
+  if(!url){toast('Ingresa una URL valida','','warn');return}
+  localStorage.setItem('centyr_logo_url', url);
+  applyLogo(url);
+  toast('Logo aplicado','','ok');
+}
+
+function clearLogo(){
+  localStorage.removeItem('centyr_logo_url');
+  applyLogo(null);
+  const inp=g('logoUrl');if(inp)inp.value='';
+}
+
+function applyLogo(url){
+  const show = url && url.length > 0;
+  ['logoImg','logoLogin'].forEach(id=>{
+    const el=g(id);if(!el)return;
+    if(show){el.src=url;el.style.display='';el.onerror=()=>{el.style.display='none';const fb=g(id==='logoImg'?'logoFallback':'logoLoginFallback');if(fb)fb.style.display=''}}
+    else{el.src='';el.style.display='none'}
+  });
+  ['logoFallback','logoLoginFallback'].forEach(id=>{
+    const el=g(id);if(!el)return;el.style.display=show?'none':'';
+  });
+  const prev=g('logoPreview'),prevTxt=g('logoPreviewTxt');
+  if(prev){if(show){prev.src=url;prev.style.display=''}else{prev.src='';prev.style.display='none'}}
+  if(prevTxt)prevTxt.style.display=show?'none':'';
+}
+
 // Aplicar logo guardado al cargar
-(function(){const saved=localStorage.getItem('centyr_logo');if(saved)applyLogo(saved);})();
+(function(){
+  const saved=localStorage.getItem('centyr_logo_url');
+  if(saved){applyLogo(saved);const inp=g('logoUrl');if(inp)inp.value=saved;}
+  // Auto-aplicar logo.png del repo de GitHub si no hay logo guardado
+  else{
+    const autoUrl='https://raw.githubusercontent.com/USUARIO_GITHUB/REPO/main/logo.png';
+    // Si el admin configura GAS_URL de GitHub Pages, detectar el repo automáticamente
+    // Por ahora se usa la URL configurada manualmente
+  }
+})();
+
+// ── LOG DE NOTAS ──────────────────────────────────────────────
+async function cargarLog(){
+  const box=g('logList');if(!box)return;
+  box.innerHTML='<div class="empty">Cargando...</div>';
+  const hojaFiltro=vi('logFiltroHoja');
+  // Poblar select de hojas en el filtro
+  const sel=g('logFiltroHoja');
+  if(sel&&sel.options.length<=1&&hojaData){
+    // Añadir hojas conocidas
+    try{const rh=await apiGet('listarHojas');if(rh.ok)rh.hojas.forEach(h=>{if(![...sel.options].find(o=>o.value===h.nombre)){const o=document.createElement('option');o.value=h.nombre;o.textContent=h.nombre;sel.appendChild(o)}})}catch(e){}
+  }
+  try{
+    const r=await apiGet('leerLog',{hoja:hojaFiltro,limite:200});
+    if(!r.ok)throw new Error(r.error);
+    if(!r.registros.length){box.innerHTML='<div class="empty">Sin registros</div>';return}
+    box.innerHTML=`<div style="background:var(--n900);padding:6px 10px;position:sticky;top:0;display:grid;grid-template-columns:110px 90px 1fr 60px 40px 55px;gap:5px;font-size:10px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.6px">
+      <span>Fecha/Hora</span><span>Docente</span><span>Alumno / Curso / Pac.</span><span>Tipo</span><span>N°</span><span>Valor</span>
+    </div>`+r.registros.map(reg=>{
+      const tipo=reg.tipo==='SS'?'ss':'ex';
+      const antStr=reg.anterior!==null&&reg.anterior!==undefined&&reg.anterior!=='-'?reg.anterior:'-';
+      const nuevoStr=reg.nuevo!==null&&reg.nuevo!==undefined&&reg.nuevo!=='-'?reg.nuevo:'-';
+      return`<div class="log-row">
+        <span class="log-ts">${reg.ts}</span>
+        <span class="log-doc" title="${reg.docente}">${reg.docente}</span>
+        <span class="log-info" title="${reg.alumno} | ${reg.curso} | ${reg.subgrupo} | ${reg.paciente}">${reg.alumno} &rsaquo; ${reg.curso} &rsaquo; ${reg.paciente}</span>
+        <span class="log-tipo ${tipo}">${reg.tipo}</span>
+        <span style="text-align:center;font-family:'DM Mono',monospace;font-weight:700">${reg.nro}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:11px;text-align:center;color:var(--n500);font-weight:700">${antStr}&#8594;${nuevoStr}</span>
+      </div>`;
+    }).join('');
+  }catch(e){box.innerHTML=`<div class="hint">Error: ${e.message}</div>`}
+}
 
 </script>
 </body>
