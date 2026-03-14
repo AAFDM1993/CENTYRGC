@@ -203,6 +203,13 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 /* Ocultar columna ID en editor de docente/admin */
 #edBody .nt th.th-pac,
 #edBody .nt td.td-pac { display:none }
+
+/* ── MODAL CAMBIO DE CONTRASEÑA ── */
+#passModal{position:fixed;inset:0;background:rgba(10,22,40,.65);z-index:600;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+#passModal.show{display:flex}
+.pass-card{background:var(--surf);border-radius:14px;padding:28px 28px 24px;width:100%;max-width:360px;box-shadow:0 24px 60px rgba(10,22,40,.4)}
+.pass-card h3{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--n900);margin-bottom:4px}
+.pass-card p{font-size:12px;color:var(--tx3);margin-bottom:18px}
 </style>
 </head>
 <body>
@@ -246,6 +253,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
       <div class="hdr-right">
         <div class="cpill" id="cpill"><div class="dot" id="cdot"></div><span class="clabel" id="clabel">-</span></div>
         <div class="rol-pill"><div class="rdot" id="rolDot"></div><span id="rolLabel">-</span></div>
+        <button class="btn-logout" onclick="mostrarCambioPass()" style="border-color:var(--n600);color:var(--n300)" title="Cambiar contrasena">&#128274;</button>
         <button class="btn-logout" onclick="logout()">Salir</button>
       </div>
     </div>
@@ -439,21 +447,37 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 
   <div id="viewEstudiante" style="display:none">
     <div class="est-wrap">
-      <div class="est-welcome">
-        <div class="est-avatar" id="estAvatar">E</div>
+      <div class="est-welcome" style="justify-content:space-between;align-items:center">
         <div class="est-info"><h2 id="estNombre">Estudiante</h2><p id="estCodigo">Codigo: -</p></div>
+        <button class="btn-sm" onclick="mostrarCambioPass()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);font-size:12px;padding:7px 14px">&#128274; Cambiar contrasena</button>
       </div>
       <div id="estNotas"><div class="est-no-data"><div class="ico">&#128203;</div><p>Cargando notas...</p></div></div>
     </div>
   </div>
 </div>
 
+
+<!-- Modal cambio de contraseña -->
+<div id="passModal">
+  <div class="pass-card">
+    <h3>&#128274; Cambiar contrasena</h3>
+    <p>Introduce tu contrasena actual y la nueva contrasena.</p>
+    <div class="field"><label>Contrasena actual</label><input class="inp" id="passActual" type="password" placeholder="Contrasena actual"></div>
+    <div class="field"><label>Nueva contrasena</label><input class="inp" id="passNueva" type="password" placeholder="Nueva contrasena" onkeydown="if(event.key==='Enter')guardarNuevaPass()"></div>
+    <div class="field"><label>Confirmar nueva contrasena</label><input class="inp" id="passConfirm" type="password" placeholder="Repetir nueva contrasena" onkeydown="if(event.key==='Enter')guardarNuevaPass()"></div>
+    <div id="passErr" style="font-size:12px;color:var(--red);margin-bottom:10px;display:none"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-sm green" onclick="guardarNuevaPass()" style="flex:1">Guardar nueva contrasena</button>
+      <button class="btn-ghost" onclick="cerrarPassModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
 <div id="toast"><div class="tt" id="ttt"></div><div class="tm" id="ttm"></div></div>
 
 <script>
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxrDH3Z27TKDClJ0dUiQwXocEUnqDOeQ34ihx9iDdwNeRqb6oje8ej9xp50CaBwhDXN2Q/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyCIK2FDl97snDT4ON7gQj_zFFQtM7k6noJ6Y4umCNmMWrRe0oFqmxz9IQhyUFg2kXv-w/exec';
 // ====================================================
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
@@ -868,8 +892,7 @@ async function saveNota(inp){
   },500);
 }
 async function iniciarVistaEstudiante(){
-  const ini=session.nombre?session.nombre.charAt(0).toUpperCase():'E';
-  g('estAvatar').textContent=ini;g('estNombre').textContent=session.nombre||'Estudiante';g('estCodigo').textContent='Codigo: '+session.codigo;
+  // avatar removidog('estNombre').textContent=session.nombre||'Estudiante';g('estCodigo').textContent='Codigo: '+session.codigo;
   showLoader('Cargando notas...');
   try{
     const r=await apiGet('misNotas',{codigo:session.codigo});hideLoader();if(!r.ok)throw new Error(r.error);renderEstNotas(r.resultados);
@@ -999,117 +1022,88 @@ function renderResumenPreview(curso){
 function exportarPDF(){
   if(!expResumen||!expSelCurso){toast('Selecciona hoja y curso','','warn');return}
   const cfg=expResumen.config||{};
-  const apro=Number(cfg.notaApro)||11;
   const curso=expResumen.cursos.find(c=>c.nombre===expSelCurso);
   if(!curso){toast('Curso no encontrado','','err');return}
   const asignatura=cfg.asignatura||expSelHoja;
   const semestre=cfg.semestre||'';
-  const seccion=cfg.seccion||'';
   const fecha=new Date().toLocaleDateString('es-PE',{year:'numeric',month:'long',day:'numeric'});
-  const aprobados=curso.alumnos.filter(al=>al.promFinal!==''&&al.promFinal!==undefined&&Number(al.promFinal)>=apro).length;
-  const total=curso.alumnos.length;
+  const logoUrl=getLogoUrl();
 
   const filas=curso.alumnos.map((al,i)=>{
     const p=al.promFinal;
-    const aprobado=p!==''&&p!==undefined&&Number(p)>=apro;
-    const color=p!==''&&p!==undefined?(aprobado?'#059669':'#dc2626'):'#64748b';
-    const estado=p!==''&&p!==undefined?(aprobado?'APROBADO':'DESAPROBADO'):'-';
     return `<tr>
-      <td style="text-align:center;color:#64748b;font-size:11px">${i+1}</td>
-      <td style="font-family:monospace;font-size:11px;color:#1d4ed8">${al.codigo||'-'}</td>
-      <td style="font-weight:600;font-size:12px">${al.nombre}</td>
-      <td style="text-align:center;font-family:monospace;font-weight:700;font-size:13px;color:${color}">${p!==''&&p!==undefined?p:'-'}</td>
-      <td style="text-align:center;font-size:11px;color:${color};font-weight:600">${estado}</td>
+      <td style="text-align:center;color:#64748b;font-size:11px;padding:8px 10px">${i+1}</td>
+      <td style="font-family:monospace;font-size:11px;color:#1d4ed8;padding:8px 10px">${al.codigo||'-'}</td>
+      <td style="font-weight:600;font-size:12px;padding:8px 10px">${al.nombre}</td>
+      <td style="text-align:center;font-family:monospace;font-weight:700;font-size:13px;color:#0a1628;padding:8px 10px">${p!==''&&p!==undefined?p:'-'}</td>
     </tr>`;
   }).join('');
 
   const htmlPDF=`<!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8">
-<title>Registro - ${curso.nombre}</title>
+<title>Registro de Notas - ${asignatura} - ${curso.nombre}</title>
 <style>
-@page{size:A4;margin:18mm 14mm}
+@page{size:A4;margin:15mm 14mm 18mm 14mm}
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#0f172a}
-.top{border-bottom:3px solid #1d4ed8;padding-bottom:12px;margin-bottom:16px}
-.inst{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
-h1{font-size:17px;font-weight:800;color:#0a1628;margin-bottom:3px}
-h2{font-size:13px;font-weight:700;color:#1d4ed8;margin-bottom:8px}
-.meta{display:flex;gap:14px;font-size:11px;color:#334155;margin-top:7px;flex-wrap:wrap}
-.meta span{background:#eff6ff;border:1px solid #bfdbfe;border-radius:4px;padding:2px 9px}
-.meta strong{color:#1d4ed8}
-table{width:100%;border-collapse:collapse;margin-top:4px}
-thead th{background:#0a1628;color:#fff;padding:8px 11px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.4px}
+/* HEADER */
+.hdr-pdf{display:flex;align-items:center;gap:18px;padding-bottom:14px;border-bottom:2px solid #0a1628;margin-bottom:18px}
+.logo-box{width:80px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.logo-box img{max-width:80px;max-height:70px;object-fit:contain}
+.inst-info{flex:1}
+.inst-univ{font-size:10px;font-weight:700;color:#0a1628;text-transform:uppercase;letter-spacing:.6px;line-height:1.5}
+.inst-fac{font-size:9.5px;color:#334155;text-transform:uppercase;letter-spacing:.5px;line-height:1.5}
+.inst-esc{font-size:9.5px;color:#1d4ed8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;line-height:1.5}
+/* TITULO */
+.titulo{margin-bottom:14px}
+.titulo h1{font-size:15px;font-weight:800;color:#0a1628;margin-bottom:3px}
+.titulo h2{font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:8px}
+.meta{display:flex;gap:18px;font-size:11px;color:#334155;flex-wrap:wrap}
+.meta-item{display:flex;gap:5px}
+.meta-item strong{color:#0a1628}
+/* TABLA */
+table{width:100%;border-collapse:collapse;margin-top:6px}
+thead th{background:#0a1628;color:#fff;padding:9px 10px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.3px}
 thead th.c{text-align:center}
 tbody tr:nth-child(even){background:#f8faff}
-tbody td{padding:7px 11px;border-bottom:1px solid #e2e8f0;vertical-align:middle}
-.footer{margin-top:22px;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px solid #e2e8f0;padding-top:12px}
-.stats{display:flex;gap:14px}
-.stat{text-align:center;background:#f0f4ff;border-radius:8px;padding:7px 14px;min-width:72px}
-.stat .n{font-size:20px;font-weight:800;color:#1d4ed8}
-.stat .l{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.6px;margin-top:1px}
-.stat.ok .n{color:#059669}.stat.no .n{color:#dc2626}
-.firma{text-align:right}
-.firma-line{border-top:1px solid #0a1628;width:190px;margin:28px 0 4px auto;display:block}
-.firma p{font-size:11px;color:#334155}
+tbody tr:nth-child(odd){background:#fff}
+tbody td{border-bottom:1px solid #e2e8f0;vertical-align:middle}
+tbody tr:last-child td{border-bottom:2px solid #0a1628}
 @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-
-/* ── LOG ── */
-.log-row{display:grid;grid-template-columns:110px 90px 1fr 60px 40px 55px;gap:5px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--bd2);font-size:11px}
-.log-row:hover{background:var(--n050)}
-.log-row:last-child{border-bottom:none}
-.log-ts{font-family:'DM Mono',monospace;font-size:10px;color:var(--tx4)}
-.log-doc{font-weight:600;color:var(--n500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.log-info{color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.log-tipo{font-family:'DM Mono',monospace;font-size:10px;font-weight:700;text-align:center;padding:1px 6px;border-radius:4px}
-.log-tipo.ss{background:var(--n100);color:var(--n600)}.log-tipo.ex{background:var(--green2);color:var(--green)}
-.log-val-old{font-family:'DM Mono',monospace;color:var(--tx4);text-align:center}
-.log-val-new{font-family:'DM Mono',monospace;font-weight:700;color:var(--n500);text-align:center}
-/* columna extra ponderado */
-.nt th.th-xp{background:#064e3b;color:#6ee7b7;width:76px}
-.nt th.th-nf{background:#1d4ed8;color:#fff;width:82px;font-weight:800}
-.nc.nf{color:#1d4ed8;font-weight:800}
-.pc.nf{background:#1e3a8a;color:#fff}
-
-/* Ocultar columna ID en editor de docente/admin */
-#edBody .nt th.th-pac,
-#edBody .nt td.td-pac { display:none }
 </style></head>
 <body>
-<div class="top">
-  <div class="inst">Escuela Profesional de Tecnologia Medica - Fisioterapia</div>
+<!-- ENCABEZADO INSTITUCIONAL -->
+<div class="hdr-pdf">
+  <div class="logo-box">
+    <img src="${logoUrl}" alt="Logo UPT" onerror="this.style.display='none'">
+  </div>
+  <div class="inst-info">
+    <div class="inst-univ">Universidad Privada de Tacna</div>
+    <div class="inst-fac">Facultad de Ciencias de la Salud</div>
+    <div class="inst-esc">Escuela Profesional de Tecnologia Medica</div>
+  </div>
+</div>
+<!-- TITULO Y METADATOS -->
+<div class="titulo">
   <h1>${asignatura}</h1>
   <h2>${curso.nombre}</h2>
   <div class="meta">
-    ${semestre?`<span><strong>Semestre:</strong> ${semestre}</span>`:''}
-    ${seccion?`<span><strong>Seccion:</strong> ${seccion}</span>`:''}
-    <span><strong>Nota aprobatoria:</strong> ${apro} pts</span>
-    <span><strong>Fecha:</strong> ${fecha}</span>
+    ${semestre?`<div class="meta-item"><strong>Semestre:</strong><span>${semestre}</span></div>`:''}
+    <div class="meta-item"><strong>Fecha:</strong><span>${fecha}</span></div>
   </div>
 </div>
+<!-- TABLA DE NOTAS -->
 <table>
   <thead><tr>
     <th class="c" style="width:34px">#</th>
-    <th style="width:95px">Codigo</th>
+    <th style="width:100px">Codigo</th>
     <th>Apellidos y Nombres</th>
-    <th class="c" style="width:75px">Prom. Final</th>
-    <th class="c" style="width:95px">Estado</th>
+    <th class="c" style="width:90px">Promedio Final</th>
   </tr></thead>
   <tbody>${filas}</tbody>
 </table>
-<div class="footer">
-  <div class="stats">
-    <div class="stat"><div class="n">${total}</div><div class="l">Total</div></div>
-    <div class="stat ok"><div class="n">${aprobados}</div><div class="l">Aprobados</div></div>
-    <div class="stat no"><div class="n">${total-aprobados}</div><div class="l">Desaprobados</div></div>
-  </div>
-  <div class="firma">
-    <span class="firma-line"></span>
-    <p><strong>Firma del Docente</strong></p>
-    <p style="margin-top:3px;color:#64748b">${asignatura}</p>
-  </div>
-</div>
 <script>window.onload=function(){window.print()}<\/script>
-</body></html>`;
+</body></html>\`;
 
   const win=window.open('','_blank');
   if(!win){toast('Habilita popups en el navegador','','warn');return}
@@ -1205,6 +1199,48 @@ function closeSidebar(){
   if(!_sidebarOpen) return;
   toggleSidebar();
 }
+
+
+// ── CAMBIO DE CONTRASEÑA ─────────────────────────────────────
+function mostrarCambioPass(){
+  g('passActual').value='';g('passNueva').value='';g('passConfirm').value='';
+  const err=g('passErr');if(err){err.style.display='none';err.textContent=''}
+  g('passModal').classList.add('show');
+  setTimeout(()=>g('passActual').focus(),100);
+}
+function cerrarPassModal(){
+  g('passModal').classList.remove('show');
+}
+async function guardarNuevaPass(){
+  const actual=g('passActual').value.trim();
+  const nueva=g('passNueva').value.trim();
+  const confirm=g('passConfirm').value.trim();
+  const err=g('passErr');
+  const showErr=m=>{err.textContent=m;err.style.display='block'};
+  if(!actual||!nueva||!confirm){showErr('Completa todos los campos');return}
+  if(nueva!==confirm){showErr('Las contrasenas nuevas no coinciden');return}
+  if(nueva.length<4){showErr('La contrasena debe tener al menos 4 caracteres');return}
+  if(!session){showErr('No hay sesion activa');return}
+  // Verificar contraseña actual haciendo login
+  showLoader('Verificando...');
+  try{
+    const vr=await apiGet('login',{codigo:session.codigo,password:actual});
+    if(!vr.ok){hideLoader();showErr('La contrasena actual es incorrecta');return}
+    // Guardar nueva contraseña usando guardarUsuario
+    const r=await apiPost({action:'guardarUsuario',codigo:session.codigo,password:nueva,rol:session.rol,nombre:session.nombre||''});
+    hideLoader();
+    if(!r.ok)throw new Error(r.error);
+    // Actualizar token de sesión con nueva contraseña
+    session.token=btoa(session.codigo+':'+nueva+':'+session.rol);
+    sessionStorage.setItem('ft_session',JSON.stringify(session));
+    cerrarPassModal();
+    toast('Contrasena actualizada','Usa tu nueva contrasena en el proximo inicio de sesion','ok');
+  }catch(e){hideLoader();showErr('Error: '+e.message)}
+}
+// Cerrar modal al hacer clic fuera
+g('passModal')&&g('passModal').addEventListener('click',function(e){
+  if(e.target===this)cerrarPassModal();
+});
 
 </script>
 </body>
