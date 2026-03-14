@@ -141,11 +141,11 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 .nn{width:100%;border:1px solid transparent;background:transparent;font-size:12px;color:var(--tx);outline:none;padding:5px 6px;border-radius:5px;transition:all .15s;font-family:'Plus Jakarta Sans',sans-serif}
 .nn:hover{border-color:var(--bd);background:var(--surf2)}.nn:focus{border-color:var(--n500);background:#fff}.nn.has-val{font-weight:600}
 .pc{font-family:'DM Mono',monospace;font-size:13px;font-weight:700;display:inline-block;min-width:52px;padding:4px 8px;border-radius:6px;background:var(--n800);color:var(--n300);text-align:center}.pc.ok{background:var(--green2);color:var(--green)}.pc.no{background:var(--red2);color:var(--red)}
-.est-wrap{max-width:900px;margin:0 auto;padding:24px 28px}
+.est-wrap{max-width:100%;margin:0 auto;padding:20px 28px}
 .est-welcome{background:var(--n900);border-radius:14px;padding:24px 28px;margin-bottom:22px;display:flex;align-items:center;gap:18px}
 .est-avatar{width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,var(--n500),var(--n400));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-size:20px;font-weight:800;color:#fff;flex-shrink:0}
 .est-info h2{font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:18px}.est-info p{color:var(--n300);font-size:13px;margin-top:3px}
-.est-hoja{background:var(--surf);border:1px solid var(--bd2);border-radius:12px;margin-bottom:18px;overflow:visible;box-shadow:var(--sh)}
+.est-hoja{background:var(--surf);border:1px solid var(--bd2);border-radius:12px;margin-bottom:18px;overflow:visible;box-shadow:var(--sh);width:100%}
 .est-hoja-hdr{background:var(--n800);padding:14px 20px}.est-hoja-hdr h3{font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:15px}.est-hoja-hdr p{font-size:11px;color:var(--n300);margin-top:2px}
 .est-cu-hdr{background:var(--n700);color:var(--n200);padding:8px 20px;font-size:12px;font-weight:600;font-style:italic;display:flex;align-items:center;gap:7px}
 .est-sgr-hdr{background:var(--n600);color:#bfdbfe;padding:6px 24px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:8px}
@@ -497,6 +497,7 @@ async function apiGet(action,params){
   if(session&&session.token)p.token=session.token;
   const r=await fetch(GAS_URL+'?'+new URLSearchParams(p));
   if(!r.ok)throw new Error('HTTP '+r.status);
+  if(session)saveSession(session); // renovar timestamp al hacer actividad
   return r.json();
 }
 async function apiPost(body){
@@ -506,9 +507,35 @@ async function apiPost(body){
   return r.json();
 }
 
+const SESSION_KEY='ft_session_v2';
+const SESSION_TTL=6*60*60*1000; // 6 horas en ms
+
+function saveSession(data){
+  const payload={data:data,ts:Date.now()};
+  localStorage.setItem(SESSION_KEY,JSON.stringify(payload));
+}
+function loadSession(){
+  try{
+    const raw=localStorage.getItem(SESSION_KEY);
+    if(!raw)return null;
+    const payload=JSON.parse(raw);
+    if(Date.now()-payload.ts>SESSION_TTL){
+      localStorage.removeItem(SESSION_KEY);return null;
+    }
+    return payload.data;
+  }catch(e){return null;}
+}
+function clearSession(){
+  localStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem('ft_session'); // limpiar legacy
+}
+
 window.onload=function(){
-  const s=sessionStorage.getItem('ft_session');
-  if(s){try{session=JSON.parse(s);startApp();return}catch(e){}}
+  // Migrar sesión legacy de sessionStorage si existe
+  const legacy=sessionStorage.getItem('ft_session');
+  if(legacy){try{const d=JSON.parse(legacy);saveSession(d);sessionStorage.removeItem('ft_session')}catch(e){}}
+  const saved=loadSession();
+  if(saved){session=saved;startApp();return;}
   g('loginPage').style.display='flex';
 };
 
@@ -522,12 +549,12 @@ async function doLogin(){
     hideLoader();
     if(!r.ok){lgErr(r.error||'Error de autenticacion');return}
     session={token:r.token,rol:r.rol,nombre:r.nombre,codigo:code};
-    sessionStorage.setItem('ft_session',JSON.stringify(session));startApp();
+    saveSession(session);startApp();
   }catch(e){hideLoader();lgErr('Error: '+e.message)}
 }
 function lgErr(m){const el=g('lgErr');el.textContent=m;el.classList.add('show')}
 function logout(){
-  session=null;sessionStorage.removeItem('ft_session');hojaActiva=null;hojaData=null;
+  session=null;clearSession();hojaActiva=null;hojaData=null;
   g('appPage').style.display='none';g('loginPage').style.display='flex';
   g('lgCode').value='';g('lgPass').value='';g('lgErr').classList.remove('show');
 }
@@ -1233,7 +1260,7 @@ async function guardarNuevaPass(){
     if(!r.ok)throw new Error(r.error);
     // Actualizar token de sesión con nueva contraseña
     session.token=btoa(session.codigo+':'+nueva+':'+session.rol);
-    sessionStorage.setItem('ft_session',JSON.stringify(session));
+    saveSession(session);
     cerrarPassModal();
     toast('Contrasena actualizada','Usa tu nueva contrasena en el proximo inicio de sesion','ok');
   }catch(e){hideLoader();showErr('Error: '+e.message)}
