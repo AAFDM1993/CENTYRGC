@@ -418,7 +418,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
     <div id="sideOverlay" onclick="toggleSidebar()"></div>
 
     <!-- Sidebar deslizable -->
-    <div id="adminSidebar">
+    <div id="adminSidebar" class="sidebar-hidden">
       <div class="sidebar-inner">
         <div class="tabs" id="adminTabs" style="grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--n700)">
           <button class="tab on" id="tabAl" onclick="showTab('al',this)">Alumnos</button>
@@ -583,7 +583,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
             <!-- Navegacion semanal -->
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:6px">
               <button class="btn-ghost" onclick="semanaAnterior()" style="padding:6px 11px;font-size:16px">&#8249;</button>
-              <span id="calSemanaLabel" style="font-size:12px;font-weight:700;color:var(--tx);flex:1;text-align:center"></span>
+              <span id="calSemanaLabelSidebar" style="font-size:12px;font-weight:700;color:var(--tx);flex:1;text-align:center"></span>
               <button class="btn-ghost" onclick="semanaSiguiente()" style="padding:6px 11px;font-size:16px">&#8250;</button>
               <button class="btn-ghost" onclick="irHoy()" style="font-size:11px;padding:5px 10px">Hoy</button>
             </div>
@@ -595,7 +595,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
             </div>
 
             <!-- Grid del calendario (días de la semana) -->
-            <div id="calGrid" style="overflow-x:auto;-webkit-overflow-scrolling:touch"></div>
+            <div id="calGridSidebar" style="overflow-x:auto;-webkit-overflow-scrolling:touch"></div>
 
             <!-- Sección: Ver y gestionar reservas -->
             <div style="margin-top:12px">
@@ -680,7 +680,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
         <span style="font-size:10px;font-weight:700;color:var(--n500);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap">Hojas:</span>
         <div id="docenteHojasBtns" style="display:flex;gap:5px;align-items:center"><span style="font-size:12px;color:var(--n500)">Cargando...</span></div>
         <div style="width:1px;height:24px;background:var(--n700);margin:0 6px;flex-shrink:0"></div>
-        <button onclick="abrirAgendaPopup()" style="display:flex;align-items:center;gap:6px;background:var(--n600);border:1px solid var(--n500);border-radius:9px;color:#fff;font-size:12px;font-weight:700;padding:6px 13px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='var(--n500)'" onmouseout="this.style.background='var(--n600)'">
+        <button id="btnTopbarAgenda" onclick="mostrarAgenda()" style="display:flex;align-items:center;gap:6px;background:var(--n600);border:1px solid var(--n500);border-radius:9px;color:#fff;font-size:12px;font-weight:700;padding:6px 13px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='var(--n500)'" onmouseout="this.style.background='var(--n600)'">
           &#128197; Agenda
         </button>
       </div>
@@ -693,6 +693,29 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
             <div id="connHint" class="hint"><span>...</span><span>Conectando...</span></div>
           </div>
         </div>
+        <div id="agendaCard" style="display:none">
+          <div style="background:var(--surf);border:1px solid var(--bd2);border-radius:16px;overflow:hidden">
+            <div class="chdr" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+              <div style="display:flex;align-items:center;gap:10px">
+                <h2 style="font-size:15px">&#128197; Agenda</h2>
+                <div style="display:flex;align-items:center;gap:5px">
+                  <button onclick="semanaAnterior()" style="background:var(--n800);border:none;color:#fff;width:28px;height:28px;border-radius:8px;font-size:16px;cursor:pointer;line-height:1">&#8249;</button>
+                  <span id="calSemanaLabel" style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:var(--tx);min-width:140px;text-align:center"></span>
+                  <button onclick="semanaSiguiente()" style="background:var(--n800);border:none;color:#fff;width:28px;height:28px;border-radius:8px;font-size:16px;cursor:pointer;line-height:1">&#8250;</button>
+                  <button onclick="irHoy()" style="background:var(--surf2);border:1px solid var(--bd);color:var(--tx3);border-radius:8px;padding:4px 10px;font-size:11px;cursor:pointer;font-weight:700">Hoy</button>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:7px">
+                <select id="calAreaFiltro" style="background:var(--surf2);border:1px solid var(--bd);border-radius:10px;color:var(--tx);font-size:12px;padding:5px 10px;outline:none" onchange="renderCalendario()"><option value="">Todas las areas</option></select>
+                <button id="btnConfigAgenda" style="display:none;background:var(--n700);border:1px solid var(--n600);color:#fff;border-radius:9px;padding:5px 11px;font-size:12px;font-weight:600;cursor:pointer" onclick="abrirConfigAgenda()">&#9881; Config</button>
+              </div>
+            </div>
+            <div style="padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y">
+              <div id="calGrid"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="card" id="edCard" style="display:none">
           <div class="chdr"><h2 id="edTitle">Editor</h2><span class="badge" id="edBadge">-</span></div>
           <div class="ed-filter" id="edFilter" style="display:none">
@@ -797,6 +820,32 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
   </div>
 </div>
 
+
+<!-- Modal config agenda -->
+<div id="configAgendaModal" style="position:fixed;inset:0;background:rgba(10,22,40,.6);z-index:900;display:none;align-items:flex-start;justify-content:center;padding:60px 16px 16px;overflow-y:auto;backdrop-filter:blur(2px)">
+  <div style="background:var(--surf);border-radius:16px;width:100%;max-width:500px;box-shadow:0 20px 50px rgba(10,22,40,.4);overflow:hidden">
+    <div style="background:var(--n900);padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:14px">&#9881; Configuracion de Agenda</span>
+      <button onclick="cerrarConfigAgenda()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:7px;font-size:16px;cursor:pointer">&#10005;</button>
+    </div>
+    <div style="padding:16px;overflow-y:auto;max-height:70vh">
+      <div id="areasConfigList"></div>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <input class="inp" id="newAreaNom" placeholder="Nombre del area" style="flex:1">
+        <button class="btn-sm" onclick="addArea()">+ Area</button>
+      </div>
+      <div class="slbl">Franjas horarias</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:14px">
+        <div class="field" style="margin:0"><label>T1 inicio</label><input class="inp" id="calFranja1Ini" value="08:00" type="time"></div>
+        <div class="field" style="margin:0"><label>T1 fin</label><input class="inp" id="calFranja1Fin" value="13:00" type="time"></div>
+        <div class="field" style="margin:0"><label>T2 inicio</label><input class="inp" id="calFranja2Ini" value="14:00" type="time"></div>
+        <div class="field" style="margin:0"><label>T2 fin</label><input class="inp" id="calFranja2Fin" value="19:00" type="time"></div>
+      </div>
+      <button class="btn-sm green" onclick="guardarAgendaConfig();cerrarConfigAgenda();" style="width:100%;min-height:40px">Guardar configuracion</button>
+    </div>
+  </div>
+</div>
+
 <!-- Modal de reserva de agenda -->
 <div id="reservaModal" style="position:fixed;inset:0;background:rgba(10,22,40,.65);z-index:800;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
   <div style="background:var(--surf);border-radius:14px;padding:24px;width:100%;max-width:400px;box-shadow:0 24px 60px rgba(10,22,40,.4)">
@@ -813,31 +862,6 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
   </div>
 </div>
 
-<!-- Modal Agenda Popup (docente y para referencia del alumno) -->
-<div id="agendaModal" style="position:fixed;inset:0;background:rgba(10,22,40,.7);z-index:700;display:none;align-items:flex-start;justify-content:center;padding:70px 16px 16px;backdrop-filter:blur(3px);overflow-y:auto">
-  <div style="background:var(--surf);border-radius:14px;width:100%;max-width:1100px;box-shadow:0 24px 60px rgba(10,22,40,.5);overflow:hidden">
-    <!-- Header del modal -->
-    <div style="background:var(--n900);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:2">
-      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
-        <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:15px">&#128197; Agenda</span>
-        <div style="display:flex;align-items:center;gap:6px">
-          <button onclick="semanaAnterior()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:7px;font-size:16px;cursor:pointer;line-height:1">&#8249;</button>
-          <span id="calSemanaLabelModal" style="font-size:12px;color:var(--n300);min-width:130px;text-align:center"></span>
-          <button onclick="semanaSiguiente()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:7px;font-size:16px;cursor:pointer;line-height:1">&#8250;</button>
-          <button onclick="irHoy()" style="background:rgba(255,255,255,.1);border:none;color:var(--n300);border-radius:7px;padding:5px 10px;font-size:11px;cursor:pointer;font-weight:700">Hoy</button>
-        </div>
-        <select id="calAreaFiltroModal" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:7px;color:#fff;font-size:12px;padding:5px 10px;cursor:pointer" onchange="syncFiltroArea();renderCalendario()">
-          <option value="">Todas las areas</option>
-        </select>
-      </div>
-      <button onclick="cerrarAgendaModal()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:18px;cursor:pointer;line-height:1">&#10005;</button>
-    </div>
-    <!-- Contenido del calendario en el modal -->
-    <div style="padding:16px;overflow-x:auto;max-height:70vh;overflow-y:auto">
-      <div id="calGridModal"></div>
-    </div>
-  </div>
-</div>
 
 
 <div id="toast"><div class="tt" id="ttt"></div><div class="tm" id="ttm"></div></div>
@@ -845,7 +869,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 <script>
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbz1Lf52L8ZUWgRDeMau2e58GMi-7VO7Pspgmrm7a4KBrduo5Z1bLh6SJUFWoO7ITKm65g/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz9a0Xl031LtOJQnNfqDfP8Tq50Gjw4fvdSI1g4q-IExDiGHinB7GZ3nTo9c6DX3yuV9Q/exec';
 // ====================================================
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
@@ -950,11 +974,8 @@ function iniciarVistaAdmin(){
   const esA=session.rol==='admin';
   const esD=session.rol==='docente';
 
-  // Ambos roles: ocultar sidebar y toolbar clásica, mostrar topbar
-  const sb=g('adminSidebar');
-  if(sb){sb.classList.add('sidebar-hidden');sb.classList.remove('open');}
-  if(g('sideOverlay'))g('sideOverlay').classList.remove('show');
-  _sidebarOpen=false;
+  // Ambos roles: ocultar sidebar completamente, mostrar topbar
+  hideSidebar();
   if(g('contentToolbar'))g('contentToolbar').style.display='none';
   if(g('docenteTopbar'))g('docenteTopbar').style.display='';
 
@@ -1189,6 +1210,9 @@ async function delHoja(nombre){
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
 async function abrirHoja(nombre){
+  var ac=g('agendaCard'); if(ac) ac.style.display='none';
+  var btn=g('btnTopbarAgenda');
+  if(btn){ btn.style.background='var(--n600)'; btn.style.borderColor='var(--n500)'; }
   closeSidebar();
   showLoader('Cargando hoja...');
   try{
@@ -1657,7 +1681,11 @@ function toggleSidebar(){
   const sb  = g('adminSidebar');
   const ov  = g('sideOverlay');
   const lbl = g('sidebarBtnLabel');
-  if(sb) sb.classList.toggle('open', _sidebarOpen);
+  if(sb){
+    // Quitar sidebar-hidden al abrir por primera vez
+    if(_sidebarOpen) sb.classList.remove('sidebar-hidden');
+    sb.classList.toggle('open', _sidebarOpen);
+  }
   if(ov) ov.classList.toggle('show', _sidebarOpen);
   if(lbl) lbl.textContent = _sidebarOpen ? 'Cerrar panel' : 'Panel';
   document.body.style.overflow = _sidebarOpen ? 'hidden' : '';
@@ -1665,6 +1693,14 @@ function toggleSidebar(){
 function closeSidebar(){
   if(!_sidebarOpen) return;
   toggleSidebar();
+}
+function hideSidebar(){
+  // Ocultar completamente el sidebar (para admin sin panel abierto)
+  const sb=g('adminSidebar');
+  if(sb){ sb.classList.add('sidebar-hidden'); sb.classList.remove('open'); }
+  if(g('sideOverlay')) g('sideOverlay').classList.remove('show');
+  _sidebarOpen=false;
+  document.body.style.overflow='';
 }
 
 
@@ -2026,6 +2062,8 @@ async function pedirEliminar(fecha,hora,area,camilla){
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
 
+
+g('configAgendaModal')&&g('configAgendaModal').addEventListener('click',function(e){if(e.target===this)cerrarConfigAgenda();});
 g('reservaModal')&&g('reservaModal').addEventListener('click',function(e){if(e.target===this)cerrarReservaModal();});
 
 
@@ -2235,43 +2273,61 @@ function renderDocenteHojasBtns(hojas){
     </button>`).join('');
 }
 
-// Abrir/cerrar modal agenda
-async function abrirAgendaPopup(){
-  g('agendaModal').style.display='flex';
-  // Siempre cargar config y reservas al abrir
+// ── AGENDA COMO PÁGINA COMPLETA ────────────────────────────
+async function mostrarAgenda(){
+  // Ocultar el editor, mostrar la sección de agenda
+  var edCard = g('edCard');
+  if(edCard) edCard.style.display='none';
+  var ac = g('agendaCard');
+  if(ac) ac.style.display='block';
+  // Marcar botón activo en el topbar
+  var btn = g('btnTopbarAgenda');
+  if(btn){ btn.style.background='var(--n500)'; btn.style.borderColor='var(--n400)'; }
+  // Cargar configuración y datos
   showLoader('Cargando agenda...');
   try{
-    const rc=await apiGet('leerAgendaConfig');
+    var rc = await apiGet('leerAgendaConfig');
     if(rc.ok){
-      agendaCfg=rc.config;
-      // Migrar config antigua si tiene 'camillas' en vez de 'espacios'
-      agendaCfg.areas=(agendaCfg.areas||[]).map(a=>{
-        if(!a.espacios&&a.camillas) a.espacios=Array.from({length:a.camillas},(_,i)=>({nombre:'Camilla '+(i+1),capacidad:1}));
-        if(!a.espacios) a.espacios=[{nombre:'Espacio 1',capacidad:1}];
+      agendaCfg = rc.config;
+      agendaCfg.areas = (agendaCfg.areas||[]).map(function(a){
+        if(!a.espacios && a.camillas)
+          a.espacios = Array.from({length:a.camillas}, function(_,i){ return {nombre:'Camilla '+(i+1), capacidad:1}; });
+        if(!a.espacios) a.espacios = [{nombre:'Espacio 1', capacidad:1}];
         return a;
       });
-      if(!agendaCfg.franjas) agendaCfg.franjas=[{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}];
+      if(!agendaCfg.franjas)
+        agendaCfg.franjas = [{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}];
     }
-    calFechaBase=getLunes(calFechaBase||new Date());
-    const finSem=new Date(calFechaBase);finSem.setDate(finSem.getDate()+4);
+    // Mostrar btn Config solo para admin
+    var btnCfg = g('btnConfigAgenda');
+    if(btnCfg) btnCfg.style.display = (session && session.rol==='admin') ? '' : 'none';
+    // Poblar filtro de área
+    var sel = g('calAreaFiltro');
+    if(sel){
+      sel.innerHTML = '<option value="">Todas las areas</option>' +
+        agendaCfg.areas.map(function(a){
+          return '<option value="' + esc2(a.nombre) + '">' + a.nombre + '</option>';
+        }).join('');
+    }
+    calFechaBase = getLunes(calFechaBase || new Date());
+    var finSem = new Date(calFechaBase); finSem.setDate(finSem.getDate()+4);
     await cargarReservasSemana();
-    await cargarBloqueos(fmt(calFechaBase),fmt(finSem));
-  }catch(e){console.warn('Error cargando agenda:',e);}
+    await cargarBloqueos(fmt(calFechaBase), fmt(finSem));
+  } catch(ex){ console.warn('Error agenda:', ex); }
   hideLoader();
-
-  // Poblar filtro de área en el modal
-  const filtSel=g('calAreaFiltroModal');
-  if(filtSel){
-    filtSel.innerHTML='<option value="">Todas las areas</option>'+
-      agendaCfg.areas.map(a=>`<option value="${esc2(a.nombre)}">${a.nombre}</option>`).join('');
-  }
-  // Actualizar label de semana
-  const vier=new Date(calFechaBase);vier.setDate(vier.getDate()+4);
-  const lbl=g('calSemanaLabelModal');
-  if(lbl)lbl.textContent=fmtDia(calFechaBase)+' – '+fmtDia(vier)+' / '+vier.getFullYear();
-
-  renderCalendarioModal();
+  renderCalendario();
 }
+function abrirConfigAgenda(){
+  renderAreasConfig();
+  var m = g('configAgendaModal');
+  if(m) m.style.display='flex';
+}
+function cerrarConfigAgenda(){
+  var m = g('configAgendaModal');
+  if(m) m.style.display='none';
+}
+function abrirAgendaPopup(){ mostrarAgenda(); }
+function cerrarAgendaModal(){}
 
 function cerrarAgendaModal(){
   g('agendaModal').style.display='none';
@@ -2584,6 +2640,7 @@ function abrirPanelAdmin(tab){
   showTab(tab, g('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)));
   if(!_sidebarOpen) toggleSidebar();
 }
+
 
 </script>
 </body>
