@@ -163,7 +163,43 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 #loader.show{display:flex}#loader p{font-family:'Syne',sans-serif;font-size:14px;color:#fff}
 .ring{width:44px;height:44px;border:3px solid var(--n700);border-top-color:var(--n400);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:900px){.wrap{padding:0}.hdr{padding:0 14px}.est-wrap{padding:14px}#drawer{width:100%;max-width:100%}#adminSidebar{width:100%;max-width:100%}.content-main{padding:14px}.content-toolbar{padding:8px 14px}}
+
+/* ── RESPONSIVE ── */
+@media(max-width:1200px){
+  .content-main{padding:16px 14px}
+  .wrap{padding:0}
+}
+@media(max-width:768px){
+  #adminSidebar{width:100%;max-width:100%;top:58px;height:calc(100vh - 58px)}
+  .content-main{padding:10px 10px}
+  .hdr{padding:0 12px}
+  .hdr h1{font-size:13px}
+  .hdr p{display:none}
+  .logo .lmark{width:28px;height:28px;font-size:12px}
+  .est-wrap{padding:10px 10px}
+  .est-welcome{padding:14px 16px}
+  #docenteTopbar{padding:0 10px}
+  #docenteTopbar>div{gap:4px}
+  .cal-day-col{min-width:85px;width:85px!important}
+  [style*="width:130px"]{min-width:85px!important}
+  .cal-day-hdr .dia-num{font-size:14px}
+  .nt th,.nt td{padding:5px 4px}
+  .nc{font-size:11px;padding:4px 1px}
+  .card{border-radius:8px}
+  .pv-al-hdr{font-size:12px;padding:8px 12px}
+  #agendaModal{padding:58px 8px 8px}
+  #agendaModal>div{border-radius:10px}
+}
+@media(max-width:480px){
+  .hdr{height:50px}
+  .btn-logout{font-size:11px;padding:4px 9px}
+  .rol-pill{padding:3px 9px;font-size:11px}
+  .est-info h2{font-size:15px}
+  .cal-day-col{min-width:70px;width:70px!important}
+  [style*="width:130px"]{min-width:70px!important}
+  #adminSidebar{top:50px;height:calc(100vh - 50px)}
+}
+
 
 /* ── EXPORTAR PDF ── */
 .exp-hoja-item{display:flex;align-items:center;gap:10px;background:var(--surf2);border:1px solid var(--bd2);border-radius:9px;padding:10px 14px;margin-bottom:7px;cursor:pointer;transition:all .15s}
@@ -615,6 +651,32 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
     </div>
   </div>
 </div>
+
+<!-- Modal Agenda Popup (docente y para referencia del alumno) -->
+<div id="agendaModal" style="position:fixed;inset:0;background:rgba(10,22,40,.7);z-index:700;display:none;align-items:flex-start;justify-content:center;padding:70px 16px 16px;backdrop-filter:blur(3px);overflow-y:auto">
+  <div style="background:var(--surf);border-radius:14px;width:100%;max-width:1100px;box-shadow:0 24px 60px rgba(10,22,40,.5);overflow:hidden">
+    <!-- Header del modal -->
+    <div style="background:var(--n900);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:2">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:15px">&#128197; Agenda</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <button onclick="semanaAnterior()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:7px;font-size:16px;cursor:pointer;line-height:1">&#8249;</button>
+          <span id="calSemanaLabelModal" style="font-size:12px;color:var(--n300);min-width:130px;text-align:center"></span>
+          <button onclick="semanaSiguiente()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:7px;font-size:16px;cursor:pointer;line-height:1">&#8250;</button>
+          <button onclick="irHoy()" style="background:rgba(255,255,255,.1);border:none;color:var(--n300);border-radius:7px;padding:5px 10px;font-size:11px;cursor:pointer;font-weight:700">Hoy</button>
+        </div>
+        <select id="calAreaFiltroModal" style="background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:7px;color:#fff;font-size:12px;padding:5px 10px;cursor:pointer" onchange="syncFiltroArea();renderCalendario()">
+          <option value="">Todas las areas</option>
+        </select>
+      </div>
+      <button onclick="cerrarAgendaModal()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:32px;height:32px;border-radius:8px;font-size:18px;cursor:pointer;line-height:1">&#10005;</button>
+    </div>
+    <!-- Contenido del calendario en el modal -->
+    <div style="padding:16px;overflow-x:auto;max-height:70vh;overflow-y:auto">
+      <div id="calGridModal"></div>
+    </div>
+  </div>
+</div>
 <div id="toast"><div class="tt" id="ttt"></div><div class="tm" id="ttm"></div></div>
 
 <script>
@@ -728,14 +790,23 @@ function setConn(ok,msg){
 }
 function iniciarVistaAdmin(){
   const esA=session.rol==='admin';
-  if(!esA){
-    ['tabAl','tabCu','tabNt','tabUs','tabPdf','tabLog'].forEach(t=>{const el=g(t);if(el)el.style.display='none'});g('btnGen').style.display='none';
-    document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
-    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
-    g('tabHo').classList.add('on');g('pane-ho').classList.add('on');
-    g('btnGen').style.display='none';
+  const esD=session.rol==='docente';
+  if(esA){
+    // Admin: sidebar normal
+    g('btnGen').disabled=false;renderCursos();renderPreview();cargarUsuarios();cargarLog();
+    if(g('adminSidebar'))g('adminSidebar').style.display='';
+    if(g('contentToolbar'))g('contentToolbar').style.display='';
+    if(g('docenteTopbar'))g('docenteTopbar').style.display='none';
+  } else if(esD){
+    // Docente: ocultar sidebar, mostrar barra superior propia
+    if(g('adminSidebar'))g('adminSidebar').style.display='none';
+    if(g('contentToolbar'))g('contentToolbar').style.display='none';
+    if(g('docenteTopbar'))g('docenteTopbar').style.display='';
+    if(g('btnGen'))g('btnGen').style.display='none';
     const uz=g('uploadZone');if(uz)uz.style.display='none';
-  }else{g('btnGen').disabled=false;renderCursos();renderPreview();cargarUsuarios();cargarLog();}
+    // Ocultar tabs del sidebar que no aplican
+    ['tabAl','tabCu','tabNt','tabUs','tabPdf','tabLog'].forEach(t=>{const el=g(t);if(el)el.style.display='none'});
+  }
   loadHojas();
 }
 function showTab(tid,btn){
@@ -940,6 +1011,8 @@ async function loadHojas(){
   const box=g('hojasBox');if(!box)return;box.innerHTML='<div class="empty">Cargando...</div>';
   try{
     const r=await apiGet('listarHojas');if(!r.ok)throw new Error(r.error);
+    // Poblar botones del topbar del docente
+    renderDocenteHojasBtns(r.hojas);
     if(!r.hojas.length){box.innerHTML='<div class="empty">Sin hojas creadas</div>';return}
     const esA=session&&session.rol==='admin';
     box.innerHTML=r.hojas.map(h=>`<div class="hi" onclick="abrirHoja('${esc(h.nombre)}')"><div class="hi-ico">&#128203;</div><div class="hi-info"><div class="hi-name">${h.nombre}</div><div class="hi-meta">${h.alumnos} alumno${h.alumnos!==1?'s':''}</div></div>${esA?`<button class="hi-del" onclick="event.stopPropagation();delHoja('${esc(h.nombre)}')">&#128465;</button>`:''}</div>`).join('');
@@ -1734,6 +1807,7 @@ async function confirmarReserva(){
   if(!pac){const e=g('rsvErr');e.textContent='El nombre del paciente es requerido';e.style.display='block';return}
   showLoader('Guardando reserva...');
   const esEst=rsvPendiente.esEstudiante||false;
+  const fromModal=rsvPendiente.fromModal||false;
   try{
     const r=await apiPost({
       action:'crearReserva',
@@ -1745,6 +1819,7 @@ async function confirmarReserva(){
     hideLoader();if(!r.ok)throw new Error(r.error);
     cerrarReservaModal();toast('Reserva creada','','ok');
     if(esEst){ await cargarReservasEst();renderCalendarioEst(); }
+    else if(fromModal){ await cargarReservasSemana();renderCalendarioModal(); }
     else { await cargarReservasSemana();renderCalendario(); }
   }catch(e){hideLoader();const er=g('rsvErr');er.textContent=e.message;er.style.display='block';}
 }
@@ -1918,12 +1993,152 @@ function abrirReservaEst(fecha,hora,area,camilla,fechaLabel){
 
 
 // ── EXPAND/COLAPSAR secciones ──────────────────────────────
-function toggleSection(id, hdr){
+function toggleSection(id, arrowOrHdr){
   const body=g(id);if(!body)return;
-  const arrow=hdr&&hdr.querySelector('.collapsible-arrow');
+  // arrowOrHdr puede ser el arrow directamente (por id) o el hdr (para buscar en hijos)
+  let arrow=arrowOrHdr;
+  if(arrowOrHdr&&arrowOrHdr.classList&&!arrowOrHdr.classList.contains('collapsible-arrow')){
+    arrow=arrowOrHdr.querySelector('.collapsible-arrow')||arrowOrHdr;
+  }
   const open=body.classList.toggle('open');
-  if(arrow) arrow.classList.toggle('open', open);
+  if(arrow&&arrow.classList) arrow.classList.toggle('open', open);
 }
+
+
+// ── DOCENTE TOPBAR ───────────────────────────────────────
+let calGridTarget = 'calGrid'; // 'calGrid' o 'calGridModal'
+
+function renderDocenteHojasBtns(hojas){
+  const box=g('docenteHojasBtns');if(!box)return;
+  if(!hojas||!hojas.length){box.innerHTML='<span style="font-size:12px;color:var(--n400)">Sin hojas</span>';return;}
+  box.innerHTML=hojas.map(h=>`
+    <button onclick="abrirHoja('${esc(h.nombre)}')" style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;white-space:nowrap;transition:all .2s;max-width:180px;overflow:hidden;text-overflow:ellipsis" onmouseover="this.style.background='rgba(255,255,255,.18)'" onmouseout="this.style.background='rgba(255,255,255,.08)'" title="${h.nombre}">
+      ${h.nombre.length>20?h.nombre.substring(0,18)+'…':h.nombre}
+    </button>`).join('');
+}
+
+// Abrir/cerrar modal agenda
+async function abrirAgendaPopup(){
+  g('agendaModal').style.display='flex';
+  calGridTarget='calGridModal';
+  // Sincronizar filtro de área
+  const filtSel=g('calAreaFiltroModal');
+  if(filtSel){
+    filtSel.innerHTML='<option value="">Todas las areas</option>'+
+      agendaCfg.areas.map(a=>`<option value="${esc2(a.nombre)}">${a.nombre}</option>`).join('');
+  }
+  if(!agendaReservas.length) await cargarReservasSemana();
+  renderCalendarioModal();
+  // Sincronizar label
+  const finD=new Date(calFechaBase);finD.setDate(finD.getDate()+6);
+  const lbl=g('calSemanaLabelModal');if(lbl)lbl.textContent=fmtDia(calFechaBase)+' – '+fmtDia(finD)+' / '+finD.getFullYear();
+}
+
+function cerrarAgendaModal(){
+  g('agendaModal').style.display='none';
+  calGridTarget='calGrid';
+}
+
+function syncFiltroArea(){
+  const val=vi('calAreaFiltroModal');
+  const main=g('calAreaFiltro');if(main)main.value=val;
+}
+
+// Renderizar el calendario dentro del modal (misma lógica, diferente target)
+function renderCalendarioModal(){
+  // Actualizar label semana
+  const fin=new Date(calFechaBase);fin.setDate(fin.getDate()+6);
+  const lbl=g('calSemanaLabelModal');
+  if(lbl)lbl.textContent=fmtDia(calFechaBase)+' – '+fmtDia(fin)+' / '+fin.getFullYear();
+
+  const areaFiltro=vi('calAreaFiltroModal');
+  const areas=areaFiltro?agendaCfg.areas.filter(a=>a.nombre===areaFiltro):agendaCfg.areas;
+  const modalGrid=g('calGridModal');if(!modalGrid)return;
+
+  if(!areas.length){modalGrid.innerHTML='<div class="empty" style="padding:20px">Sin areas configuradas</div>';return;}
+
+  const slots=generarSlots(agendaCfg.franjas);
+  const hoy=fmt(new Date());
+  const dias=[];
+  for(let i=0;i<7;i++){const d=new Date(calFechaBase);d.setDate(d.getDate()+i);dias.push(d);}
+  const esAdmin=session&&session.rol==='admin';
+  const esDocente=session&&session.rol==='docente';
+  const puedeElim=esAdmin||esDocente;
+
+  let html='<div class="cal-grid-wrap"><div style="display:flex;flex-direction:column;min-width:max-content">';
+  html+='<div style="display:flex;position:sticky;top:0;z-index:5;background:var(--surf)">';
+  html+='<div style="width:130px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);background:var(--surf2)"></div>';
+  dias.forEach(d=>{
+    const esHoy=fmt(d)===hoy;
+    html+=`<div style="width:130px;flex-shrink:0"><div class="cal-day-hdr ${esHoy?'hoy':''}"><span class="dia-num">${d.getDate()}</span><span class="dia-nom">${DIAS_NOM[d.getDay()]}</span></div></div>`;
+  });
+  html+='</div>';
+
+  areas.forEach(area=>{
+    html+=`<div style="background:var(--n700);color:var(--n200);padding:6px 12px;font-size:11px;font-weight:700">${area.nombre}</div>`;
+    slots.forEach(hora=>{
+      html+='<div style="display:flex">';
+      html+=`<div style="width:130px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);background:var(--surf2);padding:4px 8px">
+        <div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:var(--tx2)">${hora}</div>
+        ${(area.espacios||[]).map(esp=>`<div style="font-size:9px;color:var(--tx4)">${esp.nombre}(${esp.capacidad||1})</div>`).join('')}
+      </div>`;
+      dias.forEach(d=>{
+        const fechaStr=fmt(d);
+        const pasado=new Date(fechaStr+'T'+hora+':00')<new Date();
+        const reservasSlot=agendaReservas.filter(r=>r.fecha===fechaStr&&r.horaInicio===hora&&r.area===area.nombre);
+        let celdaHtml='';
+        (area.espacios||[]).forEach(esp=>{
+          const rsvEsp=reservasSlot.filter(r=>r.camilla===esp.nombre);
+          const cap=esp.capacidad||1;
+          rsvEsp.forEach(rsv=>{
+            celdaHtml+=`<div style="background:var(--n600);border-radius:4px;padding:3px 6px;margin-bottom:3px;position:relative">
+              <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esp.nombre}: ${rsv.paciente||'—'}</div>
+              <div style="font-size:9px;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rsv.docente||rsv.reservadoPor||''}</div>
+              ${puedeElim?`<button onclick="event.stopPropagation();pedirEliminarModal('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}')" style="position:absolute;top:2px;right:3px;background:none;border:none;color:rgba(255,255,255,.6);font-size:11px;cursor:pointer" title="Cancelar">&#10005;</button>`:''}
+            </div>`;
+          });
+          if(rsvEsp.length<cap&&!pasado){
+            const fl=d.toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'long'});
+            celdaHtml+=`<button onclick="abrirReservaEspModal('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}',${cap},'${esc(fl)}')" style="width:100%;background:transparent;border:1px dashed transparent;border-radius:4px;color:var(--tx4);font-size:10px;padding:3px 2px;cursor:pointer;transition:all .15s" onmouseover="this.style.borderColor='var(--n300)';this.style.color='var(--n500)';this.style.background='rgba(29,78,216,.05)'" onmouseout="this.style.borderColor='transparent';this.style.color='var(--tx4)';this.style.background='transparent'">
+              <span>+</span> ${esp.nombre}${rsvEsp.length>0?' ('+rsvEsp.length+'/'+cap+')':''}
+            </button>`;
+          }
+        });
+        html+=`<div style="width:130px;flex-shrink:0;border-right:1px solid var(--bd2);border-bottom:1px solid var(--bd2);padding:4px 5px;min-height:52px;background:${pasado?'#fafafa':'var(--surf)'}">${celdaHtml}</div>`;
+      });
+      html+='</div>';
+    });
+    html+='<div style="height:4px;background:var(--n800)"></div>';
+  });
+  html+='</div></div>';
+  modalGrid.innerHTML=html;
+}
+
+function abrirReservaEspModal(fecha,hora,area,espacio,capacidad,fechaLabel){
+  rsvPendiente={fecha,hora,area,camilla:espacio,capacidad,esEstudiante:false,fromModal:true};
+  g('reservaModalTitle').textContent='Reservar · '+area+' · '+espacio;
+  g('reservaModalSub').textContent=fechaLabel+' · '+hora+' hs';
+  g('rsvPaciente').value='';
+  g('rsvDocente').value=session&&session.nombre||'';
+  g('rsvObs').value='';
+  const err=g('rsvErr');if(err){err.style.display='none';err.textContent=''}
+  g('reservaModal').style.display='flex';
+  setTimeout(()=>g('rsvPaciente').focus(),100);
+}
+
+async function pedirEliminarModal(fecha,hora,area,camilla){
+  if(!confirm('Cancelar esta reserva?'))return;
+  showLoader('Cancelando...');
+  try{
+    const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast('Reserva cancelada','','ok');
+    await cargarReservasSemana();renderCalendarioModal();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+
+// Cerrar modal agenda al click fuera
+g('agendaModal')&&g('agendaModal').addEventListener('click',function(e){if(e.target===this)cerrarAgendaModal();});
 
 </script>
 </body>
