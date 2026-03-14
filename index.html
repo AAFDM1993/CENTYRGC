@@ -288,8 +288,8 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 .collapsible-hdr:hover{opacity:.9}
 .collapsible-arrow{font-size:14px;transition:transform .25s;display:inline-block;margin-left:8px}
 .collapsible-arrow.open{transform:rotate(180deg)}
-.collapsible-body{overflow:hidden;transition:max-height .3s ease, opacity .3s;max-height:0;opacity:0}
-.collapsible-body.open{max-height:9999px;opacity:1}
+.collapsible-body{overflow:hidden;transition:max-height .3s ease, opacity .3s;max-height:0;opacity:0;pointer-events:none}
+.collapsible-body.open{max-height:9999px;opacity:1;overflow:visible;pointer-events:auto}
 </style>
 </head>
 <body>
@@ -521,7 +521,23 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
             </div>
 
             <!-- Grid del calendario (días de la semana) -->
-            <div id="calGrid" style="overflow-x:auto"></div>
+            <div id="calGrid" style="overflow-x:auto;-webkit-overflow-scrolling:touch"></div>
+
+            <!-- Sección: Ver y gestionar reservas -->
+            <div style="margin-top:12px">
+              <div class="slbl">Reservas registradas</div>
+              <div style="display:flex;gap:7px;margin-bottom:8px;flex-wrap:wrap">
+                <select class="sel" id="calFiltroHojaRes" style="flex:1;font-size:12px" onchange="cargarListaReservas()">
+                  <option value="">Esta semana</option>
+                  <option value="todas">Todas</option>
+                </select>
+                <select class="sel" id="calFiltroAreaRes" style="flex:1;font-size:12px" onchange="cargarListaReservas()">
+                  <option value="">Todas las areas</option>
+                </select>
+                <button class="btn-ghost" onclick="cargarListaReservas()" style="padding:6px 12px;font-size:12px">&#8635; Actualizar</button>
+              </div>
+              <div id="listaReservasBox" style="max-height:300px;overflow-y:auto;border:1px solid var(--bd2);border-radius:9px"></div>
+            </div>
           </div>
         </div><!-- end sidebar-inner -->
       <div class="sidebar-footer">
@@ -531,12 +547,23 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
       </div>
     </div><!-- end adminSidebar -->
 
-    <!-- Toolbar + contenido principal -->
-    <div class="content-toolbar">
+    <!-- Toolbar Admin (con id para poder ocultar) -->
+    <div class="content-toolbar" id="contentToolbar">
       <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
         <span class="ico">&#9776;</span><span id="sidebarBtnLabel">Panel</span>
       </button>
-      <div class="cpill" id="cpill2" style="display:none"><div class="dot" id="cdot2"></div><span class="clabel" id="clabel2">-</span></div>
+    </div>
+
+    <!-- Topbar Docente -->
+    <div id="docenteTopbar" style="display:none;background:var(--n900);border-bottom:1px solid var(--n800);padding:0 16px;position:sticky;top:58px;z-index:100;overflow-x:auto">
+      <div style="display:flex;align-items:center;gap:6px;height:50px;min-width:max-content">
+        <span style="font-size:11px;font-weight:700;color:var(--n400);text-transform:uppercase;letter-spacing:.7px;margin-right:4px;white-space:nowrap">Hojas:</span>
+        <div id="docenteHojasBtns" style="display:flex;gap:6px;align-items:center"><span style="font-size:12px;color:var(--n500)">Cargando...</span></div>
+        <div style="width:1px;height:28px;background:var(--n700);margin:0 8px;flex-shrink:0"></div>
+        <button id="btnAgendaDocente" onclick="abrirAgendaPopup()" style="display:flex;align-items:center;gap:7px;background:var(--n700);border:1px solid var(--n600);border-radius:8px;color:#fff;font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap">
+          &#128197; Agenda
+        </button>
+      </div>
     </div>
 
     <div class="content-main">
@@ -610,7 +637,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
             <select class="filter-sel" id="calEstAreaFiltro" onchange="renderCalendarioEst()" style="max-width:220px;font-size:12px"></select>
             <span id="calEstReservaInfo" style="font-size:11px;color:#6ee7b7;font-weight:600"></span>
           </div>
-          <div style="padding:14px;overflow-x:auto">
+          <div style="padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y">
             <div id="calEstGrid"></div>
           </div>
         </div>
@@ -637,7 +664,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 </div>
 
 <!-- Modal de reserva de agenda -->
-<div id="reservaModal" style="position:fixed;inset:0;background:rgba(10,22,40,.65);z-index:600;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+<div id="reservaModal" style="position:fixed;inset:0;background:rgba(10,22,40,.65);z-index:800;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
   <div style="background:var(--surf);border-radius:14px;padding:24px;width:100%;max-width:400px;box-shadow:0 24px 60px rgba(10,22,40,.4)">
     <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--n900);margin-bottom:3px" id="reservaModalTitle">Nueva Reserva</h3>
     <p style="font-size:11px;color:var(--tx3);margin-bottom:16px" id="reservaModalSub"></p>
@@ -779,11 +806,6 @@ async function pingConn(){
 function setConn(ok,msg){
   g('cdot').className='dot '+(ok?'ok':'err');g('clabel').textContent=ok?'Conectado':'Error';
   g('cpill').className='cpill '+(ok?'ok':'');
-  // También actualizar el indicador en la toolbar
-  const cpill2=g('cpill2');const cdot2=g('cdot2');const clabel2=g('clabel2');
-  if(cpill2){cpill2.style.display='flex';cpill2.className='cpill '+(ok?'ok':'');
-    if(cdot2)cdot2.className='dot '+(ok?'ok':'err');
-    if(clabel2)clabel2.textContent=ok?'Conectado':'Error';}
   const h=g('connHint');if(!h)return;
   h.className=ok?'hint-b':'hint';
   h.innerHTML='<span>'+(ok?'OK':'!')+'</span><span>'+msg+'</span>';
@@ -813,7 +835,7 @@ function showTab(tid,btn){
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
   g('pane-'+tid).classList.add('on');btn.classList.add('on');
-  if(tid==='ho')loadHojas();if(tid==='us')cargarUsuarios();if(tid==='pdf')cargarHojasExport();if(tid==='log')cargarLog();if(tid==='cal')iniciarAgenda();if(window.innerWidth<=900)closeSidebar();
+  if(tid==='ho')loadHojas();if(tid==='us')cargarUsuarios();if(tid==='pdf')cargarHojasExport();if(tid==='log')cargarLog();if(tid==='cal'){iniciarAgenda();setTimeout(cargarListaReservas,600);}if(window.innerWidth<=900)closeSidebar();
 }
 function openDrawer(i){
   drawerIdx=i;const a=alumnos[i];
@@ -1358,8 +1380,8 @@ tbody tr:last-child td{border-bottom:2px solid #0a1628}
 .collapsible-hdr:hover{opacity:.9}
 .collapsible-arrow{font-size:14px;transition:transform .25s;display:inline-block;margin-left:8px}
 .collapsible-arrow.open{transform:rotate(180deg)}
-.collapsible-body{overflow:hidden;transition:max-height .3s ease, opacity .3s;max-height:0;opacity:0}
-.collapsible-body.open{max-height:9999px;opacity:1}
+.collapsible-body{overflow:hidden;transition:max-height .3s ease, opacity .3s;max-height:0;opacity:0;pointer-events:none}
+.collapsible-body.open{max-height:9999px;opacity:1;overflow:visible;pointer-events:auto}
 </style></head>
 <body>
 <!-- ENCABEZADO INSTITUCIONAL -->
@@ -1582,6 +1604,8 @@ async function iniciarAgenda(){
     calFechaBase=getLunes(new Date());
     await cargarReservasSemana();
     renderCalendario();
+    // También cargar lista de reservas si estamos en el pane-cal
+    setTimeout(cargarListaReservas, 500);
   }catch(e){toast('Error al cargar agenda',e.message,'err')}
 }
 
@@ -2139,6 +2163,62 @@ async function pedirEliminarModal(fecha,hora,area,camilla){
 
 // Cerrar modal agenda al click fuera
 g('agendaModal')&&g('agendaModal').addEventListener('click',function(e){if(e.target===this)cerrarAgendaModal();});
+
+
+// ── LISTA DE RESERVAS (admin) ─────────────────────────────
+async function cargarListaReservas(){
+  const box=g('listaReservasBox');if(!box)return;
+  box.innerHTML='<div class="empty">Cargando...</div>';
+  // Actualizar filtro de áreas
+  const selArea=g('calFiltroAreaRes');
+  if(selArea){
+    const val=selArea.value;
+    selArea.innerHTML='<option value="">Todas las areas</option>'+
+      agendaCfg.areas.map(a=>`<option value="${esc2(a.nombre)}" ${a.nombre===val?'selected':''}>${a.nombre}</option>`).join('');
+  }
+  try{
+    const modo=vi('calFiltroHojaRes');
+    let ini='',fin='';
+    if(modo!=='todas'){
+      const lun=getLunes(calFechaBase);
+      const dom=new Date(lun);dom.setDate(dom.getDate()+6);
+      ini=fmt(lun);fin=fmt(dom);
+    }
+    const r=await apiGet('leerReservas',{fechaInicio:ini,fechaFin:fin});
+    if(!r.ok)throw new Error(r.error);
+    let reservas=r.reservas;
+    const areaF=vi('calFiltroAreaRes');
+    if(areaF) reservas=reservas.filter(rv=>rv.area===areaF);
+    if(!reservas.length){box.innerHTML='<div class="empty" style="padding:12px">Sin reservas</div>';return;}
+    // Ordenar por fecha desc
+    reservas.sort((a,b)=>b.fecha.localeCompare(a.fecha)||b.horaInicio.localeCompare(a.horaInicio));
+    box.innerHTML=reservas.map(rv=>`
+      <div style="display:grid;grid-template-columns:85px 85px 1fr 1fr 32px;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--bd2);font-size:12px">
+        <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--tx3)">${rv.fecha}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--tx3)">${rv.horaInicio}</span>
+        <div>
+          <div style="font-weight:600;color:var(--tx)">${rv.paciente||'—'}</div>
+          <div style="font-size:11px;color:var(--tx4)">${rv.area} · ${rv.camilla}</div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--n500)">${rv.docente||rv.reservadoPor||'—'}</div>
+          <div style="font-size:10px;color:var(--tx4)">${rv.observacion||''}</div>
+        </div>
+        <button onclick="eliminarReservaLista('${esc(rv.fecha)}','${esc(rv.horaInicio)}','${esc(rv.area)}','${esc(rv.camilla)}')" style="background:none;border:none;color:var(--tx4);cursor:pointer;font-size:13px;padding:0;transition:color .15s" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--tx4)'" title="Eliminar">&#128465;</button>
+      </div>`).join('');
+  }catch(e){box.innerHTML=`<div class="hint" style="margin:8px">Error: ${e.message}</div>`}
+}
+
+async function eliminarReservaLista(fecha,hora,area,camilla){
+  if(!confirm('Cancelar reserva de '+camilla+' el '+fecha+' a las '+hora+'?'))return;
+  showLoader('Cancelando...');
+  try{
+    const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast('Reserva cancelada','','ok');
+    await cargarReservasSemana();renderCalendario();cargarListaReservas();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
 
 </script>
 </body>
