@@ -515,6 +515,23 @@ input,select,textarea{font-size:16px!important}
 .gen-section-body{padding:12px 14px;display:block}
 .gen-section-body.collapsed{display:none}
 
+
+/* ══ Control por rol ══ */
+body.rol-admin #estBottomNav,
+body.rol-docente #estBottomNav  { display:none!important; }
+body.rol-docente #adminOnlyBtns { display:none!important; }
+
+/* Bottom nav: distribución uniforme */
+#estBottomNav > div { width:100%!important; padding:0!important; gap:0!important; }
+#estBottomNav > div > button {
+  flex:1!important; min-width:0!important;
+  display:flex!important; flex-direction:column!important;
+  align-items:center!important; justify-content:center!important;
+  padding:6px 0!important; border-radius:0!important;
+}
+#estBottomNav > div > button + button {
+  border-left:1px solid rgba(255,255,255,.08)!important;
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -1038,17 +1055,17 @@ input,select,textarea{font-size:16px!important}
 
 <!-- Bottom Navigation estudiante (móvil ≤480px) -->
 <div id="estBottomNav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--n900);border-top:1px solid var(--n700);z-index:200">
-  <div style="display:flex;height:64px;padding:0 8px;gap:4px">
-    <button id="estBnNotas" onclick="mostrarSecEst('notas')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:#fff;cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
+  <div style="display:flex;height:68px;width:100%;padding:0">
+    <button id="estBnNotas" onclick="mostrarSecEst('notas')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:#fff;cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
       <span style="font-size:22px;line-height:1">&#128203;</span><span>Notas</span>
     </button>
-    <button id="estBnAgenda" onclick="mostrarSecEst('agenda')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
+    <button id="estBnAgenda" onclick="mostrarSecEst('agenda')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
       <span style="font-size:22px;line-height:1">&#128197;</span><span>Agenda</span>
     </button>
-    <button onclick="abrirPassModal()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
+    <button onclick="abrirPassModal()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
       <span style="font-size:22px;line-height:1">&#128274;</span><span>Clave</span>
     </button>
-    <button onclick="logout()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
+    <button onclick="logout()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
       <span style="font-size:22px;line-height:1">&#128682;</span><span>Salir</span>
     </button>
   </div>
@@ -1164,7 +1181,7 @@ function setConn(ok,msg){
 function iniciarVistaAdmin(){
   const esA=session.rol==='admin';
   const esD=session.rol==='docente';
-
+  document.body.className=(document.body.className||'').replace(/\brol-\S+/g,'').trim()+' rol-'+session.rol;
   // Ambos roles: ocultar sidebar completamente, mostrar topbar
   hideSidebar();
   if(g('contentToolbar'))g('contentToolbar').style.display='none';
@@ -1585,6 +1602,7 @@ async function saveNota(inp){
   },500);
 }
 async function iniciarVistaEstudiante(){
+  document.body.className=(document.body.className||'').replace(/\brol-\S+/g,'').trim()+' rol-estudiante';
   // Móvil: activar bottom nav
   if(window.innerWidth<=480){
     var bn=g('estBottomNav');if(bn)bn.style.display='flex';
