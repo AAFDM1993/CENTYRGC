@@ -1144,9 +1144,13 @@ function iniciarVistaAdmin(){
     ['adminOnlyBtns'].forEach(id=>{const el=g(id);if(el)el.style.display='';});
     renderCursos();renderPreview();cargarUsuarios();cargarLog();
   } else {
+    // Docente: solo hojas y agenda, sin acceso a paneles de admin
     if(g('btnGen'))g('btnGen').style.display='none';
     ['adminOnlyBtns'].forEach(id=>{const el=g(id);if(el)el.style.display='none';});
     const uz=g('uploadZone');if(uz)uz.style.display='none';
+    // Ocultar también el panelCard y prevCard
+    if(g('panelCard'))g('panelCard').style.display='none';
+    if(g('prevCard'))g('prevCard').style.display='none';
   }
   loadHojas();
 }
@@ -2748,6 +2752,11 @@ var PANEL_TITLES = {
 };
 
 function abrirPanelAdmin(tab){
+  // Solo el admin puede abrir paneles de administración
+  if(!session || session.rol !== 'admin'){
+    toast('Sin permiso','Esta función es solo para administradores','err');
+    return;
+  }
   // Ocultar otras secciones
   if(g('edCard'))  g('edCard').style.display='none';
   if(g('agendaCard')) g('agendaCard').style.display='none';
