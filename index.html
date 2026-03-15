@@ -503,7 +503,19 @@ input,select,textarea{font-size:16px!important}
   #loginPage{align-items:center!important;padding:16px 12px!important}
   .login-card{border-radius:20px!important;max-width:100%!important;padding:28px 20px 32px!important;margin:0!important}
 }
+
+/* ── PANEL GENERADOR (secciones colapsables) ── */
+.gen-section{border:1px solid var(--bd2);border-radius:12px;overflow:hidden;margin-bottom:8px}
+.gen-section-hdr{display:flex;align-items:center;gap:8px;padding:11px 14px;background:var(--surf2);cursor:pointer;user-select:none;font-size:13px;font-weight:700;color:var(--tx)}
+.gen-section-hdr:hover{background:var(--n100)}
+.gen-section-hdr span:nth-child(2){flex:1}
+.gen-arrow{font-size:11px;color:var(--tx4);transition:transform .2s}
+.gen-arrow.open{transform:rotate(180deg)}
+.gen-section-body{padding:12px 14px;display:block}
+.gen-section-body.collapsed{display:none}
+
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 <div id="loader"><div class="ring"></div><p id="lmsg">Cargando...</p></div>
@@ -560,82 +572,97 @@ input,select,textarea{font-size:16px!important}
     <div id="adminSidebar" class="sidebar-hidden">
       <div class="sidebar-inner">
         <div class="tabs" id="adminTabs" style="grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--n700)">
-          <button class="tab on" id="tabAl" onclick="showTab('al',this)">Alumnos</button>
-          <button class="tab" id="tabCu" onclick="showTab('cu',this)">Cursos</button>
-          <button class="tab" id="tabNt" onclick="showTab('nt',this)">Config</button>
+          <button class="tab on" id="tabAl" onclick="showTab('al',this)">&#128203; Crear</button>
           <button class="tab" id="tabUs" onclick="showTab('us',this)">Usuarios</button>
-        </div>
-        <div class="tabs" style="grid-template-columns:repeat(4,1fr)">
-          <button class="tab" id="tabHo"  onclick="showTab('ho',this)">Hojas</button>
-          <button class="tab" id="tabPdf" onclick="showTab('pdf',this)">PDF</button>
+          <button class="tab" id="tabHo" onclick="showTab('ho',this)">Hojas</button>
           <button class="tab" id="tabLog" onclick="showTab('log',this)">Log</button>
-          <button class="tab" id="tabCal" onclick="showTab('cal',this)">Agenda</button>
         </div>
 
-          <div class="pane on" id="pane-al">
-            <div class="upload" id="uploadZone" onclick="document.getElementById('csvIn').click()">
-              <div class="ico">&#128194;</div><p>Subir CSV / TXT</p><small>CODIGO, APELLIDOS Y NOMBRES</small>
+        <!-- PANE: Crear planilla (Alumnos + Cursos + Config unificados) -->
+        <div class="pane on" id="pane-al">
+
+          <!-- SECCIÓN 1: Alumnos -->
+          <div class="gen-section">
+            <div class="gen-section-hdr" onclick="toggleGenSection('secAlumnos')">
+              <span>&#128100; 1. Alumnos</span>
+              <span id="secAlumnosCount" style="font-size:11px;color:var(--n300)">0 alumnos</span>
+              <span class="gen-arrow" id="arrowSecAlumnos">&#9660;</span>
             </div>
-            <input id="csvIn" type="file" accept=".csv,.txt" style="display:none" onchange="loadCSV(event)">
-            <div class="row2" style="margin-top:10px">
-              <input class="inp" id="mCode" placeholder="Codigo" style="width:82px">
-              <input class="inp" id="mName" placeholder="Apellidos y Nombres" style="flex:1" onkeydown="if(event.key==='Enter')addAlumno()">
-              <button class="btn-sm" onclick="addAlumno()">+</button>
+            <div id="secAlumnos" class="gen-section-body">
+              <!-- Importar CSV/XLSX/TXT -->
+              <div class="upload" id="uploadZone" onclick="document.getElementById('csvIn').click()" style="margin-bottom:10px">
+                <div class="ico">&#128194;</div><p>Importar CSV / XLSX / TXT</p>
+                <small>Columnas: CODIGO, APELLIDOS Y NOMBRES</small>
+              </div>
+              <input id="csvIn" type="file" accept=".csv,.txt,.xlsx,.xls" style="display:none" onchange="loadCSV(event)">
+              <!-- Añadir manual -->
+              <div class="row2" style="margin-bottom:8px">
+                <input class="inp" id="mCode" placeholder="Codigo" style="width:82px">
+                <input class="inp" id="mName" placeholder="Apellidos y Nombres" style="flex:1" onkeydown="if(event.key==='Enter')addAlumno()">
+                <button class="btn-sm" onclick="addAlumno()">+</button>
+              </div>
+              <div class="slist" id="slist"><div class="empty">Sin alumnos</div></div>
+              <div class="row-btw" style="margin-top:6px">
+                <span style="font-size:12px;color:var(--tx4)" id="scnt">0 alumnos</span>
+                <button class="btn-ghost" onclick="clearAlumnos()">Limpiar</button>
+              </div>
             </div>
-            <div class="slist" id="slist"><div class="empty">Sin alumnos</div></div>
-            <div class="row-btw" style="margin-top:7px">
-              <span style="font-size:12px;color:var(--tx4)" id="scnt">0 alumnos</span>
-              <button class="btn-ghost" onclick="clearAlumnos()">Limpiar</button>
+          </div>
+
+          <!-- SECCIÓN 2: Cursos -->
+          <div class="gen-section">
+            <div class="gen-section-hdr" onclick="toggleGenSection('secCursos')">
+              <span>&#128218; 2. Cursos</span>
+              <span id="secCursosCount" style="font-size:11px;color:var(--n300)"></span>
+              <span class="gen-arrow" id="arrowSecCursos">&#9660;</span>
             </div>
-            <div class="hint-b" style="margin-top:10px;font-size:11px"><span>Tip:</span><span>Clic en el badge de cursos para asignarlos individualmente.</span></div>
-          <div style="padding:12px 0 4px">
-            <button class="btn btn-p" id="btnGen" onclick="generarPlanilla()" disabled style="width:100%;min-height:44px;font-size:13px">
+            <div id="secCursos" class="gen-section-body">
+              <div id="crsList" class="crs-list"></div>
+              <div class="row2" style="margin-bottom:8px">
+                <input class="inp" id="newCrs" placeholder="Nombre del curso..." style="flex:1" onkeydown="if(event.key==='Enter')addCurso()">
+                <button class="btn-sm" onclick="addCurso()">+</button>
+              </div>
+              <div style="display:flex;gap:8px">
+                <button class="btn-save" onclick="guardarCursos()" style="flex:1">Guardar cursos</button>
+                <button class="btn-ghost" onclick="resetCursos()">Reset</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECCIÓN 3: Configuración -->
+          <div class="gen-section">
+            <div class="gen-section-hdr" onclick="toggleGenSection('secConfig')">
+              <span>&#9881; 3. Configuracion</span>
+              <span class="gen-arrow" id="arrowSecConfig">&#9660;</span>
+            </div>
+            <div id="secConfig" class="gen-section-body">
+              <div class="field"><label>Asignatura</label><input class="inp" id="cfgAsig" placeholder="Ej. Tecnicas de Fisioterapia II"></div>
+              <div class="row2">
+                <div class="field"><label>Semestre</label><input class="inp" id="cfgSem" placeholder="Ej. 2025-I" style="width:100%"></div>
+                <div class="field"><label>Seccion</label><input class="inp" id="cfgSec" placeholder="Ej. Seccion A" style="width:100%"></div>
+              </div>
+              <div class="field"><label>Nombre de la hoja</label><input class="inp" id="cfgHoja" placeholder="Ej. MyT II 2025-I"></div>
+              <input type="hidden" id="scApro" value="11">
+              <div class="field">
+                <label>Porcentaje puntaje extra</label>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <input type="number" id="cfgPctExtra" value="20" min="0" max="100" style="background:var(--surf2);border:1px solid var(--bd);color:var(--tx);font-family:'DM Mono',monospace;font-size:16px;font-weight:700;width:70px;outline:none;text-align:center;border-radius:7px;padding:6px">
+                  <span style="font-size:13px;font-weight:700;color:var(--tx3)">%</span>
+                  <span style="font-size:11px;color:var(--tx4)">del promedio SS como bonificacion</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BOTÓN GENERAR -->
+          <div style="padding:14px 0 4px">
+            <button class="btn btn-p" id="btnGen" onclick="generarPlanilla()" disabled style="width:100%;min-height:48px;font-size:14px;font-weight:700">
               &#128196; Generar planilla en Google Sheets
             </button>
           </div>
-          </div>
+        </div>
 
-          <div class="pane" id="pane-cu">
-            <div class="slbl">Cursos activos</div>
-            <div id="crsList" class="crs-list"></div>
-            <div class="row2">
-              <input class="inp" id="newCrs" placeholder="Nombre del curso..." style="flex:1" onkeydown="if(event.key==='Enter')addCurso()">
-              <button class="btn-sm" onclick="addCurso()">+</button>
-            </div>
-            <div style="display:flex;gap:8px;margin-top:10px">
-              <button class="btn-save" onclick="guardarCursos()" style="flex:1">Guardar cursos</button>
-              <button class="btn-ghost" onclick="resetCursos()">Reset</button>
-            </div>
-          </div>
-
-          <div class="pane" id="pane-nt">
-            <div class="field"><label>Asignatura</label><input class="inp" id="cfgAsig" placeholder="Ej. Tecnicas de Fisioterapia II"></div>
-            <div class="row2">
-              <div class="field"><label>Semestre</label><input class="inp" id="cfgSem" placeholder="Ej. 2025-I" style="width:100%"></div>
-              <div class="field"><label>Seccion</label><input class="inp" id="cfgSec" placeholder="Ej. Seccion A" style="width:100%"></div>
-            </div>
-            <div class="field"><label>Nombre de la hoja</label><input class="inp" id="cfgHoja" placeholder="Ej. MyT II 2025-I"></div>
-            <input type="hidden" id="scApro" value="11">
-            <div class="slbl" style="margin-top:4px">Porcentaje de puntaje extra</div>
-            <div style="display:flex;align-items:center;gap:10px;background:var(--surf2);border:1px solid var(--bd);border-radius:9px;padding:10px 14px;margin-bottom:6px">
-              <div style="flex:1">
-                <div style="font-size:13px;font-weight:600;color:var(--tx)">Peso del puntaje extra</div>
-                <div style="font-size:11px;color:var(--tx3);margin-top:2px">Porcentaje del promedio SS que se suma como bonificacion extra</div>
-              </div>
-              <div style="display:flex;align-items:center;gap:6px">
-                <input type="number" id="cfgPctExtra" value="20" min="0" max="100" style="background:#fff;border:1px solid var(--bd);color:var(--tx);font-family:'DM Mono',monospace;font-size:18px;font-weight:700;width:60px;outline:none;text-align:center;border-radius:7px;padding:5px">
-                <span style="font-size:14px;font-weight:700;color:var(--tx3)">%</span>
-              </div>
-            </div>
-
-
-            <div style="margin-top:2px;background:var(--n900);border-radius:10px;padding:13px 16px">
-              <div style="font-size:11px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Formula por subgrupo</div>
-              <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--n200);line-height:1.9">PROM = PROM(notas) x (ejecutadas / programadas)<br><span style="color:var(--n300)">ejecutadas = SS + Extra ingresados</span></div>
-            </div>
-          </div>
-
-          <div class="pane" id="pane-us">
+<div class="pane" id="pane-us">
             <div class="row-btw" style="margin-bottom:8px">
               <span style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px">Usuarios registrados</span>
               <button class="btn-ghost" onclick="cargarUsuarios()" style="font-size:11px;padding:4px 10px">Recargar</button>
@@ -1147,7 +1174,7 @@ function iniciarVistaAdmin(){
     g('btnGen').disabled=false;
     // Mostrar botones de admin en el topbar
     ['adminOnlyBtns'].forEach(id=>{const el=g(id);if(el)el.style.display='';});
-    renderCursos();renderPreview();cargarUsuarios();cargarLog();
+    renderCursos();renderPreview();cargarUsuarios();cargarLog();initGenSections();
   } else {
     // Docente: solo hojas y agenda, sin acceso a paneles de admin
     if(g('btnGen'))g('btnGen').style.display='none';
@@ -1193,21 +1220,86 @@ function updBadge(i){
   if(el){el.textContent=n+'/'+activos.length+' cursos';el.className='al-badge '+(n===0?'none':'')}
 }
 function makeAlumno(code,name){const c={};cursos.forEach(cu=>{c[cu.label]=false});return{code,name,cursos:c}}
-function loadCSV(e){
-  const file=e.target.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=ev=>{
-    const lines=ev.target.result.split('\n').filter(l=>l.trim());let n=0;
-    lines.forEach(l=>{
-      const p=l.split(/[,;\t]/).map(x=>x.trim()).filter(Boolean);
-      if(p.length>=2){alumnos.push(makeAlumno(p[0],p.slice(1).join(' ')));n++}
-      else if(p.length===1){alumnos.push(makeAlumno('',p[0]));n++}
-    });
-    renderAlumnos();renderPreview();toast(n+' alumnos importados',file.name);
-  };
-  reader.readAsText(file);e.target.value='';
+
+// ── PANEL GENERADOR: secciones colapsables ──────────────
+function toggleGenSection(id){
+  var body = document.getElementById(id);
+  if(!body) return;
+  var isOpen = !body.classList.contains('collapsed');
+  var arrow = document.getElementById('arrow' + id.charAt(0).toUpperCase() + id.slice(1));
+  if(isOpen){
+    body.classList.add('collapsed');
+    if(arrow) arrow.classList.remove('open');
+  } else {
+    body.classList.remove('collapsed');
+    if(arrow) arrow.classList.add('open');
+  }
 }
-function addAlumno(){
+
+// Inicializar secciones abiertas
+function initGenSections(){
+  ['secAlumnos','secCursos','secConfig'].forEach(function(id){
+    var body = document.getElementById(id);
+    var arrow = document.getElementById('arrow' + id.charAt(0).toUpperCase() + id.slice(1));
+    if(body) body.classList.remove('collapsed');
+    if(arrow) arrow.classList.add('open');
+  });
+}
+
+function loadCSV(e){
+  var file=e.target.files[0];if(!file)return;
+  var ext=file.name.split('.').pop().toLowerCase();
+  if(ext==='xlsx'||ext==='xls'){
+    // Usar SheetJS para leer XLSX
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      try{
+        var wb=XLSX.read(ev.target.result,{type:'array'});
+        var ws=wb.Sheets[wb.SheetNames[0]];
+        var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+        var n=0;
+        rows.forEach(function(row){
+          if(!row||row.length<1)return;
+          // Intentar detectar código y nombre
+          var code='',name='';
+          if(row.length>=2){
+            // Asumir primera col=código, segunda=nombre
+            var c0=String(row[0]).trim(),c1=String(row[1]).trim();
+            // Si c0 es numérico o corto, es código
+            if(/^\d+$/.test(c0)||c0.length<=10){code=c0;name=c1;}
+            else{name=c0+' '+c1;}
+          } else {
+            name=String(row[0]).trim();
+          }
+          if(!name||name.toLowerCase()==='nombre'||name.toLowerCase()==='apellidos')return;
+          alumnos.push(makeAlumno(code,name));n++;
+        });
+        renderAlumnos();renderPreview();
+        toast(n+' alumnos importados','','ok');
+      }catch(ex){toast('Error al leer XLSX',ex.message,'err');}
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    // CSV / TXT
+    var reader2=new FileReader();
+    reader2.onload=function(ev){
+      var lines=ev.target.result.split('\n').filter(function(l){return l.trim();});var n=0;
+      lines.forEach(function(l){
+        var p=l.split(/[,;\t]/).map(function(x){return x.trim();}).filter(Boolean);
+        if(p.length<1)return;
+        var code='',name='';
+        if(p.length>=2){code=p[0];name=p.slice(1).join(' ');}
+        else{name=p[0];}
+        if(!name||name.toLowerCase()==='nombre'||name.toLowerCase()==='apellidos y nombres')return;
+        alumnos.push(makeAlumno(code,name));n++;
+      });
+      renderAlumnos();renderPreview();
+      toast(n+' alumnos importados','','ok');
+    };
+    reader2.readAsText(file);
+  }
+  e.target.value='';
+}function addAlumno(){
   const code=vi('mCode').trim(),name=vi('mName').trim();if(!name)return;
   alumnos.push(makeAlumno(code,name));g('mCode').value='';g('mName').value='';
   renderAlumnos();renderPreview();g('mCode').focus();
@@ -1223,10 +1315,15 @@ function renderAlumnos(){
   }).join('');
   g('scnt').textContent=alumnos.length+' alumno'+(alumnos.length!==1?'s':'');
   g('prevBadge').textContent=alumnos.length+' alumnos';
+  var cnt=g('secAlumnosCount');if(cnt)cnt.textContent=alumnos.length+' alumno'+(alumnos.length!==1?'s':'');
+  var btn=g('btnGen');
+  if(btn)btn.disabled=!(alumnos.length>0&&cursos.filter(function(cx){return cx.on;}).length>0);
 }
 function renderCursos(){
   const el=g('crsList');if(!el)return;
   if(!cursos.length){el.innerHTML='<div class="empty" style="padding:8px">Agrega cursos abajo</div>';return}
+  var cntEl=g('secCursosCount');if(cntEl){var act=cursos.filter(function(x){return x.on;}).length;cntEl.textContent=cursos.length+' cursos ('+act+' activos)';}
+  var btn=g('btnGen');if(btn)btn.disabled=!(alumnos.length>0&&cursos.filter(function(cx){return cx.on;}).length>0);
   el.innerHTML=cursos.map((c,ci)=>{
     const sh=c.subgrupos.length?c.subgrupos.map((sg,si)=>renderSgrCard(ci,si,sg)).join(''):'<div style="font-size:11px;color:var(--tx4);padding:4px 0">Sin subgrupos</div>';
     return `<div class="crs-item ${c.on?'on':''}" id="crsitem_${ci}">
@@ -2752,8 +2849,8 @@ function renderListaBloqueos(){
 // ── PANEL ADMIN DESDE TOPBAR ─────────────────────────────
 // Títulos de los paneles del admin
 var PANEL_TITLES = {
-  al:'&#128100; Alumnos', cu:'&#128218; Cursos', nt:'&#9881; Configuracion',
-  us:'&#128101; Usuarios', pdf:'&#128196; PDF', log:'&#128196; Log'
+  al:'&#128203; Crear planilla', us:'&#128101; Usuarios',
+  ho:'&#128193; Hojas', pdf:'&#128196; PDF', log:'&#128202; Log'
 };
 
 function abrirPanelAdmin(tab){
@@ -2788,6 +2885,7 @@ function abrirPanelAdmin(tab){
   // Mostrar el panelCard
   const pc = g('panelCard');
   if(pc) pc.style.display='block';
+  if(tab==='al') setTimeout(initGenSections,50);
 }
 
 function cerrarPanel(){
