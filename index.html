@@ -2862,10 +2862,11 @@ function abrirPanelAdmin(tab){
   if(g('agendaCard')) g('agendaCard').style.display='none';
   if(g('prevCard')) g('prevCard').style.display='none';
 
-  // Activar el tab en el sidebar (para que los panes se muestren)
-  showTab(tab, g('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)));
+  // Activar el tab del sidebar si existe (solo para al, us, ho, log)
+  const tabBtn = g('tab'+tab.charAt(0).toUpperCase()+tab.slice(1));
+  if(tabBtn) showTab(tab, tabBtn);
 
-  // Mover el contenido del pane activo al panelCard
+  // Mover el contenido del pane al panelCard
   const pane = g('pane-'+tab);
   if(!pane){ console.warn('pane-'+tab+' no encontrado'); return; }
 
@@ -2873,12 +2874,16 @@ function abrirPanelAdmin(tab){
   const title = g('panelCardTitle');
   if(!body || !title) return;
 
-  // Clonar el pane y moverlo al body del panel card
   title.innerHTML = PANEL_TITLES[tab] || tab;
   body.innerHTML = '';
-  // Mover los hijos (no clonar — para que los inputs sigan funcionando)
   while(pane.firstChild) body.appendChild(pane.firstChild);
   body.setAttribute('data-tab', tab);
+
+  // Cargar datos según el panel
+  if(tab==='pdf') cargarHojasExport();
+  else if(tab==='us') cargarUsuarios();
+  else if(tab==='ho') loadHojas();
+  else if(tab==='log') cargarLog();
 
   // Mostrar el panelCard
   const pc = g('panelCard');
