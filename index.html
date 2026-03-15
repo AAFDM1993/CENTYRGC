@@ -1071,22 +1071,6 @@ const esc2=s=>String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 function showLoader(m){g('lmsg').textContent=m;g('loader').classList.add('show')}
 function hideLoader(){g('loader').classList.remove('show')}
 let _tt;
-function toast(t,m,tp){co
-// ====================================================
-// PEGA AQUI TU URL DE APPS SCRIPT WEB APP
-const GAS_URL = 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT';
-// ====================================================
-
-let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
-let cursos=JSON.parse(localStorage.getItem('ft_cursos_v6')||'[]');
-const APRO=()=>+(document.getElementById('scApro')||{}).value||11;
-const g=s=>document.getElementById(s);
-const vi=s=>(g(s)||{}).value||'';
-const esc=s=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
-const esc2=s=>String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-function showLoader(m){g('lmsg').textContent=m;g('loader').classList.add('show')}
-function hideLoader(){g('loader').classList.remove('show')}
-let _tt;
 function toast(t,m,tp){const el=g('toast');g('ttt').textContent=t;g('ttm').textContent=m||'';el.className='show '+(tp||'');clearTimeout(_tt);_tt=setTimeout(()=>{el.className=tp||''},3800)}
 
 async function apiGet(action,params){
@@ -2918,3 +2902,6 @@ function cerrarPanel(){
 
 
 function abrirPassModal(){ mostrarCambioPass(); }
+</script>
+</body>
+</html>
