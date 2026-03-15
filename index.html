@@ -486,19 +486,15 @@ input,select,textarea{font-size:16px!important}
 /* ── Topbars y header adaptables en móvil ≤480px ── */
 @media(max-width:480px){
   #hdrBtnPass,#hdrBtnSalir{display:none!important}
-  #estBottomNav>div{width:100%!important;display:flex!important}
-  #estBottomNav>div>button{
-    flex:1!important;min-width:0!important;
-    display:flex!important;flex-direction:column!important;
-    align-items:center!important;justify-content:center!important;
-    padding:8px 4px!important;border-radius:0!important;border:none!important;
-  }
-  #estBottomNav>div>button+button{border-left:1px solid rgba(255,255,255,.07)!important}
+  #estBottomNav>div{padding:0!important;gap:0!important}
+  #estBottomNav>div>button{flex:1;min-width:0;padding:6px 2px!important;border-radius:0!important}
+  #estBottomNav>div>button+button{border-left:1px solid rgba(255,255,255,.06)!important}
   #estBottomNav{padding-bottom:max(env(safe-area-inset-bottom),8px)}
   #docenteTopbar{padding:4px 8px!important}
   .docente-inner{flex-wrap:wrap!important;height:auto!important;gap:4px!important;width:100%!important}
-  #adminOnlyBtns{display:flex!important;flex-wrap:wrap!important;gap:4px!important;width:100%!important}
-  #adminOnlyBtns button{flex:1 1 auto!important;min-width:70px!important;font-size:11px!important;padding:6px 8px!important;justify-content:center!important}
+  /* adminOnlyBtns: display gestionado solo por JS */
+  #adminOnlyBtns{flex-wrap:wrap;gap:4px;width:100%;align-items:center}
+  #adminOnlyBtns button{flex:1 1 auto;min-width:70px;font-size:11px;padding:6px 8px;justify-content:center}
   #docenteHojasBtns{display:flex!important;flex-wrap:wrap!important;gap:4px!important;flex:1!important}
   #docenteHojasBtns button{flex:1 1 auto!important;min-width:80px!important;justify-content:center!important}
   #btnTopbarAgenda{width:100%!important;justify-content:center!important}
@@ -893,7 +889,7 @@ input,select,textarea{font-size:16px!important}
               </div>
             </div>
             <div style="padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y">
-              <div id="calGrid" style="min-width:max-content;display:inline-block;width:100%"></div>
+              <div id="calGrid"></div>
             </div>
           </div>
         </div>
@@ -972,7 +968,7 @@ input,select,textarea{font-size:16px!important}
         </div>
         <!-- Grid del calendario -->
         <div style="padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y">
-          <div id="calEstGrid" style="min-width:max-content;display:inline-block;width:100%"></div>
+          <div id="calEstGrid"></div>
         </div>
       </div>
     </div>
@@ -1042,17 +1038,17 @@ input,select,textarea{font-size:16px!important}
 
 <!-- Bottom Navigation estudiante (móvil ≤480px) -->
 <div id="estBottomNav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--n900);border-top:1px solid var(--n700);z-index:200">
-  <div style="display:flex;height:72px;width:100%">
-    <button id="estBnNotas" onclick="mostrarSecEst('notas')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:#fff;cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
+  <div style="display:flex;height:64px;padding:0 8px;gap:4px">
+    <button id="estBnNotas" onclick="mostrarSecEst('notas')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:#fff;cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
       <span style="font-size:22px;line-height:1">&#128203;</span><span>Notas</span>
     </button>
-    <button id="estBnAgenda" onclick="mostrarSecEst('agenda')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
+    <button id="estBnAgenda" onclick="mostrarSecEst('agenda')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
       <span style="font-size:22px;line-height:1">&#128197;</span><span>Agenda</span>
     </button>
-    <button id="estBnClave" onclick="abrirPassModal()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
+    <button onclick="abrirPassModal()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
       <span style="font-size:22px;line-height:1">&#128274;</span><span>Clave</span>
     </button>
-    <button id="estBnSalir" onclick="logout()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
+    <button onclick="logout()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
       <span style="font-size:22px;line-height:1">&#128682;</span><span>Salir</span>
     </button>
   </div>
@@ -1061,6 +1057,7 @@ input,select,textarea{font-size:16px!important}
 <div id="toast"><div class="tt" id="ttt"></div><div class="tm" id="ttm"></div></div>
 
 <script>
+// ==========================
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyTmDPcmIKYrZewxa1J1i0_d5rce08HKplNDGzyRaP9VbCahVekkCQfMC6u9NagBO7LQw/exec';
@@ -1588,10 +1585,11 @@ async function saveNota(inp){
   },500);
 }
 async function iniciarVistaEstudiante(){
-  // Mostrar bottom nav en móvil, topbar en desktop
-  var _mob=window.innerWidth<=600;
-  var bn=g('estBottomNav');if(bn)bn.style.display=_mob?'flex':'none';
-  var tw=g('estTopbarWrap');if(tw)tw.style.display=_mob?'none':'flex';
+  // Móvil: activar bottom nav
+  if(window.innerWidth<=480){
+    var bn=g('estBottomNav');if(bn)bn.style.display='flex';
+    var tw=g('estTopbarWrap');if(tw)tw.style.display='none';
+  }
   // Actualizar barra superior
   const nomEl=g('estNombre');const codEl=g('estCodigo');
   if(nomEl)nomEl.textContent=session.nombre||'Estudiante';
@@ -1868,10 +1866,17 @@ tbody tr:last-child td{border-bottom:2px solid #0a1628}
 <script>window.onload=function(){window.print()}<\/script>
 </body></html>`;
 
-  const win=window.open('','_blank');
-  if(!win){toast('Habilita popups en el navegador','','warn');return}
-  win.document.write(htmlPDF);
-  win.document.close();
+  try{
+    const blob=new Blob([htmlPDF],{type:'text/html;charset=utf-8'});
+    const burl=URL.createObjectURL(blob);
+    const win=window.open(burl,'_blank');
+    if(!win){toast('Habilita popups','','warn');URL.revokeObjectURL(burl);return}
+    setTimeout(()=>URL.revokeObjectURL(burl),60000);
+  }catch(ex){
+    const win=window.open('','_blank');
+    if(!win){toast('Habilita popups','','warn');return}
+    win.document.write(htmlPDF);win.document.close();
+  }
 }
 
 
@@ -2866,10 +2871,11 @@ function abrirPanelAdmin(tab){
   if(g('agendaCard')) g('agendaCard').style.display='none';
   if(g('prevCard')) g('prevCard').style.display='none';
 
-  // Activar el tab en el sidebar (para que los panes se muestren)
-  showTab(tab, g('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)));
+  // Activar el tab del sidebar si existe (solo para al, us, ho, log)
+  const tabBtn = g('tab'+tab.charAt(0).toUpperCase()+tab.slice(1));
+  if(tabBtn) showTab(tab, tabBtn);
 
-  // Mover el contenido del pane activo al panelCard
+  // Mover el contenido del pane al panelCard
   const pane = g('pane-'+tab);
   if(!pane){ console.warn('pane-'+tab+' no encontrado'); return; }
 
@@ -2877,12 +2883,16 @@ function abrirPanelAdmin(tab){
   const title = g('panelCardTitle');
   if(!body || !title) return;
 
-  // Clonar el pane y moverlo al body del panel card
   title.innerHTML = PANEL_TITLES[tab] || tab;
   body.innerHTML = '';
-  // Mover los hijos (no clonar — para que los inputs sigan funcionando)
   while(pane.firstChild) body.appendChild(pane.firstChild);
   body.setAttribute('data-tab', tab);
+
+  // Cargar datos según el panel
+  if(tab==='pdf') cargarHojasExport();
+  else if(tab==='us') cargarUsuarios();
+  else if(tab==='ho') loadHojas();
+  else if(tab==='log') cargarLog();
 
   // Mostrar el panelCard
   const pc = g('panelCard');
