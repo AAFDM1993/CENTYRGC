@@ -477,22 +477,27 @@ input,select,textarea{font-size:16px!important}
 
   /* safe area iPhone notch */
   #estBottomNav{padding-bottom:max(env(safe-area-inset-bottom),8px)}
+}
 
-  /* Ocultar candado y salir del header en móvil (están en el bottom nav) */
+/* ── Topbars y header adaptables en móvil ≤480px ── */
+@media(max-width:480px){
   #hdrBtnPass,#hdrBtnSalir{display:none!important}
-
-  /* Bottom nav: distribuir botones uniformemente sin padding lateral */
   #estBottomNav>div{padding:0!important;gap:0!important}
-  #estBottomNav>div>button{
-    flex:1;
-    min-width:0;
-    padding:6px 4px!important;
-    border-radius:0!important;
-  }
-  /* Separadores sutiles entre botones */
-  #estBottomNav>div>button+button{
-    border-left:1px solid rgba(255,255,255,.06)!important;
-  }
+  #estBottomNav>div>button{flex:1;min-width:0;padding:6px 2px!important;border-radius:0!important}
+  #estBottomNav>div>button+button{border-left:1px solid rgba(255,255,255,.06)!important}
+  #estBottomNav{padding-bottom:max(env(safe-area-inset-bottom),8px)}
+  #docenteTopbar{padding:4px 8px!important}
+  .docente-inner{flex-wrap:wrap!important;height:auto!important;gap:4px!important;width:100%!important}
+  #adminOnlyBtns{display:flex!important;flex-wrap:wrap!important;gap:4px!important;width:100%!important}
+  #adminOnlyBtns button{flex:1 1 auto!important;min-width:70px!important;font-size:11px!important;padding:6px 8px!important;justify-content:center!important}
+  #docenteHojasBtns{display:flex!important;flex-wrap:wrap!important;gap:4px!important;flex:1!important}
+  #docenteHojasBtns button{flex:1 1 auto!important;min-width:80px!important;justify-content:center!important}
+  #btnTopbarAgenda{width:100%!important;justify-content:center!important}
+  #estTopbarWrap{padding:6px 12px!important}
+  #estTopbarWrap>div{flex-wrap:wrap!important;width:100%!important;gap:6px!important}
+  #btnEstNotas,#btnEstAgenda{flex:1!important;justify-content:center!important;min-height:42px!important}
+  #loginPage{align-items:center!important;padding:16px 12px!important}
+  .login-card{border-radius:20px!important;max-width:100%!important;padding:28px 20px 32px!important;margin:0!important}
 }
 </style>
 </head>
@@ -793,8 +798,8 @@ input,select,textarea{font-size:16px!important}
     </div>
 
     <!-- Topbar Admin + Docente (barra unificada) -->
-    <div id="docenteTopbar" style="display:none;background:var(--n900);border-bottom:1px solid var(--n800);padding:0 14px;position:sticky;top:58px;z-index:100;overflow-x:auto">
-      <div class="docente-inner" style="display:flex;align-items:center;gap:5px;height:50px;min-width:max-content">
+    <div id="docenteTopbar" style="display:none;background:var(--n900);border-bottom:1px solid var(--n800);padding:0 14px;position:sticky;top:58px;z-index:100">
+      <div class="docente-inner" style="display:flex;align-items:center;gap:5px;min-height:50px;flex-wrap:wrap;padding:4px 0;width:100%">
 
         <!-- Solo Admin: botones de configuración -->
         <div id="adminOnlyBtns" style="display:none;align-items:center;gap:5px">
@@ -880,7 +885,7 @@ input,select,textarea{font-size:16px!important}
 
   <div id="viewEstudiante" style="display:none">
   <!-- Barra superior del estudiante -->
-  <div id="estTopbarWrap" style="background:var(--n900);border-bottom:1px solid var(--n800);padding:0 16px;position:sticky;top:58px;z-index:100;overflow-x:auto">
+  <div id="estTopbarWrap" style="background:var(--n900);border-bottom:1px solid var(--n800);padding:0 16px;position:sticky;top:58px;z-index:100">
     <div style="display:flex;align-items:center;gap:6px;min-height:50px;flex-wrap:wrap;padding:4px 0">
       <!-- Info del usuario -->
       <div style="margin-right:8px;flex-shrink:0">
@@ -2785,6 +2790,8 @@ function cerrarPanel(){
 }
 
 
+
+function abrirPassModal(){ mostrarCambioPass(); }
 </script>
 </body>
 </html>
