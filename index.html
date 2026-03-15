@@ -224,8 +224,9 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
   .hdr h1{font-size:13px;letter-spacing:0}
   .logo .lmark{width:28px;height:28px;font-size:11px}
   /* Login pantalla completa */
-  #loginPage{align-items:flex-end;padding-bottom:0}
-  .login-card{border-radius:24px 24px 0 0;max-width:100%;padding:28px 20px 36px;margin:0}
+  /* Login centrado verticalmente en móvil */
+  #loginPage{align-items:center;padding:16px}
+  .login-card{border-radius:20px;max-width:100%;width:100%;padding:28px 20px 32px;margin:0}
   /* Sidebar */
   #adminSidebar{top:50px;height:calc(100vh - 50px)}
   /* Botones táctiles más grandes */
@@ -425,9 +426,9 @@ input,select,textarea{font-size:16px!important}
   #logoImg{height:28px!important}
   .rol-pill{display:none}
 
-  /* Login: bottom sheet */
-  #loginPage{align-items:flex-end;padding:0}
-  .login-card{border-radius:22px 22px 0 0;max-width:100%;width:100%;padding:28px 20px 40px;margin:0;max-height:92vh;overflow-y:auto}
+  /* Login centrado en móvil */
+  #loginPage{align-items:center;padding:16px 12px}
+  .login-card{border-radius:20px;max-width:100%;width:100%;padding:28px 20px 32px;margin:0}
   .btn-login{padding:16px;font-size:16px;min-height:52px;border-radius:14px}
 
   /* Sidebar */
@@ -444,7 +445,7 @@ input,select,textarea{font-size:16px!important}
 
   /* Bottom nav estudiante */
   #estBottomNav{display:flex!important}
-  .content-main{padding-bottom:72px}
+  .content-main{padding-bottom:78px}
 
   /* Modales: bottom sheet */
   #reservaModal{align-items:flex-end!important}
@@ -864,7 +865,7 @@ input,select,textarea{font-size:16px!important}
   <div id="viewEstudiante" style="display:none">
   <!-- Barra superior del estudiante -->
   <div id="estTopbarWrap" style="background:var(--n900);border-bottom:1px solid var(--n800);padding:0 16px;position:sticky;top:58px;z-index:100;overflow-x:auto">
-    <div style="display:flex;align-items:center;gap:6px;height:50px;min-width:max-content">
+    <div style="display:flex;align-items:center;gap:6px;min-height:50px;flex-wrap:wrap;padding:4px 0">
       <!-- Info del usuario -->
       <div style="margin-right:8px;flex-shrink:0">
         <div id="estNombre" style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:14px;line-height:1.2">Estudiante</div>
@@ -879,10 +880,6 @@ input,select,textarea{font-size:16px!important}
         &#128197; Agenda
       </button>
 
-      <div style="width:1px;height:28px;background:var(--n700);flex-shrink:0"></div>
-      <button onclick="mostrarCambioPass()" style="display:flex;align-items:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--n300);font-size:12px;font-weight:600;padding:6px 12px;cursor:pointer;white-space:nowrap">
-        &#128274; Contrasena
-      </button>
     </div>
   </div>
 
@@ -991,18 +988,18 @@ input,select,textarea{font-size:16px!important}
 
 <!-- Bottom Navigation estudiante (móvil ≤480px) -->
 <div id="estBottomNav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--n900);border-top:1px solid var(--n700);z-index:200">
-  <div style="display:flex;height:58px">
-    <button id="estBnNotas" onclick="mostrarSecEst('notas')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:#fff;cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
-      <span style="font-size:20px;line-height:1">&#128203;</span><span>Notas</span>
+  <div style="display:flex;height:64px;padding:0 8px;gap:4px">
+    <button id="estBnNotas" onclick="mostrarSecEst('notas')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:#fff;cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:22px;line-height:1">&#128203;</span><span>Notas</span>
     </button>
-    <button id="estBnAgenda" onclick="mostrarSecEst('agenda')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
-      <span style="font-size:20px;line-height:1">&#128197;</span><span>Agenda</span>
+    <button id="estBnAgenda" onclick="mostrarSecEst('agenda')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:22px;line-height:1">&#128197;</span><span>Agenda</span>
     </button>
-    <button onclick="abrirPassModal()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
-      <span style="font-size:20px;line-height:1">&#128274;</span><span>Clave</span>
+    <button onclick="abrirPassModal()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:22px;line-height:1">&#128274;</span><span>Clave</span>
     </button>
-    <button onclick="logout()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
-      <span style="font-size:20px;line-height:1">&#128682;</span><span>Salir</span>
+    <button onclick="logout()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:22px;line-height:1">&#128682;</span><span>Salir</span>
     </button>
   </div>
 </div>
