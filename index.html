@@ -532,6 +532,26 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
 #estBottomNav > div > button + button {
   border-left:1px solid rgba(255,255,255,.08)!important;
 }
+
+/* Admin/Docente bottom nav en móvil */
+@media(max-width:600px){
+  body.rol-admin #adminBottomNav,
+  body.rol-docente #adminBottomNav { display:flex!important; }
+  /* Padding inferior para el contenido */
+  body.rol-admin .content-main,
+  body.rol-docente .content-main { padding-bottom:80px; }
+}
+/* Admin/Docente bottom nav: distribución uniforme */
+#adminBottomNav > div { width:100%!important; padding:0!important; gap:0!important; }
+#adminBottomNav > div > button {
+  flex:1!important; min-width:0!important;
+  display:flex!important; flex-direction:column!important;
+  align-items:center!important; justify-content:center!important;
+  padding:6px 0!important; border-radius:0!important;
+}
+#adminBottomNav > div > button + button {
+  border-left:1px solid rgba(255,255,255,.08)!important;
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -1052,6 +1072,24 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
 </div>
 
 
+
+<!-- Bottom Navigation admin/docente (móvil ≤600px) -->
+<div id="adminBottomNav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--n900);border-top:1px solid var(--n700);z-index:200">
+  <div style="display:flex;height:68px;width:100%;padding:0">
+    <button id="admBnHojas" onclick="admNavNotas()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:#fff;cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:26px;line-height:1">&#128203;</span><span>Notas</span>
+    </button>
+    <button id="admBnAgenda" onclick="admNavAgenda()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:26px;line-height:1">&#128197;</span><span>Agenda</span>
+    </button>
+    <button onclick="abrirPassModal()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:26px;line-height:1">&#128274;</span><span>Clave</span>
+    </button>
+    <button onclick="logout()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:26px;line-height:1">&#128682;</span><span>Salir</span>
+    </button>
+  </div>
+</div>
 
 <!-- Bottom Navigation estudiante (móvil ≤480px) -->
 <div id="estBottomNav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--n900);border-top:1px solid var(--n700);z-index:200">
@@ -2932,6 +2970,33 @@ function cerrarPanel(){
 }
 
 
+
+// ── BOTTOM NAV ADMIN/DOCENTE ────────────────────────────
+function admNavNotas(){
+  // Ir a la primera hoja disponible o mostrar el panel de hojas
+  var ac=g('agendaCard');if(ac)ac.style.display='none';
+  var pc=g('panelCard');if(pc)pc.style.display='none';
+  // Si hay una hoja activa, mostrarla; si no, abrir panel de hojas
+  if(hojaActiva && hojaData){
+    g('edCard').style.display='';
+    g('prevCard') && (g('prevCard').style.display='none');
+  } else {
+    // Mostrar la lista de hojas para que elija
+    if(session&&session.rol==='admin') abrirPanelAdmin('ho');
+    else loadHojas();
+  }
+  // Actualizar colores del nav
+  var bnH=g('admBnHojas'),bnA=g('admBnAgenda');
+  if(bnH)bnH.style.color='#fff';
+  if(bnA)bnA.style.color='var(--n400)';
+}
+function admNavAgenda(){
+  mostrarAgenda();
+  // Actualizar colores del nav
+  var bnH=g('admBnHojas'),bnA=g('admBnAgenda');
+  if(bnA)bnA.style.color='#fff';
+  if(bnH)bnH.style.color='var(--n400)';
+}
 
 function abrirPassModal(){ mostrarCambioPass(); }
 </script>
