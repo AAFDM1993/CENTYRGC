@@ -445,7 +445,7 @@ input,select,textarea{font-size:16px!important}
 
   /* Bottom nav estudiante */
   #estBottomNav{display:flex!important}
-  .content-main{padding-bottom:78px}
+  .content-main{padding-bottom:84px}
 
   /* Modales: bottom sheet */
   #reservaModal{align-items:flex-end!important}
@@ -476,7 +476,7 @@ input,select,textarea{font-size:16px!important}
   #panelCard>div>div:last-child{max-height:calc(100vh - 160px)!important}
 
   /* safe area iPhone notch */
-  #estBottomNav{padding-bottom:max(env(safe-area-inset-bottom),8px)}
+  #estBottomNav{padding-bottom:max(env(safe-area-inset-bottom),10px);height:72px}
 }
 
 /* ── Topbars y header adaptables en móvil ≤480px ── */
@@ -485,10 +485,10 @@ input,select,textarea{font-size:16px!important}
   #estBottomNav>div{padding:0!important;gap:0!important}
   #estBottomNav>div>button{flex:1;min-width:0;padding:6px 2px!important;border-radius:0!important}
   #estBottomNav>div>button+button{border-left:1px solid rgba(255,255,255,.06)!important}
-  #estBottomNav{padding-bottom:max(env(safe-area-inset-bottom),8px)}
+  #estBottomNav{padding-bottom:max(env(safe-area-inset-bottom),10px);height:72px}
   #docenteTopbar{padding:4px 8px!important}
   .docente-inner{flex-wrap:wrap!important;height:auto!important;gap:4px!important;width:100%!important}
-  #adminOnlyBtns{display:flex!important;flex-wrap:wrap!important;gap:4px!important;width:100%!important}
+  #adminOnlyBtns{flex-wrap:wrap!important;gap:4px!important;width:100%!important;align-items:center!important}
   #adminOnlyBtns button{flex:1 1 auto!important;min-width:70px!important;font-size:11px!important;padding:6px 8px!important;justify-content:center!important}
   #docenteHojasBtns{display:flex!important;flex-wrap:wrap!important;gap:4px!important;flex:1!important}
   #docenteHojasBtns button{flex:1 1 auto!important;min-width:80px!important;justify-content:center!important}
@@ -1007,18 +1007,18 @@ input,select,textarea{font-size:16px!important}
 
 <!-- Bottom Navigation estudiante (móvil ≤480px) -->
 <div id="estBottomNav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--n900);border-top:1px solid var(--n700);z-index:200">
-  <div style="display:flex;height:64px;padding:0 8px;gap:4px">
-    <button id="estBnNotas" onclick="mostrarSecEst('notas')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:#fff;cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
-      <span style="font-size:22px;line-height:1">&#128203;</span><span>Notas</span>
+  <div style="display:flex;height:72px;padding:0;gap:0">
+    <button id="estBnNotas" onclick="mostrarSecEst('notas')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:#fff;cursor:pointer;font-size:10px;font-weight:700;letter-spacing:.3px;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:26px;line-height:1">&#128203;</span><span>Notas</span>
     </button>
-    <button id="estBnAgenda" onclick="mostrarSecEst('agenda')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
-      <span style="font-size:22px;line-height:1">&#128197;</span><span>Agenda</span>
+    <button id="estBnAgenda" onclick="mostrarSecEst('agenda')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;letter-spacing:.3px;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:26px;line-height:1">&#128197;</span><span>Agenda</span>
     </button>
-    <button onclick="abrirPassModal()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
-      <span style="font-size:22px;line-height:1">&#128274;</span><span>Clave</span>
+    <button onclick="abrirPassModal()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;letter-spacing:.3px;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:26px;line-height:1">&#128274;</span><span>Clave</span>
     </button>
-    <button onclick="logout()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:9px;font-weight:700;letter-spacing:.5px;-webkit-tap-highlight-color:transparent">
-      <span style="font-size:22px;line-height:1">&#128682;</span><span>Salir</span>
+    <button onclick="logout()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;letter-spacing:.3px;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:26px;line-height:1">&#128682;</span><span>Salir</span>
     </button>
   </div>
 </div>
