@@ -477,6 +477,22 @@ input,select,textarea{font-size:16px!important}
 
   /* safe area iPhone notch */
   #estBottomNav{padding-bottom:max(env(safe-area-inset-bottom),8px)}
+
+  /* Ocultar candado y salir del header en móvil (están en el bottom nav) */
+  #hdrBtnPass,#hdrBtnSalir{display:none!important}
+
+  /* Bottom nav: distribuir botones uniformemente sin padding lateral */
+  #estBottomNav>div{padding:0!important;gap:0!important}
+  #estBottomNav>div>button{
+    flex:1;
+    min-width:0;
+    padding:6px 4px!important;
+    border-radius:0!important;
+  }
+  /* Separadores sutiles entre botones */
+  #estBottomNav>div>button+button{
+    border-left:1px solid rgba(255,255,255,.06)!important;
+  }
 }
 </style>
 </head>
@@ -521,8 +537,8 @@ input,select,textarea{font-size:16px!important}
       <div class="hdr-right">
         <div class="cpill" id="cpill"><div class="dot" id="cdot"></div><span class="clabel" id="clabel">-</span></div>
         <div class="rol-pill"><div class="rdot" id="rolDot"></div><span id="rolLabel">-</span></div>
-        <button class="btn-logout" onclick="mostrarCambioPass()" style="border-color:var(--n600);color:var(--n300)" title="Cambiar contrasena">&#128274;</button>
-        <button class="btn-logout" onclick="logout()">Salir</button>
+        <button id="hdrBtnPass" class="btn-logout" onclick="mostrarCambioPass()" style="border-color:var(--n600);color:var(--n300)" title="Cambiar contrasena">&#128274;</button>
+        <button id="hdrBtnSalir" class="btn-logout" onclick="logout()">Salir</button>
       </div>
     </div>
   </header>
