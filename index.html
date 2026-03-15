@@ -836,8 +836,6 @@ input,select,textarea{font-size:16px!important}
         <!-- Solo Admin: botones de configuración -->
         <div id="adminOnlyBtns" style="display:none;align-items:center;gap:5px">
           <button onclick="abrirPanelAdmin('al')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128100; Alumnos</button>
-          <button onclick="abrirPanelAdmin('cu')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128218; Cursos</button>
-          <button onclick="abrirPanelAdmin('nt')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#9881; Config</button>
           <button onclick="abrirPanelAdmin('us')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128101; Usuarios</button>
           <button onclick="abrirPanelAdmin('pdf')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128196; PDF</button>
           <div style="width:1px;height:24px;background:var(--n700);flex-shrink:0;margin:0 3px"></div>
@@ -1061,6 +1059,22 @@ input,select,textarea{font-size:16px!important}
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyTmDPcmIKYrZewxa1J1i0_d5rce08HKplNDGzyRaP9VbCahVekkCQfMC6u9NagBO7LQw/exec';
+// ====================================================
+
+let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
+let cursos=JSON.parse(localStorage.getItem('ft_cursos_v6')||'[]');
+const APRO=()=>+(document.getElementById('scApro')||{}).value||11;
+const g=s=>document.getElementById(s);
+const vi=s=>(g(s)||{}).value||'';
+const esc=s=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+const esc2=s=>String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+function showLoader(m){g('lmsg').textContent=m;g('loader').classList.add('show')}
+function hideLoader(){g('loader').classList.remove('show')}
+let _tt;
+function toast(t,m,tp){co
+// ====================================================
+// PEGA AQUI TU URL DE APPS SCRIPT WEB APP
+const GAS_URL = 'PEGA_AQUI_TU_URL_DE_APPS_SCRIPT';
 // ====================================================
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
@@ -2904,6 +2918,3 @@ function cerrarPanel(){
 
 
 function abrirPassModal(){ mostrarCambioPass(); }
-</script>
-</body>
-</html>
