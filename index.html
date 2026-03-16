@@ -869,21 +869,22 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
 
     <!-- Topbar Admin + Docente (barra unificada) -->
     <div id="docenteTopbar" style="display:none;background:var(--n900);border-bottom:1px solid var(--n800);padding:0 14px;position:sticky;top:58px;z-index:100">
-      <div class="docente-inner" style="display:flex;align-items:center;gap:5px;min-height:50px;flex-wrap:wrap;padding:4px 0;width:100%">
+      <!-- Fila única: todos los botones a la misma altura -->
+      <div style="display:flex;align-items:center;gap:5px;height:50px;overflow-x:auto;-webkit-overflow-scrolling:touch">
 
-        <!-- Solo Admin: botones de configuración -->
-        <div id="adminOnlyBtns" style="display:none;align-items:center;gap:5px">
+        <!-- Solo Admin: botones de configuración (inline, misma fila) -->
+        <div id="adminOnlyBtns" style="display:none;align-items:center;gap:5px;flex-shrink:0">
           <button onclick="abrirPanelAdmin('al')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128100; Alumnos</button>
           <button onclick="abrirPanelAdmin('us')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128101; Usuarios</button>
           <button onclick="abrirPanelAdmin('pdf')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128196; PDF</button>
-          <div style="width:1px;height:24px;background:var(--n700);flex-shrink:0;margin:0 3px"></div>
+          <div style="width:1px;height:24px;background:var(--n700);flex-shrink:0;margin:0 4px"></div>
         </div>
 
-        <!-- Admin+Docente: hojas y agenda -->
-        <span style="font-size:10px;font-weight:700;color:var(--n500);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap">Hojas:</span>
-        <div id="docenteHojasBtns" style="display:flex;gap:5px;align-items:center"><span style="font-size:12px;color:var(--n500)">Cargando...</span></div>
+        <!-- Admin+Docente: hojas y agenda (misma fila) -->
+        <span style="font-size:10px;font-weight:700;color:var(--n500);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap;flex-shrink:0">Hojas:</span>
+        <div id="docenteHojasBtns" style="display:flex;gap:5px;align-items:center;flex-shrink:0"><span style="font-size:12px;color:var(--n500)">Cargando...</span></div>
         <div style="width:1px;height:24px;background:var(--n700);margin:0 6px;flex-shrink:0"></div>
-        <button id="btnTopbarAgenda" onclick="mostrarAgenda()" style="display:flex;align-items:center;gap:6px;background:var(--n600);border:1px solid var(--n500);border-radius:9px;color:#fff;font-size:12px;font-weight:700;padding:6px 13px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='var(--n500)'" onmouseout="this.style.background='var(--n600)'">
+        <button id="btnTopbarAgenda" onclick="mostrarAgenda()" style="display:flex;align-items:center;gap:6px;background:var(--n600);border:1px solid var(--n500);border-radius:9px;color:#fff;font-size:12px;font-weight:700;padding:6px 13px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .2s" onmouseover="this.style.background='var(--n500)'" onmouseout="this.style.background='var(--n600)'">
           &#128197; Agenda
         </button>
       </div>
