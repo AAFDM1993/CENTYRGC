@@ -925,6 +925,7 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
         <span style="font-size:10px;font-weight:700;color:var(--n500);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap;flex-shrink:0">Hojas:</span>
         <div id="docenteHojasBtns" style="display:flex;gap:5px;align-items:center;flex-shrink:0"><span style="font-size:12px;color:var(--n500)">Cargando...</span></div>
         <div style="width:1px;height:24px;background:var(--n700);margin:0 6px;flex-shrink:0"></div>
+        <button id="btnTopbarCas" onclick="abrirPanelAdmin('cas')" style="display:none;align-items:center;gap:6px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:700;padding:6px 13px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.18)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128220; Casilleros</button>
         <button id="btnTopbarAgenda" onclick="mostrarAgenda()" style="display:flex;align-items:center;gap:6px;background:var(--n600);border:1px solid var(--n500);border-radius:9px;color:#fff;font-size:12px;font-weight:700;padding:6px 13px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .2s" onmouseover="this.style.background='var(--n500)'" onmouseout="this.style.background='var(--n600)'">
           &#128197; Agenda
         </button>
@@ -1007,25 +1008,11 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
       <button id="btnEstNotas" onclick="mostrarSecEst('notas')" style="display:flex;align-items:center;gap:7px;background:var(--n500);border:1px solid var(--n400);border-radius:10px;color:#fff;font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap;transition:all .2s">
         &#128203; Mis Notas
       </button>
+      <button id="btnEstCas" onclick="mostrarSecEst('casilleros')" style="display:flex;align-items:center;gap:7px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--n300);font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer">&#128220; Casilleros</button>
       <button id="btnEstAgenda" onclick="mostrarSecEst('agenda')" style="display:flex;align-items:center;gap:7px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--n300);font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap;transition:all .2s">
         &#128197; Agenda
       </button>
 
-    </div>
-  </div>
-
-  <!-- Casillero del alumno -->
-  <div id="secEstCasillero" style="display:none">
-    <div class="est-wrap">
-      <div class="est-hoja" style="border-left:3px solid var(--n500)">
-        <div class="est-hoja-hdr" style="display:flex;align-items:center;gap:12px">
-          <span style="font-size:28px">&#128220;</span>
-          <div>
-            <h3 style="font-size:14px">Mi Casillero</h3>
-            <p id="estCasilleroInfo" style="font-size:13px;color:var(--n300);margin-top:2px">Cargando...</p>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -1036,6 +1023,14 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
         <div class="est-no-data"><div class="ico">&#128203;</div><p>Cargando notas...</p></div>
       </div>
     </div>
+  </div>
+
+  <!-- Casilleros alumno (solo lectura) -->
+  <div id="secEstCasilleros" style="display:none">
+    <div class="est-wrap"><div class="est-hoja" style="overflow:hidden">
+      <div class="est-hoja-hdr"><h3>&#128220; Casilleros</h3><p style="font-size:11px;color:var(--n300);margin-top:2px">Verde=libre &nbsp; &#128100;=mi casillero &nbsp; gris=ocupado</p></div>
+      <div style="padding:14px"><div id="casEstGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px"></div></div>
+    </div></div>
   </div>
 
   <!-- Sección AGENDA -->
@@ -1154,6 +1149,9 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
     <button id="estBnNotas" onclick="mostrarSecEst('notas')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:#fff;cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
       <span style="font-size:22px;line-height:1">&#128203;</span><span>Notas</span>
     </button>
+    <button onclick="mostrarSecEst('casilleros')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:22px;line-height:1">&#128220;</span><span>Casilleros</span>
+    </button>
     <button id="estBnAgenda" onclick="mostrarSecEst('agenda')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
       <span style="font-size:22px;line-height:1">&#128197;</span><span>Agenda</span>
     </button>
@@ -1168,22 +1166,26 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
 
 <!-- Modal asignar casillero -->
 <div id="modalAsignarCasillero" style="display:none;position:fixed;inset:0;background:rgba(10,22,40,.65);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
-  <div style="background:var(--surf);border-radius:16px;padding:24px;width:100%;max-width:420px;box-shadow:0 24px 60px rgba(10,22,40,.4)">
-    <h3 id="modalCasTitulo" style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--n900);margin-bottom:4px">Asignar Casillero</h3>
-    <p id="modalCasInfo" style="font-size:11px;color:var(--tx3);margin-bottom:14px;min-height:16px"></p>
-    <div class="field" style="margin-bottom:12px">
-      <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Código del alumno *</label>
-      <input class="inp" id="inputAlumnoCod" list="dlAlumnos" placeholder="Escribe el código o busca por nombre..." onkeydown="if(event.key==='Enter')confirmarAsignacion()" style="background:var(--surf2);border:1px solid var(--bd);border-radius:9px;color:var(--tx);padding:9px 12px;width:100%;outline:none">
-      <datalist id="dlAlumnos"></datalist>
-      <div style="font-size:10px;color:var(--tx4);margin-top:4px">Empieza a escribir para ver sugerencias de alumnos registrados</div>
+  <div style="background:var(--surf);border-radius:16px;padding:0;width:100%;max-width:440px;box-shadow:0 24px 60px rgba(10,22,40,.4);overflow:hidden">
+    <div style="background:var(--n900);padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
+      <div><div id="modalCasTitulo" style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#fff">Asignar</div><div id="modalCasInfo" style="font-size:11px;color:var(--n300);margin-top:2px"></div></div>
+      <button onclick="cerrarModalCasillero()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:7px;font-size:16px;cursor:pointer;line-height:1">&#10005;</button>
     </div>
-    <div class="field" style="margin-bottom:18px">
-      <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Nombre del alumno</label>
-      <input class="inp" id="inputAlumnoNom" placeholder="Se autocompleta al seleccionar el código" style="background:var(--surf2);border:1px solid var(--bd);border-radius:9px;color:var(--tx);padding:9px 12px;width:100%;outline:none">
-    </div>
-    <div style="display:flex;gap:8px">
-      <button onclick="confirmarAsignacion()" style="flex:1;background:var(--n500);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;padding:11px;cursor:pointer">&#10003; Confirmar asignación</button>
-      <button onclick="cerrarModalCasillero()" style="background:var(--surf2);border:1px solid var(--bd);border-radius:10px;color:var(--tx2);font-size:13px;font-weight:700;padding:11px 16px;cursor:pointer">Cancelar</button>
+    <div style="padding:14px 18px">
+      <input id="buscarAlumnoModal" placeholder="Buscar por c&#243;digo o apellido..." oninput="filtrarAlumnosModal()" style="width:100%;background:var(--surf2);border:1px solid var(--bd);border-radius:9px;color:var(--tx);padding:9px 12px;font-size:13px;outline:none;margin-bottom:8px">
+      <div id="listaAlumnosModal" style="max-height:200px;overflow-y:auto;border:1px solid var(--bd2);border-radius:9px;margin-bottom:10px">
+        <div style="padding:12px;text-align:center;color:var(--tx4);font-size:12px">Escribe para buscar alumnos...</div>
+      </div>
+      <div id="alumnoSelBox" style="display:none;background:var(--n100);border:1px solid var(--n300);border-radius:9px;padding:10px 12px;margin-bottom:12px">
+        <div style="font-size:10px;font-weight:700;color:var(--n500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Alumno seleccionado</div>
+        <div id="alumnoSelNombre" style="font-size:13px;font-weight:700;color:var(--tx)"></div>
+        <div id="alumnoSelCodigo" style="font-size:11px;color:var(--tx3);font-family:'DM Mono',monospace"></div>
+      </div>
+      <input type="hidden" id="inputAlumnoCod"><input type="hidden" id="inputAlumnoNom">
+      <div style="display:flex;gap:8px">
+        <button onclick="confirmarAsignacion()" style="flex:1;background:var(--n500);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;padding:11px;cursor:pointer">&#10003; Confirmar</button>
+        <button onclick="cerrarModalCasillero()" style="background:var(--surf2);border:1px solid var(--bd);border-radius:10px;color:var(--tx2);font-size:13px;font-weight:700;padding:11px 16px;cursor:pointer">Cancelar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1319,6 +1321,7 @@ function iniciarVistaAdmin(){
     if(g('panelCard'))g('panelCard').style.display='none';
     if(g('prevCard'))g('prevCard').style.display='none';
     var cap2=g('casAdminPanel');if(cap2)cap2.style.display='none';
+    var _bCas=g('btnTopbarCas');if(_bCas)_bCas.style.display='flex';
   }
   loadHojas();
 }
@@ -1738,7 +1741,6 @@ async function iniciarVistaEstudiante(){
   }catch(e){hideLoader();g('estNotas').innerHTML=`<div class="hint">Error: ${e.message}</div>`}
   // Cargar la agenda en background
   iniciarAgendaEstudiante();
-  cargarCasilleroEstudiante();
 }
 function renderEstNotas(resultados){
   const box=g('estNotas');
@@ -2868,28 +2870,28 @@ async function eliminarReservaLista(fecha,hora,area,camilla){
 
 // ── NAVEGACIÓN ESTUDIANTE ────────────────────────────────
 function mostrarSecEst(sec){
-  const secNotas=g('secEstNotas'),secAgenda=g('secEstAgenda');
-  const btnNotas=g('btnEstNotas'),btnAgenda=g('btnEstAgenda');
-  const bnNotas=g('estBnNotas'),bnAgenda=g('estBnAgenda');
+  var sN=g('secEstNotas'),sA=g('secEstAgenda'),sC=g('secEstCasilleros');
+  var bN=g('btnEstNotas'),bA=g('btnEstAgenda'),bC=g('btnEstCas');
+  var bnN=g('estBnNotas'),bnA=g('estBnAgenda');
+  [sN,sA,sC].forEach(function(s){if(s)s.style.display='none';});
+  [bN,bA,bC].forEach(function(b){if(b){b.style.background='transparent';b.style.borderColor='rgba(255,255,255,.2)';b.style.color='var(--n300)';}});
+  if(bnN)bnN.style.color='var(--n400)';if(bnA)bnA.style.color='var(--n400)';
   if(sec==='notas'){
-    if(secNotas)secNotas.style.display='block';
-    if(secAgenda)secAgenda.style.display='none';
-    if(btnNotas){btnNotas.style.background='var(--n500)';btnNotas.style.borderColor='var(--n400)';btnNotas.style.color='#fff';}
-    if(btnAgenda){btnAgenda.style.background='transparent';btnAgenda.style.borderColor='rgba(255,255,255,.2)';btnAgenda.style.color='var(--n300)';}
-    if(bnNotas)bnNotas.style.color='#fff';
-    if(bnAgenda)bnAgenda.style.color='var(--n400)';
-  } else {
-    if(secNotas)secNotas.style.display='none';
-    if(secAgenda)secAgenda.style.display='block';
-    if(btnAgenda){btnAgenda.style.background='var(--n500)';btnAgenda.style.borderColor='var(--n400)';btnAgenda.style.color='#fff';}
-    if(btnNotas){btnNotas.style.background='transparent';btnNotas.style.borderColor='rgba(255,255,255,.2)';btnNotas.style.color='var(--n300)';}
-    if(bnAgenda)bnAgenda.style.color='#fff';
-    if(bnNotas)bnNotas.style.color='var(--n400)';
-    if(!agendaEstReservas.length||!agendaCfg.areas.length) iniciarAgendaEstudiante();
+    if(sN)sN.style.display='block';
+    if(bN){bN.style.background='var(--n500)';bN.style.borderColor='var(--n400)';bN.style.color='#fff';}
+    if(bnN)bnN.style.color='#fff';
+  }else if(sec==='agenda'){
+    if(sA)sA.style.display='block';
+    if(bA){bA.style.background='var(--n500)';bA.style.borderColor='var(--n400)';bA.style.color='#fff';}
+    if(bnA)bnA.style.color='#fff';
+    if(!agendaEstReservas.length||!agendaCfg.areas.length)iniciarAgendaEstudiante();
     else renderCalendarioEst();
+  }else if(sec==='casilleros'){
+    if(sC)sC.style.display='block';
+    if(bC){bC.style.background='var(--n500)';bC.style.borderColor='var(--n400)';bC.style.color='#fff';}
+    cargarCasillerosSoloLectura();
   }
 }
-
 
 // ════════════════════════════════════════════════════════
 // BLOQUEOS DE AGENDA
@@ -2999,11 +3001,8 @@ var PANEL_TITLES = {
 };
 
 function abrirPanelAdmin(tab){
-  // Solo el admin puede abrir paneles de administración
-  if(!session || session.rol !== 'admin'){
-    toast('Sin permiso','Esta función es solo para administradores','err');
-    return;
-  }
+  var _rp=tab==='cas'?['admin','docente']:['admin'];
+  if(!session||!_rp.includes(session.rol)){toast('Sin permiso','Solo admin','err');return;}
 
   // Si ya hay un panel abierto, devolver su contenido al pane original ANTES de abrir otro
   const body = g('panelCardBody');
@@ -3182,35 +3181,64 @@ async function eliminarCasillero(codigo){
 
 async function abrirAsignarCasillero(codigo){
   _casignandoCodigo=codigo;
-  const cas=casillerosTodos.find(x=>x.codigo===codigo);
-  const m=g('modalAsignarCasillero');if(!m)return;
-  const libre=!cas?.alumnoCodigo;
-  g('modalCasTitulo').textContent=(libre?'&#128100; Asignar':'&#128257; Reasignar')+' Casillero '+codigo;
-  g('inputAlumnoCod').value=cas?.alumnoCodigo||'';
-  g('inputAlumnoNom').value=cas?.alumnoNombre||'';
-  const info=g('modalCasInfo');
-  if(info) info.textContent=libre?'':'Actualmente: '+(cas.alumnoNombre||cas.alumnoCodigo);
+  var cas=casillerosTodos.find(function(x){return x.codigo===codigo;});
+  var m=g('modalAsignarCasillero');if(!m)return;
+  var libre=!cas||!cas.alumnoCodigo;
+  var tit=g('modalCasTitulo');
+  if(tit)tit.textContent=(libre?'Asignar':'Reasignar')+' Casillero '+codigo;
+  var info=g('modalCasInfo');
+  if(info)info.textContent=libre?'':(cas.alumnoNombre||cas.alumnoCodigo)+' ('+cas.alumnoCodigo+')';
+  g('inputAlumnoCod').value='';g('inputAlumnoNom').value='';
+  var bsr=g('buscarAlumnoModal');if(bsr)bsr.value='';
+  var lb=g('listaAlumnosModal');
+  if(lb)lb.innerHTML='<div style="padding:12px;text-align:center;color:var(--tx4);font-size:12px">Escribe para buscar...</div>';
+  var sB=g('alumnoSelBox');if(sB)sB.style.display='none';
   m.style.display='flex';
   cargarAlumnosDatalist();
-  setTimeout(()=>g('inputAlumnoCod').focus(),100);
+  setTimeout(function(){var b=g('buscarAlumnoModal');if(b)b.focus();},100);
 }
 
+var _alumnosModal=[];
 async function cargarAlumnosDatalist(){
   try{
-    const r=await apiGet('listarUsuarios');
+    var r=await apiGet('listarUsuarios');
     if(!r.ok||!r.usuarios)return;
-    const alumnos=r.usuarios.filter(u=>u.rol==='estudiante');
-    const dl=g('dlAlumnos');if(!dl)return;
-    dl.innerHTML=alumnos.map(u=>`<option value="${esc2(u.codigo)}">${u.nombre||u.codigo} (${u.codigo})</option>`).join('');
-    const inp=g('inputAlumnoCod');
-    if(inp) inp.oninput=function(){
-      const sel=alumnos.find(u=>u.codigo===this.value.trim());
-      if(sel&&g('inputAlumnoNom')) g('inputAlumnoNom').value=sel.nombre||'';
-    };
-  }catch(e){/* silencioso */}
-}function cerrarModalCasillero(){
-  const m=g('modalAsignarCasillero');if(m)m.style.display='none';
-  _casignandoCodigo='';
+    _alumnosModal=r.usuarios.filter(function(u){return u.rol==='estudiante';});
+  }catch(e){}
+}
+function filtrarAlumnosModal(){
+  var q=(g('buscarAlumnoModal')?g('buscarAlumnoModal').value:'').toLowerCase().trim();
+  var box=g('listaAlumnosModal');if(!box)return;
+  if(!q){box.innerHTML='<div style="padding:12px;text-align:center;color:var(--tx4);font-size:12px">Escribe para buscar...</div>';return;}
+  var f=_alumnosModal.filter(function(u){
+    return (u.codigo||'').toLowerCase().indexOf(q)>=0||(u.nombre||'').toLowerCase().indexOf(q)>=0;
+  });
+  if(!f.length){box.innerHTML='<div style="padding:12px;text-align:center;color:var(--tx4);font-size:12px">Sin resultados</div>';return;}
+  box.innerHTML=f.map(function(u){
+    var c2=String(u.codigo||'').replace(/&/g,'&amp;');
+    var n2=String(u.nombre||u.codigo).replace(/&/g,'&amp;');
+    return '<div onclick="selAlumnoModal(this.dataset.cod,this.dataset.nom)"'
+      +' data-cod="'+c2+'" data-nom="'+n2+'"'
+      +' style="padding:10px 14px;border-bottom:1px solid var(--bd2);cursor:pointer"'
+      +' onmouseover="this.style.background=\'var(--n050)\'" onmouseout="this.style.background=\'\'">'
+      +'<div style="font-size:13px;font-weight:600;color:var(--tx)">'+n2+'</div>'
+      +'<div style="font-size:11px;color:var(--tx3)">'+c2+'</div></div>';
+  }).join('');
+}
+function selAlumnoModal(codigo,nombre){
+  g('inputAlumnoCod').value=codigo;g('inputAlumnoNom').value=nombre;
+  var box=g('alumnoSelBox');if(box)box.style.display='block';
+  var n=g('alumnoSelNombre');if(n)n.textContent=nombre;
+  var cd=g('alumnoSelCodigo');if(cd)cd.textContent='Cod: '+codigo;
+  var bsr=g('buscarAlumnoModal');if(bsr)bsr.value='';
+  var lb=g('listaAlumnosModal');if(lb)lb.innerHTML='<div style="padding:10px 14px;color:var(--n500);font-size:12px;font-weight:700">'+nombre+' seleccionado</div>';
+}
+
+function cerrarModalCasillero(){
+  var m=g('modalAsignarCasillero');if(m)m.style.display='none';
+  _casignandoCodigo='';_alumnosModal=[];
+  var bsr=g('buscarAlumnoModal');if(bsr)bsr.value='';
+  var sB=g('alumnoSelBox');if(sB)sB.style.display='none';
 }
 
 async function devolverLlave(codigo, alumnoInfo){
@@ -3226,7 +3254,10 @@ async function devolverLlave(codigo, alumnoInfo){
 async function confirmarAsignacion(){
   const alumnoCod=(g('inputAlumnoCod')?.value||'').trim();
   const alumnoNom=(g('inputAlumnoNom')?.value||'').trim();
-  if(!alumnoCod){toast('Ingresa el código del alumno','','warn');return;}
+  if(!alumnoCod){
+    toast('Selecciona un alumno','Usa el buscador','warn');
+    var b=g('buscarAlumnoModal');if(b)b.focus();return;
+  }
   showLoader('Asignando...');
   try{
     const r=await apiPost({action:'asignarCasillero',codigo:_casignandoCodigo,alumnoCodigo:alumnoCod,alumnoNombre:alumnoNom,asignadoPor:session.nombre||session.codigo});
@@ -3239,22 +3270,29 @@ async function confirmarAsignacion(){
 
 g('modalAsignarCasillero')&&g('modalAsignarCasillero').addEventListener('click',function(e){if(e.target===this)cerrarModalCasillero();});
 
-async function cargarCasilleroEstudiante(){
-  if(!session)return;
-  const sec=g('secEstCasillero');const info=g('estCasilleroInfo');
-  if(!sec||!info)return;
+async function cargarCasillerosSoloLectura(){
+  var box=g('casEstGrid');if(!box)return;
+  box.innerHTML='<div style="padding:8px;color:var(--tx4);font-size:12px">Cargando...</div>';
   try{
-    const r=await apiGet('miCasillero',{codigo:session.codigo});
-    sec.style.display='block';
-    if(r.ok&&r.casillero){
-      info.innerHTML='<strong style="font-size:18px;font-family:monospace">'+r.casillero.codigo+'</strong>';
-      info.style.color='var(--n300)';
-    }else{
-      info.textContent='Sin casillero asignado';
-      info.style.color='var(--tx4)';
-    }
-  }catch(e){/*silencioso*/}
+    var r=await apiGet('listarCasilleros');
+    if(!r.ok)throw new Error(r.error);
+    var lista=r.casilleros||[];
+    if(!lista.length){box.innerHTML='<div style="padding:8px;color:var(--tx4);font-size:12px">Sin casilleros</div>';return;}
+    var miCod=(session.codigo||'').toLowerCase();
+    box.innerHTML=lista.map(function(cas){
+      var libre=!cas.alumnoCodigo,esMio=!libre&&cas.alumnoCodigo.toLowerCase()===miCod;
+      var bg=esMio?'var(--n500)':libre?'var(--green2)':'var(--surf2)';
+      var brd=esMio?'var(--n400)':libre?'var(--green)':'var(--bd)';
+      var tc=esMio?'#fff':libre?'var(--green)':'var(--tx3)';
+      var lbl=esMio?'Mi casillero':libre?'Libre':'Ocupado';
+      var lc=esMio?'rgba(255,255,255,.8)':libre?'var(--green)':'var(--tx4)';
+      return '<div style="background:'+bg+';border:1px solid '+brd+';border-radius:10px;padding:10px 6px;text-align:center">'
+        +'<div style="font-family:monospace;font-size:15px;font-weight:800;color:'+tc+'">'+cas.codigo+'</div>'
+        +'<div style="font-size:10px;color:'+lc+';margin-top:3px">'+lbl+'</div></div>';
+    }).join('');
+  }catch(e){box.innerHTML='<div style="padding:8px;color:var(--red);font-size:12px">Error: '+e.message+'</div>';}
 }
+function cargarCasilleroEstudiante(){}
 
 function abrirPassModal(){ mostrarCambioPass(); }
 </script>
