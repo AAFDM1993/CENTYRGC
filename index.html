@@ -566,6 +566,22 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
 .cas-del{position:absolute;top:4px;right:4px;background:none;border:none;color:var(--tx4);font-size:11px;cursor:pointer}
 .cas-del:hover{color:var(--red)}
 .cas-asig-btn{margin-top:6px;width:100%;border-radius:7px;color:#fff;font-size:10px;font-weight:700;padding:4px 0;cursor:pointer;border:none}
+
+/* Topbar estudiante: fijo en móvil */
+@media(max-width:600px){
+  #estNombreBox { display:none!important; }
+  #estTopbarWrap > div { gap:4px!important; }
+}
+
+/* Calendario estudiante: scroll táctil correcto */
+#calEstGrid {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+#calEstGrid > * {
+  touch-action: pan-x pan-y;
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -966,7 +982,7 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
 <div id="calAreaFiltro" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div>
               </div>
             </div>
-            <div style="padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y">
+            <div style="padding:14px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain">
               <div id="calGrid"></div>
             </div>
           </div>
@@ -994,20 +1010,20 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
 
   <div id="viewEstudiante" style="display:none">
   <!-- Barra superior del estudiante -->
-  <div id="estTopbarWrap" style="background:var(--n900);border-bottom:1px solid var(--n800);padding:0 16px;position:sticky;top:58px;z-index:100">
-    <div style="display:flex;align-items:center;gap:6px;min-height:50px;flex-wrap:wrap;padding:4px 0">
+  <div id="estTopbarWrap" style="background:var(--n900);border-bottom:1px solid var(--n800);position:sticky;top:58px;z-index:100">
+    <div style="display:flex;align-items:center;height:50px;padding:0 16px">
       <!-- Info del usuario -->
-      <div style="margin-right:8px;flex-shrink:0">
+      <div id="estNombreBox" style="margin-right:8px;flex-shrink:0">
         <div id="estNombre" style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:14px;line-height:1.2">Estudiante</div>
         <div id="estCodigo" style="font-size:11px;color:var(--n300)">Codigo: -</div>
       </div>
       <div style="width:1px;height:28px;background:var(--n700);flex-shrink:0"></div>
       <!-- Botones de navegación -->
-      <button id="btnEstNotas" onclick="mostrarSecEst('notas')" style="display:flex;align-items:center;gap:7px;background:var(--n500);border:1px solid var(--n400);border-radius:10px;color:#fff;font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap;transition:all .2s">
+      <button id="btnEstNotas" onclick="mostrarSecEst('notas')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:var(--n500);border:1px solid var(--n400);border-radius:10px;color:#fff;font-size:12px;font-weight:700;padding:7px 6px;cursor:pointer;white-space:nowrap;min-width:0;transition:all .2s">
         &#128203; Mis Notas
       </button>
-      <button id="btnEstCas" onclick="mostrarSecEst('casilleros')" style="display:flex;align-items:center;gap:7px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--n300);font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer">&#128220; Casilleros</button>
-      <button id="btnEstAgenda" onclick="mostrarSecEst('agenda')" style="display:flex;align-items:center;gap:7px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--n300);font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap;transition:all .2s">
+      <button id="btnEstCas" onclick="mostrarSecEst('casilleros')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--n300);font-size:12px;font-weight:700;padding:7px 6px;cursor:pointer;min-width:0">&#128220; Casilleros</button>
+      <button id="btnEstAgenda" onclick="mostrarSecEst('agenda')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--n300);font-size:12px;font-weight:700;padding:7px 6px;cursor:pointer;min-width:0;white-space:nowrap;transition:all .2s">
         &#128197; Agenda
       </button>
 
@@ -1054,8 +1070,8 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
           <div id="calEstAreaFiltro" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div>
         </div>
         <!-- Grid del calendario -->
-        <div style="padding:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y">
-          <div id="calEstGrid"></div>
+        <div style="padding:14px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;cursor:grab">
+          <div id="calEstGrid" style="min-width:max-content"></div>
         </div>
       </div>
     </div>
