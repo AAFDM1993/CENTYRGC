@@ -2927,12 +2927,29 @@ function abrirPanelAdmin(tab){
     toast('Sin permiso','Esta función es solo para administradores','err');
     return;
   }
+
+  // Si ya hay un panel abierto, devolver su contenido al pane original ANTES de abrir otro
+  const body = g('panelCardBody');
+  if(body){
+    const prevTab = body.getAttribute('data-tab');
+    if(prevTab && prevTab !== tab){
+      const prevPane = g('pane-'+prevTab);
+      if(prevPane){ while(body.firstChild) prevPane.appendChild(body.firstChild); }
+      body.removeAttribute('data-tab');
+    } else if(prevTab === tab){
+      // Mismo panel: ya está abierto, solo asegurarse que sea visible
+      const pc = g('panelCard');
+      if(pc) pc.style.display='block';
+      return;
+    }
+  }
+
   // Ocultar otras secciones
   if(g('edCard'))  g('edCard').style.display='none';
   if(g('agendaCard')) g('agendaCard').style.display='none';
   if(g('prevCard')) g('prevCard').style.display='none';
 
-  // Activar el tab del sidebar si existe (solo para al, us, ho, log)
+  // Activar el tab del sidebar si existe
   const tabBtn = g('tab'+tab.charAt(0).toUpperCase()+tab.slice(1));
   if(tabBtn) showTab(tab, tabBtn);
 
@@ -2940,7 +2957,6 @@ function abrirPanelAdmin(tab){
   const pane = g('pane-'+tab);
   if(!pane){ console.warn('pane-'+tab+' no encontrado'); return; }
 
-  const body = g('panelCardBody');
   const title = g('panelCardTitle');
   if(!body || !title) return;
 
