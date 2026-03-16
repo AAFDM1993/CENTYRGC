@@ -333,7 +333,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 .cal-reserva .rsv-del:hover{color:#fff}
 .cal-libre-btn{position:absolute;inset:3px;border-radius:5px;background:transparent;border:1px dashed transparent;display:flex;align-items:center;justify-content:center;color:var(--tx4);font-size:10px;opacity:0;transition:all .15s;cursor:pointer}
 .cal-slot:hover .cal-libre-btn{opacity:1;border-color:var(--n300);color:var(--n500);background:rgba(29,78,216,.05)}
-.cal-grid-wrap{display:flex;overflow-x:auto;border:1px solid var(--bd2);border-radius:9px;overflow:hidden}
+.cal-grid-wrap{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;border:1px solid var(--bd2);border-radius:9px}
 .cal-grid-body{flex:1;overflow-y:auto;max-height:calc(100vh - 340px)}
 
 /* area card en config */
@@ -573,15 +573,6 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
   #estTopbarWrap > div { gap:4px!important; }
 }
 
-/* Calendario estudiante: scroll táctil correcto */
-#calEstGrid {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: contain;
-}
-#calEstGrid > * {
-  touch-action: pan-x pan-y;
-}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -1070,8 +1061,8 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
           <div id="calEstAreaFiltro" style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"></div>
         </div>
         <!-- Grid del calendario -->
-        <div style="padding:14px 8px;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;cursor:grab">
-          <div id="calEstGrid" style="min-width:max-content"></div>
+        <div style="padding:14px 8px">
+          <div id="calEstGrid"></div>
         </div>
       </div>
     </div>
