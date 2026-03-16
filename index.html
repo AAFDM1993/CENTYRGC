@@ -556,6 +556,16 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
 /* Topbar: alineación vertical forzada */
 #docenteTopbar > div { align-items:center!important; }
 #adminOnlyBtns { align-items:center!important; }
+
+/* ── Casilleros ── */
+.cas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:6px}
+.cas-card{position:relative;border-radius:10px;padding:10px;text-align:center;border:1px solid}
+.cas-code{font-family:'DM Mono',monospace;font-size:16px;font-weight:800}
+.cas-estado{font-size:10px;margin-top:2px}
+.cas-alumno{font-size:10px;color:var(--tx3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cas-del{position:absolute;top:4px;right:4px;background:none;border:none;color:var(--tx4);font-size:11px;cursor:pointer}
+.cas-del:hover{color:var(--red)}
+.cas-asig-btn{margin-top:6px;width:100%;border-radius:7px;color:#fff;font-size:10px;font-weight:700;padding:4px 0;cursor:pointer;border:none}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -617,6 +627,7 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
           <button class="tab on" id="tabAl" onclick="showTab('al',this)">&#128203; Crear</button>
           <button class="tab" id="tabUs" onclick="showTab('us',this)">Usuarios</button>
           <button class="tab" id="tabHo" onclick="showTab('ho',this)">Hojas</button>
+          <button class="tab" id="tabCas" onclick="showTab('cas',this)">&#128220; Cas.</button>
           <button class="tab" id="tabLog" onclick="showTab('log',this)">Log</button>
         </div>
 
@@ -735,6 +746,30 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
               <button class="btn-sm green" onclick="importarDesdeAlumnos()" style="width:100%">Importar alumnos como estudiantes</button>
               <div id="importResult" style="margin-top:8px;display:none"></div>
             </div>
+          </div>
+
+          <div class="pane" id="pane-cas">
+            <div id="casAdminPanel">
+              <div class="slbl">Crear casilleros en lote</div>
+              <div class="row2" style="margin-bottom:8px;align-items:flex-end;gap:6px">
+                <div class="field" style="margin:0">
+                  <label style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Prefijo</label>
+                  <input class="inp" id="casPrefijo" value="C" style="width:60px;padding:7px 8px">
+                </div>
+                <div class="field" style="margin:0">
+                  <label style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Desde</label>
+                  <input class="inp" id="casDesde" type="number" value="1" min="1" style="width:60px;padding:7px 8px">
+                </div>
+                <div class="field" style="margin:0">
+                  <label style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px">Hasta</label>
+                  <input class="inp" id="casHasta" type="number" value="10" min="1" style="width:60px;padding:7px 8px">
+                </div>
+                <button class="btn-sm" onclick="crearCasilleros()" style="background:var(--n500);border:none;color:#fff;border-radius:9px;padding:8px 14px;cursor:pointer;font-weight:700;font-size:12px;white-space:nowrap;flex-shrink:0">+ Crear</button>
+              </div>
+              <div style="height:1px;background:var(--bd2);margin:10px 0"></div>
+            </div>
+            <div class="slbl" style="margin-bottom:8px">Casilleros <span id="casCount" style="font-weight:400;color:var(--tx4)"></span></div>
+            <div id="casillerosList" class="cas-grid"></div>
           </div>
 
           <div class="pane" id="pane-ho">
@@ -881,6 +916,9 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
           <button onclick="abrirPanelAdmin('al')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128100; Alumnos</button>
           <button onclick="abrirPanelAdmin('us')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128101; Usuarios</button>
           <button onclick="abrirPanelAdmin('pdf')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128196; PDF</button>
+          <button onclick="abrirPanelAdmin('cas')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128220; Casilleros</button>
+          
+          <button onclick="abrirPanelAdmin('cas')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128220; Casilleros</button>
           <div style="width:1px;height:24px;background:var(--n700);flex-shrink:0;margin:0 4px"></div>
         </div>
 
@@ -974,6 +1012,21 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
         &#128197; Agenda
       </button>
 
+    </div>
+  </div>
+
+  <!-- Casillero del alumno -->
+  <div id="secEstCasillero" style="display:none">
+    <div class="est-wrap">
+      <div class="est-hoja" style="border-left:3px solid var(--n500)">
+        <div class="est-hoja-hdr" style="display:flex;align-items:center;gap:12px">
+          <span style="font-size:28px">&#128220;</span>
+          <div>
+            <h3 style="font-size:14px">Mi Casillero</h3>
+            <p id="estCasilleroInfo" style="font-size:13px;color:var(--n300);margin-top:2px">Cargando...</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1114,6 +1167,25 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
   </div>
 </div>
 
+<!-- Modal asignar casillero -->
+<div id="modalAsignarCasillero" style="display:none;position:fixed;inset:0;background:rgba(10,22,40,.65);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+  <div style="background:var(--surf);border-radius:16px;padding:24px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(10,22,40,.4)">
+    <h3 id="modalCasTitulo" style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--n900);margin-bottom:16px">Asignar Casillero</h3>
+    <div class="field" style="margin-bottom:12px">
+      <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Código del alumno *</label>
+      <input class="inp" id="inputAlumnoCod" placeholder="Ej. 2021001234" onkeydown="if(event.key==='Enter')confirmarAsignacion()" style="background:var(--surf2);border:1px solid var(--bd);border-radius:9px;color:var(--tx);padding:9px 12px;width:100%;outline:none">
+    </div>
+    <div class="field" style="margin-bottom:16px">
+      <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:5px">Nombre del alumno (opcional)</label>
+      <input class="inp" id="inputAlumnoNom" placeholder="Apellidos y nombres" style="background:var(--surf2);border:1px solid var(--bd);border-radius:9px;color:var(--tx);padding:9px 12px;width:100%;outline:none">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="confirmarAsignacion()" style="flex:1;background:var(--n500);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:700;padding:11px;cursor:pointer">Confirmar</button>
+      <button onclick="cerrarModalCasillero()" style="background:var(--surf2);border:1px solid var(--bd);border-radius:10px;color:var(--tx2);font-size:13px;font-weight:700;padding:11px 16px;cursor:pointer">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"><div class="tt" id="ttt"></div><div class="tm" id="ttm"></div></div>
 
 <script>
@@ -1235,6 +1307,7 @@ function iniciarVistaAdmin(){
     // Mostrar botones de admin en el topbar
     ['adminOnlyBtns'].forEach(id=>{const el=g(id);if(el)el.style.display='flex';});
     renderCursos();renderPreview();cargarUsuarios();cargarLog();initGenSections();
+    var cap=g('casAdminPanel');if(cap)cap.style.display='';
   } else {
     // Docente: solo hojas y agenda, sin acceso a paneles de admin
     if(g('btnGen'))g('btnGen').style.display='none';
@@ -1243,6 +1316,7 @@ function iniciarVistaAdmin(){
     // Ocultar también el panelCard y prevCard
     if(g('panelCard'))g('panelCard').style.display='none';
     if(g('prevCard'))g('prevCard').style.display='none';
+    var cap2=g('casAdminPanel');if(cap2)cap2.style.display='none';
   }
   loadHojas();
 }
@@ -1250,7 +1324,7 @@ function showTab(tid,btn){
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
   g('pane-'+tid).classList.add('on');btn.classList.add('on');
-  if(tid==='ho')loadHojas();if(tid==='us')cargarUsuarios();if(tid==='pdf')cargarHojasExport();if(tid==='log')cargarLog();if(tid==='cal'){iniciarAgenda();setTimeout(cargarListaReservas,600);}if(window.innerWidth<=900)closeSidebar();
+  if(tid==='ho')loadHojas();if(tid==='cas')cargarCasilleros();if(tid==='us')cargarUsuarios();if(tid==='pdf')cargarHojasExport();if(tid==='log')cargarLog();if(tid==='cal'){iniciarAgenda();setTimeout(cargarListaReservas,600);}if(window.innerWidth<=900)closeSidebar();
 }
 function openDrawer(i){
   drawerIdx=i;const a=alumnos[i];
@@ -1662,6 +1736,7 @@ async function iniciarVistaEstudiante(){
   }catch(e){hideLoader();g('estNotas').innerHTML=`<div class="hint">Error: ${e.message}</div>`}
   // Cargar la agenda en background
   iniciarAgendaEstudiante();
+  cargarCasilleroEstudiante();
 }
 function renderEstNotas(resultados){
   const box=g('estNotas');
@@ -2918,7 +2993,7 @@ function renderListaBloqueos(){
 // Títulos de los paneles del admin
 var PANEL_TITLES = {
   al:'&#128203; Crear planilla', us:'&#128101; Usuarios',
-  ho:'&#128193; Hojas', pdf:'&#128196; PDF', log:'&#128202; Log'
+  ho:'&#128193; Hojas', pdf:'&#128196; PDF', log:'&#128202; Log', cas:'&#128220; Casilleros'
 };
 
 function abrirPanelAdmin(tab){
@@ -2970,6 +3045,7 @@ function abrirPanelAdmin(tab){
   else if(tab==='us') cargarUsuarios();
   else if(tab==='ho') loadHojas();
   else if(tab==='log') cargarLog();
+  else if(tab==='cas') cargarCasilleros();
 
   // Mostrar el panelCard
   const pc = g('panelCard');
@@ -3017,6 +3093,128 @@ function admNavAgenda(){
   var bnH=g('admBnHojas'),bnA=g('admBnAgenda');
   if(bnA)bnA.style.color='#fff';
   if(bnH)bnH.style.color='var(--n400)';
+}
+
+// ════════════════════════════════════════════════════════
+// CASILLEROS
+// ════════════════════════════════════════════════════════
+let casillerosTodos=[];
+let _casignandoCodigo='';
+
+async function cargarCasilleros(){
+  const box=g('casillerosList');if(!box)return;
+  box.innerHTML='<div class="empty">Cargando...</div>';
+  try{
+    const r=await apiGet('listarCasilleros');
+    if(!r.ok)throw new Error(r.error);
+    casillerosTodos=r.casilleros||[];
+    const cnt=g('casCount');
+    if(cnt)cnt.textContent='('+casillerosTodos.length+' total, '+(casillerosTodos.filter(x=>!x.alumnoCodigo).length)+' libres)';
+    renderCasilleros(casillerosTodos);
+  }catch(e){box.innerHTML='<div class="hint">Error: '+e.message+'</div>';}
+}
+
+function renderCasilleros(lista){
+  const box=g('casillerosList');if(!box)return;
+  const esAdmin=session&&session.rol==='admin';
+  const esDocente=session&&session.rol==='docente';
+  const puedeAsignar=esAdmin||esDocente;
+  if(!lista.length){
+    box.innerHTML='<div class="empty" style="grid-column:1/-1">Sin casilleros.'+(esAdmin?' Crea algunos arriba.':'')+'</div>';
+    return;
+  }
+  box.innerHTML=lista.map(cas=>{
+    const libre=!cas.alumnoCodigo;
+    const bg    =libre?'var(--green2)':'var(--n100)';
+    const border=libre?'var(--green)':'var(--n300)';
+    const txtc  =libre?'var(--green)':'var(--tx)';
+    const estado=libre?'&#128994; Libre':'&#128309; Asignado';
+    const alumInfo=libre?'':`<div class="cas-alumno" title="${esc2(cas.alumnoNombre||cas.alumnoCodigo)}">${cas.alumnoNombre||cas.alumnoCodigo}</div>`;
+    const delBtn=esAdmin?`<button class="cas-del" onclick="event.stopPropagation();eliminarCasillero('${esc(cas.codigo)}')" title="Eliminar">&#10005;</button>`:'';
+    const asigBtn=puedeAsignar?`<button class="cas-asig-btn" onclick="abrirAsignarCasillero('${esc(cas.codigo)}')" style="background:${libre?'var(--n500)':'rgba(29,78,216,.15)'};border:1px solid ${libre?'var(--n500)':'rgba(29,78,216,.3)'}">${libre?'Asignar':'Reasignar'}</button>`:'';
+    return `<div class="cas-card" style="background:${bg};border-color:${border}">
+      ${delBtn}
+      <div class="cas-code" style="color:${txtc}">${cas.codigo}</div>
+      <div class="cas-estado" style="color:${libre?'var(--green)':'var(--tx3)'}">${estado}</div>
+      ${alumInfo}
+      ${asigBtn}
+    </div>`;
+  }).join('');
+}
+
+async function crearCasilleros(){
+  const prefijo=(g('casPrefijo')?.value||'C').trim().toUpperCase();
+  const desde=parseInt(g('casDesde')?.value||1);
+  const hasta=parseInt(g('casHasta')?.value||10);
+  if(isNaN(desde)||isNaN(hasta)||desde>hasta){toast('Rango inválido','','warn');return;}
+  if(hasta-desde>99){toast('Máximo 100 a la vez','','warn');return;}
+  const codigos=[];
+  for(let i=desde;i<=hasta;i++) codigos.push(prefijo+'-'+String(i).padStart(2,'0'));
+  showLoader('Creando casilleros...');
+  try{
+    const r=await apiPost({action:'crearCasilleros',codigos});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast(r.creados+' creados','','ok');
+    cargarCasilleros();
+  }catch(e){hideLoader();toast('Error',e.message,'err');}
+}
+
+async function eliminarCasillero(codigo){
+  if(!confirm('¿Eliminar casillero '+codigo+'?'))return;
+  showLoader('Eliminando...');
+  try{
+    const r=await apiPost({action:'eliminarCasillero',codigo});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast('Casillero eliminado','','ok');
+    cargarCasilleros();
+  }catch(e){hideLoader();toast('Error',e.message,'err');}
+}
+
+function abrirAsignarCasillero(codigo){
+  _casignandoCodigo=codigo;
+  const cas=casillerosTodos.find(x=>x.codigo===codigo);
+  const m=g('modalAsignarCasillero');if(!m)return;
+  g('modalCasTitulo').textContent='Asignar Casillero '+codigo;
+  g('inputAlumnoCod').value=cas?.alumnoCodigo||'';
+  g('inputAlumnoNom').value=cas?.alumnoNombre||'';
+  m.style.display='flex';
+  setTimeout(()=>g('inputAlumnoCod').focus(),100);
+}
+function cerrarModalCasillero(){
+  const m=g('modalAsignarCasillero');if(m)m.style.display='none';
+  _casignandoCodigo='';
+}
+async function confirmarAsignacion(){
+  const alumnoCod=(g('inputAlumnoCod')?.value||'').trim();
+  const alumnoNom=(g('inputAlumnoNom')?.value||'').trim();
+  if(!alumnoCod){toast('Ingresa el código del alumno','','warn');return;}
+  showLoader('Asignando...');
+  try{
+    const r=await apiPost({action:'asignarCasillero',codigo:_casignandoCodigo,alumnoCodigo:alumnoCod,alumnoNombre:alumnoNom,asignadoPor:session.nombre||session.codigo});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast('Casillero asignado','','ok');
+    cerrarModalCasillero();
+    cargarCasilleros();
+  }catch(e){hideLoader();toast('Error',e.message,'err');}
+}
+
+g('modalAsignarCasillero')&&g('modalAsignarCasillero').addEventListener('click',function(e){if(e.target===this)cerrarModalCasillero();});
+
+async function cargarCasilleroEstudiante(){
+  if(!session)return;
+  const sec=g('secEstCasillero');const info=g('estCasilleroInfo');
+  if(!sec||!info)return;
+  try{
+    const r=await apiGet('miCasillero',{codigo:session.codigo});
+    sec.style.display='block';
+    if(r.ok&&r.casillero){
+      info.innerHTML='<strong style="font-size:18px;font-family:monospace">'+r.casillero.codigo+'</strong>';
+      info.style.color='var(--n300)';
+    }else{
+      info.textContent='Sin casillero asignado';
+      info.style.color='var(--tx4)';
+    }
+  }catch(e){/*silencioso*/}
 }
 
 function abrirPassModal(){ mostrarCambioPass(); }
