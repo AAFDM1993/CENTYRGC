@@ -552,6 +552,10 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
 #adminBottomNav > div > button + button {
   border-left:1px solid rgba(255,255,255,.08)!important;
 }
+
+/* Topbar: alineación vertical forzada */
+#docenteTopbar > div { align-items:center!important; }
+#adminOnlyBtns { align-items:center!important; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -1229,7 +1233,7 @@ function iniciarVistaAdmin(){
   if(esA){
     g('btnGen').disabled=false;
     // Mostrar botones de admin en el topbar
-    ['adminOnlyBtns'].forEach(id=>{const el=g(id);if(el)el.style.display='';});
+    ['adminOnlyBtns'].forEach(id=>{const el=g(id);if(el)el.style.display='flex';});
     renderCursos();renderPreview();cargarUsuarios();cargarLog();initGenSections();
   } else {
     // Docente: solo hojas y agenda, sin acceso a paneles de admin
