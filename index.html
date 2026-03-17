@@ -619,6 +619,10 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
         <div class="rol-pill"><div class="rdot" id="rolDot"></div><span id="rolLabel">-</span></div>
         <button id="hdrBtnPass" class="btn-logout" onclick="mostrarCambioPass()" style="border-color:var(--n600);color:var(--n300)" title="Cambiar contrasena">&#128274;</button>
         <button id="hdrBtnSalir" class="btn-logout" onclick="logout()">Salir</button>
+         <div class="hdr-right">
+        <button id="btnConectarHC" class="btn-sm green" style="margin-right: 8px; display: none;">
+          <span class="ico">📋</span> HC
+        </button>
       </div>
     </div>
   </header>
@@ -1216,6 +1220,32 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwq6qohTDxiIoJdFI6ab0So3oGFjDp-59ki0XFpNWg7T_VD3JQkiU98pwhPnl7MugjIAg/exec';
 // ====================================================
+   // Función para inicializar el botón de HC
+function configurarBotonHC() {
+  const btn = document.getElementById('btnConectarHC');
+  
+  // Solo mostrar el botón si el usuario está logueado
+  if (session && session.codigo) {
+    btn.style.display = 'inline-flex';
+  }
+
+  btn.onclick = function() {
+    // Extraer datos de la sesión actual de CENTYR
+    const params = new URLSearchParams({
+      token: session.token || '',   // Token de validación
+      rol: session.rol || '',       // admin, docente o estudiante
+      nombre: session.nombre || '', // Nombre completo
+      codigo: session.codigo || ''  // Código de usuario
+    });
+
+    // Abrir CENTYR HC en una nueva pestaña
+    const urlHC = `hc.html?${params.toString()}`;
+    window.open(urlHC, '_blank');
+  };
+}
+
+// Asegúrate de llamar a esta función después de que session se haya cargado
+// Por ejemplo, dentro de tu función inicializarApp() o similar
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
 let cursos=JSON.parse(localStorage.getItem('ft_cursos_v6')||'[]');
