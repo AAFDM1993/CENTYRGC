@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CENTYR · Historias Clínicas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --n900:#0a1628;--n800:#0f2040;--n700:#1a3054;--n600:#1e3a63;
+  --n500:#1d4ed8;--n400:#3b6fd4;--n300:#7aa3e0;--n200:#a8c4ee;
+  --n100:#dce9f8;--n050:#f0f6ff;
+  --surf:#0f1f3a;--surf2:#162845;--surf3:#1e3554;
+  --bd:#263f62;--bd2:#1e3554;
+  --tx:#e8f0fd;--tx2:#a8c4ee;--tx3:#7aa3e0;--tx4:#4a6d99;
+  --green:#22c55e;--green2:rgba(34,197,94,.12);
+  --amber:#f59e0b;--amber2:rgba(245,158,11,.12);
+  --red:#ef4444;--red2:rgba(239,68,68,.12);
+  --purple:#8b5cf6;
+  font-size:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}
+body{background:var(--n900);color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;min-height:100vh;}
+
+/* Topbar */
+.hdr{position:sticky;top:0;z-index:300;background:var(--n900);border-bottom:1px solid var(--bd);padding:0 20px;height:58px;display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.hdr-mark{width:34px;height:34px;background:linear-gradient(135deg,var(--n500),var(--purple));border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:#fff;flex-shrink:0;}
+.hdr-t1{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:#fff;line-height:1;}
+.hdr-t2{font-size:10px;color:var(--tx3);margin-top:2px;}
+.rol-pill{padding:4px 10px;border-radius:20px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.rol-pill.admin{background:rgba(239,68,68,.2);color:#fca5a5;}
+.rol-pill.docente{background:rgba(245,158,11,.2);color:#fcd34d;}
+.rol-pill.estudiante{background:rgba(34,197,94,.18);color:#86efac;}
+
+/* Layout */
+.layout{display:flex;height:calc(100vh - 58px);overflow:hidden;}
+.sidebar{width:260px;flex-shrink:0;background:var(--surf);border-right:1px solid var(--bd);overflow-y:auto;}
+.main{flex:1;overflow-y:auto;padding:24px;}
+
+/* Sidebar */
+.sb-sec{padding:14px 14px 6px;font-size:10px;font-weight:700;color:var(--tx4);text-transform:uppercase;letter-spacing:.6px;}
+.sb-btn{display:flex;align-items:center;gap:10px;padding:9px 14px;border-radius:10px;margin:2px 8px;cursor:pointer;border:none;background:transparent;color:var(--tx2);font-size:13px;font-weight:600;width:calc(100% - 16px);text-align:left;}
+.sb-btn:hover{background:var(--surf2);color:var(--tx);}
+.sb-btn.active{background:rgba(29,78,216,.2);color:#fff;border:1px solid rgba(29,78,216,.3);}
+.sb-badge{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;}
+.sb-divider{height:1px;background:var(--bd);margin:8px 14px;}
+
+/* Cards */
+.card{background:var(--surf);border:1px solid var(--bd);border-radius:16px;padding:20px;margin-bottom:16px;}
+.card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:#fff;}
+
+/* Estado badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge.borrador{background:var(--surf3);color:var(--tx3);border:1px solid var(--bd);}
+.badge.pendiente{background:var(--amber2);color:var(--amber);border:1px solid rgba(245,158,11,.3);}
+.badge.aprobada{background:var(--green2);color:var(--green);border:1px solid rgba(34,197,94,.3);}
+.badge.rechazada{background:var(--red2);color:var(--red);border:1px solid rgba(239,68,68,.3);}
+.badge.activo{background:var(--green2);color:var(--green);}
+
+/* Pacientes */
+.pac-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+.pac-card{background:var(--surf2);border:1px solid var(--bd);border-radius:14px;padding:16px;cursor:pointer;transition:all .15s;}
+.pac-card:hover{border-color:var(--n400);background:var(--surf3);}
+.pac-avatar{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#fff;flex-shrink:0;}
+
+/* Formularios */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+.form-full{grid-column:1/-1;}
+.field label{display:block;font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+.inp,.sel,.ta{width:100%;background:var(--surf2);border:1px solid var(--bd);border-radius:10px;color:var(--tx);padding:9px 13px;font-size:13px;outline:none;font-family:'Plus Jakarta Sans',sans-serif;transition:border-color .2s;}
+.inp:focus,.sel:focus,.ta:focus{border-color:var(--n400);}
+.ta{resize:vertical;min-height:80px;}
+.sel{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%237aa3e0' viewBox='0 0 20 20'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:16px;padding-right:34px;}
+
+/* Botones */
+.btn{display:inline-flex;align-items:center;gap:7px;border:none;border-radius:10px;font-size:13px;font-weight:700;padding:9px 18px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;}
+.btn-primary{background:var(--n500);color:#fff;} .btn-primary:hover{opacity:.9;}
+.btn-success{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3);}
+.btn-danger{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25);}
+.btn-ghost{background:var(--surf2);color:var(--tx2);border:1px solid var(--bd);}
+.btn-sm{padding:6px 13px;font-size:12px;}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap;}
+
+/* Secciones acordeón */
+.hc-sec{background:var(--surf2);border:1px solid var(--bd);border-radius:14px;margin-bottom:12px;overflow:hidden;}
+.hc-sec-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;cursor:pointer;user-select:none;}
+.hc-sec-hdr:hover{background:rgba(255,255,255,.03);}
+.hc-sec-title{font-weight:700;font-size:13px;color:#fff;display:flex;align-items:center;gap:8px;}
+.hc-sec-body{padding:16px;border-top:1px solid var(--bd);display:none;}
+.hc-sec-body.open{display:block;}
+.chv{color:var(--tx3);font-size:12px;transition:transform .2s;}
+.chv.open{transform:rotate(180deg);}
+
+/* EVA */
+.eva-wrap{display:flex;align-items:center;gap:12px;}
+.eva-track{flex:1;height:8px;background:linear-gradient(to right,#22c55e,#f59e0b,#ef4444);border-radius:4px;position:relative;}
+input[type=range].eva-sl{-webkit-appearance:none;width:100%;height:8px;background:transparent;outline:none;cursor:pointer;position:absolute;top:0;left:0;}
+input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#fff;border:3px solid var(--n500);box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.eva-val{width:36px;text-align:center;font-family:'DM Mono',monospace;font-weight:700;font-size:16px;}
+
+/* Tabla ROM */
+.tbl{width:100%;border-collapse:collapse;}
+.tbl th{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;padding:6px 8px;text-align:left;border-bottom:1px solid var(--bd);}
+.tbl td{padding:5px 8px;border-bottom:1px solid var(--bd2);}
+.tbl tr:last-child td{border-bottom:none;}
+.ri{background:transparent;border:none;border-bottom:1px solid var(--bd);color:var(--tx);padding:2px 4px;width:65px;font-size:12px;outline:none;font-family:'DM Mono',monospace;text-align:center;}
+.ri:focus{border-color:var(--n400);}
+
+/* Timeline */
+.timeline{padding-left:24px;position:relative;}
+.timeline::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:2px;background:var(--bd);}
+.tl-item{position:relative;margin-bottom:14px;}
+.tl-dot{position:absolute;left:-24px;top:14px;width:16px;height:16px;border-radius:50%;border:2px solid var(--bd);background:var(--surf);font-size:8px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.tl-dot.aprobada{border-color:var(--green);background:var(--green2);color:var(--green);}
+.tl-dot.pendiente{border-color:var(--amber);background:var(--amber2);color:var(--amber);}
+.tl-dot.rechazada{border-color:var(--red);background:var(--red2);color:var(--red);}
+.tl-dot.borrador{border-color:var(--tx4);color:var(--tx4);}
+
+/* Review bar */
+.rev-bar{border-radius:10px;padding:12px 14px;margin-bottom:10px;display:flex;gap:10px;align-items:flex-start;}
+.rev-bar.pendiente{background:var(--amber2);border:1px solid rgba(245,158,11,.3);}
+.rev-bar.aprobada{background:var(--green2);border:1px solid rgba(34,197,94,.3);}
+.rev-bar.rechazada{background:var(--red2);border:1px solid rgba(239,68,68,.3);}
+.rev-comment{margin-top:6px;padding:8px 10px;background:rgba(0,0,0,.2);border-radius:7px;font-size:12px;color:var(--tx2);}
+
+/* Modal */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(10,22,40,.75);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-ov.open{display:flex;}
+.modal-box{background:var(--surf);border:1px solid var(--bd);border-radius:18px;padding:24px;width:100%;max-width:440px;box-shadow:0 24px 60px rgba(0,0,0,.5);}
+
+/* Toast */
+#hcToast{position:fixed;top:70px;right:20px;z-index:999;pointer-events:none;}
+.t-item{background:var(--surf);border:1px solid var(--bd);border-radius:12px;padding:12px 16px;margin-bottom:8px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:tIn .25s ease;font-size:13px;max-width:280px;}
+.t-item.ok{border-color:rgba(34,197,94,.4);color:var(--green);}
+.t-item.err{border-color:rgba(239,68,68,.4);color:var(--red);}
+.t-item.warn{border-color:rgba(245,158,11,.4);color:var(--amber);}
+@keyframes tIn{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+
+/* Login */
+#lgPage{display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px;}
+#lgPage.on{display:flex;}
+.lg-card{background:var(--surf);border:1px solid var(--bd);border-radius:20px;padding:36px 28px;width:100%;max-width:360px;}
+
+/* Responsive */
+@media(max-width:768px){
+  .sidebar{display:none;}
+  .main{padding:14px;}
+  .pac-grid{grid-template-columns:1fr;}
+  .form-grid{grid-template-columns:1fr;}
+}
+.empty{text-align:center;padding:36px;color:var(--tx4);font-size:13px;}
+.loader{text-align:center;padding:28px;color:var(--tx3);font-size:13px;}
+.err-box{background:var(--red2);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--red);margin-bottom:12px;}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="lgPage">
+  <div class="lg-card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px">
+      <div style="width:42px;height:42px;background:linear-gradient(135deg,var(--n500),var(--purple));border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:#fff">HC</div>
+      <div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#fff">CENTYR · HC</div><div style="font-size:11px;color:var(--tx3)">Historias Clínicas Fisioterapéuticas</div></div>
+    </div>
+    <div class="field" style="margin-bottom:12px"><label>Código</label>
+      <input class="inp" id="lgCod" type="text" placeholder="Código de usuario" autocomplete="username"></div>
+    <div class="field" style="margin-bottom:18px"><label>Contraseña</label>
+      <input class="inp" id="lgPass" type="password" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <p id="lgErr" style="display:none;color:var(--red);font-size:12px;margin-bottom:12px"></p>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="doLogin()">Ingresar</button>
+  </div>
+</div>
+
+<!-- App -->
+<div id="appPage" style="display:none">
+  <header class="hdr">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="hdr-mark">HC</div>
+      <div><div class="hdr-t1">CENTYR · HC</div><div class="hdr-t2">Historias Clínicas</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span id="hdrNombre" style="font-size:12px;color:var(--tx2);font-weight:600;display:none"></span>
+      <span id="hdrRol" class="rol-pill"></span>
+      <a href="index.html" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer;text-decoration:none">← CENTYR</a>
+      <button onclick="doLogout()" style="background:var(--red2);border:1px solid rgba(239,68,68,.3);color:var(--red);border-radius:9px;font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer">Salir</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sb-sec">Menú</div>
+      <button class="sb-btn active" id="sbPac" onclick="navTo('pac')"><span>👤</span> Pacientes</button>
+      <button class="sb-btn" id="sbPend" onclick="navTo('pend')">
+        <span>⏳</span> Pendientes <span class="sb-badge" id="sbBadge" style="display:none">0</span>
+      </button>
+      <div id="sbAdminSec" style="display:none">
+        <div class="sb-divider"></div>
+        <div class="sb-sec">Admin</div>
+        <button class="sb-btn" id="sbCats" onclick="navTo('cats')"><span>🏷️</span> Categorías</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div id="vPac"></div>
+      <div id="vDetalle" style="display:none"></div>
+      <div id="vEvalForm" style="display:none"></div>
+      <div id="vSesForm" style="display:none"></div>
+      <div id="vPend" style="display:none"></div>
+      <div id="vCats" style="display:none"></div>
+    </main>
+  </div>
+</div>
+
+<!-- Modal revisión -->
+<div class="modal-ov" id="modalRev">
+  <div class="modal-box">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#fff;margin-bottom:14px" id="modalRevTit">Revisar</div>
+    <div class="field" style="margin-bottom:16px">
+      <label>Comentario <span style="color:var(--tx4);font-weight:400">(obligatorio si rechaza)</span></label>
+      <textarea class="ta" id="modalRevCom" rows="3" placeholder="Observaciones para el alumno..."></textarea>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-success" onclick="confirmarRev('aprobada')">✓ Aprobar</button>
+      <button class="btn btn-danger" onclick="confirmarRev('rechazada')">✗ Rechazar</button>
+      <button class="btn btn-ghost" onclick="cerrarRev()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="hcToast"></div>
+
+<script>
+// ─── Config ───────────────────────────────────────────
+const HC_URL = 'REEMPLAZAR_HC_GAS_URL';
+const SK = 'centyr_hc_s';
+const TTL = 6*60*60*1000;
+
+let session = null, cats = [], pacActivo = null, revTarget = null;
+const g = id => document.getElementById(id);
+const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+const e2 = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+// ─── Toast ────────────────────────────────────────────
+function toast(msg, sub, tipo='ok'){
+  const d=document.createElement('div');
+  d.className='t-item '+tipo;
+  d.innerHTML=`<strong>${e2(msg)}</strong>${sub?`<div style="font-size:11px;opacity:.8;margin-top:2px">${e2(sub)}</div>`:''}`;
+  g('hcToast').appendChild(d);
+  setTimeout(()=>d.remove(),3500);
+}
+
+// ─── API ──────────────────────────────────────────────
+async function apiGet(action, p={}){
+  const u=new URL(HC_URL);
+  u.searchParams.set('action',action);
+  if(session) u.searchParams.set('token',session.token);
+  Object.entries(p).forEach(([k,v])=>u.searchParams.set(k,String(v)));
+  const r=await fetch(u.toString());
+  return r.json();
+}
+async function apiPost(body){
+  const r=await fetch(HC_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
+    body:JSON.stringify({...body,token:session?.token||''})});
+  return r.json();
+}
+
+// ─── Auth ─────────────────────────────────────────────
+function loadSess(){
+  try{const s=JSON.parse(localStorage.getItem(SK)||'null');
+    if(!s||Date.now()-s.ts>TTL){localStorage.removeItem(SK);return null;}return s;}catch{return null;}
+}
+function saveSess(s){localStorage.setItem(SK,JSON.stringify({...s,ts:Date.now()}));}
+
+async function doLogin(){
+  const cod=(g('lgCod')?.value||'').trim(),pass=(g('lgPass')?.value||'').trim();
+  if(!cod||!pass){g('lgErr').textContent='Completa los campos';g('lgErr').style.display='block';return;}
+  g('lgErr').style.display='none';
+  const r=await apiGet('login',{codigo:cod,password:pass,token:''});
+  if(!r.ok){g('lgErr').textContent=r.error||'Error';g('lgErr').style.display='block';return;}
+  session={token:r.token,rol:r.rol,nombre:r.nombre,codigo:r.codigo||cod};
+  saveSess(session); iniciarApp();
+}
+function doLogout(){localStorage.removeItem(SK);session=null;g('appPage').style.display='none';g('lgPage').classList.add('on');}
+
+// ─── Init ─────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',async()=>{
+  const p=new URLSearchParams(location.search);
+  const tk=p.get('token');
+  if(tk){session={token:tk,rol:p.get('rol')||'',nombre:p.get('nombre')||'',codigo:p.get('codigo')||''};
+    saveSess(session);history.replaceState({},'',location.pathname);}
+  else session=loadSess();
+  if(session) iniciarApp(); else g('lgPage').classList.add('on');
+});
+
+async function iniciarApp(){
+  g('lgPage').classList.remove('on');
+  g('appPage').style.display='block';
+  const hn=g('hdrNombre'); if(hn){hn.textContent=session.nombre||session.codigo;hn.style.display='';}
+  const hr=g('hdrRol'); hr.textContent=session.rol; hr.className='rol-pill '+session.rol;
+  if(session.rol==='admin') g('sbAdminSec').style.display='block';
+  const rc=await apiGet('listarCategorias');
+  if(rc.ok) cats=rc.categorias||[];
+  if(session.rol!=='estudiante') cargarBadge();
+  navTo('pac');
+}
+
+// ─── Nav ──────────────────────────────────────────────
+const views=['vPac','vDetalle','vEvalForm','vSesForm','vPend','vCats'];
+const sbs=['sbPac','sbPend','sbCats'];
+function navTo(v){
+  views.forEach(x=>g(x).style.display='none');
+  sbs.forEach(x=>{const e=g(x);if(e)e.classList.remove('active');});
+  if(v==='pac'){g('vPac').style.display='block';g('sbPac').classList.add('active');renderPacs();}
+  if(v==='pend'){g('vPend').style.display='block';g('sbPend')?.classList.add('active');renderPend();}
+  if(v==='cats'){g('vCats').style.display='block';g('sbCats')?.classList.add('active');renderCats();}
+}
+
+// ─── Helpers ──────────────────────────────────────────
+function getCat(id){return cats.find(c=>c.id===id)||{nombre:id||'—',color:'#64748b',id};}
+function catPill(id){const c=getCat(id);return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;background:${c.color}22;color:${c.color};border:1px solid ${c.color}44">${e2(c.nombre)}</span>`;}
+function bdg(estado){const m={borrador:'📝 Borrador',pendiente:'⏳ Pendiente',aprobada:'✓ Aprobada',rechazada:'✗ Rechazada',activo:'● Activo'};return `<span class="badge ${estado}">${m[estado]||estado}</span>`;}
+function edad(fn){const d=new Date(fn),h=new Date();let a=h.getFullYear()-d.getFullYear();if(h<new Date(h.getFullYear(),d.getMonth(),d.getDate()))a--;return isNaN(a)?'':a;}
+
+// ─── Vista: Pacientes ─────────────────────────────────
+async function renderPacs(){
+  g('vPac').innerHTML=`
+    <div class="card-hdr">
+      <div><div class="card-title">👤 Pacientes</div></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input class="inp" id="fBusca" placeholder="🔍 Buscar..." oninput="filtrarPacs()" style="width:180px">
+        <select class="sel" id="fCat" onchange="filtrarPacs()" style="width:170px">
+          <option value="">Todas las categorías</option>
+          ${cats.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('')}
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="abrirFrmPac()">+ Nuevo</button>
+      </div>
+    </div>
+    <div id="pacBox"><div class="loader">⏳ Cargando...</div></div>`;
+  const r=await apiGet('listarPacientes');
+  if(!r.ok){g('pacBox').innerHTML=`<div class="err-box">${e2(r.error)}</div>`;return;}
+  window._pacs=r.pacientes||[];
+  filtrarPacs();
+}
+
+function filtrarPacs(){
+  const q=(g('fBusca')?.value||'').toLowerCase(),cat=g('fCat')?.value||'';
+  const lista=(window._pacs||[]).filter(p=>{
+    const mq=!q||(p.nombre||'').toLowerCase().includes(q)||(p.dni||'').includes(q);
+    const mc=!cat||p.categoriaId===cat;
+    return mq&&mc;
+  });
+  const box=g('pacBox');if(!box)return;
+  if(!lista.length){box.innerHTML='<div class="empty">Sin pacientes. Usa "+ Nuevo" para crear el primero.</div>';return;}
+  box.innerHTML=`<div class="pac-grid">${lista.map(p=>{
+    const c=getCat(p.categoriaId);
+    const ini=(p.nombre||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    return `<div class="pac-card" onclick="abrirPac('${esc(p.id)}')">
+      <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+        <div class="pac-avatar" style="background:${c.color}33;color:${c.color};border:1.5px solid ${c.color}55">${ini}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:14px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e2(p.nombre)}</div>
+          <div style="font-size:11px;color:var(--tx3);font-family:'DM Mono',monospace;margin-top:1px">${e2(p.dni)} ${p.fechaNac?'· '+edad(p.fechaNac)+' a':''}</div>
+          <div style="margin-top:6px">${catPill(p.categoriaId)}</div>
+        </div>
+        ${bdg(p.estado||'activo')}
+      </div>
+      <div style="display:flex;gap:10px;font-size:11px;color:var(--tx3)">
+        <span>📋 ${p.evalTotal||0} eval</span>
+        ${p.evalPendiente>0?`<span style="color:var(--amber)">⏳ ${p.evalPendiente} pend</span>`:''}
+        ${p.evalAprobada>0?`<span style="color:var(--green)">✓ ${p.evalAprobada}</span>`:''}
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+// ─── Formulario Paciente ──────────────────────────────
+function abrirFrmPac(pac=null){
+  views.forEach(v=>g(v).style.display='none');
+  g('vEvalForm').style.display='block';
+  g('vEvalForm').innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+      <button class="btn btn-ghost btn-sm" onclick="navTo('pac')">← Volver</button>
+      <div class="card-title">${pac?'✏️ Editar':'➕ Nuevo'} Paciente</div>
+    </div>
+    <div class="card">
+      <div class="form-grid">
+        <div class="field form-full"><label>Nombre completo *</label>
+          <input class="inp" id="pN" value="${e2(pac?.nombre||'')}" placeholder="Apellidos y nombres"></div>
+        <div class="field"><label>DNI *</label>
+          <input class="inp" id="pD" value="${e2(pac?.dni||'')}" placeholder="12345678"></div>
+        <div class="field"><label>Fecha de nacimiento</label>
+          <input class="inp" id="pFN" type="date" value="${pac?.fechaNac||''}"></div>
+        <div class="field"><label>Sexo</label>
+          <select class="sel" id="pS">
+            <option value="">—</option>
+            <option value="M" ${pac?.sexo==='M'?'selected':''}>Masculino</option>
+            <option value="F" ${pac?.sexo==='F'?'selected':''}>Femenino</option>
+          </select></div>
+        <div class="field"><label>Teléfono</label>
+          <input class="inp" id="pT" value="${e2(pac?.telefono||'')}" placeholder="999 999 999"></div>
+        <div class="field"><label>Ocupación</label>
+          <input class="inp" id="pO" value="${e2(pac?.ocupacion||'')}" placeholder="Profesión"></div>
+        <div class="field"><label>Categoría *</label>
+          <select class="sel" id="pC">
+            <option value="">Seleccionar...</option>
+            ${cats.map(c=>`<option value="${c.id}" ${pac?.categoriaId===c.id?'selected':''}>${c.nombre}</option>`).join('')}
+          </select></div>
+        <div class="field"><label>Médico tratante</label>
+          <input class="inp" id="pM" value="${e2(pac?.medico||'')}" placeholder="Dr. Nombre"></div>
+        <div class="field"><label>Diagnóstico médico</label>
+          <input class="inp" id="pDx" value="${e2(pac?.dxMedico||'')}" placeholder="CIE-10 o descripción"></div>
+        <div class="field"><label>Fecha inicio atención</label>
+          <input class="inp" id="pFI" type="date" value="${pac?.fechaInicio||''}"></div>
+        <div class="field"><label>Responsable (si aplica)</label>
+          <input class="inp" id="pR" value="${e2(pac?.responsable||'')}" placeholder="Nombre del responsable"></div>
+        <div class="field"><label>Teléfono responsable</label>
+          <input class="inp" id="pTR" value="${e2(pac?.telResponsable||'')}" placeholder="999 999 999"></div>
+        <div class="field form-full"><label>Motivo de consulta</label>
+          <textarea class="ta" id="pMot" placeholder="Sintomatología principal y motivo...">${e2(pac?.motivo||'')}</textarea></div>
+        <div class="field form-full"><label>Antecedentes</label>
+          <textarea class="ta" id="pAnt" placeholder="Antecedentes médicos/quirúrgicos relevantes...">${e2(pac?.antecedentes||'')}</textarea></div>
+      </div>
+      <div class="btn-group" style="margin-top:16px">
+        <button class="btn btn-primary" onclick="guardarPac(${pac?`'${esc(pac.id)}'`:'null'})">💾 Guardar</button>
+        <button class="btn btn-ghost" onclick="navTo('pac')">Cancelar</button>
+      </div>
+    </div>`;
+}
+
+async function guardarPac(id){
+  const n=g('pN')?.value?.trim()||'',d=g('pD')?.value?.trim()||'',c=g('pC')?.value||'';
+  if(!n||!d||!c){toast('Nombre, DNI y Categoría son requeridos','','warn');return;}
+  const b={action:'guardarPaciente',nombre:n,dni:d,sexo:g('pS').value,fechaNac:g('pFN').value,
+    telefono:g('pT').value,ocupacion:g('pO').value,categoriaId:c,medico:g('pM').value,
+    dxMedico:g('pDx').value,fechaInicio:g('pFI').value,responsable:g('pR').value,
+    telResponsable:g('pTR').value,motivo:g('pMot').value,antecedentes:g('pAnt').value,estado:'activo'};
+  if(id) b.id=id;
+  const r=await apiPost(b);
+  if(!r.ok){toast('Error',r.error,'err');return;}
+  toast('Paciente guardado','','ok');navTo('pac');
+}
+
+// ─── Detalle Paciente ─────────────────────────────────
+async function abrirPac(id){
+  views.forEach(v=>g(v).style.display='none');
+  const v=g('vDetalle');v.style.display='block';v.innerHTML='<div class="loader">⏳ Cargando...</div>';
+  const [rP,rE,rS]=await Promise.all([apiGet('obtenerPaciente',{id}),apiGet('listarEvaluaciones',{pacienteId:id}),apiGet('listarSesiones',{pacienteId:id})]);
+  if(!rP.ok){v.innerHTML=`<div class="err-box">${e2(rP.error)}</div>`;return;}
+  const pac=rP.paciente; pacActivo=pac;
+  const evals=rE.evaluaciones||[], ses=rS.sesiones||[];
+  const cat=getCat(pac.categoriaId);
+  const esPropio=session.rol==='estudiante'&&(pac.creadoPor===session.codigo||pac.asignadoA===session.codigo);
+  const puedeEditar=session.rol!=='estudiante'||esPropio;
+  const evalAp=evals.find(e=>e.estado==='aprobada');
+  const puedeNuevaSes=!!evalAp&&puedeEditar;
+
+  v.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="navTo('pac')">← Volver</button>
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div class="card-title">${e2(pac.nombre)}</div>${catPill(pac.categoriaId)}${bdg(pac.estado||'activo')}
+        </div>
+        <div style="font-size:12px;color:var(--tx3);margin-top:2px">
+          DNI: ${e2(pac.dni)} ${pac.sexo?'· '+(pac.sexo==='M'?'Masc.':'Fem.'):''} ${pac.fechaNac?'· '+edad(pac.fechaNac)+' años':''}
+        </div>
+      </div>
+      <div class="btn-group">
+        ${puedeEditar?`<button class="btn btn-ghost btn-sm" onclick="editarPac('${esc(pac.id)}')">✏️ Editar</button>`:''}
+        ${session.rol==='admin'?`<button class="btn btn-danger btn-sm" onclick="eliminarPac('${esc(pac.id)}','${esc(pac.nombre)}')">🗑️</button>`:''}
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;font-size:13px">
+        ${pac.dxMedico?`<div><div style="font-size:10px;font-weight:700;color:var(--tx4);margin-bottom:2px">DX MÉDICO</div>${e2(pac.dxMedico)}</div>`:''}
+        ${pac.medico?`<div><div style="font-size:10px;font-weight:700;color:var(--tx4);margin-bottom:2px">MÉDICO</div>${e2(pac.medico)}</div>`:''}
+        ${pac.telefono?`<div><div style="font-size:10px;font-weight:700;color:var(--tx4);margin-bottom:2px">TELÉFONO</div>${e2(pac.telefono)}</div>`:''}
+        ${pac.asignadoA?`<div><div style="font-size:10px;font-weight:700;color:var(--tx4);margin-bottom:2px">ASIGNADO A</div>${e2(pac.asignadoA)}</div>`:''}
+      </div>
+      ${pac.motivo?`<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--bd)"><div style="font-size:10px;font-weight:700;color:var(--tx4);margin-bottom:4px">MOTIVO</div><div style="font-size:13px">${e2(pac.motivo)}</div></div>`:''}
+      ${session.rol!=='estudiante'?`
+      <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--bd);display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <select class="sel" id="selReasig" style="width:220px"><option value="">↪️ Reasignar a alumno...</option></select>
+        <button class="btn btn-ghost btn-sm" onclick="reasignarPac('${esc(pac.id)}')">Reasignar</button>
+      </div>`:''}
+    </div>
+
+    <!-- Evaluaciones -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-hdr">
+        <div class="card-title">📋 Evaluaciones</div>
+        ${puedeEditar?`<button class="btn btn-primary btn-sm" onclick="abrirFrmEval('${esc(pac.id)}',null,'${esc(pac.categoriaId)}')">+ Nueva evaluación</button>`:''}
+      </div>
+      ${evals.length?evals.map(ev=>evalCard(ev,pac)).join(''):'<div class="empty">Sin evaluaciones.</div>'}
+    </div>
+
+    <!-- Sesiones -->
+    <div class="card">
+      <div class="card-hdr">
+        <div><div class="card-title">🗓️ Sesiones de tratamiento</div><div style="font-size:12px;color:var(--tx3)">${ses.length} sesión(es)</div></div>
+        ${puedeNuevaSes?`<button class="btn btn-primary btn-sm" onclick="abrirFrmSes('${esc(pac.id)}','${evalAp?.id||''}',${ses.length+1})">+ Nueva sesión</button>`:''}
+        ${!evalAp?`<span style="font-size:11px;color:var(--tx4)">Requiere evaluación aprobada</span>`:''}
+      </div>
+      ${ses.length?`<div class="timeline">${ses.map(s=>sesCard(s,pac,evalAp)).join('')}</div>`:'<div class="empty">Sin sesiones aún.</div>'}
+    </div>`;
+
+  // Cargar alumnos para reasignar
+  if(session.rol!=='estudiante'){
+    const rU=await apiGet('listarUsuarios').catch(()=>({ok:false}));
+    const sel=g('selReasig');
+    if(sel&&rU.ok&&rU.usuarios){
+      rU.usuarios.filter(u=>u.rol==='estudiante').forEach(u=>{
+        const o=document.createElement('option');
+        o.value=u.codigo;o.textContent=(u.nombre||u.codigo);
+        if(u.codigo===pac.asignadoA)o.selected=true;
+        sel.appendChild(o);
+      });
+    }
+  }
+}
+
+function evalCard(ev, pac){
+  const pr=session.rol==='admin'||session.rol==='docente';
+  const puedeSend=(ev.estado==='borrador'||ev.estado==='rechazada')&&(session.rol!=='estudiante'||pac.asignadoA===session.codigo||pac.creadoPor===session.codigo);
+  return `<div style="background:var(--surf3);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:8px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-weight:700;font-size:13px">${ev.tipo==='inicial'?'Evaluación inicial':'Reevaluación'}</span>
+        ${bdg(ev.estado)}
+      </div>
+      <div style="font-size:11px;color:var(--tx4)">${e2(ev.autor)} · ${e2(ev.fecha)}</div>
+    </div>
+    ${ev.dxFisio?`<div style="font-size:12px;color:var(--tx2);margin-bottom:8px">Dx: ${e2(ev.dxFisio)}</div>`:''}
+    ${ev.comentarioDocente&&ev.estado!=='borrador'?`<div class="rev-bar ${ev.estado}">
+      <div style="font-size:18px">${ev.estado==='aprobada'?'✅':ev.estado==='rechazada'?'❌':'⏳'}</div>
+      <div><div style="font-size:12px;font-weight:700;color:${ev.estado==='aprobada'?'var(--green)':ev.estado==='rechazada'?'var(--red)':'var(--amber)'}">${ev.estado==='aprobada'?'Aprobada':'Rechazada'} — ${e2(ev.revisadoPor)}</div>
+        <div class="rev-comment">${e2(ev.comentarioDocente)}</div></div></div>`:''}
+    <div class="btn-group">
+      <button class="btn btn-ghost btn-sm" onclick="verEval('${esc(ev.id)}','${esc(pac.id)}')">👁️ Ver</button>
+      ${ev.estado==='borrador'||ev.estado==='rechazada'?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmEval('${esc(pac.id)}','${esc(ev.id)}','${esc(pac.categoriaId)}')">✏️ Editar</button>`:''}
+      ${puedeSend?`<button class="btn btn-primary btn-sm" onclick="enviarEval('${esc(ev.id)}','${esc(pac.id)}')">📤 Enviar al docente</button>`:''}
+      ${pr&&ev.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('eval','${esc(ev.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
+    </div>
+  </div>`;
+}
+
+function sesCard(s, pac, evalAp){
+  const pr=session.rol==='admin'||session.rol==='docente';
+  const puedeSend=(s.estado==='borrador'||s.estado==='rechazada')&&evalAp;
+  return `<div class="tl-item">
+    <div class="tl-dot ${s.estado}">S${s.numero}</div>
+    <div style="background:var(--surf2);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-left:4px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:6px">
+        <div style="font-size:12px;color:var(--tx4)">Sesión #${s.numero} · ${e2(s.fecha)}</div>
+        ${bdg(s.estado)}
+      </div>
+      ${s.descripcion?`<div style="font-size:13px;margin-bottom:8px">${e2(s.descripcion.substring(0,100))}${s.descripcion.length>100?'...':''}</div>`:''}
+      ${s.comentarioDocente&&s.estado!=='borrador'?`<div class="rev-bar ${s.estado}" style="margin-bottom:8px">
+        <div style="font-size:16px">${s.estado==='aprobada'?'✅':'❌'}</div>
+        <div><div style="font-size:11px;font-weight:700;color:${s.estado==='aprobada'?'var(--green)':'var(--red)'}">${s.estado==='aprobada'?'Aprobada':'Rechazada'} — ${e2(s.revisadoPor)}</div>
+          ${s.comentarioDocente?`<div class="rev-comment">${e2(s.comentarioDocente)}</div>`:''}</div></div>`:''}
+      <div class="btn-group">
+        <button class="btn btn-ghost btn-sm" onclick="verSes('${esc(s.id)}','${esc(pac.id)}')">👁️ Ver</button>
+        ${s.estado==='borrador'||s.estado==='rechazada'?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmSes('${esc(pac.id)}','${esc(s.evaluacionId)}',${s.numero},'${esc(s.id)}')">✏️ Editar</button>`:''}
+        ${puedeSend&&(s.estado==='borrador'||s.estado==='rechazada')?`<button class="btn btn-primary btn-sm" onclick="enviarSes('${esc(s.id)}','${esc(pac.id)}')">📤 Enviar</button>`:''}
+        ${pr&&s.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('ses','${esc(s.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ─── Formulario Evaluación ────────────────────────────
+async function abrirFrmEval(pacId, evalId, catId){
+  views.forEach(v=>g(v).style.display='none');
+  const v=g('vEvalForm'); v.style.display='block';
+  let ev=null;
+  if(evalId){const r=await apiGet('obtenerEvaluacion',{id:evalId});if(r.ok)ev=r.evaluacion;}
+  const catNom=getCat(catId).nombre;
+  v.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="abrirPac('${esc(pacId)}')">← Volver</button>
+      <div class="card-title">${evalId?'✏️ Editar':'📋 Nueva'} Evaluación · <span style="color:var(--n300)">${e2(catNom)}</span></div>
+    </div>
+
+    <!-- Examen físico -->
+    <div class="hc-sec">
+      <div class="hc-sec-hdr" onclick="toggleSec('exF')">
+        <div class="hc-sec-title">🔬 Examen físico</div>
+        <span class="chv open" id="chvExF">▼</span>
+      </div>
+      <div class="hc-sec-body open" id="exF">
+        <div class="form-grid" style="margin-bottom:14px">
+          <div class="field">
+            <label>EVA — Dolor (0-10)</label>
+            <div class="eva-wrap" style="margin-top:6px">
+              <div class="eva-track" style="position:relative">
+                <input type="range" class="eva-sl" id="evaS" min="0" max="10" step="1" value="${ev?.evaValor??0}" oninput="g('evaD').textContent=this.value">
+              </div>
+              <div class="eva-val" id="evaD">${ev?.evaValor??0}</div>
+            </div>
+          </div>
+          <div class="field"><label>Localización del dolor</label>
+            <input class="inp" id="dolL" value="${e2(ev?.dolLoc||'')}" placeholder="Ej. Rodilla derecha"></div>
+          <div class="field"><label>Tipo de dolor</label>
+            <select class="sel" id="dolT">
+              <option value="">—</option>
+              ${['Agudo','Crónico','Nociceptivo','Neuropático','Mixto','Referido'].map(t=>`<option ${ev?.dolTipo===t?'selected':''}>${t}</option>`).join('')}
+            </select></div>
+          <div class="field"><label>Postura</label>
+            <select class="sel" id="post">
+              <option value="">—</option>
+              ${['Normal','Escoliosis','Cifosis','Hiperlordosis','Alt. pélvica','Otra'].map(t=>`<option ${ev?.postura===t?'selected':''}>${t}</option>`).join('')}
+            </select></div>
+          <div class="field"><label>Marcha</label>
+            <select class="sel" id="marc">
+              <option value="">—</option>
+              ${['Normal','Antiálgica','Atáxica','Espástica','Hemipléjica','Con ayuda técnica','Otra'].map(t=>`<option ${ev?.marcha===t?'selected':''}>${t}</option>`).join('')}
+            </select></div>
+        </div>
+        <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:8px">ROM — Rango de movimiento (grados)</div>
+        ${mkROM(ev?.rom||{})}
+        <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin:14px 0 8px">Fuerza muscular — Escala Daniels (0-5)</div>
+        ${mkFuerza(ev?.fuerza||{})}
+        <div class="field" style="margin-top:12px"><label>Observaciones del examen</label>
+          <textarea class="ta" id="obsEx" rows="3" placeholder="Hallazgos adicionales...">${e2(ev?.obsExamen||'')}</textarea></div>
+      </div>
+    </div>
+
+    <!-- Diagnóstico APTA -->
+    <div class="hc-sec">
+      <div class="hc-sec-hdr" onclick="toggleSec('dxA')">
+        <div class="hc-sec-title">🏥 Diagnóstico Fisioterapéutico (APTA / CIF)</div>
+        <span class="chv" id="chvDxA">▼</span>
+      </div>
+      <div class="hc-sec-body" id="dxA">
+        <div class="form-grid">
+          <div class="field form-full"><label>Patrón APTA</label>
+            <select class="sel" id="apta">
+              <option value="">Seleccionar patrón...</option>
+              ${aptaList().map(p=>`<option value="${e2(p)}" ${ev?.aptaPatron===p?'selected':''}>${p}</option>`).join('')}
+            </select></div>
+          <div class="field form-full"><label>Diagnóstico fisioterapéutico</label>
+            <textarea class="ta" id="dxFT" rows="3" placeholder="Descripción del diagnóstico fisioterapéutico...">${e2(ev?.dxFisio||'')}</textarea></div>
+          <div class="field form-full"><label>CIF — Deterioro de funciones/estructuras</label>
+            <textarea class="ta" id="cifD" rows="2" placeholder="Ej. b710 Movilidad articular...">${e2(ev?.icfDeterioro||'')}</textarea></div>
+          <div class="field form-full"><label>CIF — Limitación de actividad</label>
+            <textarea class="ta" id="cifA" rows="2" placeholder="Ej. d450 Andar...">${e2(ev?.icfActividad||'')}</textarea></div>
+          <div class="field form-full"><label>CIF — Restricción de participación</label>
+            <textarea class="ta" id="cifP" rows="2" placeholder="Ej. d850 Trabajo remunerado...">${e2(ev?.icfParticipacion||'')}</textarea></div>
+          <div class="field form-full"><label>Pronóstico</label>
+            <textarea class="ta" id="pronost" rows="2" placeholder="Pronóstico funcional...">${e2(ev?.pronostico||'')}</textarea></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plan de tratamiento -->
+    <div class="hc-sec">
+      <div class="hc-sec-hdr" onclick="toggleSec('plan')">
+        <div class="hc-sec-title">🎯 Plan de tratamiento</div>
+        <span class="chv" id="chvPlan">▼</span>
+      </div>
+      <div class="hc-sec-body" id="plan">
+        <div class="form-grid">
+          <div class="field form-full"><label>Objetivos a corto plazo</label>
+            <textarea class="ta" id="objC" rows="2" placeholder="Objetivos 2-4 semanas...">${e2(ev?.objCorto||'')}</textarea></div>
+          <div class="field form-full"><label>Objetivos a largo plazo</label>
+            <textarea class="ta" id="objL" rows="2" placeholder="Objetivos funcionales finales...">${e2(ev?.objLargo||'')}</textarea></div>
+          <div class="field"><label>N° sesiones</label>
+            <input class="inp" id="nSes" type="number" min="1" value="${e2(ev?.planSesiones||'')}" placeholder="Ej. 12"></div>
+          <div class="field"><label>Frecuencia</label>
+            <select class="sel" id="freq">
+              <option value="">—</option>
+              ${['1 vez/semana','2 veces/semana','3 veces/semana','Diario','2 veces/día'].map(f=>`<option ${ev?.planFrecuencia===f?'selected':''}>${f}</option>`).join('')}
+            </select></div>
+          <div class="field"><label>Duración / sesión</label>
+            <select class="sel" id="dur">
+              <option value="">—</option>
+              ${['30 min','45 min','60 min','90 min'].map(d=>`<option ${ev?.planDuracion===d?'selected':''}>${d}</option>`).join('')}
+            </select></div>
+          <div class="field form-full"><label>Precauciones / Contraindicaciones</label>
+            <textarea class="ta" id="prec" rows="2" placeholder="Precauciones especiales...">${e2(ev?.planPrecauciones||'')}</textarea></div>
+          <div class="field form-full"><label>Educación al paciente</label>
+            <textarea class="ta" id="educ" rows="2" placeholder="Instrucciones y recomendaciones...">${e2(ev?.planEducacion||'')}</textarea></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-group" style="margin-top:18px">
+      <button class="btn btn-ghost btn-sm" onclick="guardarEval('${esc(pacId)}','${evalId||''}','${esc(catId)}','borrador')">💾 Borrador</button>
+      <button class="btn btn-primary" onclick="guardarEval('${esc(pacId)}','${evalId||''}','${esc(catId)}','enviar')">📤 Guardar y enviar al docente</button>
+      <button class="btn btn-ghost" onclick="abrirPac('${esc(pacId)}')">Cancelar</button>
+    </div>`;
+}
+
+function toggleSec(id){
+  const b=g(id), c=g('chv'+id.charAt(0).toUpperCase()+id.slice(1));
+  if(!b) return;
+  b.classList.toggle('open');
+  if(c) c.classList.toggle('open');
+}
+
+function mkROM(rom){
+  const grps=[
+    {r:'Cervical',m:['Flexión','Extensión','Inc.Derecha','Inc.Izquierda','Rot.Derecha','Rot.Izquierda']},
+    {r:'Hombro',m:['Flexión','Extensión','Abducción','Rot.Interna','Rot.Externa']},
+    {r:'Codo',m:['Flexión','Extensión','Pronación','Supinación']},
+    {r:'Muñeca',m:['Flexión','Extensión','Desv.Radial','Desv.Ulnar']},
+    {r:'Cadera',m:['Flexión','Extensión','Abducción','Rot.Interna','Rot.Externa']},
+    {r:'Rodilla',m:['Flexión','Extensión']},
+    {r:'Tobillo',m:['Dorsiflexión','Plantiflexión','Inversión','Eversión']},
+    {r:'Lumbar',m:['Flexión','Extensión','Inc.Derecha','Inc.Izquierda']},
+  ];
+  return `<div style="overflow-x:auto"><table class="tbl">
+    <tr><th>Región</th><th>Movimiento</th><th style="text-align:center">Der.</th><th style="text-align:center">Izq.</th></tr>
+    ${grps.map(g=>g.m.map((m,i)=>{
+      const k=g.r+'_'+m;
+      return `<tr>${i===0?`<td rowspan="${g.m.length}" style="font-weight:700;font-size:11px;vertical-align:top;padding-top:8px">${g.r}</td>`:''}<td style="font-size:12px">${m}</td>
+        <td><input type="text" class="ri" data-rom="${k}_D" value="${e2(rom[k+'_D']||'')}" placeholder="°"></td>
+        <td><input type="text" class="ri" data-rom="${k}_I" value="${e2(rom[k+'_I']||'')}" placeholder="°"></td></tr>`;
+    }).join('')).join('')}
+  </table></div>`;
+}
+
+function mkFuerza(f){
+  const gs=[
+    {n:'Flex. cervicales',k:'fxCerv'},{n:'Ext. cervicales',k:'exCerv'},
+    {n:'Flex. hombro',k:'fxHombro'},{n:'Abd. hombro',k:'abHombro'},
+    {n:'Flex. codo',k:'fxCodo'},{n:'Ext. codo',k:'exCodo'},
+    {n:'Flex. cadera',k:'fxCad'},{n:'Ext. cadera',k:'exCad'},
+    {n:'Abd. cadera',k:'abCad'},{n:'Cuadriceps',k:'quad'},
+    {n:'Isquiotibiales',k:'isq'},{n:'Flex. plantares',k:'fxPl'},
+    {n:'Dorsiflexores',k:'dfx'},
+  ];
+  return `<div style="overflow-x:auto"><table class="tbl">
+    <tr><th>Grupo muscular</th><th style="text-align:center">Der.</th><th style="text-align:center">Izq.</th></tr>
+    ${gs.map(g=>`<tr><td style="font-size:12px">${g.n}</td>
+      <td><input type="number" class="ri" data-f="${g.k}_D" min="0" max="5" value="${e2(f[g.k+'_D']??'')}" placeholder="—"></td>
+      <td><input type="number" class="ri" data-f="${g.k}_I" min="0" max="5" value="${e2(f[g.k+'_I']??'')}" placeholder="—"></td></tr>`).join('')}
+  </table></div>`;
+}
+
+function aptaList(){return['4A - Riesgo de lesión esquelética primaria','4B - Deterioro del rendimiento muscular','4C - Deterioro de movilidad articular','4D - Deterioro posquirúrgico','4E - Deterioro de movilidad espinal','5A - Riesgo de deterioro del sistema neuromuscular','5B - Deterioro de control motor central','5C - Deterioro periférico del sistema nervioso','5D - Deterioro de equilibrio y coordinación','5E - Deterioro funcional miembros inferiores','5F - Deterioro de deglución','6A - Riesgo cardiopulmonar','6B - Deterioro del intercambio gaseoso','6C - Deterioro de ventilación mecánica','6D - Deterioro de bomba cardiopulmonar','6F - Deterioro de ventilación parietal'];}
+
+function leerROM2(){const r={};document.querySelectorAll('[data-rom]').forEach(el=>{if(el.value.trim())r[el.dataset.rom]=el.value.trim();});return r;}
+function leerF2(){const f={};document.querySelectorAll('[data-f]').forEach(el=>{if(el.value.trim())f[el.dataset.f]=Number(el.value.trim());});return f;}
+
+async function guardarEval(pacId, evalId, catId, modo){
+  const estado=modo==='borrador'?'borrador':(session.rol==='estudiante'?'pendiente':'aprobada');
+  const b={action:'guardarEvaluacion',pacienteId:pacId,categoriaId:catId,tipo:'inicial',estado,
+    evaValor:Number(g('evaS')?.value||0),dolLoc:g('dolL')?.value||'',dolTipo:g('dolT')?.value||'',
+    postura:g('post')?.value||'',marcha:g('marc')?.value||'',
+    rom:leerROM2(),fuerza:leerF2(),obsExamen:g('obsEx')?.value||'',
+    aptaPatron:g('apta')?.value||'',dxFisio:g('dxFT')?.value||'',
+    icfDeterioro:g('cifD')?.value||'',icfActividad:g('cifA')?.value||'',
+    icfParticipacion:g('cifP')?.value||'',pronostico:g('pronost')?.value||'',
+    objCorto:g('objC')?.value||'',objLargo:g('objL')?.value||'',
+    planSesiones:g('nSes')?.value||'',planFrecuencia:g('freq')?.value||'',
+    planDuracion:g('dur')?.value||'',planPrecauciones:g('prec')?.value||'',
+    planEducacion:g('educ')?.value||''};
+  if(evalId) b.id=evalId;
+  const r=await apiPost(b);
+  if(!r.ok){toast('Error',r.error,'err');return;}
+  const msgs={pendiente:'📤 Enviada al docente',aprobada:'✅ Evaluación guardada',borrador:'💾 Borrador guardado'};
+  toast(msgs[estado]||'Guardado','','ok');
+  abrirPac(pacId);
+}
+
+async function enviarEval(evalId, pacId){
+  const r=await apiPost({action:'guardarEvaluacion',id:evalId,estado:'pendiente'});
+  if(!r.ok){toast('Error',r.error,'err');return;}
+  toast('📤 Enviada al docente','','ok');abrirPac(pacId);
+}
+
+// ─── Formulario Sesión ────────────────────────────────
+async function abrirFrmSes(pacId, evalId, num, sesId=null){
+  views.forEach(v=>g(v).style.display='none');
+  const v=g('vSesForm'); v.style.display='block';
+  let ses=null;
+  if(sesId){const r=await apiGet('listarSesiones',{pacienteId:pacId});ses=(r.sesiones||[]).find(s=>s.id===sesId);}
+  const hoy=new Date().toISOString().slice(0,10);
+  const tecsList=['Electroterapia','Ultrasonido','TENS','Termoterapia','Crioterapia','Masoterapia','Kinesioterapia','Hidroterapia','Ejercicio terapéutico','Vendaje neuromuscular','Punción seca','Otras'];
+  const selTecs=Array.isArray(ses?.tecnicas)?ses.tecnicas:[];
+
+  v.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="abrirPac('${esc(pacId)}')">← Volver</button>
+      <div class="card-title">🗓️ ${sesId?'Editar':'Nueva'} Sesión #${num}</div>
+    </div>
+    <div class="card">
+      <div class="form-grid">
+        <div class="field"><label>Fecha *</label>
+          <input class="inp" id="sF" type="date" value="${ses?.fecha||hoy}"></div>
+        <div class="field"><label>Terapeuta</label>
+          <input class="inp" id="sT" value="${e2(ses?.terapeuta||session.nombre||session.codigo)}" placeholder="Nombre del terapeuta"></div>
+        <div class="field"><label>EVA inicial (0-10)</label>
+          <div class="eva-wrap" style="margin-top:6px">
+            <div class="eva-track" style="position:relative">
+              <input type="range" class="eva-sl" id="sesEva" min="0" max="10" step="1" value="${ses?.evaValor??0}" oninput="g('sesEvaD').textContent=this.value">
+            </div>
+            <div class="eva-val" id="sesEvaD">${ses?.evaValor??0}</div>
+          </div></div>
+        <div class="field form-full"><label>Técnicas aplicadas *</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+            ${tecsList.map(t=>{const s2=selTecs.includes(t);return`<label style="display:flex;align-items:center;gap:5px;background:${s2?'rgba(29,78,216,.2)':'var(--surf2)'};border:1px solid ${s2?'var(--n400)':'var(--bd)'};border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px">
+              <input type="checkbox" value="${t}" ${s2?'checked':''} style="accent-color:var(--n500)"> ${t}</label>`;}).join('')}
+          </div></div>
+        <div class="field form-full"><label>Otras técnicas</label>
+          <input class="inp" id="sTO" value="${e2(ses?.tecnicasOtras||'')}" placeholder="Especificar..."></div>
+        <div class="field form-full"><label>Descripción de la sesión *</label>
+          <textarea class="ta" id="sDes" rows="4" placeholder="Procedimientos realizados, parámetros, áreas tratadas...">${e2(ses?.descripcion||'')}</textarea></div>
+        <div class="field form-full"><label>Evolución / Respuesta</label>
+          <textarea class="ta" id="sEvo" rows="3" placeholder="Cambios observados, comparación con sesión anterior...">${e2(ses?.evolucion||'')}</textarea></div>
+        <div class="field"><label>Respuesta del paciente</label>
+          <select class="sel" id="sRes">
+            <option value="">—</option>
+            ${['Muy buena','Buena','Regular','Sin cambios','Deterioro leve','Intolerancia'].map(r=>`<option ${ses?.respuesta===r?'selected':''}>${r}</option>`).join('')}
+          </select></div>
+      </div>
+      <div class="btn-group" style="margin-top:16px">
+        <button class="btn btn-ghost btn-sm" onclick="guardarSes('${esc(pacId)}','${esc(evalId)}',${num},'${sesId||''}','borrador')">💾 Borrador</button>
+        <button class="btn btn-primary" onclick="guardarSes('${esc(pacId)}','${esc(evalId)}',${num},'${sesId||''}','enviar')">📤 Enviar al docente</button>
+        <button class="btn btn-ghost" onclick="abrirPac('${esc(pacId)}')">Cancelar</button>
+      </div>
+    </div>`;
+}
+
+async function guardarSes(pacId, evalId, num, sesId, modo){
+  const tecs=Array.from(document.querySelectorAll('input[type=checkbox]:checked')).map(c=>c.value);
+  const des=g('sDes')?.value?.trim()||'';
+  if(modo==='enviar'&&(!tecs.length||!des)){toast('Completa técnicas y descripción','','warn');return;}
+  const estado=modo==='borrador'?'borrador':(session.rol==='estudiante'?'pendiente':'aprobada');
+  const b={action:'guardarSesion',pacienteId:pacId,evaluacionId:evalId,numero:num,
+    fecha:g('sF')?.value||'',terapeuta:g('sT')?.value||'',evaValor:Number(g('sesEva')?.value||0),
+    tecnicas:tecs,tecnicasOtras:g('sTO')?.value||'',descripcion:des,
+    evolucion:g('sEvo')?.value||'',respuesta:g('sRes')?.value||'',estado};
+  if(sesId) b.id=sesId;
+  const r=await apiPost(b);
+  if(!r.ok){toast('Error',r.error,'err');return;}
+  const msgs={pendiente:'📤 Enviada al docente',aprobada:'✅ Sesión guardada',borrador:'💾 Borrador guardado'};
+  toast(msgs[estado],'','ok');abrirPac(pacId);
+}
+
+async function enviarSes(sesId, pacId){
+  const r=await apiPost({action:'guardarSesion',id:sesId,estado:'pendiente'});
+  if(!r.ok){toast('Error',r.error,'err');return;}
+  toast('📤 Enviada al docente','','ok');abrirPac(pacId);
+}
+
+// ─── Revisión (docente/admin) ─────────────────────────
+function abrirRev(tipo, id, pacId){
+  revTarget={tipo,id,pacId};
+  g('modalRevTit').textContent=tipo==='eval'?'📋 Revisar evaluación':'🗓️ Revisar sesión';
+  g('modalRevCom').value='';
+  g('modalRev').classList.add('open');
+}
+function cerrarRev(){g('modalRev').classList.remove('open');revTarget=null;}
+async function confirmarRev(estado){
+  if(!revTarget)return;
+  const com=g('modalRevCom')?.value?.trim()||'';
+  if(estado==='rechazada'&&!com){toast('Escribe un comentario para el alumno','','warn');return;}
+  const action=revTarget.tipo==='eval'?'revisarEvaluacion':'revisarSesion';
+  const r=await apiPost({action,id:revTarget.id,estado,comentario:com});
+  if(!r.ok){toast('Error',r.error,'err');return;}
+  toast(estado==='aprobada'?'✅ Aprobado':'❌ Rechazado','','ok');
+  cerrarRev(); if(revTarget?.pacId)abrirPac(revTarget.pacId); cargarBadge();
+}
+
+// ─── Vista: Pendientes ────────────────────────────────
+async function renderPend(){
+  g('vPend').innerHTML='<div class="loader">⏳ Cargando pendientes...</div>';
+  const r=await apiGet('pendientesRevision');
+  if(!r.ok){g('vPend').innerHTML=`<div class="err-box">${e2(r.error)}</div>`;return;}
+  const ev=r.evaluaciones||[], ses=r.sesiones||[], tot=ev.length+ses.length;
+  const pnoms={};
+  await Promise.all([...new Set([...ev.map(e=>e.pacienteId),...ses.map(s=>s.pacienteId)])].map(async id=>{
+    const rp=await apiGet('obtenerPaciente',{id});if(rp.ok)pnoms[id]=rp.paciente?.nombre||id;
+  }));
+
+  g('vPend').innerHTML=`
+    <div class="card-hdr"><div class="card-title">⏳ Pendientes de revisión</div><span class="badge ${tot?'pendiente':'aprobada'}">${tot} pendiente(s)</span></div>
+    ${tot===0?'<div class="empty">✅ Todo al día. Sin pendientes.</div>':''}
+    ${ev.length?`<div style="font-size:11px;font-weight:700;color:var(--tx4);text-transform:uppercase;margin-bottom:8px">Evaluaciones (${ev.length})</div>
+      ${ev.map(e=>`<div style="background:var(--surf2);border:1px solid var(--amber);border-radius:12px;padding:14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div><div style="font-weight:700">👤 ${e2(pnoms[e.pacienteId]||e.pacienteId)}</div>
+          <div style="font-size:12px;color:var(--tx3)">Evaluación · ${e2(e.autor)} · ${e2(e.fecha)}</div></div>
+        <div class="btn-group">
+          <button class="btn btn-ghost btn-sm" onclick="abrirPac('${esc(e.pacienteId)}')">👁️ Ver</button>
+          <button class="btn btn-success btn-sm" onclick="abrirRev('eval','${esc(e.id)}','${esc(e.pacienteId)}')">📝 Revisar</button>
+        </div></div>`).join('')}`:''}
+    ${ses.length?`<div style="font-size:11px;font-weight:700;color:var(--tx4);text-transform:uppercase;margin:14px 0 8px">Sesiones (${ses.length})</div>
+      ${ses.map(s=>`<div style="background:var(--surf2);border:1px solid var(--amber);border-radius:12px;padding:14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div><div style="font-weight:700">👤 ${e2(pnoms[s.pacienteId]||s.pacienteId)}</div>
+          <div style="font-size:12px;color:var(--tx3)">Sesión #${s.numero} · ${e2(s.autor)} · ${e2(s.fecha)}</div></div>
+        <div class="btn-group">
+          <button class="btn btn-ghost btn-sm" onclick="abrirPac('${esc(s.pacienteId)}')">👁️ Ver</button>
+          <button class="btn btn-success btn-sm" onclick="abrirRev('ses','${esc(s.id)}','${esc(s.pacienteId)}')">📝 Revisar</button>
+        </div></div>`).join('')}`:''}
+  `;
+}
+
+async function cargarBadge(){
+  if(session.rol==='estudiante')return;
+  const r=await apiGet('pendientesRevision').catch(()=>({ok:false}));
+  if(!r.ok)return;
+  const t=(r.evaluaciones?.length||0)+(r.sesiones?.length||0);
+  const b=g('sbBadge');if(b){b.textContent=t;b.style.display=t?'':'none';}
+}
+
+// ─── Vista: Categorías ────────────────────────────────
+function renderCats(){
+  g('vCats').innerHTML=`
+    <div class="card-hdr"><div class="card-title">🏷️ Categorías</div></div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px">
+      ${cats.map(c=>`<div style="background:var(--surf2);border:1px solid ${c.color}44;border-radius:14px;padding:16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div style="width:12px;height:12px;border-radius:50%;background:${c.color};flex-shrink:0"></div>
+          <div style="font-weight:700;font-size:14px;color:#fff">${e2(c.nombre)}</div>
+        </div>
+        <div style="font-size:12px;color:var(--tx3)">${e2(c.descripcion)}</div>
+      </div>`).join('')}
+    </div>
+    <div style="margin-top:14px;padding:14px;background:var(--surf2);border:1px solid var(--bd);border-radius:12px;font-size:12px;color:var(--tx3)">
+      💡 Las plantillas específicas por categoría se pueden personalizar. Puedes proporcionar los campos adicionales para cada categoría y se integrarán en la evaluación.
+    </div>`;
+}
+
+// ─── Ver detalle ──────────────────────────────────────
+async function verEval(evalId, pacId){
+  const r=await apiGet('obtenerEvaluacion',{id:evalId});
+  if(!r.ok){toast('Error',r.error,'err');return;}
+  const ev=r.evaluacion;
+  const info=['Diagnóstico: '+(ev.dxFisio||'—'),'APTA: '+(ev.aptaPatron||'—'),'Pronóstico: '+(ev.pronostico||'—'),'EVA: '+ev.evaValor+'/10','Obj. corto: '+(ev.objCorto||'—'),'Sesiones: '+(ev.planSesiones||'—')+' · '+(ev.planFrecuencia||'—')].join('\n');
+  alert('EVALUACIÓN FISIOTERAPÉUTICA\n\n'+info);
+}
+
+async function verSes(sesId, pacId){
+  const r=await apiGet('listarSesiones',{pacienteId:pacId});
+  const s=(r.sesiones||[]).find(x=>x.id===sesId);
+  if(!s){toast('No encontrada','','err');return;}
+  const tecs=Array.isArray(s.tecnicas)?s.tecnicas.join(', '):String(s.tecnicas||'—');
+  alert(`SESIÓN #${s.numero} · ${s.fecha}\nTerapeuta: ${s.terapeuta}\nTécnicas: ${tecs}\n\nDescripción:\n${s.descripcion||'—'}\n\nEvolución:\n${s.evolucion||'—'}\n\nEVA: ${s.evaValor}/10 · Respuesta: ${s.respuesta||'—'}`);
+}
+
+async function editarPac(id){
+  const r=await apiGet('obtenerPaciente',{id});
+  if(!r.ok){toast('Error',r.error,'err');return;}
+  abrirFrmPac(r.paciente);
+}
+
+async function eliminarPac(id, nombre){
+  if(!confirm('¿Eliminar paciente "'+nombre+'"?\nSe eliminarán todos sus datos. No se puede deshacer.'))return;
+  const r=await apiPost({action:'eliminarPaciente',id});
+  if(!r.ok){toast('Error',r.error,'err');return;}
+  toast('Paciente eliminado','','ok');navTo('pac');
+}
+
+async function reasignarPac(pacId){
+  const nuevo=g('selReasig')?.value;
+  if(!nuevo){toast('Selecciona un alumno','','warn');return;}
+  const r=await apiPost({action:'reasignarPaciente',pacienteId:pacId,nuevoAlumno:nuevo});
+  if(!r.ok){toast('Error',r.error,'err');return;}
+  toast('Paciente reasignado','','ok');abrirPac(pacId);
+}
+</script>
+</body>
+</html>
