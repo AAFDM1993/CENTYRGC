@@ -1781,6 +1781,12 @@ async function iniciarVistaEstudiante(){
 }
 function renderEstNotas(resultados){
   const box=g('estNotas');
+  // DEBUG: mostrar en consola la estructura recibida
+  console.log('renderEstNotas recibió:', JSON.stringify(resultados).substring(0,2000));
+  if(resultados[0]&&resultados[0].cursos[0]&&resultados[0].cursos[0].subgrupos[0]&&resultados[0].cursos[0].subgrupos[0].pacientes[0]){
+    const p0=resultados[0].cursos[0].subgrupos[0].pacientes[0];
+    console.log('Primer paciente notas:', p0.notas, 'notasDoc:', p0.notasDoc);
+  }
   if(!resultados.length){box.innerHTML='<div class="est-no-data"><div class="ico">&#128203;</div><p>No se encontraron notas para tu codigo.</p></div>';return}
   box.innerHTML=resultados.map(res=>{
     const bl=res.cursos.map(cu=>{
@@ -1793,16 +1799,16 @@ function renderEstNotas(resultados){
           const tSS=pac.notas.map((v,ni)=>{
             if(v==='') return`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;padding:5px 3px;color:var(--tx4)">.</td>`;
             const doc=(pac.notasDoc&&pac.notasDoc[ni])||'';
-            const docAttr=doc?`data-doc="${esc2(doc)}"  onclick="mostrarDocenteNota(this)" title="Click para ver quién registró esta nota"`:'';
-            const cursor=doc?'cursor:pointer;':'';
-            return`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;padding:5px 3px;color:var(--n600);${cursor}position:relative" ${docAttr}>${v}${doc?'<span style="position:absolute;top:1px;right:1px;font-size:8px;color:var(--n300);line-height:1">&#9432;</span>':''}</td>`;
+            return`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;padding:5px 3px;color:var(--n600);cursor:pointer;position:relative"
+              data-doc="${esc2(doc)}" onclick="mostrarDocenteNota(this)" title="Ver quién registró esta nota"
+            >${v}<span style="position:absolute;top:1px;right:1px;font-size:8px;color:var(--n300);line-height:1">&#9432;</span></td>`;
           }).join('');
           const tEx=pac.xNotas.map((v,ni)=>{
             if(v==='') return`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;padding:5px 3px;color:var(--tx4)">.</td>`;
             const doc=(pac.xNotasDoc&&pac.xNotasDoc[ni])||'';
-            const docAttr=doc?`data-doc="${esc2(doc)}" onclick="mostrarDocenteNota(this)" title="Click para ver quién registró esta nota"`:'';
-            const cursor=doc?'cursor:pointer;':'';
-            return`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;padding:5px 3px;color:#1d4ed8;${cursor}position:relative" ${docAttr}>${v}${doc?'<span style="position:absolute;top:1px;right:1px;font-size:8px;color:var(--n400);line-height:1">&#9432;</span>':''}</td>`;
+            return`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;padding:5px 3px;color:#1d4ed8;cursor:pointer;position:relative"
+              data-doc="${esc2(doc)}" onclick="mostrarDocenteNota(this)" title="Ver quién registró esta nota"
+            >${v}<span style="position:absolute;top:1px;right:1px;font-size:8px;color:var(--n400);line-height:1">&#9432;</span></td>`;
           }).join('');
           const ps=pac.promSS;const pe=pac.extraPond;const p=pac.prom;
           const pc='pc'+(p!==''&&p!==undefined?(p>=11?' ok':' no'):'');
