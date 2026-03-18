@@ -1781,11 +1781,11 @@ async function iniciarVistaEstudiante(){
 }
 function renderEstNotas(resultados){
   const box=g('estNotas');
-  // DEBUG: mostrar en consola la estructura recibida
-  console.log('renderEstNotas recibió:', JSON.stringify(resultados).substring(0,2000));
+  // DEBUG
   if(resultados[0]&&resultados[0].cursos[0]&&resultados[0].cursos[0].subgrupos[0]&&resultados[0].cursos[0].subgrupos[0].pacientes[0]){
     const p0=resultados[0].cursos[0].subgrupos[0].pacientes[0];
-    console.log('Primer paciente notas:', p0.notas, 'notasDoc:', p0.notasDoc);
+    console.log('DEBUG pac0 completo:', JSON.stringify(p0));
+    console.log('hoja:', resultados[0].hoja, 'curso:', resultados[0].cursos[0].nombre, 'sgr:', resultados[0].cursos[0].subgrupos[0].nombre);
   }
   if(!resultados.length){box.innerHTML='<div class="est-no-data"><div class="ico">&#128203;</div><p>No se encontraron notas para tu codigo.</p></div>';return}
   box.innerHTML=resultados.map(res=>{
