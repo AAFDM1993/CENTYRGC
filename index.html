@@ -815,12 +815,11 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
           <button onclick="abrirPanelAdmin('al')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128100; Alumnos</button>
           <button onclick="abrirPanelAdmin('us')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128101; Usuarios</button>
           <button onclick="abrirPanelAdmin('pdf')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128196; PDF</button>
-          <button onclick="abrirPanelAdmin('ho')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128193; Hojas</button>
           <button onclick="abrirPanelAdmin('log')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128202; Log</button>
           <div style="width:1px;height:24px;background:var(--n700);flex-shrink:0;margin:0 4px"></div>
         </div>
 
-        <!-- Admin+Docente: hojas y agenda (misma fila) -->
+        <!-- Admin+Docente: hojas, casilleros y agenda -->
         <span style="font-size:10px;font-weight:700;color:var(--n500);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap;flex-shrink:0">Hojas:</span>
         <div id="docenteHojasBtns" style="display:flex;gap:5px;align-items:center;flex-shrink:0"><span style="font-size:12px;color:var(--n500)">Cargando...</span></div>
         <div style="width:1px;height:24px;background:var(--n700);margin:0 6px;flex-shrink:0"></div>
@@ -1300,7 +1299,7 @@ function iniciarVistaAdmin(){
     g('btnGen').disabled=false;
     // Mostrar botones de admin en el topbar
     ['adminOnlyBtns'].forEach(id=>{const el=g(id);if(el)el.style.display='flex';});
-    renderCursos();renderPreview();cargarUsuarios();cargarLog();initGenSections();
+    renderCursos();renderPreview();cargarUsuarios();initGenSections();
     var cap=g('casAdminPanel');if(cap)cap.style.display='';
   } else {
     // Docente: solo hojas y agenda, sin acceso a paneles de admin
@@ -1865,19 +1864,20 @@ async function mostrarDocenteNota(td, hoja, curso, subgrupo, pacLabel, tipo, idx
     }
 
     // Buscar el registro más reciente que coincida
-    // tipo en el log: 'SS' para ss, 'Extra' para extra; nro puede ser 0-based o 1-based
+    // En el log: tipo='SS' o 'Extra', nro es 1-based
     const tipoLog = tipo === 'ss' ? 'SS' : 'Extra';
-    const alumnoSesion = (session.nombre || session.codigo || '').toLowerCase();
+    const idxLog1 = idx + 1; // log usa 1-based
 
-    // Intentar con nro como idx (0-based) y como idx+1 (1-based)
     const match = registros.find(reg => {
-      const mismoAlumno = reg.alumno && reg.alumno.toLowerCase().indexOf(alumnoSesion.split(' ')[0]) >= 0;
-      const mismoCurso  = reg.curso === curso;
-      const mismoSgr    = reg.subgrupo === subgrupo;
-      const mismoPac    = reg.paciente === pacLabel;
-      const mismoTipo   = reg.tipo === tipoLog;
-      const mismoIdx    = reg.nro === idx || reg.nro === idx+1 || String(reg.nro) === String(idx) || String(reg.nro) === String(idx+1);
-      return mismoAlumno && mismoCurso && mismoSgr && mismoPac && mismoTipo && mismoIdx;
+      const mismoCurso = reg.curso === curso;
+      const mismoSgr   = reg.subgrupo === subgrupo;
+      const mismoPac   = reg.paciente === pacLabel;
+      const mismoTipo  = reg.tipo === tipoLog;
+      // nro puede venir como número o string, 0-based o 1-based
+      const nroNum = Number(reg.nro);
+      const mismoIdx = nroNum === idxLog1 || nroNum === idx ||
+                       String(reg.nro) === String(idxLog1) || String(reg.nro) === String(idx);
+      return mismoCurso && mismoSgr && mismoPac && mismoTipo && mismoIdx;
     });
 
     if(match){
@@ -3177,7 +3177,7 @@ var PANEL_TITLES = {
 };
 
 function abrirPanelAdmin(tab){
-  var _rp=tab==='cas'?['admin','docente']:['admin'];
+  var _rp = (tab==='cas'||tab==='ho') ? ['admin','docente'] : ['admin'];
   if(!session||!_rp.includes(session.rol)){toast('Sin permiso','Solo admin','err');return;}
 
   // Si ya hay un panel abierto, devolver su contenido al pane original ANTES de abrir otro
