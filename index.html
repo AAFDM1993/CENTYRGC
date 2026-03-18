@@ -1173,7 +1173,7 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
 // ==========================
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwmu7JmtjcVD1x_kTQGn9PyuZ-npx8_kNxKn95ZtexMyPcowNL7yOLJYVRXhobdYSVR7A/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbw0i5KyZ4j5MJlkVrx7xK6dDuu_OO_eEmBwxjC7LJoBBtAIYa-zIUy3RqFd_hMAdqOxLA/exec';
 // ====================================================
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
@@ -1781,10 +1781,6 @@ async function iniciarVistaEstudiante(){
 }
 function renderEstNotas(resultados){
   const box=g('estNotas');
-  if(resultados[0]&&resultados[0].cursos[0]&&resultados[0].cursos[0].subgrupos[0]&&resultados[0].cursos[0].subgrupos[0].pacientes[0]){
-    const p0=resultados[0].cursos[0].subgrupos[0].pacientes[0];
-    console.log('DEBUG pac0:', JSON.stringify(p0));
-  }
   if(!resultados.length){box.innerHTML='<div class="est-no-data"><div class="ico">&#128203;</div><p>No se encontraron notas para tu codigo.</p></div>';return}
   box.innerHTML=resultados.map(res=>{
     const bl=res.cursos.map(cu=>{
