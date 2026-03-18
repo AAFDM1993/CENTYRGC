@@ -1092,20 +1092,25 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
 
 <!-- Modal config agenda -->
 <div id="configAgendaModal" style="position:fixed;inset:0;background:rgba(10,22,40,.6);z-index:900;display:none;align-items:flex-start;justify-content:center;padding:60px 16px 16px;overflow-y:auto;backdrop-filter:blur(2px)">
-  <div style="background:var(--surf);border-radius:16px;width:100%;max-width:500px;box-shadow:0 20px 50px rgba(10,22,40,.4);overflow:hidden">
+  <div style="background:var(--surf);border-radius:16px;width:100%;max-width:520px;box-shadow:0 20px 50px rgba(10,22,40,.4);overflow:hidden">
     <div style="background:var(--n900);padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
       <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:14px">&#9881; Configuracion de Agenda</span>
       <button onclick="cerrarConfigAgenda()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:7px;font-size:16px;cursor:pointer">&#10005;</button>
     </div>
-    <div style="padding:16px;overflow-y:auto;max-height:70vh">
-      
+
+    <!-- Tabs -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;background:var(--n800);border-bottom:2px solid var(--n700)">
+      <button id="cfgTabAreas" onclick="cfgSwitchTab('areas')" style="background:rgba(59,130,246,.12);border:none;border-bottom:2px solid var(--n400);color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;padding:11px 6px;cursor:pointer;transition:all .2s">&#127963; Areas y Franjas</button>
+      <button id="cfgTabBloqueos" onclick="cfgSwitchTab('bloqueos')" style="background:none;border:none;border-bottom:2px solid transparent;color:var(--n300);font-family:'Syne',sans-serif;font-weight:700;font-size:12px;padding:11px 6px;cursor:pointer;transition:all .2s">&#128274; Bloqueos</button>
+    </div>
+
+    <!-- Panel: Areas y Franjas -->
+    <div id="cfgPanelAreas" style="padding:16px;overflow-y:auto;max-height:70vh">
       <div id="areasConfigListModal"></div>
-      
       <div style="display:flex;gap:8px;margin-bottom:12px">
         <input class="inp" id="newAreaNomModal" placeholder="Nombre del area" style="flex:1" onkeydown="if(event.key==='Enter')addArea()">
         <button class="btn-sm" onclick="addArea()">+ Area</button>
       </div>
-      
       <div class="slbl">Franjas horarias</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:14px">
         <div class="field" style="margin:0"><label>T1 inicio</label><input class="inp" id="calFranja1IniModal" value="08:00" type="time"></div>
@@ -1115,6 +1120,43 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
       </div>
       <button class="btn-sm green" onclick="guardarAgendaConfig();cerrarConfigAgenda();" style="width:100%;min-height:40px">Guardar configuracion</button>
     </div>
+
+    <!-- Panel: Bloqueos -->
+    <div id="cfgPanelBloqueos" style="display:none;padding:16px;overflow-y:auto;max-height:70vh">
+      <div style="font-size:11px;color:var(--tx3);background:var(--n050);border:1px solid var(--n200);border-radius:10px;padding:9px 12px;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px">
+        <span>&#128274;</span><span>Bloquea fechas, horas o espacios especificos. Los alumnos y docentes no podran reservar esos slots.</span>
+      </div>
+
+      <!-- Formulario nuevo bloqueo (modal) -->
+      <div style="background:var(--surf2);border:1px solid var(--bd2);border-radius:12px;padding:12px;margin-bottom:10px">
+        <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Nuevo bloqueo</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div class="field" style="margin:0"><label>Fecha (o vacio = siempre)</label><input class="inp" id="mbFecha" type="date"></div>
+          <div class="field" style="margin:0"><label>Hora (o vacio = todo el dia)</label><input class="inp" id="mbHora" type="time"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div class="field" style="margin:0"><label>Area</label>
+            <select class="sel" id="mbArea" style="font-size:12px" onchange="actualizarCamillasBloqueoModal()">
+              <option value="*">Todas las areas</option>
+            </select>
+          </div>
+          <div class="field" style="margin:0"><label>Espacio</label>
+            <select class="sel" id="mbCamilla" style="font-size:12px">
+              <option value="*">Todos los espacios</option>
+            </select>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:10px"><label>Motivo</label><input class="inp" id="mbMotivo" placeholder="Ej. Feriado, mantenimiento..."></div>
+        <button class="btn-sm" onclick="crearBloqueoModal()" style="width:100%;background:var(--red);color:#fff;min-height:36px">&#128274; Crear bloqueo</button>
+      </div>
+
+      <!-- Lista de bloqueos activos (modal) -->
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px">Bloqueos activos</div>
+      <div id="listaBloqueosModal" style="max-height:220px;overflow-y:auto;border:1px solid var(--bd2);border-radius:9px">
+        <div class="empty" style="padding:12px">Cargando...</div>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -2844,12 +2886,110 @@ async function mostrarAgenda(){
 }
 function abrirConfigAgenda(){
   renderAreasConfig();
+  // Poblar selects de bloqueo del modal con las áreas actuales
+  actualizarSelectsBloqueoModal();
+  renderListaBloqueosModal();
+  cfgSwitchTab('areas');
   var m = g('configAgendaModal');
   if(m) m.style.display='flex';
 }
 function cerrarConfigAgenda(){
   var m = g('configAgendaModal');
   if(m) m.style.display='none';
+}
+
+function cfgSwitchTab(tab){
+  var pA=g('cfgPanelAreas'),pB=g('cfgPanelBloqueos');
+  var tA=g('cfgTabAreas'),tB=g('cfgTabBloqueos');
+  if(!pA||!pB)return;
+  if(tab==='areas'){
+    pA.style.display='block';pB.style.display='none';
+    tA.style.background='rgba(59,130,246,.12)';tA.style.borderBottomColor='var(--n400)';tA.style.color='#fff';
+    tB.style.background='none';tB.style.borderBottomColor='transparent';tB.style.color='var(--n300)';
+  } else {
+    pA.style.display='none';pB.style.display='block';
+    tB.style.background='rgba(220,38,38,.12)';tB.style.borderBottomColor='var(--red)';tB.style.color='#fff';
+    tA.style.background='none';tA.style.borderBottomColor='transparent';tA.style.color='var(--n300)';
+    renderListaBloqueosModal();
+  }
+}
+
+function actualizarSelectsBloqueoModal(){
+  var mbArea=g('mbArea');if(!mbArea)return;
+  var val=mbArea.value;
+  mbArea.innerHTML='<option value="*">Todas las areas</option>'+
+    agendaCfg.areas.map(a=>`<option value="${esc2(a.nombre)}" ${a.nombre===val?'selected':''}>${a.nombre}</option>`).join('');
+  actualizarCamillasBloqueoModal();
+}
+
+function actualizarCamillasBloqueoModal(){
+  var mbCamilla=g('mbCamilla');if(!mbCamilla)return;
+  var areaVal=vi('mbArea');
+  mbCamilla.innerHTML='<option value="*">Todos los espacios</option>';
+  if(areaVal&&areaVal!=='*'){
+    var area=agendaCfg.areas.find(a=>a.nombre===areaVal);
+    if(area&&area.espacios){
+      area.espacios.forEach(e=>{
+        var opt=document.createElement('option');
+        opt.value=e.nombre;opt.textContent=e.nombre;
+        mbCamilla.appendChild(opt);
+      });
+    }
+  }
+}
+
+async function crearBloqueoModal(){
+  var fecha=vi('mbFecha')||'*';
+  var hora=vi('mbHora')||'*';
+  var area=vi('mbArea')||'*';
+  var camilla=vi('mbCamilla')||'*';
+  var motivo=vi('mbMotivo')||'Sin motivo';
+  if(fecha==='*'&&hora==='*'&&area==='*'){
+    if(!confirm('Esto bloqueará TODOS los horarios de TODAS las áreas. ¿Continuar?'))return;
+  }
+  showLoader('Creando bloqueo...');
+  try{
+    var r=await apiPost({action:'crearBloqueo',fecha,hora,area,camilla,motivo});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast('Bloqueo creado','','ok');
+    var f=g('mbFecha');var h=g('mbHora');var mo=g('mbMotivo');
+    if(f)f.value='';if(h)h.value='';if(mo)mo.value='';
+    await cargarBloqueos();
+    renderListaBloqueos();
+    renderListaBloqueosModal();
+    renderCalendario();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+
+function renderListaBloqueosModal(){
+  var box=g('listaBloqueosModal');if(!box)return;
+  if(!agendaBloqueos.length){
+    box.innerHTML='<div class="empty" style="padding:12px">Sin bloqueos activos</div>';return;
+  }
+  box.innerHTML=`<div style="background:var(--n900);padding:6px 12px;display:grid;grid-template-columns:80px 60px 1fr 1fr 28px;gap:6px;font-size:10px;font-weight:700;color:var(--n300);text-transform:uppercase">
+    <span>Fecha</span><span>Hora</span><span>Area</span><span>Motivo</span><span></span>
+  </div>`+agendaBloqueos.map(b=>`
+    <div style="display:grid;grid-template-columns:80px 60px 1fr 1fr 28px;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--bd2);background:var(--red2);font-size:12px">
+      <span style="font-family:'DM Mono',monospace;font-size:10px">${b.fecha}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:10px">${b.hora}</span>
+      <div><div style="font-weight:600;font-size:11px">${b.area}</div><div style="font-size:10px;color:var(--tx3)">${b.camilla}</div></div>
+      <span style="color:var(--red);font-weight:600;font-size:11px">${b.motivo}</span>
+      <button onclick="eliminarBloqueoModal(${b.id})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:0" title="Eliminar">&#128465;</button>
+    </div>`).join('');
+}
+
+async function eliminarBloqueoModal(id){
+  if(!confirm('Eliminar este bloqueo?'))return;
+  showLoader('Eliminando...');
+  try{
+    var r=await apiPost({action:'eliminarBloqueo',id});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast('Bloqueo eliminado','','ok');
+    await cargarBloqueos();
+    renderListaBloqueos();
+    renderListaBloqueosModal();
+    renderCalendario();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
 function abrirAgendaPopup(){ mostrarAgenda(); }
 function cerrarAgendaModal(){}
