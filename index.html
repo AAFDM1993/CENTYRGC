@@ -1595,10 +1595,13 @@ async function delHoja(nombre){
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
 async function abrirHoja(nombre){
+  // Cerrar panelCard devolviendo contenido al pane original
+  cerrarPanel();
+  // Ocultar otras vistas
   var ac=g('agendaCard'); if(ac) ac.style.display='none';
+  var pc=g('prevCard');   if(pc) pc.style.display='none';
   var btn=g('btnTopbarAgenda');
   if(btn){ btn.style.background='var(--n600)'; btn.style.borderColor='var(--n500)'; }
-  closeSidebar();
   showLoader('Cargando hoja...');
   try{
     const r=await apiGet('leerHoja',{hoja:nombre});hideLoader();if(!r.ok)throw new Error(r.error);
