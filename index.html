@@ -606,7 +606,7 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
   </div>
 </div>
 
-<div id="appPage">
+<div id="appPage" style="display:none">
   <header>
     <div class="hdr">
       <div class="logo">
@@ -1236,6 +1236,19 @@ window.onload=function(){
   g('loginPage').style.display='flex';
 };
 
+// Adaptación responsive al rotar pantalla
+window.addEventListener('resize',function(){
+  if(!session||session.rol!=='estudiante')return;
+  var bn=g('estBottomNav'),tw=g('estTopbarWrap');
+  if(window.innerWidth<=480){
+    if(bn)bn.style.display='flex';
+    if(tw)tw.style.display='none';
+  } else {
+    if(bn)bn.style.display='none';
+    if(tw)tw.style.removeProperty('display');
+  }
+});
+
 async function doLogin(){
   const code=vi('lgCode').trim().toLowerCase(),pass=vi('lgPass').trim();
   if(!code||!pass){lgErr('Completa codigo y contrasena');return}
@@ -1572,18 +1585,21 @@ async function generarPlanilla(){
 }
 
 async function loadHojas(){
-  const box=g('hojasBox');if(!box)return;box.innerHTML='<div class="empty">Cargando...</div>';
+  // Filtrar hojas del sistema
+  var HOJAS_SIS=['Casilleros','_usuarios','Log'];
+  const box=g('hojasBox');
+  if(box) box.innerHTML='<div class="empty">Cargando...</div>';
   try{
     const r=await apiGet('listarHojas');if(!r.ok)throw new Error(r.error);
-    // Filtrar hojas internas del sistema
-    var HOJAS_SIS=['Casilleros','_usuarios','Log'];
     var hojasFiltradas=r.hojas.filter(function(h){return HOJAS_SIS.indexOf(h.nombre)<0;});
-    // Poblar botones del topbar del docente
+    // Poblar SIEMPRE los botones del topbar
     renderDocenteHojasBtns(hojasFiltradas);
+    // Poblar el panel de hojas solo si está en el DOM visible
+    if(!box)return;
     if(!hojasFiltradas.length){box.innerHTML='<div class="empty">Sin hojas creadas</div>';return}
     const esA=session&&session.rol==='admin';
     box.innerHTML=hojasFiltradas.map(h=>`<div class="hi" onclick="abrirHoja('${esc(h.nombre)}')"><div class="hi-ico">&#128203;</div><div class="hi-info"><div class="hi-name">${h.nombre}</div><div class="hi-meta">${h.alumnos} alumno${h.alumnos!==1?'s':''}</div></div>${esA?`<button class="hi-del" onclick="event.stopPropagation();delHoja('${esc(h.nombre)}')">&#128465;</button>`:''}</div>`).join('');
-  }catch(e){box.innerHTML=`<div class="hint">Error: ${e.message}</div>`}
+  }catch(e){if(box)box.innerHTML=`<div class="hint">Error: ${e.message}</div>`}
 }
 async function delHoja(nombre){
   if(!confirm(`Eliminar "${nombre}"?`))return;showLoader('Eliminando...');
@@ -1709,11 +1725,19 @@ async function saveNota(inp){
 }
 async function iniciarVistaEstudiante(){
   document.body.className=(document.body.className||'').replace(/\brol-\S+/g,'').trim()+' rol-estudiante';
-  // Móvil: activar bottom nav
+  // Ocultar topbar de docente/admin, nunca aplica a estudiantes
+  var dt=g('docenteTopbar'); if(dt) dt.style.display='none';
+  // Decidir entre topbar o bottom nav según ancho
+  var bn=g('estBottomNav'), tw=g('estTopbarWrap');
   if(window.innerWidth<=480){
-    var bn=g('estBottomNav');if(bn)bn.style.display='flex';
-    var tw=g('estTopbarWrap');if(tw)tw.style.display='none';
+    if(bn) bn.style.display='flex';
+    if(tw) tw.style.display='none';
+  } else {
+    if(bn) bn.style.display='none';
+    if(tw) tw.style.removeProperty('display'); // dejar que el CSS decida (visible por defecto)
   }
+  // Mostrar sección inicial de notas
+  mostrarSecEst('notas');
   // Actualizar barra superior
   const nomEl=g('estNombre');const codEl=g('estCodigo');
   if(nomEl)nomEl.textContent=session.nombre||'Estudiante';
