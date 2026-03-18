@@ -1245,7 +1245,7 @@ window.addEventListener('resize',function(){
     if(tw)tw.style.display='none';
   } else {
     if(bn)bn.style.display='none';
-    if(tw)tw.style.removeProperty('display');
+    if(tw)tw.style.display='block';
   }
 });
 
@@ -1294,7 +1294,7 @@ function iniciarVistaAdmin(){
   document.body.className=(document.body.className||'').replace(/\brol-\S+/g,'').trim()+' rol-'+session.rol;
   // Ambos roles: ocultar sidebar completamente, mostrar topbar
   hideSidebar();
-  if(g('docenteTopbar'))g('docenteTopbar').style.display='';
+  if(g('docenteTopbar'))g('docenteTopbar').style.display='block';
 
   if(esA){
     g('btnGen').disabled=false;
@@ -1611,24 +1611,39 @@ async function delHoja(nombre){
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
 async function abrirHoja(nombre){
-  // Cerrar panelCard devolviendo contenido al pane original
-  cerrarPanel();
-  // Ocultar otras vistas
-  var ac=g('agendaCard'); if(ac) ac.style.display='none';
-  var pc=g('prevCard');   if(pc) pc.style.display='none';
+  // Ocultar todas las otras vistas
+  var pc=g('panelCard');    if(pc) pc.style.display='none';
+  var ac=g('agendaCard');   if(ac) ac.style.display='none';
+  var pv=g('prevCard');     if(pv) pv.style.display='none';
+  // Si había un panel abierto, devolver su contenido al pane original
+  var body=g('panelCardBody');
+  if(body){
+    var prevTab=body.getAttribute('data-tab');
+    if(prevTab){
+      var prevPane=g('pane-'+prevTab);
+      if(prevPane){while(body.firstChild)prevPane.appendChild(body.firstChild);}
+      body.removeAttribute('data-tab');
+    }
+  }
   var btn=g('btnTopbarAgenda');
-  if(btn){ btn.style.background='var(--n600)'; btn.style.borderColor='var(--n500)'; }
+  if(btn){btn.style.background='var(--n600)';btn.style.borderColor='var(--n500)';}
   showLoader('Cargando hoja...');
   try{
-    const r=await apiGet('leerHoja',{hoja:nombre});hideLoader();if(!r.ok)throw new Error(r.error);
-    hojaActiva=nombre;hojaData=r;renderEditor();
-  }catch(e){hideLoader();toast('Error',e.message,'err')}
+    const r=await apiGet('leerHoja',{hoja:nombre});
+    hideLoader();
+    if(!r.ok) throw new Error(r.error);
+    hojaActiva=nombre; hojaData=r;
+    renderEditor();
+  }catch(e){hideLoader();toast('Error al cargar hoja',e.message,'err')}
 }
 function renderEditor(){
   if(!hojaData)return;
   const cfg=hojaData.config||{},apro=Number(cfg.notaApro)||APRO();
   const esD=session&&session.rol==='docente';
-  g('prevCard').style.display='none';g('edCard').style.display='';
+  g('prevCard').style.display='none';
+  g('edCard').style.display='block';
+  g('panelCard').style.display='none';
+  g('agendaCard').style.display='none';
   g('edTitle').textContent='Editor: '+hojaActiva;
   g('edBadge').textContent=hojaData.alumnos.length+' alumnos';
   const fb=g('edFilter');fb.style.display=esD?'flex':'none';
@@ -1725,30 +1740,44 @@ async function saveNota(inp){
 }
 async function iniciarVistaEstudiante(){
   document.body.className=(document.body.className||'').replace(/\brol-\S+/g,'').trim()+' rol-estudiante';
-  // Ocultar topbar de docente/admin, nunca aplica a estudiantes
+  // Ocultar topbars que no aplican al estudiante
   var dt=g('docenteTopbar'); if(dt) dt.style.display='none';
-  // Decidir entre topbar o bottom nav según ancho
+  var ab=g('adminBottomNav'); if(ab) ab.style.display='none';
+  // Decidir entre topbar o bottom nav según ancho de pantalla
   var bn=g('estBottomNav'), tw=g('estTopbarWrap');
   if(window.innerWidth<=480){
     if(bn) bn.style.display='flex';
     if(tw) tw.style.display='none';
   } else {
     if(bn) bn.style.display='none';
-    if(tw) tw.style.removeProperty('display'); // dejar que el CSS decida (visible por defecto)
+    if(tw) tw.style.display='block';
   }
-  // Mostrar sección inicial de notas
-  mostrarSecEst('notas');
-  // Actualizar barra superior
-  const nomEl=g('estNombre');const codEl=g('estCodigo');
-  if(nomEl)nomEl.textContent=session.nombre||'Estudiante';
-  if(codEl)codEl.textContent='Cod: '+(session.codigo||'-');
+  // Actualizar info del usuario
+  var nomEl=g('estNombre'), codEl=g('estCodigo');
+  if(nomEl) nomEl.textContent=session.nombre||'Estudiante';
+  if(codEl) codEl.textContent='Cod: '+(session.codigo||'-');
+  // Mostrar sección de notas por defecto
+  var sN=g('secEstNotas'),sA=g('secEstAgenda'),sC=g('secEstCasilleros');
+  if(sN) sN.style.display='block';
+  if(sA) sA.style.display='none';
+  if(sC) sC.style.display='none';
+  var bN=g('btnEstNotas'),bA=g('btnEstAgenda'),bC=g('btnEstCas');
+  if(bN){bN.style.background='var(--n500)';bN.style.borderColor='var(--n400)';bN.style.color='#fff';}
+  if(bA){bA.style.background='transparent';bA.style.borderColor='rgba(255,255,255,.2)';bA.style.color='var(--n300)';}
+  if(bC){bC.style.background='transparent';bC.style.borderColor='rgba(255,255,255,.2)';bC.style.color='var(--n300)';}
+  // Cargar notas
   showLoader('Cargando notas...');
   try{
     const r=await apiGet('misNotas',{codigo:session.codigo});
-    hideLoader();if(!r.ok)throw new Error(r.error);
+    hideLoader();
+    if(!r.ok) throw new Error(r.error);
     renderEstNotas(r.resultados);
-  }catch(e){hideLoader();g('estNotas').innerHTML=`<div class="hint">Error: ${e.message}</div>`}
-  // Cargar la agenda en background
+  }catch(e){
+    hideLoader();
+    var box=g('estNotas');
+    if(box) box.innerHTML='<div class="hint" style="margin:16px">Error al cargar notas: '+e.message+'</div>';
+  }
+  // Cargar agenda en background
   iniciarAgendaEstudiante();
 }
 function renderEstNotas(resultados){
