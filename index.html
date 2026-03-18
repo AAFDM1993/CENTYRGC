@@ -624,19 +624,9 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
   </header>
 
   <div id="viewAdmin" style="display:none">
-    <!-- Overlay backdrop del sidebar -->
-    <div id="sideOverlay" onclick="toggleSidebar()"></div>
-
-    <!-- Sidebar deslizable -->
-    <div id="adminSidebar" class="sidebar-hidden">
-      <div class="sidebar-inner">
-        <div class="tabs" id="adminTabs" style="grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--n700)">
-          <button class="tab on" id="tabAl" onclick="showTab('al',this)">&#128203; Crear</button>
-          <button class="tab" id="tabUs" onclick="showTab('us',this)">Usuarios</button>
-          <button class="tab" id="tabHo" onclick="showTab('ho',this)">Hojas</button>
-          <button class="tab" id="tabCas" onclick="showTab('cas',this)">&#128220; Cas.</button>
-          <button class="tab" id="tabLog" onclick="showTab('log',this)">Log</button>
-        </div>
+    <!-- Panes ocultos: el contenido se mueve dinámicamente al panelCard -->
+    <div id="adminPanesStore" style="display:none">
+      <div id="adminTabs"></div>
 
         <!-- PANE: Crear planilla (Alumnos + Cursos + Config unificados) -->
         <div class="pane on" id="pane-al">
@@ -813,105 +803,7 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
             <button class="btn-ghost" onclick="cargarHojasExport()" style="width:100%;margin-top:10px">Recargar hojas</button>
           </div>
 
-          <!-- AGENDA / CALENDARIO -->
-          <div class="pane" id="pane-cal">
-
-            <!-- Config de áreas (solo admin) -->
-            <div id="calConfigBox">
-              <div class="slbl">Configuracion de areas</div>
-              <div id="areasConfigList"></div>
-              <div class="row2" style="margin-bottom:8px">
-                <input class="inp" id="newAreaNom" placeholder="Nombre del area" style="flex:1" onkeydown="if(event.key==='Enter')addArea()">
-                <button class="btn-sm" onclick="addArea()">+ Area</button>
-              </div>
-              <div class="slbl" style="margin-top:6px">Franjas horarias</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px">
-                <div class="field" style="margin:0"><label>Turno 1 inicio</label><input class="inp" id="calFranja1Ini" value="08:00" type="time"></div>
-                <div class="field" style="margin:0"><label>Turno 1 fin</label><input class="inp" id="calFranja1Fin" value="13:00" type="time"></div>
-                <div class="field" style="margin:0"><label>Turno 2 inicio</label><input class="inp" id="calFranja2Ini" value="14:00" type="time"></div>
-                <div class="field" style="margin:0"><label>Turno 2 fin</label><input class="inp" id="calFranja2Fin" value="19:00" type="time"></div>
-              </div>
-              <button class="btn-sm green" onclick="guardarAgendaConfig()" style="width:100%;margin-bottom:10px">Guardar configuracion</button>
-              <div style="height:1px;background:var(--bd2);margin-bottom:10px"></div>
-            </div>
-
-            <!-- Navegacion semanal -->
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:6px">
-              <button class="btn-ghost" onclick="semanaAnterior()" style="padding:6px 11px;font-size:16px">&#8249;</button>
-              <span id="calSemanaLabelSidebar" style="font-size:12px;font-weight:700;color:var(--tx);flex:1;text-align:center"></span>
-              <button class="btn-ghost" onclick="semanaSiguiente()" style="padding:6px 11px;font-size:16px">&#8250;</button>
-              <button class="btn-ghost" onclick="irHoy()" style="font-size:11px;padding:5px 10px">Hoy</button>
-            </div>
-
-            <!-- Selector de area -->
-            <div class="field" style="margin-bottom:8px">
-              <label>Filtrar por area</label>
-              <select class="sel" id="calAreaFiltroSidebar" onchange="renderCalendario()" style="font-size:12px"></select>
-            </div>
-
-            <!-- Grid del calendario (días de la semana) -->
-            <div id="calGridSidebar" style="overflow-x:auto;-webkit-overflow-scrolling:touch"></div>
-
-            <!-- Sección: Ver y gestionar reservas -->
-            <div style="margin-top:12px">
-              <div class="slbl">Reservas registradas</div>
-              <div style="display:flex;gap:7px;margin-bottom:8px;flex-wrap:wrap">
-                <select class="sel" id="calFiltroHojaRes" style="flex:1;font-size:12px" onchange="cargarListaReservas()">
-                  <option value="">Esta semana</option>
-                  <option value="todas">Todas</option>
-                </select>
-                <select class="sel" id="calFiltroAreaRes" style="flex:1;font-size:12px" onchange="cargarListaReservas()">
-                  <option value="">Todas las areas</option>
-                </select>
-                <button class="btn-ghost" onclick="cargarListaReservas()" style="padding:6px 12px;font-size:12px">&#8635; Actualizar</button>
-              </div>
-              <div id="listaReservasBox" style="max-height:300px;overflow-y:auto;border:1px solid var(--bd2);border-radius:9px"></div>
-            </div>
-
-            <!-- Gestión de bloqueos -->
-            <div style="margin-top:12px" id="bloqueoSection">
-              <div class="slbl">Bloqueos de horario</div>
-              <div class="hint" style="margin-bottom:8px;font-size:11px"><span>&#128274;</span><span>Bloquea dias, horas o espacios especificos. Los alumnos y docentes no podran reservar en esos slots.</span></div>
-
-              <!-- Formulario de nuevo bloqueo -->
-              <div style="background:var(--surf2);border:1px solid var(--bd2);border-radius:12px;padding:12px;margin-bottom:8px">
-                <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Nuevo bloqueo</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-                  <div class="field" style="margin:0"><label>Fecha (o * para siempre)</label><input class="inp" id="bFecha" type="date" placeholder="YYYY-MM-DD"></div>
-                  <div class="field" style="margin:0"><label>Hora (o * para todo el dia)</label><input class="inp" id="bHora" type="time" placeholder="HH:MM"></div>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-                  <div class="field" style="margin:0"><label>Area (o * para todas)</label>
-                    <select class="sel" id="bArea" style="font-size:12px">
-                      <option value="*">Todas las areas</option>
-                    </select>
-                  </div>
-                  <div class="field" style="margin:0"><label>Espacio (o * para todos)</label>
-                    <select class="sel" id="bCamilla" style="font-size:12px">
-                      <option value="*">Todos los espacios</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="field" style="margin-bottom:10px"><label>Motivo</label><input class="inp" id="bMotivo" placeholder="Ej. Feriado nacional, mantenimiento..."></div>
-                <button class="btn-sm" onclick="crearBloqueoUI()" style="width:100%;background:var(--red);color:#fff">&#128274; Crear bloqueo</button>
-              </div>
-
-              <!-- Lista de bloqueos activos -->
-              <div id="listaBloqueosBox" style="max-height:250px;overflow-y:auto;border:1px solid var(--bd2);border-radius:9px">
-                <div class="empty" style="padding:10px">Cargando bloqueos...</div>
-              </div>
-            </div>
-          </div>
-        </div><!-- end sidebar-inner -->
-      <div class="sidebar-footer"></div>
-    </div><!-- end adminSidebar -->
-
-    <!-- Toolbar Admin (con id para poder ocultar) -->
-    <div class="content-toolbar" id="contentToolbar">
-      <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
-        <span class="ico">&#9776;</span><span id="sidebarBtnLabel">Panel</span>
-      </button>
-    </div>
+    </div><!-- end adminPanesStore -->
 
     <!-- Topbar Admin + Docente (barra unificada) -->
     <div id="docenteTopbar" style="display:none;background:var(--n900);border-bottom:1px solid var(--n800);padding:0 14px;position:sticky;top:58px;z-index:100">
@@ -923,6 +815,8 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
           <button onclick="abrirPanelAdmin('al')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128100; Alumnos</button>
           <button onclick="abrirPanelAdmin('us')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128101; Usuarios</button>
           <button onclick="abrirPanelAdmin('pdf')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128196; PDF</button>
+          <button onclick="abrirPanelAdmin('ho')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128193; Hojas</button>
+          <button onclick="abrirPanelAdmin('log')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128202; Log</button>
           <div style="width:1px;height:24px;background:var(--n700);flex-shrink:0;margin:0 4px"></div>
         </div>
 
@@ -1099,9 +993,10 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
     </div>
 
     <!-- Tabs -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;background:var(--n800);border-bottom:2px solid var(--n700)">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--n800);border-bottom:2px solid var(--n700)">
       <button id="cfgTabAreas" onclick="cfgSwitchTab('areas')" style="background:rgba(59,130,246,.12);border:none;border-bottom:2px solid var(--n400);color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;padding:11px 6px;cursor:pointer;transition:all .2s">&#127963; Areas y Franjas</button>
       <button id="cfgTabBloqueos" onclick="cfgSwitchTab('bloqueos')" style="background:none;border:none;border-bottom:2px solid transparent;color:var(--n300);font-family:'Syne',sans-serif;font-weight:700;font-size:12px;padding:11px 6px;cursor:pointer;transition:all .2s">&#128274; Bloqueos</button>
+      <button id="cfgTabReservas" onclick="cfgSwitchTab('reservas')" style="background:none;border:none;border-bottom:2px solid transparent;color:var(--n300);font-family:'Syne',sans-serif;font-weight:700;font-size:12px;padding:11px 6px;cursor:pointer;transition:all .2s">&#128197; Reservas</button>
     </div>
 
     <!-- Panel: Areas y Franjas -->
@@ -1154,6 +1049,23 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
       <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px">Bloqueos activos</div>
       <div id="listaBloqueosModal" style="max-height:220px;overflow-y:auto;border:1px solid var(--bd2);border-radius:9px">
         <div class="empty" style="padding:12px">Cargando...</div>
+      </div>
+    </div>
+
+    <!-- Panel: Reservas -->
+    <div id="cfgPanelReservas" style="display:none;padding:16px;overflow-y:auto;max-height:70vh">
+      <div style="display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap;align-items:center">
+        <select class="sel" id="calFiltroHojaRes" style="flex:1;font-size:12px" onchange="cargarListaReservas()">
+          <option value="">Esta semana</option>
+          <option value="todas">Todas</option>
+        </select>
+        <select class="sel" id="calFiltroAreaRes" style="flex:1;font-size:12px" onchange="cargarListaReservas()">
+          <option value="">Todas las areas</option>
+        </select>
+        <button class="btn-ghost" onclick="cargarListaReservas()" style="padding:6px 12px;font-size:12px">&#8635; Actualizar</button>
+      </div>
+      <div id="listaReservasBox" style="max-height:340px;overflow-y:auto;border:1px solid var(--bd2);border-radius:9px">
+        <div class="empty" style="padding:12px">Sin reservas</div>
       </div>
     </div>
 
@@ -1369,7 +1281,6 @@ function iniciarVistaAdmin(){
   document.body.className=(document.body.className||'').replace(/\brol-\S+/g,'').trim()+' rol-'+session.rol;
   // Ambos roles: ocultar sidebar completamente, mostrar topbar
   hideSidebar();
-  if(g('contentToolbar'))g('contentToolbar').style.display='none';
   if(g('docenteTopbar'))g('docenteTopbar').style.display='';
 
   if(esA){
@@ -1391,10 +1302,12 @@ function iniciarVistaAdmin(){
   loadHojas();
 }
 function showTab(tid,btn){
-  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('on'));
-  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
-  g('pane-'+tid).classList.add('on');btn.classList.add('on');
-  if(tid==='ho')loadHojas();if(tid==='cas')cargarCasilleros();if(tid==='us')cargarUsuarios();if(tid==='pdf')cargarHojasExport();if(tid==='log')cargarLog();if(tid==='cal'){iniciarAgenda();setTimeout(cargarListaReservas,600);}if(window.innerWidth<=900)closeSidebar();
+  if(tid==='ho')loadHojas();
+  if(tid==='cas')cargarCasilleros();
+  if(tid==='us')cargarUsuarios();
+  if(tid==='pdf')cargarHojasExport();
+  if(tid==='log')cargarLog();
+  if(tid==='cal'){iniciarAgenda();setTimeout(cargarListaReservas,600);}
 }
 function openDrawer(i){
   drawerIdx=i;const a=alumnos[i];
@@ -2161,32 +2074,9 @@ async function cargarLog(){
 
 // ── SIDEBAR DESLIZABLE ───────────────────────────────────────
 let _sidebarOpen = false;
-function toggleSidebar(){
-  _sidebarOpen = !_sidebarOpen;
-  const sb  = g('adminSidebar');
-  const ov  = g('sideOverlay');
-  const lbl = g('sidebarBtnLabel');
-  if(sb){
-    // Quitar sidebar-hidden al abrir por primera vez
-    if(_sidebarOpen) sb.classList.remove('sidebar-hidden');
-    sb.classList.toggle('open', _sidebarOpen);
-  }
-  if(ov) ov.classList.toggle('show', _sidebarOpen);
-  if(lbl) lbl.textContent = _sidebarOpen ? 'Cerrar panel' : 'Panel';
-  document.body.style.overflow = _sidebarOpen ? 'hidden' : '';
-}
-function closeSidebar(){
-  if(!_sidebarOpen) return;
-  toggleSidebar();
-}
-function hideSidebar(){
-  // Ocultar completamente el sidebar (para admin sin panel abierto)
-  const sb=g('adminSidebar');
-  if(sb){ sb.classList.add('sidebar-hidden'); sb.classList.remove('open'); }
-  if(g('sideOverlay')) g('sideOverlay').classList.remove('show');
-  _sidebarOpen=false;
-  document.body.style.overflow='';
-}
+function toggleSidebar(){ /* sidebar eliminado */ }
+function closeSidebar(){ /* sidebar eliminado */ }
+function hideSidebar(){ /* sidebar eliminado */ }
 
 
 // ── CAMBIO DE CONTRASEÑA ─────────────────────────────────────
@@ -2432,13 +2322,10 @@ function renderCalendario(){
 // ── Configuración de áreas ────────────────────────────────
 function renderAreasConfig(){
   const esA=session&&session.rol==='admin';
-  const box=g('calConfigBox');
-  if(box) box.style.display=esA?'block':'none';
   if(!esA)return;
-  
-  const listSidebar = g('areasConfigList');
+
   const listModal = g('areasConfigListModal');
-  if(!listSidebar && !listModal) return;
+  if(!listModal) return;
 
   const html = agendaCfg.areas.map((a,i)=>{
     const espaciosHtml=(a.espacios||[]).map((esp,ei)=>`
@@ -2465,33 +2352,21 @@ function renderAreasConfig(){
   }).join('');
 
   const emptyMsg = '<div class="empty" style="padding:8px">Sin areas. Agrega una abajo.</div>';
-  if(listSidebar) listSidebar.innerHTML = html || emptyMsg;
-  if(listModal) listModal.innerHTML = html || emptyMsg;
+  listModal.innerHTML = html || emptyMsg;
 
-  // Sincronizar franjas horarias en ambas vistas
+  // Sincronizar franjas horarias en el modal
   const f=agendaCfg.franjas||[{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}];
   ['calFranja1Ini','calFranja1Fin','calFranja2Ini','calFranja2Fin'].forEach((id,i)=>{
-    const elSidebar=g(id), elModal=g(id+'Modal');
+    const elModal=g(id+'Modal');
     const frIdx=Math.floor(i/2); const tipo=i%2===0?'inicio':'fin';
-    if(elSidebar) elSidebar.value=(f[frIdx]||{})[tipo]||'';
     if(elModal) elModal.value=(f[frIdx]||{})[tipo]||'';
   });
 }
 function addArea(){
   const inputModal = g('newAreaNomModal');
-  const inputSidebar = g('newAreaNom');
-  
-  let nom = '';
-  // Priorizar lo que esté escrito en el modal, si no, buscar en el sidebar
-  if (inputModal && inputModal.value.trim() !== '') {
-    nom = inputModal.value.trim();
-    inputModal.value = '';
-  } else if (inputSidebar && inputSidebar.value.trim() !== '') {
-    nom = inputSidebar.value.trim();
-    inputSidebar.value = '';
-  }
-  
+  const nom = inputModal ? inputModal.value.trim() : '';
   if(!nom) return;
+  if(inputModal) inputModal.value='';
   agendaCfg.areas.push({nombre:nom,espacios:[{nombre:'Espacio 1',capacidad:1}],duracion:60});
   renderAreasConfig();
   actualizarFiltroArea();
@@ -2548,17 +2423,12 @@ function filtrarCalendarioPorArea(area){
 
 async function guardarAgendaConfig(){
   const f=agendaCfg.franjas=[];
-  const pares=[['calFranja1Ini','calFranja1Fin'],['calFranja2Ini','calFranja2Fin']];
-  
+  const pares=[['calFranja1IniModal','calFranja1FinModal'],['calFranja2IniModal','calFranja2FinModal']];
   pares.forEach(([iId,fId])=>{
-    // Lee primero los inputs del modal, si están vacíos o no existen, lee los del sidebar
-    let ini = vi(iId+'Modal') || vi(iId);
-    let fin = vi(fId+'Modal') || vi(fId);
+    const ini=vi(iId), fin=vi(fId);
     if(ini&&fin) f.push({inicio:ini,fin:fin});
   });
-  
   if(!f.length) f.push({inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'});
-  
   showLoader('Guardando configuracion...');
   try{
     const r=await apiPost({action:'guardarAgendaConfig',config:agendaCfg});
@@ -2899,18 +2769,25 @@ function cerrarConfigAgenda(){
 }
 
 function cfgSwitchTab(tab){
-  var pA=g('cfgPanelAreas'),pB=g('cfgPanelBloqueos');
-  var tA=g('cfgTabAreas'),tB=g('cfgTabBloqueos');
-  if(!pA||!pB)return;
+  var pA=g('cfgPanelAreas'),pB=g('cfgPanelBloqueos'),pR=g('cfgPanelReservas');
+  var tA=g('cfgTabAreas'),tB=g('cfgTabBloqueos'),tR=g('cfgTabReservas');
+  if(!pA||!pB) return;
+
+  // Reset all
+  [pA,pB,pR].forEach(function(p){if(p)p.style.display='none';});
+  [tA,tB,tR].forEach(function(t){if(t){t.style.background='none';t.style.borderBottomColor='transparent';t.style.color='var(--n300)';}});
+
   if(tab==='areas'){
-    pA.style.display='block';pB.style.display='none';
+    pA.style.display='block';
     tA.style.background='rgba(59,130,246,.12)';tA.style.borderBottomColor='var(--n400)';tA.style.color='#fff';
-    tB.style.background='none';tB.style.borderBottomColor='transparent';tB.style.color='var(--n300)';
-  } else {
-    pA.style.display='none';pB.style.display='block';
+  } else if(tab==='bloqueos'){
+    pB.style.display='block';
     tB.style.background='rgba(220,38,38,.12)';tB.style.borderBottomColor='var(--red)';tB.style.color='#fff';
-    tA.style.background='none';tA.style.borderBottomColor='transparent';tA.style.color='var(--n300)';
     renderListaBloqueosModal();
+  } else if(tab==='reservas'){
+    if(pR) pR.style.display='block';
+    if(tR){tR.style.background='rgba(5,150,105,.12)';tR.style.borderBottomColor='var(--green)';tR.style.color='#fff';}
+    cargarListaReservas();
   }
 }
 
@@ -3132,78 +3009,15 @@ function esBloqueado(fecha, hora, area, camilla){
 
 // UI de bloqueos
 function actualizarSelectsBloqueo(){
-  const bArea=g('bArea');const bCamilla=g('bCamilla');
-  if(bArea){
-    const val=bArea.value;
-    bArea.innerHTML='<option value="*">Todas las areas</option>'+
-      agendaCfg.areas.map(a=>`<option value="${esc2(a.nombre)}" ${a.nombre===val?'selected':''}>${a.nombre}</option>`).join('');
-  }
-  // Camillas según área seleccionada
-  actualizarCamillasBloqueo();
+  actualizarSelectsBloqueoModal();
 }
-
 function actualizarCamillasBloqueo(){
-  const bCamilla=g('bCamilla');if(!bCamilla)return;
-  const areaVal=vi('bArea');
-  bCamilla.innerHTML='<option value="*">Todos los espacios</option>';
-  if(areaVal&&areaVal!=='*'){
-    const area=agendaCfg.areas.find(a=>a.nombre===areaVal);
-    if(area&&area.espacios){
-      area.espacios.forEach(e=>{
-        const opt=document.createElement('option');
-        opt.value=e.nombre;opt.textContent=e.nombre;
-        bCamilla.appendChild(opt);
-      });
-    }
-  }
+  actualizarCamillasBloqueoModal();
 }
 
-async function crearBloqueoUI(){
-  const fecha=vi('bFecha')||'*';
-  const hora=vi('bHora')||'*';
-  const area=vi('bArea')||'*';
-  const camilla=vi('bCamilla')||'*';
-  const motivo=vi('bMotivo')||'Sin motivo';
-  if(fecha==='*'&&hora==='*'&&area==='*'){
-    if(!confirm('Esto bloqueará TODOS los horarios de TODAS las áreas. ¿Continuar?'))return;
-  }
-  showLoader('Creando bloqueo...');
-  try{
-    const r=await apiPost({action:'crearBloqueo',fecha,hora,area,camilla,motivo});
-    hideLoader();if(!r.ok)throw new Error(r.error);
-    toast('Bloqueo creado','','ok');
-    g('bFecha').value='';g('bHora').value='';g('bMotivo').value='';
-    await cargarBloqueos();renderListaBloqueos();
-    await cargarReservasSemana();renderCalendario();
-  }catch(e){hideLoader();toast('Error',e.message,'err')}
-}
+async function crearBloqueoUI(){ await crearBloqueoModal(); }
 
-async function eliminarBloqueoUI(id){
-  if(!confirm('Eliminar este bloqueo?'))return;
-  showLoader('Eliminando...');
-  try{
-    const r=await apiPost({action:'eliminarBloqueo',id});
-    hideLoader();if(!r.ok)throw new Error(r.error);
-    toast('Bloqueo eliminado','','ok');
-    await cargarBloqueos();renderListaBloqueos();
-    await cargarReservasSemana();renderCalendario();
-  }catch(e){hideLoader();toast('Error',e.message,'err')}
-}
-
-function renderListaBloqueos(){
-  const box=g('listaBloqueosBox');if(!box)return;
-  if(!agendaBloqueos.length){box.innerHTML='<div class="empty" style="padding:12px">Sin bloqueos activos</div>';return;}
-  box.innerHTML=`<div style="background:var(--n900);padding:6px 12px;display:grid;grid-template-columns:80px 65px 1fr 1fr 28px;gap:6px;font-size:10px;font-weight:700;color:var(--n300);text-transform:uppercase">
-    <span>Fecha</span><span>Hora</span><span>Area</span><span>Motivo</span><span></span>
-  </div>`+agendaBloqueos.map(b=>`
-    <div style="display:grid;grid-template-columns:80px 65px 1fr 1fr 28px;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--bd2);background:var(--red2);font-size:12px">
-      <span style="font-family:'DM Mono',monospace;font-size:11px">${b.fecha}</span>
-      <span style="font-family:'DM Mono',monospace;font-size:11px">${b.hora}</span>
-      <div><div style="font-weight:600">${b.area}</div><div style="font-size:10px;color:var(--tx3)">${b.camilla}</div></div>
-      <span style="color:var(--red);font-weight:600">${b.motivo}</span>
-      <button onclick="eliminarBloqueoUI(${b.id})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:13px;padding:0" title="Eliminar">&#128465;</button>
-    </div>`).join('');
-}
+function renderListaBloqueos(){ renderListaBloqueosModal(); }
 
 
 
