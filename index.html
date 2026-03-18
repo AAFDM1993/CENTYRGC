@@ -1918,7 +1918,8 @@ function renderResumenPreview(curso){
   const tbl=g('resumenTable');if(!tbl)return;
   const cfg=expResumen.config||{};
   const apro=Number(cfg.notaApro)||11;
-  const filas=curso.alumnos.map((al,i)=>{
+  const alumnosOrdenados=[...curso.alumnos].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
+  const filas=alumnosOrdenados.map((al,i)=>{
     const p=al.promFinal;
     const cls=p!==''&&p!==undefined?(p>=apro?'ok':'no'):'';
     const color=cls==='ok'?'var(--green)':cls==='no'?'var(--red)':'var(--tx3)';
@@ -1946,7 +1947,8 @@ function exportarPDF(){
   const fecha=new Date().toLocaleDateString('es-PE',{year:'numeric',month:'long',day:'numeric'});
   const logoUrl=getLogoUrl();
 
-  const filas=curso.alumnos.map((al,i)=>{
+  const alumnosOrdenados=[...curso.alumnos].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
+  const filas=alumnosOrdenados.map((al,i)=>{
     const p=al.promFinal;
     return `<tr>
       <td style="text-align:center;color:#64748b;font-size:11px;padding:8px 10px">${i+1}</td>
@@ -2774,7 +2776,7 @@ function abrirReservaEstEsp(fecha,hora,area,espacio,capacidad,fechaLabel){
   g('reservaModalTitle').textContent='Reservar \xb7 '+area+' \xb7 '+espacio;
   g('reservaModalSub').textContent=fechaLabel+' \xb7 '+hora+' hs';
   g('rsvPaciente').value='';
-  g('rsvDocente').value='';
+  g('rsvDocente').value=session&&session.nombre||'';
   g('rsvObs').value='';
   const err=g('rsvErr');if(err){err.style.display='none';err.textContent=''}
   g('reservaModal').style.display='flex';
