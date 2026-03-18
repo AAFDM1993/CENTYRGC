@@ -1098,17 +1098,20 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
       <button onclick="cerrarConfigAgenda()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:7px;font-size:16px;cursor:pointer">&#10005;</button>
     </div>
     <div style="padding:16px;overflow-y:auto;max-height:70vh">
-      <div id="areasConfigList"></div>
+      
+      <div id="areasConfigListModal"></div>
+      
       <div style="display:flex;gap:8px;margin-bottom:12px">
-        <input class="inp" id="newAreaNom" placeholder="Nombre del area" style="flex:1">
+        <input class="inp" id="newAreaNomModal" placeholder="Nombre del area" style="flex:1" onkeydown="if(event.key==='Enter')addArea()">
         <button class="btn-sm" onclick="addArea()">+ Area</button>
       </div>
+      
       <div class="slbl">Franjas horarias</div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:14px">
-        <div class="field" style="margin:0"><label>T1 inicio</label><input class="inp" id="calFranja1Ini" value="08:00" type="time"></div>
-        <div class="field" style="margin:0"><label>T1 fin</label><input class="inp" id="calFranja1Fin" value="13:00" type="time"></div>
-        <div class="field" style="margin:0"><label>T2 inicio</label><input class="inp" id="calFranja2Ini" value="14:00" type="time"></div>
-        <div class="field" style="margin:0"><label>T2 fin</label><input class="inp" id="calFranja2Fin" value="19:00" type="time"></div>
+        <div class="field" style="margin:0"><label>T1 inicio</label><input class="inp" id="calFranja1IniModal" value="08:00" type="time"></div>
+        <div class="field" style="margin:0"><label>T1 fin</label><input class="inp" id="calFranja1FinModal" value="13:00" type="time"></div>
+        <div class="field" style="margin:0"><label>T2 inicio</label><input class="inp" id="calFranja2IniModal" value="14:00" type="time"></div>
+        <div class="field" style="margin:0"><label>T2 fin</label><input class="inp" id="calFranja2FinModal" value="19:00" type="time"></div>
       </div>
       <button class="btn-sm green" onclick="guardarAgendaConfig();cerrarConfigAgenda();" style="width:100%;min-height:40px">Guardar configuracion</button>
     </div>
@@ -2375,10 +2378,12 @@ function renderAreasConfig(){
   const box=g('calConfigBox');
   if(box) box.style.display=esA?'block':'none';
   if(!esA)return;
-  const list=g('areasConfigList');if(!list)return;
-  if(!agendaCfg.areas.length){list.innerHTML='<div class="empty" style="padding:8px">Sin areas. Agrega una abajo.</div>';return;}
+  
+  const listSidebar = g('areasConfigList');
+  const listModal = g('areasConfigListModal');
+  if(!listSidebar && !listModal) return;
 
-  list.innerHTML=agendaCfg.areas.map((a,i)=>{
+  const html = agendaCfg.areas.map((a,i)=>{
     const espaciosHtml=(a.espacios||[]).map((esp,ei)=>`
       <div class="espacio-row">
         <div><label>Nombre del espacio</label><input value="${esc2(esp.nombre)}" placeholder="Ej. Camilla 1" oninput="agendaCfg.areas[${i}].espacios[${ei}].nombre=this.value"></div>
@@ -2402,19 +2407,37 @@ function renderAreasConfig(){
     </div>`;
   }).join('');
 
-  // Sync franjas
+  const emptyMsg = '<div class="empty" style="padding:8px">Sin areas. Agrega una abajo.</div>';
+  if(listSidebar) listSidebar.innerHTML = html || emptyMsg;
+  if(listModal) listModal.innerHTML = html || emptyMsg;
+
+  // Sincronizar franjas horarias en ambas vistas
   const f=agendaCfg.franjas||[{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}];
   ['calFranja1Ini','calFranja1Fin','calFranja2Ini','calFranja2Fin'].forEach((id,i)=>{
-    const el=g(id); if(!el)return;
+    const elSidebar=g(id), elModal=g(id+'Modal');
     const frIdx=Math.floor(i/2); const tipo=i%2===0?'inicio':'fin';
-    el.value=(f[frIdx]||{})[tipo]||'';
+    if(elSidebar) elSidebar.value=(f[frIdx]||{})[tipo]||'';
+    if(elModal) elModal.value=(f[frIdx]||{})[tipo]||'';
   });
 }
-
 function addArea(){
-  const nom=vi('newAreaNom').trim();if(!nom)return;
+  const inputModal = g('newAreaNomModal');
+  const inputSidebar = g('newAreaNom');
+  
+  let nom = '';
+  // Priorizar lo que esté escrito en el modal, si no, buscar en el sidebar
+  if (inputModal && inputModal.value.trim() !== '') {
+    nom = inputModal.value.trim();
+    inputModal.value = '';
+  } else if (inputSidebar && inputSidebar.value.trim() !== '') {
+    nom = inputSidebar.value.trim();
+    inputSidebar.value = '';
+  }
+  
+  if(!nom) return;
   agendaCfg.areas.push({nombre:nom,espacios:[{nombre:'Espacio 1',capacidad:1}],duracion:60});
-  g('newAreaNom').value='';renderAreasConfig();actualizarFiltroArea();
+  renderAreasConfig();
+  actualizarFiltroArea();
 }
 function delArea(i){ agendaCfg.areas.splice(i,1);renderAreasConfig();actualizarFiltroArea(); }
 function addEspacio(areaIdx){ agendaCfg.areas[areaIdx].espacios.push({nombre:'Espacio '+(agendaCfg.areas[areaIdx].espacios.length+1),capacidad:1}); renderAreasConfig(); }
@@ -2469,11 +2492,16 @@ function filtrarCalendarioPorArea(area){
 async function guardarAgendaConfig(){
   const f=agendaCfg.franjas=[];
   const pares=[['calFranja1Ini','calFranja1Fin'],['calFranja2Ini','calFranja2Fin']];
+  
   pares.forEach(([iId,fId])=>{
-    const ini=vi(iId);const fin=vi(fId);
+    // Lee primero los inputs del modal, si están vacíos o no existen, lee los del sidebar
+    let ini = vi(iId+'Modal') || vi(iId);
+    let fin = vi(fId+'Modal') || vi(fId);
     if(ini&&fin) f.push({inicio:ini,fin:fin});
   });
+  
   if(!f.length) f.push({inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'});
+  
   showLoader('Guardando configuracion...');
   try{
     const r=await apiPost({action:'guardarAgendaConfig',config:agendaCfg});
