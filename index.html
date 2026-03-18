@@ -1717,13 +1717,29 @@ async function iniciarVistaEstudiante(){
   if(codEl)codEl.textContent='Cod: '+(session.codigo||'-');
   showLoader('Cargando notas...');
   try{
-    const r=await apiGet('misNotas',{codigo:session.codigo});
-    hideLoader();if(!r.ok)throw new Error(r.error);renderEstNotas(r.resultados);
+    // Cargar notas y log en paralelo
+    const [r, rLog] = await Promise.all([
+      apiGet('misNotas',{codigo:session.codigo}),
+      apiGet('leerLog',{alumno:session.nombre||session.codigo, limite:500}).catch(()=>({ok:false}))
+    ]);
+    hideLoader();
+    if(!r.ok) throw new Error(r.error);
+    // Construir mapa docente: "curso|subgrupo|paciente|tipo|idx" → nombre docente más reciente
+    const docenteMap = {};
+    if(rLog.ok && rLog.registros){
+      // El log viene ordenado desc (más reciente primero), así que el primero encontrado es el último que editó
+      rLog.registros.forEach(reg=>{
+        const key = `${reg.curso}|${reg.subgrupo}|${reg.paciente}|${reg.tipo}|${reg.nro}`;
+        if(!docenteMap[key]) docenteMap[key] = reg.docente;
+      });
+    }
+    renderEstNotas(r.resultados, docenteMap);
   }catch(e){hideLoader();g('estNotas').innerHTML=`<div class="hint">Error: ${e.message}</div>`}
   // Cargar la agenda en background
   iniciarAgendaEstudiante();
 }
-function renderEstNotas(resultados){
+function renderEstNotas(resultados, docenteMap){
+  docenteMap = docenteMap || {};
   const box=g('estNotas');
   if(!resultados.length){box.innerHTML='<div class="est-no-data"><div class="ico">&#128203;</div><p>No se encontraron notas para tu codigo.</p></div>';return}
   box.innerHTML=resultados.map(res=>{
@@ -1734,8 +1750,23 @@ function renderEstNotas(resultados){
         for(let i=0;i<base;i++){const lbl=i===0?'EV':'S'+i;thS+=`<th class="th-ss">${lbl}</th>`;}
         for(let i=0;i<extra;i++)thE+=`<th class="th-ex">E${i+1}</th>`;
         const rows=sg.pacientes.map(pac=>{
-          const tSS=pac.notas.map(v=>`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;padding:5px 3px;color:${v!==''?'var(--n600)':'var(--tx4)'}">${v!==''?v:'.'}</td>`).join('');
-          const tEx=pac.xNotas.map(v=>`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;padding:5px 3px;color:${v!==''?'#1d4ed8':'var(--tx4)'}">${v!==''?v:'.'}</td>`).join('');
+          // tipo 'SS' en el log, índice 1-based según el log (nro)
+          const tSS=pac.notas.map((v,ni)=>{
+            const logKey=`${cu.nombre}|${sg.nombre}|${pac.label}|SS|${ni+1}`;
+            const doc=docenteMap[logKey]||'';
+            const hasVal=v!=='';
+            const tooltip=hasVal&&doc?`data-doc="${esc2(doc)}" onclick="mostrarDocenteNota(this)"`:''
+            const cursor=hasVal&&doc?'cursor:pointer;':'';
+            return`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;padding:5px 3px;color:${hasVal?'var(--n600)':'var(--tx4)'};${cursor}position:relative" ${tooltip}>${hasVal?v:'.'}</td>`;
+          }).join('');
+          const tEx=pac.xNotas.map((v,ni)=>{
+            const logKey=`${cu.nombre}|${sg.nombre}|${pac.label}|Extra|${ni+1}`;
+            const doc=docenteMap[logKey]||'';
+            const hasVal=v!=='';
+            const tooltip=hasVal&&doc?`data-doc="${esc2(doc)}" onclick="mostrarDocenteNota(this)"`:''
+            const cursor=hasVal&&doc?'cursor:pointer;':'';
+            return`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;padding:5px 3px;color:${hasVal?'#1d4ed8':'var(--tx4)'};${cursor}position:relative" ${tooltip}>${hasVal?v:'.'}</td>`;
+          }).join('');
           const ps=pac.promSS;const pe=pac.extraPond;const p=pac.prom;
           const pc='pc'+(p!==''&&p!==undefined?(p>=11?' ok':' no'):'');
           return`<tr>
@@ -1753,6 +1784,32 @@ function renderEstNotas(resultados){
     }).join('');
     return`<div class="est-hoja"><div class="est-hoja-hdr"><h3>${res.asignatura}</h3><p>${res.hoja}</p></div>${bl}</div>`;
   }).join('');
+}
+
+// Muestra un mini popup flotante con el nombre del docente
+let _docPopupTimer=null;
+function mostrarDocenteNota(td){
+  // Quitar popups previos
+  document.querySelectorAll('.nota-doc-popup').forEach(p=>p.remove());
+  clearTimeout(_docPopupTimer);
+  const doc=td.getAttribute('data-doc');
+  if(!doc)return;
+  const popup=document.createElement('div');
+  popup.className='nota-doc-popup';
+  popup.innerHTML=`<span style="font-size:10px;color:var(--tx4);display:block;margin-bottom:2px;text-transform:uppercase;letter-spacing:.6px;font-weight:700">Registrado por</span><span style="font-size:13px;font-weight:700;color:var(--n500)">${doc}</span>`;
+  popup.style.cssText='position:fixed;background:var(--surf);border:1px solid var(--n300);border-radius:10px;padding:8px 12px;box-shadow:0 6px 20px rgba(10,22,40,.18);z-index:9999;pointer-events:none;white-space:nowrap;min-width:120px';
+  document.body.appendChild(popup);
+  // Posicionar cerca de la celda
+  const rect=td.getBoundingClientRect();
+  let top=rect.bottom+6, left=rect.left+rect.width/2-popup.offsetWidth/2;
+  if(top+popup.offsetHeight>window.innerHeight-10) top=rect.top-popup.offsetHeight-6;
+  left=Math.max(8, Math.min(left, window.innerWidth-popup.offsetWidth-8));
+  popup.style.top=top+'px'; popup.style.left=left+'px';
+  // Auto-cerrar
+  _docPopupTimer=setTimeout(()=>popup.remove(), 3000);
+  // Cerrar al click afuera
+  const cerrar=function(e){if(!td.contains(e.target)){popup.remove();document.removeEventListener('click',cerrar);}};
+  setTimeout(()=>document.addEventListener('click',cerrar),10);
 }
 
 // ── EXPORTAR PDF ─────────────────────────────────────────────
