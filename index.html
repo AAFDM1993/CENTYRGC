@@ -1946,20 +1946,28 @@ function renderExpCursos(){
 function selExpCurso(nombre){
   expSelCurso=nombre;
   const pb=g('resumenPreviewBox');if(pb)pb.style.display='none';
-  // Refrescar lista para marcar seleccionado
   if(window._expCursosMap){
     const nombres=Object.keys(window._expCursosMap).sort((a,b)=>a.localeCompare(b,'es'));
     renderExpCursosList(nombres,window._expCursosMap);
   }
-  // Usar datos ya cargados sin re-escanear
   if(window._expCursosMap&&window._expCursosMap[nombre]){
     const grupos=window._expCursosMap[nombre];
-    grupos.sort((a,b)=>a.ciclo.localeCompare(b.ciclo,'es',{numeric:true}));
-    expResumenCombinado={curso:nombre,grupos};
+    // Combinar todos los alumnos en UNA sola lista sin separar por ciclo/hoja
+    const todosAlumnos=[];
+    grupos.forEach(gr=>{
+      gr.alumnos.forEach(al=>{
+        todosAlumnos.push({
+          nombre:al.nombre,
+          codigo:al.codigo,
+          promFinal:al.promFinal,
+          notaApro:Number((gr.cfg||{}).notaApro)||11
+        });
+      });
+    });
+    todosAlumnos.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
+    expResumenCombinado={curso:nombre,alumnos:todosAlumnos,grupos};
     renderResumenPreviewCombinado();
     if(pb)pb.style.display='block';
-  } else {
-    cargarResumenCursoCombinado(nombre);
   }
 }
 
@@ -2013,91 +2021,64 @@ function extraerCicloDeNombre(nombre){
 
 function renderResumenPreviewCombinado(){
   const tbl=g('resumenTable');if(!tbl||!expResumenCombinado)return;
-  if(!expResumenCombinado.grupos.length){tbl.innerHTML='<div class="empty">Sin datos</div>';return;}
-
+  if(!expResumenCombinado.alumnos||!expResumenCombinado.alumnos.length){
+    tbl.innerHTML='<div class="empty">Sin datos</div>';return;
+  }
   let html='<table>';
   html+=`<thead><tr>
     <th style="width:36px">#</th>
-    <th style="width:70px">Ciclo</th>
     <th style="width:100px">Codigo</th>
     <th>Apellidos y Nombres</th>
     <th style="width:80px;text-align:center">Prom.</th>
   </tr></thead><tbody>`;
-
-  let n=0;
-  expResumenCombinado.grupos.forEach(grupo=>{
-    const apro=Number((grupo.cfg||{}).notaApro)||11;
-    const alumnosOrdenados=[...grupo.alumnos].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
-    // Fila separadora de ciclo
-    html+=`<tr><td colspan="5" style="background:var(--n900);color:#fff;padding:6px 12px;font-family:'DM Mono',monospace;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">${grupo.ciclo}</td></tr>`;
-    alumnosOrdenados.forEach(al=>{
-      n++;
-      const p=al.promFinal;
-      const cls=p!==''&&p!==undefined?(p>=apro?'ok':'no'):'';
-      const color=cls==='ok'?'var(--green)':cls==='no'?'var(--red)':'var(--tx3)';
-      html+=`<tr>
-        <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-size:12px;color:var(--tx3);text-align:center">${n}</td>
-        <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-size:11px;color:var(--tx3)">${grupo.ciclo}</td>
-        <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-family:'DM Mono',monospace;font-size:11px;color:var(--n500)">${al.codigo||'-'}</td>
-        <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-size:12px;font-weight:600">${al.nombre}</td>
-        <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-family:'DM Mono',monospace;font-weight:700;text-align:center;color:${color}">${p!==''&&p!==undefined?p:'-'}</td>
-      </tr>`;
-    });
+  expResumenCombinado.alumnos.forEach((al,i)=>{
+    const p=al.promFinal;
+    const apro=al.notaApro||11;
+    const cls=p!==''&&p!==undefined?(p>=apro?'ok':'no'):'';
+    const color=cls==='ok'?'var(--green)':cls==='no'?'var(--red)':'var(--tx3)';
+    html+=`<tr>
+      <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-size:12px;color:var(--tx3);text-align:center">${i+1}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-family:'DM Mono',monospace;font-size:11px;color:var(--n500)">${al.codigo||'-'}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-size:12px;font-weight:600">${al.nombre}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-family:'DM Mono',monospace;font-weight:700;text-align:center;color:${color}">${p!==''&&p!==undefined?p:'-'}</td>
+    </tr>`;
   });
   html+='</tbody></table>';
   tbl.innerHTML=html;
 }
 
 function exportarPDF(){
-  if(!expSelCurso){toast('Selecciona un curso','','warn');return}
-  if(!expResumenCombinado||!expResumenCombinado.grupos.length){toast('Sin datos para exportar','','warn');return}
-
+  // Validación corregida — solo necesita curso seleccionado y datos combinados
+  if(!expSelCurso||!expResumenCombinado||!expResumenCombinado.alumnos||!expResumenCombinado.alumnos.length){
+    toast('Selecciona un curso primero','','warn');return;
+  }
   const fecha=new Date().toLocaleDateString('es-PE',{year:'numeric',month:'long',day:'numeric'});
   const logoUrl=getLogoUrl();
-  // Usar semestre del primer grupo que lo tenga
-  const semestre=expResumenCombinado.grupos.map(g=>g.cfg.semestre).find(s=>s)||'';
-
-  // Construir filas agrupadas por ciclo
+  // Semestre del primer grupo que lo tenga
+  const semestre=(expResumenCombinado.grupos||[]).map(g=>g.cfg&&g.cfg.semestre).find(s=>s)||'';
+  const apro=expResumenCombinado.alumnos[0]&&expResumenCombinado.alumnos[0].notaApro||11;
+ 
+  // Filas sin columna de ciclo
   let filas='';
-  let n=0;
-  expResumenCombinado.grupos.forEach(grupo=>{
-    const apro=Number((grupo.cfg||{}).notaApro)||11;
-    const alumnosOrdenados=[...grupo.alumnos].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
-    // Encabezado de ciclo
-    filas+=`<tr><td colspan="5" style="background:#0a1628;color:#fff;padding:7px 12px;font-family:monospace;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">${grupo.ciclo} &nbsp;·&nbsp; ${alumnosOrdenados.length} alumno${alumnosOrdenados.length!==1?'s':''}</td></tr>`;
-    alumnosOrdenados.forEach(al=>{
-      n++;
-      const p=al.promFinal;
-      const aprobado=p!==''&&p!==undefined&&p>=apro;
-      const desaprobado=p!==''&&p!==undefined&&p<apro;
-      const color=aprobado?'#059669':desaprobado?'#dc2626':'#64748b';
-      filas+=`<tr>
-        <td style="text-align:center;color:#64748b;font-size:11px;padding:7px 10px">${n}</td>
-        <td style="font-size:11px;color:#334155;padding:7px 10px">${grupo.ciclo}</td>
-        <td style="font-family:monospace;font-size:11px;color:#1d4ed8;padding:7px 10px">${al.codigo||'-'}</td>
-        <td style="font-weight:600;font-size:12px;padding:7px 10px">${al.nombre}</td>
-        <td style="text-align:center;font-family:monospace;font-weight:700;font-size:13px;color:${color};padding:7px 10px">${p!==''&&p!==undefined?p:'-'}</td>
-      </tr>`;
-    });
-  });
-
-  // Resumen estadístico por ciclo
-  let statsRows='';
-  expResumenCombinado.grupos.forEach(grupo=>{
-    const apro=Number((grupo.cfg||{}).notaApro)||11;
-    const conNota=grupo.alumnos.filter(a=>a.promFinal!==''&&a.promFinal!==undefined);
-    const aprobados=conNota.filter(a=>a.promFinal>=apro).length;
-    const total=grupo.alumnos.length;
-    const pct=conNota.length?Math.round(aprobados/conNota.length*100):0;
-    statsRows+=`<tr>
-      <td style="padding:6px 12px;font-weight:600;font-size:12px">${grupo.ciclo}</td>
-      <td style="padding:6px 12px;text-align:center;font-size:12px">${total}</td>
-      <td style="padding:6px 12px;text-align:center;color:#059669;font-weight:700;font-size:12px">${aprobados}</td>
-      <td style="padding:6px 12px;text-align:center;color:#dc2626;font-weight:700;font-size:12px">${conNota.length-aprobados}</td>
-      <td style="padding:6px 12px;text-align:center;font-weight:700;font-size:12px">${pct}%</td>
+  expResumenCombinado.alumnos.forEach((al,i)=>{
+    const p=al.promFinal;
+    const aprobado=p!==''&&p!==undefined&&p>=al.notaApro;
+    const desaprobado=p!==''&&p!==undefined&&p<al.notaApro;
+    const color=aprobado?'#059669':desaprobado?'#dc2626':'#64748b';
+    filas+=`<tr>
+      <td style="text-align:center;color:#64748b;font-size:11px;padding:7px 10px">${i+1}</td>
+      <td style="font-family:monospace;font-size:11px;color:#1d4ed8;padding:7px 10px">${al.codigo||'-'}</td>
+      <td style="font-weight:600;font-size:12px;padding:7px 10px">${al.nombre}</td>
+      <td style="text-align:center;font-family:monospace;font-weight:700;font-size:13px;color:${color};padding:7px 10px">${p!==''&&p!==undefined?p:'-'}</td>
     </tr>`;
   });
-
+ 
+  // Resumen estadístico al pie
+  const conNota=expResumenCombinado.alumnos.filter(a=>a.promFinal!==''&&a.promFinal!==undefined);
+  const aprobados=conNota.filter(a=>a.promFinal>=a.notaApro).length;
+  const pct=conNota.length?Math.round(aprobados/conNota.length*100):0;
+  const total=expResumenCombinado.alumnos.length;
+ 
   const htmlPDF=`<!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8">
 <title>Registro de Notas - ${expSelCurso}</title>
@@ -2109,30 +2090,27 @@ body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#0f172a}
 .logo-box{width:80px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
 .logo-box img{max-width:80px;max-height:70px;object-fit:contain}
 .inst-info{flex:1}
-.inst-univ{font-size:10px;font-weight:700;color:#0a1628;text-transform:uppercase;letter-spacing:.6px;line-height:1.5}
-.inst-fac{font-size:9.5px;color:#334155;text-transform:uppercase;letter-spacing:.5px;line-height:1.5}
-.inst-esc{font-size:9.5px;color:#1d4ed8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;line-height:1.5}
+.inst-univ{font-size:10px;font-weight:700;color:#0a1628;text-transform:uppercase;letter-spacing:.6px;line-height:1.6}
+.inst-fac{font-size:9.5px;color:#334155;text-transform:uppercase;letter-spacing:.5px;line-height:1.6}
+.inst-esc{font-size:9.5px;color:#1d4ed8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;line-height:1.6}
 .titulo{margin-bottom:14px}
 .titulo h1{font-size:15px;font-weight:800;color:#0a1628;margin-bottom:3px}
 .titulo h2{font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:8px}
 .meta{display:flex;gap:18px;font-size:11px;color:#334155;flex-wrap:wrap}
-.meta-item{display:flex;gap:5px}
-.meta-item strong{color:#0a1628}
+.meta-item{display:flex;gap:5px}.meta-item strong{color:#0a1628}
 table{width:100%;border-collapse:collapse;margin-top:6px}
 thead th{background:#0a1628;color:#fff;padding:9px 10px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.3px}
 thead th.c{text-align:center}
-tbody tr:nth-child(even){background:#f8faff}
-tbody tr:nth-child(odd){background:#fff}
+tbody tr:nth-child(even){background:#f8faff}tbody tr:nth-child(odd){background:#fff}
 tbody td{border-bottom:1px solid #e2e8f0;vertical-align:middle}
 tbody tr:last-child td{border-bottom:2px solid #0a1628}
-.stats-section{margin-top:24px;page-break-inside:avoid}
-.stats-section h3{font-size:12px;font-weight:700;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}
-.stats-table{width:auto;min-width:60%}
-.stats-table thead th{font-size:10px}
-.stats-table tbody td{font-size:11px}
+.stats-box{margin-top:20px;padding:12px 16px;background:#f8faff;border:1px solid #e2e8f0;border-radius:8px;display:flex;gap:28px;flex-wrap:wrap;page-break-inside:avoid}
+.stat-item{text-align:center}
+.stat-num{font-size:22px;font-weight:800;line-height:1.1}
+.stat-lbl{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.stat-apro{color:#059669}.stat-desapro{color:#dc2626}.stat-total{color:#0a1628}.stat-pct{color:#1d4ed8}
 @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-</style></head>
-<body>
+</style></head><body>
 <div class="hdr-pdf">
   <div class="logo-box"><img src="${logoUrl}" alt="Logo" onerror="this.style.display='none'"></div>
   <div class="inst-info">
@@ -2143,44 +2121,36 @@ tbody tr:last-child td{border-bottom:2px solid #0a1628}
 </div>
 <div class="titulo">
   <h1>${expSelCurso}</h1>
-  <h2>Registro consolidado por ciclo</h2>
+  <h2>Registro consolidado de notas</h2>
   <div class="meta">
     ${semestre?`<div class="meta-item"><strong>Semestre:</strong><span>${semestre}</span></div>`:''}
-    <div class="meta-item"><strong>Ciclos:</strong><span>${expResumenCombinado.grupos.map(g=>g.ciclo).join(', ')}</span></div>
+    <div class="meta-item"><strong>Total alumnos:</strong><span>${total}</span></div>
     <div class="meta-item"><strong>Fecha:</strong><span>${fecha}</span></div>
   </div>
 </div>
 <table>
   <thead><tr>
     <th class="c" style="width:34px">#</th>
-    <th style="width:80px">Ciclo</th>
     <th style="width:100px">Codigo</th>
     <th>Apellidos y Nombres</th>
     <th class="c" style="width:90px">Prom. Final</th>
   </tr></thead>
   <tbody>${filas}</tbody>
 </table>
-<div class="stats-section">
-  <h3>Resumen por ciclo</h3>
-  <table class="stats-table">
-    <thead><tr>
-      <th>Ciclo</th>
-      <th class="c">Total</th>
-      <th class="c">Aprobados</th>
-      <th class="c">Desaprobados</th>
-      <th class="c">% Aprobacion</th>
-    </tr></thead>
-    <tbody>${statsRows}</tbody>
-  </table>
+<div class="stats-box">
+  <div class="stat-item"><div class="stat-num stat-total">${total}</div><div class="stat-lbl">Total</div></div>
+  <div class="stat-item"><div class="stat-num stat-apro">${aprobados}</div><div class="stat-lbl">Aprobados</div></div>
+  <div class="stat-item"><div class="stat-num stat-desapro">${conNota.length-aprobados}</div><div class="stat-lbl">Desaprobados</div></div>
+  <div class="stat-item"><div class="stat-num stat-pct">${pct}%</div><div class="stat-lbl">Aprobacion</div></div>
 </div>
 <script>window.onload=function(){window.print()}<\/script>
 </body></html>`;
-
+ 
   try{
     const blob=new Blob([htmlPDF],{type:'text/html;charset=utf-8'});
     const burl=URL.createObjectURL(blob);
     const win=window.open(burl,'_blank');
-    if(!win){toast('Habilita popups','','warn');URL.revokeObjectURL(burl);return}
+    if(!win){toast('Habilita popups en el navegador','','warn');URL.revokeObjectURL(burl);return}
     setTimeout(()=>URL.revokeObjectURL(burl),60000);
   }catch(ex){
     const win=window.open('','_blank');
