@@ -897,7 +897,6 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
   <h2 id="edTitle">Editor</h2>
   <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
     <span class="badge" id="edBadge">-</span>
-    <button onclick="editarPctExtraGlobal()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:8px;color:#fff;font-size:11px;font-weight:700;padding:5px 12px;cursor:pointer;white-space:nowrap" title="Cambiar % extra de toda la hoja">&#9881; % Extra</button>
   </div>
 </div>
           <div class="ed-filter" id="edFilter" style="display:none">
@@ -1949,7 +1948,6 @@ function renderAlBlock(al,ai,apro){
       let thS='',thE='';
       for(let i=0;i<base;i++){const lbl=i===0?'EV':'S'+i;thS+=`<th class="th-ss">${lbl}</th>`;}
       for(let i=0;i<extra;i++)thE+=`<th class="th-ss">S${base+i}</th>`;
-      const pct=sg.pctExtra!==undefined?sg.pctExtra:20;
       const rows=sg.pacientes.map((pac,pi)=>{
         const nv=pac.nombre||'';
         let sc='',ec='';
@@ -2004,10 +2002,11 @@ async function saveNota(inp){
   if(tipo==='ss' && idx>=2 && valor!==''){
     const notaActual = parseFloat(valor);
     const inputs = inp.closest('tr').querySelectorAll('input.nc:not(.ex)');
-    const notaAnterior = inputs[idx-1] ? parseFloat(inputs[idx-1].value) : null;
+    const inputAnterior = inputs[idx-1];
+    const notaAnterior = inputAnterior ? parseFloat(inputAnterior.value) : null;
 
-    // Preguntar siempre desde la 3ra sesión si hay sesión anterior registrada
-    if(notaAnterior !== null && !isNaN(notaAnterior)){
+    // Preguntar siempre desde la 3ra sesión (idx>=2), haya o no nota anterior
+    {
       const huboMejoria = await preguntarMejoria(pac, curso, sgr, idx+1);
       if(!huboMejoria){
         // Sin mejoría: la nota debe ser ≤ 10
