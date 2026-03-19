@@ -593,9 +593,8 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
 <div id="loginPage">
   <div class="login-card">
     <div class="login-logo" style="flex-direction:column;gap:16px;text-align:center">
-  <img id="logoLogin" src="" alt="CENTYR" style="width:320px;height:auto;object-fit:contain;display:none;border-radius:10px;margin:0 auto">
-  <div class="lmark" id="logoLoginFallback" style="width:80px;height:80px;font-size:28px;margin:0 auto">FT</div>
-</div>
+      <img id="logoLogin" src="" alt="CENTYR" style="width:320px;height:auto;object-fit:contain;display:none;border-radius:10px;margin:0 auto">
+      <div class="lmark" id="logoLoginFallback" style="width:80px;height:80px;font-size:28px;margin:0 auto">FT</div>
     </div>
     <div class="login-field"><label>Codigo</label><input class="login-inp" id="lgCode" placeholder="Codigo de usuario" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <div class="login-field"><label>Contrasena</label><input class="login-inp" id="lgPass" type="password" placeholder="**********" onkeydown="if(event.key==='Enter')doLogin()"></div>
@@ -1549,10 +1548,6 @@ async function eliminarUsuarioDB(codigo){
     toast('Usuario eliminado','','ok');cargarUsuarios();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
-<div class="import-box">
-  <h4>&#128196; Importar alumnos como usuarios</h4>
-  <p>Extrae codigos y nombres directamente de las planillas de notas en Google Sheets. La contrasena inicial sera igual al codigo. No sobreescribe usuarios existentes.</p>
-
   <!-- Fuente 1: desde planillas del Sheets -->
   <button class="btn-sm green" onclick="importarDesdePlanillas()" style="width:100%;margin-bottom:7px">
     &#128203; Importar desde planillas de notas
