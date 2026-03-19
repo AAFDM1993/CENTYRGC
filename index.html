@@ -2103,7 +2103,7 @@ function renderEstNotas(resultados) {
   box.innerHTML = resultados.map(res => {
     // 1. Mapeo de cursos
     const bl = res.cursos.map(cu => {
-      const subgrupos = cu.subgrupos.map(sg => {{
+      const subgrupos = cu.subgrupos.map(sg => {
         const base = sg.notasBase || 0, extra = sg.notasExtra || 0;
         let thS = '', thE = '';
         
