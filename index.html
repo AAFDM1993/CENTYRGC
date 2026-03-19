@@ -2719,21 +2719,27 @@ function renderCalendario(){
   const todosLosDias=[];
   for(let i=0;i<5;i++){const d=new Date(calFechaBase);d.setDate(d.getDate()+i);todosLosDias.push(d);}
   // Ocultar días pasados SOLO si la semana mostrada es la semana actual
-  const semanaActual=fmt(getLunes(new Date()))===fmt(calFechaBase);
-  const dias=semanaActual
-    ? todosLosDias.filter(d=>{
-        const fd=fmt(d);
-        if(fd>hoy) return true; // día futuro: siempre mostrar
-        if(fd===hoy) return true; // hoy: siempre mostrar
-        // día pasado: ocultar solo si ya terminó completamente (último slot pasado)
-        const ultimaFranja=agendaCfg.franjas&&agendaCfg.franjas.length
-          ? agendaCfg.franjas[agendaCfg.franjas.length-1].fin
-          : '19:00';
-        const [hh,mm]=ultimaFranja.split(':').map(Number);
-        const finDia=new Date(fd+'T'+ultimaFranja+':00');
-        return finDia>ahora; // si aún no terminó, mostrar
-      })
-    : todosLosDias;
+  const ultimaFranjaG = agendaCfg.franjas&&agendaCfg.franjas.length
+    ? agendaCfg.franjas[agendaCfg.franjas.length-1].fin : '19:00';
+  const semanaActual = fmt(getLunes(new Date()))===fmt(calFechaBase);
+  let dias;
+  if(semanaActual){
+    // Ventana deslizante: próximos 7 días hábiles (lun-vie) aún no terminados
+    const diasHabiles=[];
+    let cursor=new Date(); cursor.setHours(0,0,0,0);
+    while(diasHabiles.length<7){
+      const dow=cursor.getDay();
+      if(dow>=1&&dow<=5){
+        const fd=fmt(cursor);
+        const finDia=new Date(fd+'T'+ultimaFranjaG+':00');
+        if(finDia>ahora) diasHabiles.push(new Date(cursor));
+      }
+      cursor.setDate(cursor.getDate()+1);
+    }
+    dias=diasHabiles;
+  } else {
+    dias=todosLosDias;
+  }
   const esAdmin=session&&session.rol==='admin';
   const esDocente=session&&session.rol==='docente';
   const puedeElim=esAdmin||esDocente;
@@ -3074,18 +3080,26 @@ function renderCalendarioEst(){
   const ahora2=new Date();
   const todosLosDiasEst=[];
   for(let i=0;i<5;i++){const d=new Date(calEstFechaBase);d.setDate(d.getDate()+i);todosLosDiasEst.push(d);}
-  const semanaActualEst=fmt(getLunes(new Date()))===fmt(calEstFechaBase);
-  const dias=semanaActualEst
-    ? todosLosDiasEst.filter(d=>{
-        const fd=fmt(d);
-        if(fd>=hoy) return true;
-        const ultimaFranja=agendaCfg.franjas&&agendaCfg.franjas.length
-          ? agendaCfg.franjas[agendaCfg.franjas.length-1].fin
-          : '19:00';
-        const finDia=new Date(fd+'T'+ultimaFranja+':00');
-        return finDia>ahora2;
-      })
-    : todosLosDiasEst;
+  const ultimaFranjaGEst = agendaCfg.franjas&&agendaCfg.franjas.length
+    ? agendaCfg.franjas[agendaCfg.franjas.length-1].fin : '19:00';
+  const semanaActualEst = fmt(getLunes(new Date()))===fmt(calEstFechaBase);
+  let dias;
+  if(semanaActualEst){
+    const diasHabilesEst=[];
+    let cursorEst=new Date(); cursorEst.setHours(0,0,0,0);
+    while(diasHabilesEst.length<7){
+      const dow=cursorEst.getDay();
+      if(dow>=1&&dow<=5){
+        const fd=fmt(cursorEst);
+        const finDia=new Date(fd+'T'+ultimaFranjaGEst+':00');
+        if(finDia>ahora2) diasHabilesEst.push(new Date(cursorEst));
+      }
+      cursorEst.setDate(cursorEst.getDate()+1);
+    }
+    dias=diasHabilesEst;
+  } else {
+    dias=todosLosDiasEst;
+  }
 
   // Ancho de columna de días
   const dw=window.innerWidth<=480?110:window.innerWidth<=768?140:200;
