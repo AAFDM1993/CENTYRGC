@@ -4016,57 +4016,9 @@ function editarPctExtra(alumno, curso, subgrupo, ai, ci, si, pctActual){
   setTimeout(()=>{ const i=g('pctExtraInput'); if(i){i.focus();i.select();} }, 100);
 }
 
-function cerrarPctExtraModal(){
-  const m = g('pctExtraModal');
-  if(m) m.style.display='none';
-  _pctExtraCtx = null;
-}
-
-async function guardarPctExtra(){
-  if(!_pctExtraCtx) return;
-  const val = parseInt(g('pctExtraInput').value);
-  const err = g('pctExtraErr');
-  if(isNaN(val)||val<0||val>100){
-    err.textContent='Ingresa un valor entre 0 y 100';
-    err.style.display='block'; return;
-  }
-  const {alumno, curso, subgrupo, ai, ci, si} = _pctExtraCtx;
-  showLoader('Guardando...');
-  try{
-    const r = await apiPost({
-      action: 'guardarPctExtra',
-      hoja: hojaActiva,
-      alumno, curso, subgrupo,
-      pctExtra: val
-    });
-    hideLoader();
-    if(!r.ok) throw new Error(r.error||'Error al guardar');
-    // Actualizar badge en el editor sin recargar
-    const badge = g('pctBadge_'+ai+'_'+ci+'_'+si);
-    if(badge) badge.textContent = val+'%extra';
-    // Actualizar en hojaData
-    if(hojaData&&hojaData.alumnos[ai]&&
-       hojaData.alumnos[ai].cursos[ci]&&
-       hojaData.alumnos[ai].cursos[ci].subgrupos[si]){
-      hojaData.alumnos[ai].cursos[ci].subgrupos[si].pctExtra = val;
-    }
-    toast('Porcentaje actualizado', val+'% para '+subgrupo, 'ok');
-    cerrarPctExtraModal();
-  }catch(e){
-    hideLoader();
-    err.textContent = e.message;
-    err.style.display = 'block';
-  }
-}
-
-// Cerrar modal al hacer clic fuera
-g('pctExtraModal')&&g('pctExtraModal').addEventListener('click',function(e){
-  if(e.target===this) cerrarPctExtraModal();
-});
 // ── EDITAR % EXTRA GLOBAL (toda la hoja) ─────────────────
 function editarPctExtraGlobal(){
   if(!hojaActiva||!hojaData){ toast('Abre una hoja primero','','warn'); return; }
-  // Detectar el pctExtra actual del primer subgrupo que encuentre
   let pctActual = 20;
   outer: for(const al of hojaData.alumnos){
     for(const cu of al.cursos||[]){
@@ -4107,7 +4059,6 @@ async function guardarPctExtra(){
     });
     hideLoader();
     if(!r.ok) throw new Error(r.error||'Error al guardar');
-    // Actualizar hojaData localmente y todos los badges
     if(hojaData){
       hojaData.alumnos.forEach((al,ai)=>{
         (al.cursos||[]).forEach((cu,ci)=>{
@@ -4131,9 +4082,8 @@ async function guardarPctExtra(){
 g('pctExtraModal')&&g('pctExtraModal').addEventListener('click',function(e){
   if(e.target===this) cerrarPctExtraModal();
 });
-// ── MEJORÍA Y PACIENTE EXTRA ──────────────────────────────
 
-// Popup pregunta mejoría — devuelve Promise<boolean>
+// ── MEJORÍA Y PACIENTE EXTRA ──────────────────────────────
 function preguntarMejoria(pac, curso, sgr, sesion){
   return new Promise(resolve=>{
     const m = g('mejoriaModal');
@@ -4141,10 +4091,9 @@ function preguntarMejoria(pac, curso, sgr, sesion){
     if(sub) sub.textContent = curso+' · '+sgr+' · '+pac+' · Sesión '+sesion;
     if(m){
       m.style.display='flex';
-      // Guardar resolve en el modal para que los botones lo usen
       m._resolve = resolve;
     } else {
-      resolve(true); // fallback si no existe el modal
+      resolve(true);
     }
   });
 }
@@ -4158,7 +4107,6 @@ function responderMejoria(huboMejoria){
   }
 }
 
-// Popup ofrecer paciente extra
 async function ofrecerPacienteExtra(alumno, curso, sgr, notasBase, notasExtra, inp){
   const m = g('pacExtraModal');
   const sub = g('pacExtraModalSub');
@@ -4190,13 +4138,13 @@ async function confirmarPacienteExtra(){
     hideLoader();
     if(!r.ok) throw new Error(r.error);
     toast('Paciente extra agregado','Recargando editor...','ok');
-    // Recargar la hoja para mostrar el nuevo paciente
     setTimeout(()=>abrirHoja(hojaActiva), 600);
   }catch(e){
     hideLoader();
     toast('Error al agregar paciente extra', e.message, 'err');
   }
 }
+
 async function actualizarTodasPlanillas(){
   if(!confirm('¿Actualizar las fórmulas y etiquetas de TODAS las planillas existentes?\nEsto no borra notas, solo actualiza la estructura.')) return;
   showLoader('Actualizando todas las planillas...');
@@ -4211,6 +4159,7 @@ async function actualizarTodasPlanillas(){
     toast('Error al actualizar', e.message, 'err');
   }
 }
+
 function abrirPassModal(){ mostrarCambioPass(); }
 </script>
 </body>
