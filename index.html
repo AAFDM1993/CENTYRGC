@@ -1213,6 +1213,41 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
     </div>
   </div>
 </div>
+<!-- Modal mejoría -->
+<div id="mejoriaModal" style="position:fixed;inset:0;background:rgba(10,22,40,.7);z-index:820;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+  <div style="background:var(--surf);border-radius:16px;padding:24px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(10,22,40,.4)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <span style="font-size:28px">🩺</span>
+      <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--n900)">¿Hubo mejoría del paciente?</h3>
+    </div>
+    <p id="mejoriaModalSub" style="font-size:12px;color:var(--tx3);margin-bottom:6px"></p>
+    <p style="font-size:12px;color:var(--tx3);margin-bottom:20px;background:var(--amber2);border:1px solid rgba(217,119,6,.3);border-radius:8px;padding:8px 12px;color:#92400e">
+      La nota ingresada es mayor a la sesión anterior. Si no hubo mejoría real, la nota debe ser ≤ 10.
+    </p>
+    <div style="display:flex;gap:8px">
+      <button onclick="responderMejoria(true)" class="btn-sm green" style="flex:1">✓ Sí, hubo mejoría</button>
+      <button onclick="responderMejoria(false)" style="flex:1;background:var(--red);color:#fff;border:none;border-radius:10px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer">✗ No hubo mejoría</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal paciente extra -->
+<div id="pacExtraModal" style="position:fixed;inset:0;background:rgba(10,22,40,.7);z-index:820;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+  <div style="background:var(--surf);border-radius:16px;padding:24px;width:100%;max-width:400px;box-shadow:0 24px 60px rgba(10,22,40,.4)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <span style="font-size:28px">⚠️</span>
+      <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--n900)">Paciente sin mejoría</h3>
+    </div>
+    <p id="pacExtraModalSub" style="font-size:12px;color:var(--tx3);margin-bottom:8px;font-weight:600"></p>
+    <p style="font-size:12px;color:var(--tx3);margin-bottom:20px;line-height:1.6;background:var(--amber2);border:1px solid rgba(217,119,6,.3);border-radius:8px;padding:10px 12px;color:#92400e">
+      Este paciente completó todas sus sesiones <strong>sin mejoría</strong>. Según el reglamento, el alumno debe continuar con este paciente y agregar <strong>uno adicional con la misma patología</strong> para que sea considerado en el RECORD.
+    </p>
+    <div style="display:flex;gap:8px">
+      <button onclick="confirmarPacienteExtra()" class="btn-sm" style="flex:1;background:var(--amber);border:none;border-radius:10px;color:#fff;font-size:12px;font-weight:700;padding:10px;cursor:pointer">+ Agregar paciente extra</button>
+      <button onclick="cerrarPacExtraModal()" class="btn-ghost">Ahora no</button>
+    </div>
+  </div>
+</div>
 <div id="toast"><div class="tt" id="ttt"></div><div class="tm" id="ttm"></div></div>
 
 <script>
@@ -1929,8 +1964,13 @@ function renderAlBlock(al,ai,apro){
         for(let ni=0;ni<extra;ni++){const v=pac.xNotas&&pac.xNotas[ni]!==undefined&&pac.xNotas[ni]!==''?pac.xNotas[ni]:'';ec+=`<td><input type="number" class="nc ex ${v!==''?'v':''}" value="${v}" min="0" max="20" step="0.5" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" data-tipo="extra" data-idx="${ni}" data-base="${base}" data-extra="${extra}" onchange="saveNota(this)" onfocus="this.select()"></td>`}
         const ps=pac.promSS;const pe=pac.extraPond;const p=pac.prom;
         const pc='pc'+(p!==''&&p!==undefined?(p>=apro?' ok':' no'):'');
-        return`<tr>
-          <td class="td-pac">${pac.label}</td>
+        const esExtra = pac.label.indexOf('X')>=0 || (pi >= hojaData.alumnos[ai]?.cursos[ci]?.subgrupos[si]?.numPacientesBase);
+        const rowBg = esExtra ? 'background:linear-gradient(90deg,rgba(217,119,6,.08),transparent);' : '';
+        const pacLabel = esExtra
+          ? `${pac.label} <span style="background:var(--amber);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">+patología</span>`
+          : pac.label;
+        return`<tr style="${rowBg}">
+          <td class="td-pac">${pacLabel}</td>
           <td><input class="nn ${nv?'has-val':''}" value="${esc2(nv)}" placeholder="Nombre paciente" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" onchange="saveNombrePac(this)" onfocus="this.select()"></td>
           ${sc}${ec}
           <td style="text-align:center"><span class="pc" id="ps_${ai}_${ci}_${si}_${pi}" style="background:var(--n800);color:var(--n300)">${ps!==''&&ps!==undefined?ps:'-'}</span></td>
@@ -1967,6 +2007,42 @@ async function saveNota(inp){
   const key=alumno+'|'+curso+'|'+sgr+'|'+pac+'|'+tipo+'|'+idx;
   valor!==''?inp.classList.add('v'):inp.classList.remove('v');
   clearTimeout(saveTimers[key]);
+
+  // Solo verificar mejoría en notas SS desde la 3ra sesión (idx >= 2)
+  if(tipo==='ss' && idx>=2 && valor!==''){
+    const notaActual = parseFloat(valor);
+    // Buscar nota de la sesión anterior en el mismo paciente
+    const inputs = inp.closest('tr').querySelectorAll('input.nc:not(.ex)');
+    const notaAnterior = inputs[idx-1] ? parseFloat(inputs[idx-1].value) : null;
+
+    if(notaAnterior !== null && !isNaN(notaAnterior) && notaActual > notaAnterior){
+      // La nota subió — preguntar si hubo mejoría
+      const mejoria = await preguntarMejoria(pac, curso, sgr, idx+1);
+      if(!mejoria){
+        // No hubo mejoría — verificar que la nota sea ≤ 10
+        if(notaActual > 10){
+          inp.value = '';
+          inp.classList.remove('v');
+          toast('Sin mejoría','La nota debe ser ≤ 10 en esta sesión','warn');
+          return;
+        }
+      }
+      // Si mejoria=true, continuar guardando normal
+    }
+
+    // Verificar si se completaron todas las SS y no hubo mejoría
+    const todasLlenas = Array.from(inputs).every(i => i.value.trim() !== '');
+    if(todasLlenas && valor !== ''){
+      // Verificar si la última respuesta fue "no mejoría"
+      const ultimaNota = parseFloat(inputs[base-1]?.value||'0');
+      const penultimaNota = parseFloat(inputs[base-2]?.value||'0');
+      if(ultimaNota <= 10 && ultimaNota <= penultimaNota){
+        // Posible no mejoría al completar — ofrecer paciente extra
+        setTimeout(()=>ofrecerPacienteExtra(alumno,curso,sgr,base,extra,inp),800);
+      }
+    }
+  }
+
   saveTimers[key]=setTimeout(async()=>{
     try{
       const r=await apiPost({action:'guardarNota',hoja:hojaActiva,alumno,curso,subgrupo:sgr,pacLabel:pac,tipo,idx,valor:valor===''?'':parseFloat(valor),notasBase:base,notasExtra:extra});
@@ -4058,6 +4134,72 @@ async function guardarPctExtra(){
 g('pctExtraModal')&&g('pctExtraModal').addEventListener('click',function(e){
   if(e.target===this) cerrarPctExtraModal();
 });
+// ── MEJORÍA Y PACIENTE EXTRA ──────────────────────────────
+
+// Popup pregunta mejoría — devuelve Promise<boolean>
+function preguntarMejoria(pac, curso, sgr, sesion){
+  return new Promise(resolve=>{
+    const m = g('mejoriaModal');
+    const sub = g('mejoriaModalSub');
+    if(sub) sub.textContent = curso+' · '+sgr+' · '+pac+' · Sesión '+sesion;
+    if(m){
+      m.style.display='flex';
+      // Guardar resolve en el modal para que los botones lo usen
+      m._resolve = resolve;
+    } else {
+      resolve(true); // fallback si no existe el modal
+    }
+  });
+}
+
+function responderMejoria(huboMejoria){
+  const m = g('mejoriaModal');
+  if(m){
+    m.style.display='none';
+    if(m._resolve) m._resolve(huboMejoria);
+    m._resolve = null;
+  }
+}
+
+// Popup ofrecer paciente extra
+async function ofrecerPacienteExtra(alumno, curso, sgr, notasBase, notasExtra, inp){
+  const m = g('pacExtraModal');
+  const sub = g('pacExtraModalSub');
+  if(sub) sub.textContent = alumno+' · '+curso+' · '+sgr;
+  if(m){
+    m.style.display='flex';
+    m._ctx = {alumno, curso, sgr, notasBase, notasExtra};
+  }
+}
+
+function cerrarPacExtraModal(){
+  const m = g('pacExtraModal');
+  if(m){ m.style.display='none'; m._ctx=null; }
+}
+
+async function confirmarPacienteExtra(){
+  const m = g('pacExtraModal');
+  if(!m||!m._ctx) return;
+  const {alumno, curso, sgr, notasBase, notasExtra} = m._ctx;
+  cerrarPacExtraModal();
+  showLoader('Agregando paciente extra...');
+  try{
+    const r = await apiPost({
+      action: 'agregarPacienteExtra',
+      hoja: hojaActiva,
+      alumno, curso, subgrupo: sgr,
+      notasBase, notasExtra
+    });
+    hideLoader();
+    if(!r.ok) throw new Error(r.error);
+    toast('Paciente extra agregado','Recargando editor...','ok');
+    // Recargar la hoja para mostrar el nuevo paciente
+    setTimeout(()=>abrirHoja(hojaActiva), 600);
+  }catch(e){
+    hideLoader();
+    toast('Error al agregar paciente extra', e.message, 'err');
+  }
+} 
 function abrirPassModal(){ mostrarCambioPass(); }
 </script>
 </body>
