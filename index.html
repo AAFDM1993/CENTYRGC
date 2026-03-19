@@ -1909,6 +1909,8 @@ function renderEditor(){
   g('edTitle').textContent='Editor: '+hojaActiva;
   g('edBadge').textContent=hojaData.alumnos.length+' alumnos';
   const fb=g('edFilter');fb.style.display=(esD||session.rol==='admin')?'flex':'none';
+  const btnPct=document.querySelector('#edCard .chdr button[onclick="editarPctExtraGlobal()"]');
+  if(btnPct) btnPct.style.display=session.rol==='admin'?'':'none';
   g('filterText').value='';g('filterCnt').textContent='';
   g('edBody').innerHTML=hojaData.alumnos.map((al,ai)=>renderAlBlock(al,ai,apro)).join('');
 }
@@ -1936,14 +1938,7 @@ function renderAlBlock(al,ai,apro){
           <td style="text-align:center"><span class="${pc} nf" id="pc_${ai}_${ci}_${si}_${pi}">${p!==''&&p!==undefined?p:'-'}</span></td>
         </tr>`;
       }).join('')||'<tr><td colspan="99" class="empty" style="padding:8px">Sin pacientes</td></tr>';
-      return`<div class="pv-sgr-hdr" style="display:flex;align-items:center;justify-content:space-between">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span>${sg.nombre}</span>
-          <span class="pv-sgr-badge">${base}SS+${extra}E</span>
-          <span class="pv-sgr-badge" id="pctBadge_${ai}_${ci}_${si}">${pct}%extra</span>
-        </div>
-        <button onclick="editarPctExtra('${esc(al.nombre)}','${esc(cu.nombre)}','${esc(sg.nombre)}',${ai},${ci},${si},${pct})" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:6px;color:#fff;font-size:10px;font-weight:700;padding:3px 9px;cursor:pointer;white-space:nowrap" title="Cambiar porcentaje extra">&#9881; % extra</button>
-      </div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-xp">Extra ${pct}%</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span><span class="pv-sgr-badge">${base}SS+${extra}E</span><span class="pv-sgr-badge" id="pctBadge_${ai}_${ci}_${si}">${pct}%extra</span></div><div style="overflow-x:auto">><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-xp">Extra ${pct}%</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
     }).join('');
     return`<div class="pv-cu-hdr">${cu.nombre}</div>${sb}`;
   }).join('');
