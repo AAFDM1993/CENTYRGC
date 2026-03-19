@@ -4000,23 +4000,10 @@ async function cargarCasillerosSoloLectura(){
   }catch(e){box.innerHTML='<div style="padding:8px;color:var(--red);font-size:12px">Error: '+e.message+'</div>';}
 }
 function cargarCasilleroEstudiante(){}
-// ── EDITAR PORCENTAJE EXTRA ───────────────────────────────
-let _pctExtraCtx = null;
-
-function editarPctExtra(alumno, curso, subgrupo, ai, ci, si, pctActual){
-  _pctExtraCtx = {alumno, curso, subgrupo, ai, ci, si};
-  const sub = g('pctExtraModalSub');
-  if(sub) sub.textContent = alumno + ' · ' + curso + ' · ' + subgrupo;
-  const inp = g('pctExtraInput');
-  if(inp){ inp.value = pctActual; }
-  const err = g('pctExtraErr');
-  if(err){ err.style.display='none'; err.textContent=''; }
-  const m = g('pctExtraModal');
-  if(m){ m.style.display='flex'; }
-  setTimeout(()=>{ const i=g('pctExtraInput'); if(i){i.focus();i.select();} }, 100);
-}
 
 // ── EDITAR % EXTRA GLOBAL (toda la hoja) ─────────────────
+let _pctExtraCtx = null;
+
 function editarPctExtraGlobal(){
   if(!hojaActiva||!hojaData){ toast('Abre una hoja primero','','warn'); return; }
   let pctActual = 20;
