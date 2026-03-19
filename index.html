@@ -1187,7 +1187,26 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
     </div>
   </div>
 </div>
-
+<!-- Modal editar % extra -->
+<div id="pctExtraModal" style="position:fixed;inset:0;background:rgba(10,22,40,.65);z-index:800;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+  <div style="background:var(--surf);border-radius:16px;padding:24px;width:100%;max-width:360px;box-shadow:0 24px 60px rgba(10,22,40,.4)">
+    <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--n900);margin-bottom:4px">&#9881; Porcentaje extra</h3>
+    <p id="pctExtraModalSub" style="font-size:12px;color:var(--tx3);margin-bottom:18px"></p>
+    <div class="field">
+      <label>Porcentaje de bonificacion extra (%)</label>
+      <div style="display:flex;align-items:center;gap:10px">
+        <input type="number" id="pctExtraInput" min="0" max="100" step="1" style="background:var(--surf2);border:1px solid var(--bd);color:var(--tx);font-family:'DM Mono',monospace;font-size:28px;font-weight:800;width:100px;outline:none;text-align:center;border-radius:10px;padding:10px">
+        <span style="font-size:20px;font-weight:800;color:var(--tx3)">%</span>
+        <span style="font-size:12px;color:var(--tx4);line-height:1.4">del promedio<br>de SS</span>
+      </div>
+    </div>
+    <div id="pctExtraErr" style="font-size:12px;color:var(--red);margin-bottom:10px;display:none"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn-sm green" onclick="guardarPctExtra()" style="flex:1">Guardar</button>
+      <button class="btn-ghost" onclick="cerrarPctExtraModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
 <div id="toast"><div class="tt" id="ttt"></div><div class="tm" id="ttm"></div></div>
 
 <script>
@@ -1911,7 +1930,14 @@ function renderAlBlock(al,ai,apro){
           <td style="text-align:center"><span class="${pc} nf" id="pc_${ai}_${ci}_${si}_${pi}">${p!==''&&p!==undefined?p:'-'}</span></td>
         </tr>`;
       }).join('')||'<tr><td colspan="99" class="empty" style="padding:8px">Sin pacientes</td></tr>';
-      return`<div class="pv-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${base}SS+${extra}E · ${pct}%extra</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-xp">Extra ${pct}%</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      return`<div class="pv-sgr-hdr" style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span>${sg.nombre}</span>
+          <span class="pv-sgr-badge">${base}SS+${extra}E</span>
+          <span class="pv-sgr-badge" id="pctBadge_${ai}_${ci}_${si}">${pct}%extra</span>
+        </div>
+        <button onclick="editarPctExtra('${esc(al.nombre)}','${esc(cu.nombre)}','${esc(sg.nombre)}',${ai},${ci},${si},${pct})" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:6px;color:#fff;font-size:10px;font-weight:700;padding:3px 9px;cursor:pointer;white-space:nowrap" title="Cambiar porcentaje extra">&#9881; % extra</button>
+      </div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-xp">Extra ${pct}%</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
     }).join('');
     return`<div class="pv-cu-hdr">${cu.nombre}</div>${sb}`;
   }).join('');
@@ -3900,7 +3926,69 @@ async function cargarCasillerosSoloLectura(){
   }catch(e){box.innerHTML='<div style="padding:8px;color:var(--red);font-size:12px">Error: '+e.message+'</div>';}
 }
 function cargarCasilleroEstudiante(){}
+// ── EDITAR PORCENTAJE EXTRA ───────────────────────────────
+let _pctExtraCtx = null;
 
+function editarPctExtra(alumno, curso, subgrupo, ai, ci, si, pctActual){
+  _pctExtraCtx = {alumno, curso, subgrupo, ai, ci, si};
+  const sub = g('pctExtraModalSub');
+  if(sub) sub.textContent = alumno + ' · ' + curso + ' · ' + subgrupo;
+  const inp = g('pctExtraInput');
+  if(inp){ inp.value = pctActual; }
+  const err = g('pctExtraErr');
+  if(err){ err.style.display='none'; err.textContent=''; }
+  const m = g('pctExtraModal');
+  if(m){ m.style.display='flex'; }
+  setTimeout(()=>{ const i=g('pctExtraInput'); if(i){i.focus();i.select();} }, 100);
+}
+
+function cerrarPctExtraModal(){
+  const m = g('pctExtraModal');
+  if(m) m.style.display='none';
+  _pctExtraCtx = null;
+}
+
+async function guardarPctExtra(){
+  if(!_pctExtraCtx) return;
+  const val = parseInt(g('pctExtraInput').value);
+  const err = g('pctExtraErr');
+  if(isNaN(val)||val<0||val>100){
+    err.textContent='Ingresa un valor entre 0 y 100';
+    err.style.display='block'; return;
+  }
+  const {alumno, curso, subgrupo, ai, ci, si} = _pctExtraCtx;
+  showLoader('Guardando...');
+  try{
+    const r = await apiPost({
+      action: 'guardarPctExtra',
+      hoja: hojaActiva,
+      alumno, curso, subgrupo,
+      pctExtra: val
+    });
+    hideLoader();
+    if(!r.ok) throw new Error(r.error||'Error al guardar');
+    // Actualizar badge en el editor sin recargar
+    const badge = g('pctBadge_'+ai+'_'+ci+'_'+si);
+    if(badge) badge.textContent = val+'%extra';
+    // Actualizar en hojaData
+    if(hojaData&&hojaData.alumnos[ai]&&
+       hojaData.alumnos[ai].cursos[ci]&&
+       hojaData.alumnos[ai].cursos[ci].subgrupos[si]){
+      hojaData.alumnos[ai].cursos[ci].subgrupos[si].pctExtra = val;
+    }
+    toast('Porcentaje actualizado', val+'% para '+subgrupo, 'ok');
+    cerrarPctExtraModal();
+  }catch(e){
+    hideLoader();
+    err.textContent = e.message;
+    err.style.display = 'block';
+  }
+}
+
+// Cerrar modal al hacer clic fuera
+g('pctExtraModal')&&g('pctExtraModal').addEventListener('click',function(e){
+  if(e.target===this) cerrarPctExtraModal();
+});
 function abrirPassModal(){ mostrarCambioPass(); }
 </script>
 </body>
