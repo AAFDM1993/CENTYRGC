@@ -1883,7 +1883,7 @@ function renderEditor(){
   g('agendaCard').style.display='none';
   g('edTitle').textContent='Editor: '+hojaActiva;
   g('edBadge').textContent=hojaData.alumnos.length+' alumnos';
-  const fb=g('edFilter');fb.style.display=(esD||session.rol==='admin')?'flex':'none';';
+  const fb=g('edFilter');fb.style.display=(esD||session.rol==='admin')?'flex':'none';
   g('filterText').value='';g('filterCnt').textContent='';
   g('edBody').innerHTML=hojaData.alumnos.map((al,ai)=>renderAlBlock(al,ai,apro)).join('');
 }
