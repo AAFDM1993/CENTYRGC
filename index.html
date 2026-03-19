@@ -690,14 +690,6 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
 <div class="field"><label>Ciclo</label><input class="inp" id="cfgCiclo" placeholder="Ej. V Ciclo, VII Ciclo"></div>
               <div class="field"><label>Nombre de la hoja</label><input class="inp" id="cfgHoja" placeholder="Ej. MyT II 2025-I"></div>
               <input type="hidden" id="scApro" value="11">
-              <div class="field">
-                <label>Porcentaje puntaje extra</label>
-                <div style="display:flex;align-items:center;gap:8px">
-                  <input type="number" id="cfgPctExtra" value="20" min="0" max="100" style="background:var(--surf2);border:1px solid var(--bd);color:var(--tx);font-family:'DM Mono',monospace;font-size:16px;font-weight:700;width:70px;outline:none;text-align:center;border-radius:7px;padding:6px">
-                  <span style="font-size:13px;font-weight:700;color:var(--tx3)">%</span>
-                  <span style="font-size:11px;color:var(--tx4)">del promedio SS como bonificacion</span>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -1858,7 +1850,7 @@ function renderPreview(){
         for(let i=0;i<(sg.notasBase||0);i++){const lbl=i===0?'EV':'S'+i;thS+=`<th class="th-ss">${lbl}</th>`;tdS+='<td style="color:var(--tx4);text-align:center">.</td>'}
         for(let i=0;i<(sg.notasExtra||0);i++){thE+=`<th class="th-ex">E${i+1}</th>`;tdE+='<td style="color:#93c5fd;text-align:center">.</td>'}
         let rows='';for(let pi=0;pi<(sg.numPacientes||1);pi++)rows+=`<tr><td class="td-pac">PAC${pi+1}</td><td>-</td>${tdS}${tdE}<td><span class="pc">-</span></td></tr>`;
-        return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span><span class="pv-sgr-badge">${base+extra} atenciones</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+        return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
       }).join('');
       return`<div class="pv-cu-hdr">${c.label}</div>${sb}`;
     }).join('');
@@ -1978,7 +1970,7 @@ function renderAlBlock(al,ai,apro){
           <td style="text-align:center"><span class="${pc} nf" id="pc_${ai}_${ci}_${si}_${pi}">${p!==''&&p!==undefined?p:'-'}</span></td>
         </tr>`;
       }).join('')||'<tr><td colspan="99" class="empty" style="padding:8px">Sin pacientes</td></tr>';
-      return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span><span class="pv-sgr-badge">${base+extra} atenciones</span><span class="pv-sgr-badge" id="pctBadge_${ai}_${ci}_${si}">${pct}%extra</span></div><div style="overflow-x:auto">><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-xp">Extra ${pct}%</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-xp">Extra ${pct}%</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
     }).join('');
     return`<div class="pv-cu-hdr">${cu.nombre}</div>${sb}`;
   }).join('');
@@ -2120,8 +2112,7 @@ function renderEstNotas(resultados) {
   box.innerHTML = resultados.map(res => {
     // 1. Mapeo de cursos
     const bl = res.cursos.map(cu => {
-      // 2. Mapeo de subgrupos
-      return cu.subgrupos.map(sg => {
+      const subgrupos = cu.subgrupos.map(sg => {{
         const base = sg.notasBase || 0, extra = sg.notasExtra || 0;
         let thS = '', thE = '';
         
@@ -2160,9 +2151,10 @@ function renderEstNotas(resultados) {
           </tr>`;
         }).join('');
 
-        return `<div class="est-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${base + extra} atenciones</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Paciente</th>${thS}${thE}<th class="th-pr">PROM</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-      }).join(''); 
-    }).join(''); // <--- ESTE CIERRE FALTABA (el de res.cursos.map)
+        return `<div class="est-sgr-hdr">${sg.nombre}</div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Paciente</th>${thS}${thE}<th class="th-pr">PROM</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      }).join('');
+      return `<div class="est-cu-hdr">${cu.nombre}</div>${subgrupos}`;
+    }).join('');
 
     return `<div class="est-hoja"><div class="est-hoja-hdr"><h3>${res.asignatura}</h3><p>${res.hoja}</p></div>${bl}</div>`;
   }).join('');
