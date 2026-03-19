@@ -2715,8 +2715,25 @@ function renderCalendario(){
   if(!areas.length){g('calGrid').innerHTML='<div class="empty" style="padding:20px">Sin areas configuradas.</div>';return;}
 
   const hoy=fmt(new Date());
-  const dias=[];
-  for(let i=0;i<5;i++){const d=new Date(calFechaBase);d.setDate(d.getDate()+i);dias.push(d);}
+  const ahora=new Date();
+  const todosLosDias=[];
+  for(let i=0;i<5;i++){const d=new Date(calFechaBase);d.setDate(d.getDate()+i);todosLosDias.push(d);}
+  // Ocultar días pasados SOLO si la semana mostrada es la semana actual
+  const semanaActual=fmt(getLunes(new Date()))===fmt(calFechaBase);
+  const dias=semanaActual
+    ? todosLosDias.filter(d=>{
+        const fd=fmt(d);
+        if(fd>hoy) return true; // día futuro: siempre mostrar
+        if(fd===hoy) return true; // hoy: siempre mostrar
+        // día pasado: ocultar solo si ya terminó completamente (último slot pasado)
+        const ultimaFranja=agendaCfg.franjas&&agendaCfg.franjas.length
+          ? agendaCfg.franjas[agendaCfg.franjas.length-1].fin
+          : '19:00';
+        const [hh,mm]=ultimaFranja.split(':').map(Number);
+        const finDia=new Date(fd+'T'+ultimaFranja+':00');
+        return finDia>ahora; // si aún no terminó, mostrar
+      })
+    : todosLosDias;
   const esAdmin=session&&session.rol==='admin';
   const esDocente=session&&session.rol==='docente';
   const puedeElim=esAdmin||esDocente;
@@ -3054,8 +3071,21 @@ function renderCalendarioEst(){
 
   const slots=generarSlots(agendaCfg.franjas, agendaCfg.areas[0]&&agendaCfg.areas[0].duracion||60);
   const hoy=fmt(new Date());
-  const dias=[];
-  for(let i=0;i<5;i++){const d=new Date(calEstFechaBase);d.setDate(d.getDate()+i);dias.push(d);}
+  const ahora2=new Date();
+  const todosLosDiasEst=[];
+  for(let i=0;i<5;i++){const d=new Date(calEstFechaBase);d.setDate(d.getDate()+i);todosLosDiasEst.push(d);}
+  const semanaActualEst=fmt(getLunes(new Date()))===fmt(calEstFechaBase);
+  const dias=semanaActualEst
+    ? todosLosDiasEst.filter(d=>{
+        const fd=fmt(d);
+        if(fd>=hoy) return true;
+        const ultimaFranja=agendaCfg.franjas&&agendaCfg.franjas.length
+          ? agendaCfg.franjas[agendaCfg.franjas.length-1].fin
+          : '19:00';
+        const finDia=new Date(fd+'T'+ultimaFranja+':00');
+        return finDia>ahora2;
+      })
+    : todosLosDiasEst;
 
   // Ancho de columna de días
   const dw=window.innerWidth<=480?110:window.innerWidth<=768?140:200;
