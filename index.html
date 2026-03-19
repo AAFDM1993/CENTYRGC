@@ -734,37 +734,7 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
               </div>
               <button class="btn-sm green" onclick="guardarUsuarioDB()" style="width:100%">Guardar usuario</button>
             </div>
-            <div class="import-box">
-  <h4>&#128196; Importar alumnos como usuarios</h4>
-  <p>Extrae codigos y nombres directamente de las planillas de notas en Google Sheets. La contrasena inicial sera igual al codigo. No sobreescribe usuarios existentes.</p>
-
-  <!-- Fuente 1: desde planillas del Sheets -->
-  <button class="btn-sm green" onclick="importarDesdePlanillas()" style="width:100%;margin-bottom:7px">
-    &#128203; Importar desde planillas de notas
-  </button>
-
-  <!-- Fuente 2: desde lista manual cargada (comportamiento anterior) -->
-  <button class="btn-ghost" onclick="importarDesdeAlumnos()" style="width:100%;font-size:12px">
-    &#128100; Importar desde lista manual cargada
-  </button>
-
-  <div id="importResult" style="margin-top:8px;display:none"></div>
-
-  <!-- Preview de alumnos extraídos de las planillas -->
-  <div id="importPlanillasBox" style="display:none;margin-top:10px">
-    <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between">
-      <span id="importPlanillasTitle">Alumnos encontrados</span>
-      <div style="display:flex;gap:6px">
-        <button onclick="seleccionarTodosImport(true)"  style="background:var(--n100);border:1px solid var(--n200);border-radius:6px;color:var(--n600);font-size:10px;font-weight:700;padding:3px 8px;cursor:pointer">Todos</button>
-        <button onclick="seleccionarTodosImport(false)" style="background:var(--surf2);border:1px solid var(--bd);border-radius:6px;color:var(--tx3);font-size:10px;font-weight:700;padding:3px 8px;cursor:pointer">Ninguno</button>
-      </div>
-    </div>
-    <div id="importPlanillasList" style="max-height:220px;overflow-y:auto;border:1px solid var(--bd2);border-radius:9px;margin-bottom:8px"></div>
-    <button class="btn-sm green" onclick="confirmarImportPlanillas()" style="width:100%">
-      &#10003; Crear usuarios seleccionados
-    </button>
-  </div>
-</div>
+           async function importarDesdeAlumnos(){
           </div>
 
           <div class="pane" id="pane-cas">
