@@ -16,7 +16,6 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 .logo{display:flex;align-items:center;gap:11px;flex-shrink:0}
 .lmark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--n500),var(--n400));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:#fff}
 .logo h1{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#fff;letter-spacing:-.3px}
-.logo p{font-size:11px;color:var(--n300);margin-top:1px}
 .hdr-right{margin-left:auto;display:flex;align-items:center;gap:10px}
 .rol-pill{display:flex;align-items:center;gap:6px;background:var(--n800);border:1px solid var(--n700);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;color:var(--n300)}
 .rdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
@@ -594,15 +593,14 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
 <div id="loginPage">
   <div class="login-card">
     <div class="login-logo" style="flex-direction:column;gap:16px;text-align:center">
-      <img id="logoLogin" src="" alt="CENTYR" style="width:250px;height:auto;object-fit:contain;display:none;border-radius:10px;margin:0 auto">
-      <div class="lmark" id="logoLoginFallback" style="width:60px;height:60px;font-size:22px;margin:0 auto">FT</div>
-      <div><h2>CENTYR</h2><p>Centro Docente de Terapia Fisica - UPT</p></div>
+  <img id="logoLogin" src="" alt="CENTYR" style="width:320px;height:auto;object-fit:contain;display:none;border-radius:10px;margin:0 auto">
+  <div class="lmark" id="logoLoginFallback" style="width:80px;height:80px;font-size:28px;margin:0 auto">FT</div>
+</div>
     </div>
     <div class="login-field"><label>Codigo</label><input class="login-inp" id="lgCode" placeholder="Codigo de usuario" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <div class="login-field"><label>Contrasena</label><input class="login-inp" id="lgPass" type="password" placeholder="**********" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="btn-login" onclick="doLogin()">Ingresar</button>
     <div class="login-err" id="lgErr"></div>
-    <div class="login-hint">Usuarios administrados en la hoja <strong>_usuarios</strong></div>
   </div>
 </div>
 
@@ -612,7 +610,6 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
       <div class="logo">
         <img id="logoImg" src="" alt="CENTYR" style="height:38px;width:auto;object-fit:contain;border-radius:6px;display:none">
         <div class="lmark" id="logoFallback">FT</div>
-        <div><h1>CENTYR</h1><p>Centro Docente de Terapia Fisica - UPT</p></div>
       </div>
       <div class="hdr-right">
         <div class="cpill" id="cpill"><div class="dot" id="cdot"></div><span class="clabel" id="clabel">-</span></div>
@@ -739,11 +736,36 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
               <button class="btn-sm green" onclick="guardarUsuarioDB()" style="width:100%">Guardar usuario</button>
             </div>
             <div class="import-box">
-              <h4>Importar desde lista de alumnos</h4>
-              <p>Crea accesos para todos los alumnos cargados. La contrasena inicial sera igual al codigo. No sobreescribe usuarios existentes.</p>
-              <button class="btn-sm green" onclick="importarDesdeAlumnos()" style="width:100%">Importar alumnos como estudiantes</button>
-              <div id="importResult" style="margin-top:8px;display:none"></div>
-            </div>
+  <h4>&#128196; Importar alumnos como usuarios</h4>
+  <p>Extrae codigos y nombres directamente de las planillas de notas en Google Sheets. La contrasena inicial sera igual al codigo. No sobreescribe usuarios existentes.</p>
+
+  <!-- Fuente 1: desde planillas del Sheets -->
+  <button class="btn-sm green" onclick="importarDesdePlanillas()" style="width:100%;margin-bottom:7px">
+    &#128203; Importar desde planillas de notas
+  </button>
+
+  <!-- Fuente 2: desde lista manual cargada (comportamiento anterior) -->
+  <button class="btn-ghost" onclick="importarDesdeAlumnos()" style="width:100%;font-size:12px">
+    &#128100; Importar desde lista manual cargada
+  </button>
+
+  <div id="importResult" style="margin-top:8px;display:none"></div>
+
+  <!-- Preview de alumnos extraídos de las planillas -->
+  <div id="importPlanillasBox" style="display:none;margin-top:10px">
+    <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between">
+      <span id="importPlanillasTitle">Alumnos encontrados</span>
+      <div style="display:flex;gap:6px">
+        <button onclick="seleccionarTodosImport(true)"  style="background:var(--n100);border:1px solid var(--n200);border-radius:6px;color:var(--n600);font-size:10px;font-weight:700;padding:3px 8px;cursor:pointer">Todos</button>
+        <button onclick="seleccionarTodosImport(false)" style="background:var(--surf2);border:1px solid var(--bd);border-radius:6px;color:var(--tx3);font-size:10px;font-weight:700;padding:3px 8px;cursor:pointer">Ninguno</button>
+      </div>
+    </div>
+    <div id="importPlanillasList" style="max-height:220px;overflow-y:auto;border:1px solid var(--bd2);border-radius:9px;margin-bottom:8px"></div>
+    <button class="btn-sm green" onclick="confirmarImportPlanillas()" style="width:100%">
+      &#10003; Crear usuarios seleccionados
+    </button>
+  </div>
+</div>
           </div>
 
           <div class="pane" id="pane-cas">
@@ -876,13 +898,10 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
         <div class="card" id="edCard" style="display:none">
           <div class="chdr"><h2 id="edTitle">Editor</h2><span class="badge" id="edBadge">-</span></div>
           <div class="ed-filter" id="edFilter" style="display:none">
-            <label>Buscar alumno:</label>
-            <input class="filter-inp" id="filterText" placeholder="Escribe el nombre..." oninput="aplicarFiltro()">
-            <select class="filter-sel" id="filterSelect" onchange="aplicarFiltroSelect()">
-              <option value="">- Todos los alumnos -</option>
-            </select>
-            <span class="filter-cnt" id="filterCnt"></span>
-          </div>
+  <label>Buscar alumno:</label>
+  <input class="filter-inp" id="filterText" placeholder="Escribe el nombre..." oninput="aplicarFiltro()">
+  <span class="filter-cnt" id="filterCnt"></span>
+</div>
           <div id="edBody" style="padding:14px;overflow-x:auto"></div>
         </div>
         <div class="card" id="prevCard">
@@ -1530,6 +1549,38 @@ async function eliminarUsuarioDB(codigo){
     toast('Usuario eliminado','','ok');cargarUsuarios();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
+<div class="import-box">
+  <h4>&#128196; Importar alumnos como usuarios</h4>
+  <p>Extrae codigos y nombres directamente de las planillas de notas en Google Sheets. La contrasena inicial sera igual al codigo. No sobreescribe usuarios existentes.</p>
+
+  <!-- Fuente 1: desde planillas del Sheets -->
+  <button class="btn-sm green" onclick="importarDesdePlanillas()" style="width:100%;margin-bottom:7px">
+    &#128203; Importar desde planillas de notas
+  </button>
+
+  <!-- Fuente 2: desde lista manual cargada (comportamiento anterior) -->
+  <button class="btn-ghost" onclick="importarDesdeAlumnos()" style="width:100%;font-size:12px">
+    &#128100; Importar desde lista manual cargada
+  </button>
+
+  <div id="importResult" style="margin-top:8px;display:none"></div>
+
+  <!-- Preview de alumnos extraídos de las planillas -->
+  <div id="importPlanillasBox" style="display:none;margin-top:10px">
+    <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between">
+      <span id="importPlanillasTitle">Alumnos encontrados</span>
+      <div style="display:flex;gap:6px">
+        <button onclick="seleccionarTodosImport(true)"  style="background:var(--n100);border:1px solid var(--n200);border-radius:6px;color:var(--n600);font-size:10px;font-weight:700;padding:3px 8px;cursor:pointer">Todos</button>
+        <button onclick="seleccionarTodosImport(false)" style="background:var(--surf2);border:1px solid var(--bd);border-radius:6px;color:var(--tx3);font-size:10px;font-weight:700;padding:3px 8px;cursor:pointer">Ninguno</button>
+      </div>
+    </div>
+    <div id="importPlanillasList" style="max-height:220px;overflow-y:auto;border:1px solid var(--bd2);border-radius:9px;margin-bottom:8px"></div>
+    <button class="btn-sm green" onclick="confirmarImportPlanillas()" style="width:100%">
+      &#10003; Crear usuarios seleccionados
+    </button>
+  </div>
+</div>
+   
 async function importarDesdeAlumnos(){
   if(!alumnos.length){toast('No hay alumnos cargados','Ve a la pestana Alumnos','warn');return}
   const usuarios=alumnos.filter(a=>a.code).map(a=>({codigo:a.code,password:a.code,rol:'estudiante',nombre:a.name}));
@@ -1644,9 +1695,6 @@ function renderEditor(){
   g('edTitle').textContent='Editor: '+hojaActiva;
   g('edBadge').textContent=hojaData.alumnos.length+' alumnos';
   const fb=g('edFilter');fb.style.display=esD?'flex':'none';
-  const sel=g('filterSelect');
-  sel.innerHTML='<option value="">- Todos los alumnos -</option>';
-  hojaData.alumnos.forEach((al,ai)=>{const o=document.createElement('option');o.value=String(ai);o.textContent=al.nombre+' ('+al.codigo+')';sel.appendChild(o)});
   g('filterText').value='';g('filterCnt').textContent='';
   g('edBody').innerHTML=hojaData.alumnos.map((al,ai)=>renderAlBlock(al,ai,apro)).join('');
 }
@@ -1686,12 +1734,6 @@ function aplicarFiltro(){
   const bloques=g('edBody').querySelectorAll('.pv-al');let vis=0;
   bloques.forEach(b=>{const m=!txt||b.dataset.nombre.indexOf(txt)>=0;b.classList.toggle('hidden',!m);if(m)vis++});
   g('filterCnt').textContent=txt?vis+' resultado'+(vis!==1?'s':''):'';
-}
-function aplicarFiltroSelect(){
-  const val=vi('filterSelect');g('filterText').value='';
-  const bloques=g('edBody').querySelectorAll('.pv-al');let vis=0;
-  bloques.forEach((b,i)=>{const m=val===''||String(i)===val;b.classList.toggle('hidden',!m);if(m){vis++;if(val!=='')setTimeout(()=>b.scrollIntoView({behavior:'smooth',block:'start'}),50)}});
-  g('filterCnt').textContent=val?'1 alumno':'';
 }
 async function saveNombrePac(inp){
   const{al:alumno,cu:curso,sgr,pac}=inp.dataset,nombre=inp.value.trim();
