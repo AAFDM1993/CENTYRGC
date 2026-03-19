@@ -1215,7 +1215,7 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
     </div>
     <p id="mejoriaModalSub" style="font-size:12px;color:var(--tx3);margin-bottom:6px"></p>
     <p style="font-size:12px;color:var(--tx3);margin-bottom:20px;background:var(--amber2);border:1px solid rgba(217,119,6,.3);border-radius:8px;padding:8px 12px;color:#92400e">
-      La nota ingresada es mayor a la sesión anterior. Si no hubo mejoría real, la nota debe ser ≤ 10.
+      Si el paciente no presentó mejoría en esta sesión, la nota debe ser ≤ 10. En caso de mejoría confirmada puede registrar una nota mayor.
     </p>
     <div style="display:flex;gap:8px">
       <button onclick="responderMejoria(true)" class="btn-sm green" style="flex:1">✓ Sí, hubo mejoría</button>
@@ -2000,18 +2000,17 @@ async function saveNota(inp){
   valor!==''?inp.classList.add('v'):inp.classList.remove('v');
   clearTimeout(saveTimers[key]);
 
-  // Solo verificar mejoría en notas SS desde la 3ra sesión (idx >= 2)
+ // Verificar mejoría en notas SS desde la 3ra sesión (idx >= 2)
   if(tipo==='ss' && idx>=2 && valor!==''){
     const notaActual = parseFloat(valor);
-    // Buscar nota de la sesión anterior en el mismo paciente
     const inputs = inp.closest('tr').querySelectorAll('input.nc:not(.ex)');
     const notaAnterior = inputs[idx-1] ? parseFloat(inputs[idx-1].value) : null;
 
-    if(notaAnterior !== null && !isNaN(notaAnterior) && notaActual > notaAnterior){
-      // La nota subió — preguntar si hubo mejoría
-      const mejoria = await preguntarMejoria(pac, curso, sgr, idx+1);
-      if(!mejoria){
-        // No hubo mejoría — verificar que la nota sea ≤ 10
+    // Preguntar siempre desde la 3ra sesión si hay sesión anterior registrada
+    if(notaAnterior !== null && !isNaN(notaAnterior)){
+      const huboMejoria = await preguntarMejoria(pac, curso, sgr, idx+1);
+      if(!huboMejoria){
+        // Sin mejoría: la nota debe ser ≤ 10
         if(notaActual > 10){
           inp.value = '';
           inp.classList.remove('v');
@@ -2019,22 +2018,14 @@ async function saveNota(inp){
           return;
         }
       }
-      // Si mejoria=true, continuar guardando normal
-    }
 
-    // Verificar si se completaron todas las SS y no hubo mejoría
-    const todasLlenas = Array.from(inputs).every(i => i.value.trim() !== '');
-    if(todasLlenas && valor !== ''){
-      // Verificar si la última respuesta fue "no mejoría"
-      const ultimaNota = parseFloat(inputs[base-1]?.value||'0');
-      const penultimaNota = parseFloat(inputs[base-2]?.value||'0');
-      if(ultimaNota <= 10 && ultimaNota <= penultimaNota){
-        // Posible no mejoría al completar — ofrecer paciente extra
-        setTimeout(()=>ofrecerPacienteExtra(alumno,curso,sgr,base,extra,inp),800);
+      // Al completar todas las SS sin mejoría → ofrecer paciente extra
+      const todasLlenas = Array.from(inputs).every(i => i.value.trim() !== '');
+      if(todasLlenas && !huboMejoria){
+        setTimeout(()=>ofrecerPacienteExtra(alumno,curso,sgr,base,extra,inp), 800);
       }
     }
   }
-
   saveTimers[key]=setTimeout(async()=>{
     try{
       const r=await apiPost({action:'guardarNota',hoja:hojaActiva,alumno,curso,subgrupo:sgr,pacLabel:pac,tipo,idx,valor:valor===''?'':parseFloat(valor),notasBase:base,notasExtra:extra});
