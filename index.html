@@ -791,6 +791,7 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
   <!-- Lista de hojas -->
   <div id="hojasBox"><div class="hint-b"><span>...</span><span>Cargando hojas...</span></div></div>
   <button class="btn-ghost" style="width:100%;margin-top:9px" onclick="loadHojas()">Actualizar lista</button>
+<button class="btn-sm" onclick="actualizarTodasPlanillas()" style="width:100%;margin-top:7px;background:var(--amber);border:none">&#9881; Actualizar fórmulas de todas las planillas</button>
 </div>
 
           <div class="pane" id="pane-log">
@@ -1857,7 +1858,7 @@ function renderPreview(){
         for(let i=0;i<(sg.notasBase||0);i++){const lbl=i===0?'EV':'S'+i;thS+=`<th class="th-ss">${lbl}</th>`;tdS+='<td style="color:var(--tx4);text-align:center">.</td>'}
         for(let i=0;i<(sg.notasExtra||0);i++){thE+=`<th class="th-ex">E${i+1}</th>`;tdE+='<td style="color:#93c5fd;text-align:center">.</td>'}
         let rows='';for(let pi=0;pi<(sg.numPacientes||1);pi++)rows+=`<tr><td class="td-pac">PAC${pi+1}</td><td>-</td>${tdS}${tdE}<td><span class="pc">-</span></td></tr>`;
-        return`<div class="pv-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${sg.notasBase||0}SS+${sg.notasExtra||0}E</span><span class="pv-sgr-badge">${sg.numPacientes||1} pac.</span></div><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre</th>${thS}${thE}<th class="th-pr">PROM</th></tr></thead><tbody>${rows}</tbody></table>`;
+        return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span><span class="pv-sgr-badge" id="pctBadge_${ai}_${ci}_${si}">${base+extra} atenciones</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM</th><th class="th-nf">NOTA FINAL</th></tr></thead>
       }).join('');
       return`<div class="pv-cu-hdr">${c.label}</div>${sb}`;
     }).join('');
@@ -1955,7 +1956,7 @@ function renderAlBlock(al,ai,apro){
       const base=sg.notasBase||0,extra=sg.notasExtra||0;
       let thS='',thE='';
       for(let i=0;i<base;i++){const lbl=i===0?'EV':'S'+i;thS+=`<th class="th-ss">${lbl}</th>`;}
-      for(let i=0;i<extra;i++)thE+=`<th class="th-ex">E${i+1}</th>`;
+      for(let i=0;i<extra;i++)thE+=`<th class="th-ss">S${base+i}</th>`;
       const pct=sg.pctExtra!==undefined?sg.pctExtra:20;
       const rows=sg.pacientes.map((pac,pi)=>{
         const nv=pac.nombre||'';
@@ -1974,11 +1975,10 @@ function renderAlBlock(al,ai,apro){
           <td><input class="nn ${nv?'has-val':''}" value="${esc2(nv)}" placeholder="Nombre paciente" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" onchange="saveNombrePac(this)" onfocus="this.select()"></td>
           ${sc}${ec}
           <td style="text-align:center"><span class="pc" id="ps_${ai}_${ci}_${si}_${pi}" style="background:var(--n800);color:var(--n300)">${ps!==''&&ps!==undefined?ps:'-'}</span></td>
-          <td style="text-align:center"><span class="pc" id="pe_${ai}_${ci}_${si}_${pi}" style="background:#064e3b;color:#6ee7b7">${pe!==''&&pe!==undefined?pe:'-'}</span></td>
           <td style="text-align:center"><span class="${pc} nf" id="pc_${ai}_${ci}_${si}_${pi}">${p!==''&&p!==undefined?p:'-'}</span></td>
         </tr>`;
       }).join('')||'<tr><td colspan="99" class="empty" style="padding:8px">Sin pacientes</td></tr>';
-      return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span><span class="pv-sgr-badge">${base}SS+${extra}E</span><span class="pv-sgr-badge" id="pctBadge_${ai}_${ci}_${si}">${pct}%extra</span></div><div style="overflow-x:auto">><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-xp">Extra ${pct}%</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span><span class="pv-sgr-badge">${base+extra} atenciones</span><span class="pv-sgr-badge" id="pctBadge_${ai}_${ci}_${si}">${pct}%extra</span></div><div style="overflow-x:auto">><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-xp">Extra ${pct}%</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
     }).join('');
     return`<div class="pv-cu-hdr">${cu.nombre}</div>${sb}`;
   }).join('');
@@ -2142,13 +2142,10 @@ function renderEstNotas(resultados){
             <td style="font-size:12px;font-weight:500;padding:7px 8px;color:var(--tx2)">${pac.nombre||'-'}</td>
             ${tSS}${tEx}
             <td style="text-align:center"><span class="pc" style="background:var(--n800);color:var(--n300)">${ps!==''&&ps!==undefined?ps:'-'}</span></td>
-            <td style="text-align:center"><span class="pc" style="background:#064e3b;color:#6ee7b7">${pe!==''&&pe!==undefined?pe:'-'}</span></td>
             <td style="text-align:center"><span class="${pc}">${p!==''&&p!==undefined?p:'-'}</span></td>
           </tr>`;
         }).join('');
-        return`<div class="est-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${base}SS+${extra}E</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-xp">Extra</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-      }).join('');
-      return`<div class="est-cu-hdr">${cu.nombre}</div>${sb}`;
+        return`<div class="est-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${base+extra} atenciones</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Paciente</th>${thS}${thE}<th class="th-pr">PROM</th><th class="th-nf">NOTA FINAL</th></tr></thead>
     }).join('');
     return`<div class="est-hoja"><div class="est-hoja-hdr"><h3>${res.asignatura}</h3><p>${res.hoja}</p></div>${bl}</div>`;
   }).join('');
@@ -4199,7 +4196,21 @@ async function confirmarPacienteExtra(){
     hideLoader();
     toast('Error al agregar paciente extra', e.message, 'err');
   }
-} 
+}
+async function actualizarTodasPlanillas(){
+  if(!confirm('¿Actualizar las fórmulas y etiquetas de TODAS las planillas existentes?\nEsto no borra notas, solo actualiza la estructura.')) return;
+  showLoader('Actualizando todas las planillas...');
+  try{
+    const r = await apiPost({action:'actualizarPlanillas'});
+    hideLoader();
+    if(!r.ok) throw new Error(r.error);
+    const errTxt = r.errores&&r.errores.length ? '\nErrores: '+r.errores.join(', ') : '';
+    toast(r.actualizadas+' planillas actualizadas', errTxt||'Sin errores', 'ok');
+  }catch(e){
+    hideLoader();
+    toast('Error al actualizar', e.message, 'err');
+  }
+}
 function abrirPassModal(){ mostrarCambioPass(); }
 </script>
 </body>
