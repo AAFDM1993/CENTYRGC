@@ -807,16 +807,6 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
               <div class="empty">Cargando...</div>
             </div>
           </div>
-       <div class="pane" id="pane-bus">
-  <div class="field" style="margin-bottom:10px">
-    <label>Buscar alumno en todas las hojas</label>
-    <div style="display:flex;gap:8px">
-      <input class="inp" id="busAlumnoInput" placeholder="Nombre o codigo del alumno..." style="flex:1" onkeydown="if(event.key==='Enter')buscarAlumnoGlobal()">
-      <button class="btn-sm" onclick="buscarAlumnoGlobal()" style="background:var(--n500)">&#128269; Buscar</button>
-    </div>
-  </div>
-  <div id="busAlumnoResultados"><div class="empty">Escribe un nombre o codigo y presiona Buscar</div></div>
-</div>
           <div class="pane" id="pane-pdf">
   <div class="slbl">1. Selecciona el curso</div>
   <div class="hint-b" style="margin-bottom:10px;font-size:11px"><span>&#128196;</span><span>Se busca el curso en <strong>todas las hojas</strong> y se agrupa por ciclo automaticamente.</span></div>
@@ -842,7 +832,6 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
           <button onclick="abrirPanelAdmin('us')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128101; Usuarios</button>
           <button onclick="abrirPanelAdmin('pdf')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128196; PDF</button>
           <button onclick="abrirPanelAdmin('log')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128202; Log</button> 
-         <button onclick="abrirPanelAdmin('bus')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128269; Buscar</button><div style="width:1px;height:24px;background:var(--n700);flex-shrink:0;margin:0 4px"></div>
         </div>
 
         <!-- Admin+Docente: hojas, casilleros y agenda -->
@@ -1554,77 +1543,6 @@ async function eliminarUsuarioDB(codigo){
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Usuario eliminado','','ok');cargarUsuarios();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
-}
-
-// ── BUSCAR ALUMNO GLOBAL ──────────────────────────────────
-async function buscarAlumnoGlobal(){
-  const q = (vi('busAlumnoInput')||'').trim().toLowerCase();
-  const box = g('busAlumnoResultados');
-  if(!q){ box.innerHTML='<div class="empty">Escribe al menos 1 caracter</div>'; return; }
-  box.innerHTML='<div class="empty">Buscando...</div>';
-  showLoader('Buscando en todas las hojas...');
-  try{
-    const rH = await apiGet('listarHojas');
-    if(!rH.ok) throw new Error(rH.error);
-    const EXCLUIR = ['Casilleros','_usuarios','Log'];
-    const hojas = rH.hojas.filter(h => EXCLUIR.indexOf(h.nombre) < 0);
-    const resultados = []; // [{alumno, codigo, hoja, promedio}]
-    for(let i = 0; i < hojas.length; i++){
-      try{
-        const r = await apiGet('leerHoja', {hoja: hojas[i].nombre});
-        if(!r.ok || !r.alumnos) continue;
-        r.alumnos.forEach(al => {
-          const nombre = (al.nombre||'').toLowerCase();
-          const codigo = (al.codigo||'').toLowerCase();
-          if(nombre.indexOf(q) >= 0 || codigo.indexOf(q) >= 0){
-            // Calcular promedio general del alumno
-            let totalProm = [], apro = Number((r.config||{}).notaApro)||11;
-            (al.cursos||[]).forEach(cu => {
-              (cu.subgrupos||[]).forEach(sg => {
-                (sg.pacientes||[]).forEach(pac => {
-                  if(pac.prom !== '' && pac.prom !== undefined) totalProm.push(Number(pac.prom));
-                });
-              });
-            });
-            const prom = totalProm.length ? (totalProm.reduce((a,b)=>a+b,0)/totalProm.length).toFixed(1) : null;
-            resultados.push({nombre: al.nombre, codigo: al.codigo, hoja: hojas[i].nombre, prom, apro, config: r.config||{}});
-          }
-        });
-      }catch(e){}
-    }
-    hideLoader();
-    if(!resultados.length){
-      box.innerHTML='<div class="empty">No se encontraron alumnos con "'+q+'"</div>'; return;
-    }
-    // Agrupar por alumno (mismo codigo puede aparecer en varias hojas)
-    const mapa = {};
-    resultados.forEach(r => {
-      const key = (r.codigo||r.nombre).toLowerCase();
-      if(!mapa[key]) mapa[key] = {nombre:r.nombre, codigo:r.codigo, hojas:[]};
-      mapa[key].hojas.push({hoja:r.hoja, prom:r.prom, apro:r.apro, config:r.config});
-    });
-    const items = Object.values(mapa);
-    box.innerHTML = '<div style="font-size:11px;color:var(--tx3);margin-bottom:8px">'+items.length+' alumno'+(items.length!==1?'s':'')+' encontrado'+(items.length!==1?'s':'')+' en '+resultados.length+' hoja'+(resultados.length!==1?'s':'')+' · clic para abrir</div>'
-    + items.map(al => {
-      const hojaRows = al.hojas.map(h => {
-        const aprobado = h.prom !== null && Number(h.prom) >= h.apro;
-        const desapro  = h.prom !== null && Number(h.prom) <  h.apro;
-        const color    = h.prom === null ? 'var(--tx3)' : aprobado ? 'var(--green)' : 'var(--red)';
-        const nomEsc   = h.hoja.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-        return `<div onclick="cerrarPanel();setTimeout(()=>abrirHoja('${nomEsc}'),80)" style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:1px solid var(--bd2);cursor:pointer;transition:background .15s" onmouseover="this.style.background='var(--n050)'" onmouseout="this.style.background=''">
-          <span style="font-size:12px;color:var(--tx2)">${h.hoja}</span>
-          <span style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:${color}">${h.prom !== null ? h.prom : '-'}</span>
-        </div>`;
-      }).join('');
-      return `<div style="border:1px solid var(--bd2);border-radius:12px;overflow:hidden;margin-bottom:8px">
-        <div style="background:var(--n900);padding:10px 14px;display:flex;align-items:center;gap:10px">
-          <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px">${al.nombre}</span>
-          <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--n300)">${al.codigo||'-'}</span>
-        </div>
-        ${hojaRows}
-      </div>`;
-    }).join('');
-  }catch(e){ hideLoader(); box.innerHTML=`<div class="hint">Error: ${e.message}</div>`; }
 }
 
 // ── IMPORTAR DESDE PLANILLAS DE NOTAS ────────────────────
