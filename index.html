@@ -2110,44 +2110,61 @@ async function iniciarVistaEstudiante(){
   // Cargar agenda en background
   iniciarAgendaEstudiante();
 }
-function renderEstNotas(resultados){
-  const box=g('estNotas');
-  if(!resultados.length){box.innerHTML='<div class="est-no-data"><div class="ico">&#128203;</div><p>No se encontraron notas para tu codigo.</p></div>';return}
-  box.innerHTML=resultados.map(res=>{
-    const bl=res.cursos.map(cu=>{
-      const sb=cu.subgrupos.map(sg=>{
-        const base=sg.notasBase||0,extra=sg.notasExtra||0;
-        let thS='',thE='';
-        for(let i=0;i<base;i++){const lbl=i===0?'EV':'S'+i;thS+=`<th class="th-ss">${lbl}</th>`;}
-        for(let i=0;i<extra;i++)thE+=`<th class="th-ex">E${i+1}</th>`;
-        const rows=sg.pacientes.map(pac=>{
-          const tSS=pac.notas.map((v,ni)=>{
-            if(v==='') return`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;padding:5px 3px;color:var(--tx4)">.</td>`;
-            const doc=(pac.notasDoc&&pac.notasDoc[ni])||'';
-            return`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;padding:5px 3px;color:var(--n600);cursor:pointer;position:relative"
+function renderEstNotas(resultados) {
+  const box = g('estNotas');
+  if (!resultados.length) {
+    box.innerHTML = '<div class="est-no-data"><div class="ico">&#128203;</div><p>No se encontraron notas para tu codigo.</p></div>';
+    return;
+  }
+
+  box.innerHTML = resultados.map(res => {
+    // 1. Mapeo de cursos
+    const bl = res.cursos.map(cu => {
+      // 2. Mapeo de subgrupos
+      return cu.subgrupos.map(sg => {
+        const base = sg.notasBase || 0, extra = sg.notasExtra || 0;
+        let thS = '', thE = '';
+        
+        for (let i = 0; i < base; i++) {
+          const lbl = i === 0 ? 'EV' : 'S' + i;
+          thS += `<th class="th-ss">${lbl}</th>`;
+        }
+        for (let i = 0; i < extra; i++) thE += `<th class="th-ex">E${i + 1}</th>`;
+
+        const rows = sg.pacientes.map(pac => {
+          const tSS = pac.notas.map((v, ni) => {
+            if (v === '') return `<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;padding:5px 3px;color:var(--tx4)">.</td>`;
+            const doc = (pac.notasDoc && pac.notasDoc[ni]) || '';
+            return `<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;padding:5px 3px;color:var(--n600);cursor:pointer;position:relative"
               data-doc="${esc2(doc)}" onclick="mostrarDocenteNota(this)" title="Ver quién registró esta nota"
             >${v}<span style="position:absolute;top:1px;right:1px;font-size:8px;color:var(--n300);line-height:1">&#9432;</span></td>`;
           }).join('');
-          const tEx=pac.xNotas.map((v,ni)=>{
-            if(v==='') return`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;padding:5px 3px;color:var(--tx4)">.</td>`;
-            const doc=(pac.xNotasDoc&&pac.xNotasDoc[ni])||'';
-            return`<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;padding:5px 3px;color:#1d4ed8;cursor:pointer;position:relative"
+
+          const tEx = pac.xNotas.map((v, ni) => {
+            if (v === '') return `<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;padding:5px 3px;color:var(--tx4)">.</td>`;
+            const doc = (pac.xNotasDoc && pac.xNotasDoc[ni]) || '';
+            return `<td style="text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;padding:5px 3px;color:#1d4ed8;cursor:pointer;position:relative"
               data-doc="${esc2(doc)}" onclick="mostrarDocenteNota(this)" title="Ver quién registró esta nota"
             >${v}<span style="position:absolute;top:1px;right:1px;font-size:8px;color:var(--n400);line-height:1">&#9432;</span></td>`;
           }).join('');
-          const ps=pac.promSS;const pe=pac.extraPond;const p=pac.prom;
-          const pc='pc'+(p!==''&&p!==undefined?(p>=11?' ok':' no'):'');
-          return`<tr>
+
+          const ps = pac.promSS; const pe = pac.extraPond; const p = pac.prom;
+          const pc = 'pc' + (p !== '' && p !== undefined ? (p >= 11 ? ' ok' : ' no') : '');
+          
+          return `<tr>
             <td class="td-pac">${pac.label}</td>
-            <td style="font-size:12px;font-weight:500;padding:7px 8px;color:var(--tx2)">${pac.nombre||'-'}</td>
+            <td style="font-size:12px;font-weight:500;padding:7px 8px;color:var(--tx2)">${pac.nombre || '-'}</td>
             ${tSS}${tEx}
-            <td style="text-align:center"><span class="pc" style="background:var(--n800);color:var(--n300)">${ps!==''&&ps!==undefined?ps:'-'}</span></td>
-            <td style="text-align:center"><span class="${pc}">${p!==''&&p!==undefined?p:'-'}</span></td>
+            <td style="text-align:center"><span class="pc" style="background:var(--n800);color:var(--n300)">${ps !== '' && ps !== undefined ? ps : '-'}</span></td>
+            <td style="text-align:center"><span class="${pc}">${p !== '' && p !== undefined ? p : '-'}</span></td>
           </tr>`;
         }).join('');
-        return`<div class="est-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${base+extra} atenciones</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Paciente</th>${thS}${thE}<th class="th-pr">PROM</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
-      }).join('');
-    return`<div class="est-hoja"><div class="est-hoja-hdr"><h3>${res.asignatura}</h3><p>${res.hoja}</p></div>${bl}</div>`;
+
+        return `<div class="est-sgr-hdr">${sg.nombre}<span class="pv-sgr-badge">${base + extra} atenciones</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Paciente</th>${thS}${thE}<th class="th-pr">PROM</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      }).join(''); 
+    }).join(''); // <--- ESTE CIERRE FALTABA (el de res.cursos.map)
+
+    return `<div class="est-hoja"><div class="est-hoja-hdr"><h3>${res.asignatura}</h3><p>${res.hoja}</p></div>${bl}</div>`;
   }).join('');
 }
 
