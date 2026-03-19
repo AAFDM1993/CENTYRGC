@@ -687,10 +687,11 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
             </div>
             <div id="secConfig" class="gen-section-body">
               <div class="field"><label>Asignatura</label><input class="inp" id="cfgAsig" placeholder="Ej. Tecnicas de Fisioterapia II"></div>
-              <div class="row2">
-                <div class="field"><label>Semestre</label><input class="inp" id="cfgSem" placeholder="Ej. 2025-I" style="width:100%"></div>
-                <div class="field"><label>Seccion</label><input class="inp" id="cfgSec" placeholder="Ej. Seccion A" style="width:100%"></div>
-              </div>
+             <div class="row2">
+  <div class="field"><label>Semestre</label><input class="inp" id="cfgSem" placeholder="Ej. 2025-I" style="width:100%"></div>
+  <div class="field"><label>Seccion</label><input class="inp" id="cfgSec" placeholder="Ej. Seccion A" style="width:100%"></div>
+</div>
+<div class="field"><label>Ciclo</label><input class="inp" id="cfgCiclo" placeholder="Ej. V Ciclo, VII Ciclo"></div>
               <div class="field"><label>Nombre de la hoja</label><input class="inp" id="cfgHoja" placeholder="Ej. MyT II 2025-I"></div>
               <input type="hidden" id="scApro" value="11">
               <div class="field">
@@ -789,19 +790,16 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
             </div>
           </div>
           <div class="pane" id="pane-pdf">
-            <div class="slbl">1. Selecciona la hoja</div>
-            <div id="expHojasList"><div class="empty">Cargando...</div></div>
-            <div id="expCursosBox" style="display:none">
-              <div class="slbl" style="margin-top:10px">2. Selecciona el curso</div>
-              <div id="expCursosList"></div>
-              <div id="resumenPreviewBox" style="display:none">
-                <div class="slbl" style="margin-top:10px">3. Vista previa</div>
-                <div class="resumen-preview" id="resumenTable"></div>
-                <button class="btn-sm green" onclick="exportarPDF()" style="width:100%;margin-top:10px">Exportar PDF este curso</button>
-              </div>
-            </div>
-            <button class="btn-ghost" onclick="cargarHojasExport()" style="width:100%;margin-top:10px">Recargar hojas</button>
-          </div>
+  <div class="slbl">1. Selecciona el curso</div>
+  <div class="hint-b" style="margin-bottom:10px;font-size:11px"><span>&#128196;</span><span>Se busca el curso en <strong>todas las hojas</strong> y se agrupa por ciclo automaticamente.</span></div>
+  <div id="expCursosList"><div class="empty">Cargando...</div></div>
+  <div id="resumenPreviewBox" style="display:none;margin-top:12px">
+    <div class="slbl">2. Vista previa</div>
+    <div class="resumen-preview" id="resumenTable"></div>
+    <button class="btn-sm green" onclick="exportarPDF()" style="width:100%;margin-top:10px">&#128196; Exportar PDF consolidado (todos los ciclos)</button>
+  </div>
+  <button class="btn-ghost" onclick="cargarHojasExport()" style="width:100%;margin-top:10px">&#8635; Recargar cursos</button>
+</div>
 
     </div><!-- end adminPanesStore -->
 
@@ -1576,7 +1574,7 @@ async function generarPlanilla(){
   if(!aP.some(a=>a.cursos.length)){toast('Sin cursos asignados','Asigna cursos a los alumnos','warn');return}
   showLoader('Creando planilla...');
   try{
-    const r=await apiPost({action:'crearPlanilla',nombreHoja:hoja,config:{asignatura:vi('cfgAsig'),semestre:vi('cfgSem'),seccion:vi('cfgSec'),notaApro:+vi('scApro')||11,pctExtra:+(vi('cfgPctExtra')||20)},alumnos:aP});
+    const r=await apiPost({action:'crearPlanilla',nombreHoja:hoja,config:{asignatura:vi('cfgAsig'),semestre:vi('cfgSem'),seccion:vi('cfgSec'),ciclo:vi('cfgCiclo'),notaApro:+vi('scApro')||11,pctExtra:+(vi('cfgPctExtra')||20)},alumnos:aP});
     hideLoader();if(!r.ok)throw new Error(r.error||JSON.stringify(r));
     toast('Planilla creada',`"${r.hoja}"`,'ok');window.open(r.url,'_blank');
     await abrirHoja(r.hoja);loadHojas();
@@ -1848,19 +1846,60 @@ function mostrarDocenteNota(td){
 }
 
 // ── EXPORTAR PDF ─────────────────────────────────────────────
-let expHojas=[], expSelHoja=null, expResumen=null, expSelCurso=null;
+let expSelHoja=null, expResumen=null, expSelCurso=null;
 
 async function cargarHojasExport(){
-  const box=g('expHojasList');if(!box)return;
-  box.innerHTML='<div class="empty">Cargando...</div>';
-  expSelHoja=null;expResumen=null;expSelCurso=null;
-  const cb=g('expCursosBox');if(cb)cb.style.display='none';
+  const box=g('expCursosList');if(!box)return;
+  box.innerHTML='<div class="empty">Cargando cursos...</div>';
+  expSelCurso=null;expResumenCombinado=null;
+  const pb=g('resumenPreviewBox');if(pb)pb.style.display='none';
+  showLoader('Escaneando todas las hojas...');
   try{
-    const r=await apiGet('listarHojas');if(!r.ok)throw new Error(r.error);
-    expHojas=r.hojas||[];
-    if(!expHojas.length){box.innerHTML='<div class="empty">Sin hojas creadas</div>';return}
-    renderExpHojas();
-  }catch(e){box.innerHTML=`<div class="hint">Error: ${e.message}</div>`}
+    const rHojas=await apiGet('listarHojas');
+    if(!rHojas.ok)throw new Error(rHojas.error);
+    const EXCLUIR=['Casilleros','_usuarios','Log'];
+    const hojasFiltradas=rHojas.hojas.filter(h=>EXCLUIR.indexOf(h.nombre)<0);
+    if(!hojasFiltradas.length){hideLoader();box.innerHTML='<div class="empty">Sin hojas creadas</div>';return;}
+
+    // Escanear todas las hojas para obtener cursos únicos
+    const cursosMap={}; // { nombreCurso: [{hoja, ciclo, cfg}] }
+    for(let i=0;i<hojasFiltradas.length;i++){
+      const hn=hojasFiltradas[i].nombre;
+      try{
+        const r=await apiGet('resumenHoja',{hoja:hn});
+        if(!r.ok)continue;
+        const cfg=r.config||{};
+        const ciclo=cfg.ciclo||extraerCicloDeNombre(hn)||hn;
+        (r.cursos||[]).forEach(cu=>{
+          if(!cursosMap[cu.nombre]) cursosMap[cu.nombre]=[];
+          cursosMap[cu.nombre].push({hoja:hn,ciclo,cfg,alumnos:cu.alumnos});
+        });
+      }catch(e){}
+    }
+    hideLoader();
+    const nombresCursos=Object.keys(cursosMap).sort((a,b)=>a.localeCompare(b,'es'));
+    if(!nombresCursos.length){box.innerHTML='<div class="empty">Sin cursos encontrados</div>';return;}
+    // Guardar mapa global para usarlo en selExpCurso sin re-escanear
+    window._expCursosMap=cursosMap;
+    renderExpCursosList(nombresCursos,cursosMap);
+  }catch(e){hideLoader();box.innerHTML=`<div class="hint">Error: ${e.message}</div>`;}
+}
+
+function renderExpCursosList(nombres, cursosMap){
+  const box=g('expCursosList');if(!box)return;
+  box.innerHTML=nombres.map(nombre=>{
+    const grupos=cursosMap[nombre]||[];
+    const ciclos=[...new Set(grupos.map(g=>g.ciclo))].sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
+    const totalAlumnos=grupos.reduce((s,g)=>s+g.alumnos.length,0);
+    const sel=expSelCurso===nombre;
+    return `<div class="exp-hoja-item ${sel?'sel':''}" onclick="selExpCurso('${esc(nombre)}')">
+      <div class="ck">${sel?'&#10003;':' '}</div>
+      <div style="flex:1;min-width:0">
+        <div class="exp-hoja-name">${nombre}</div>
+        <div class="exp-hoja-meta">${ciclos.join(', ')} &middot; ${totalAlumnos} alumnos</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function renderExpHojas(){
@@ -1905,36 +1944,249 @@ function renderExpCursos(){
 }
 
 function selExpCurso(nombre){
-  expSelCurso=nombre;renderExpCursos();
+  expSelCurso=nombre;
   const pb=g('resumenPreviewBox');if(pb)pb.style.display='none';
-  if(!expResumen)return;
-  const curso=expResumen.cursos.find(c=>c.nombre===nombre);
-  if(!curso)return;
-  renderResumenPreview(curso);
-  if(pb)pb.style.display='block';
+  // Refrescar lista para marcar seleccionado
+  if(window._expCursosMap){
+    const nombres=Object.keys(window._expCursosMap).sort((a,b)=>a.localeCompare(b,'es'));
+    renderExpCursosList(nombres,window._expCursosMap);
+  }
+  // Usar datos ya cargados sin re-escanear
+  if(window._expCursosMap&&window._expCursosMap[nombre]){
+    const grupos=window._expCursosMap[nombre];
+    grupos.sort((a,b)=>a.ciclo.localeCompare(b.ciclo,'es',{numeric:true}));
+    expResumenCombinado={curso:nombre,grupos};
+    renderResumenPreviewCombinado();
+    if(pb)pb.style.display='block';
+  } else {
+    cargarResumenCursoCombinado(nombre);
+  }
 }
 
-function renderResumenPreview(curso){
-  const tbl=g('resumenTable');if(!tbl)return;
-  const cfg=expResumen.config||{};
-  const apro=Number(cfg.notaApro)||11;
-  const alumnosOrdenados=[...curso.alumnos].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
-  const filas=alumnosOrdenados.map((al,i)=>{
-    const p=al.promFinal;
-    const cls=p!==''&&p!==undefined?(p>=apro?'ok':'no'):'';
-    const color=cls==='ok'?'var(--green)':cls==='no'?'var(--red)':'var(--tx3)';
-    return `<tr>
-      <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-size:12px;color:var(--tx3);text-align:center">${i+1}</td>
-      <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-family:'DM Mono',monospace;font-size:11px;color:var(--n500)">${al.codigo||'-'}</td>
-      <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-size:12px;font-weight:600">${al.nombre}</td>
-      <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-family:'DM Mono',monospace;font-weight:700;text-align:center;color:${color}">${p!==''&&p!==undefined?p:'-'}</td>
-    </tr>`;
-  }).join('');
-  tbl.innerHTML=`<table><thead><tr>
-    <th style="width:36px">#</th><th>Codigo</th>
+// Nuevo: busca el mismo nombre de curso en todas las hojas y los agrupa por ciclo
+let expResumenCombinado = null; // { curso, grupos: [{ciclo, hoja, cfg, alumnos}] }
+
+async function cargarResumenCursoCombinado(nombreCurso){
+  const pb=g('resumenPreviewBox');if(pb)pb.style.display='none';
+  showLoader('Buscando curso en todas las hojas...');
+  try{
+    // Cargar todas las hojas
+    const rHojas=await apiGet('listarHojas');
+    if(!rHojas.ok)throw new Error(rHojas.error);
+    const hojasFiltradas=rHojas.hojas.filter(h=>['Casilleros','_usuarios','Log'].indexOf(h.nombre)<0);
+
+    const grupos=[];
+    for(let i=0;i<hojasFiltradas.length;i++){
+      const hn=hojasFiltradas[i].nombre;
+      try{
+        const r=await apiGet('resumenHoja',{hoja:hn});
+        if(!r.ok)continue;
+        const curso=r.cursos.find(c=>c.nombre===nombreCurso);
+        if(!curso)continue; // esta hoja no tiene ese curso
+        const cfg=r.config||{};
+        // Determinar ciclo: primero cfg.ciclo, luego intentar extraerlo del nombre de la hoja
+        const ciclo=cfg.ciclo||extraerCicloDeNombre(hn)||hn;
+        grupos.push({ciclo, hoja:hn, cfg, alumnos:curso.alumnos});
+      }catch(e){ /* hoja con error, saltar */ }
+    }
+
+    hideLoader();
+    if(!grupos.length){
+      toast('El curso "'+nombreCurso+'" no existe en ninguna hoja','','warn');
+      return;
+    }
+    // Ordenar grupos por ciclo (numérico si es posible)
+    grupos.sort((a,b)=>a.ciclo.localeCompare(b.ciclo,'es',{numeric:true}));
+    expResumenCombinado={curso:nombreCurso, grupos};
+    renderResumenPreviewCombinado();
+    if(pb)pb.style.display='block';
+  }catch(e){
+    hideLoader();toast('Error al buscar curso',e.message,'err');
+  }
+}
+
+// Extrae el ciclo romano del nombre de la hoja: "V Ciclo 2025-I" → "V Ciclo"
+function extraerCicloDeNombre(nombre){
+  const m=nombre.match(/^((?:I{1,3}|IV|VI{0,3}|IX|X|XI|XII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\s+Ciclo)/i);
+  return m?m[1]:null;
+}
+
+function renderResumenPreviewCombinado(){
+  const tbl=g('resumenTable');if(!tbl||!expResumenCombinado)return;
+  if(!expResumenCombinado.grupos.length){tbl.innerHTML='<div class="empty">Sin datos</div>';return;}
+
+  let html='<table>';
+  html+=`<thead><tr>
+    <th style="width:36px">#</th>
+    <th style="width:70px">Ciclo</th>
+    <th style="width:100px">Codigo</th>
     <th>Apellidos y Nombres</th>
     <th style="width:80px;text-align:center">Prom.</th>
-  </tr></thead><tbody>${filas}</tbody></table>`;
+  </tr></thead><tbody>`;
+
+  let n=0;
+  expResumenCombinado.grupos.forEach(grupo=>{
+    const apro=Number((grupo.cfg||{}).notaApro)||11;
+    const alumnosOrdenados=[...grupo.alumnos].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
+    // Fila separadora de ciclo
+    html+=`<tr><td colspan="5" style="background:var(--n900);color:#fff;padding:6px 12px;font-family:'DM Mono',monospace;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">${grupo.ciclo}</td></tr>`;
+    alumnosOrdenados.forEach(al=>{
+      n++;
+      const p=al.promFinal;
+      const cls=p!==''&&p!==undefined?(p>=apro?'ok':'no'):'';
+      const color=cls==='ok'?'var(--green)':cls==='no'?'var(--red)':'var(--tx3)';
+      html+=`<tr>
+        <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-size:12px;color:var(--tx3);text-align:center">${n}</td>
+        <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-size:11px;color:var(--tx3)">${grupo.ciclo}</td>
+        <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-family:'DM Mono',monospace;font-size:11px;color:var(--n500)">${al.codigo||'-'}</td>
+        <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-size:12px;font-weight:600">${al.nombre}</td>
+        <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-family:'DM Mono',monospace;font-weight:700;text-align:center;color:${color}">${p!==''&&p!==undefined?p:'-'}</td>
+      </tr>`;
+    });
+  });
+  html+='</tbody></table>';
+  tbl.innerHTML=html;
+}
+
+function exportarPDF(){
+  if(!expSelCurso){toast('Selecciona un curso','','warn');return}
+  if(!expResumenCombinado||!expResumenCombinado.grupos.length){toast('Sin datos para exportar','','warn');return}
+
+  const fecha=new Date().toLocaleDateString('es-PE',{year:'numeric',month:'long',day:'numeric'});
+  const logoUrl=getLogoUrl();
+  // Usar semestre del primer grupo que lo tenga
+  const semestre=expResumenCombinado.grupos.map(g=>g.cfg.semestre).find(s=>s)||'';
+
+  // Construir filas agrupadas por ciclo
+  let filas='';
+  let n=0;
+  expResumenCombinado.grupos.forEach(grupo=>{
+    const apro=Number((grupo.cfg||{}).notaApro)||11;
+    const alumnosOrdenados=[...grupo.alumnos].sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
+    // Encabezado de ciclo
+    filas+=`<tr><td colspan="5" style="background:#0a1628;color:#fff;padding:7px 12px;font-family:monospace;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">${grupo.ciclo} &nbsp;·&nbsp; ${alumnosOrdenados.length} alumno${alumnosOrdenados.length!==1?'s':''}</td></tr>`;
+    alumnosOrdenados.forEach(al=>{
+      n++;
+      const p=al.promFinal;
+      const aprobado=p!==''&&p!==undefined&&p>=apro;
+      const desaprobado=p!==''&&p!==undefined&&p<apro;
+      const color=aprobado?'#059669':desaprobado?'#dc2626':'#64748b';
+      filas+=`<tr>
+        <td style="text-align:center;color:#64748b;font-size:11px;padding:7px 10px">${n}</td>
+        <td style="font-size:11px;color:#334155;padding:7px 10px">${grupo.ciclo}</td>
+        <td style="font-family:monospace;font-size:11px;color:#1d4ed8;padding:7px 10px">${al.codigo||'-'}</td>
+        <td style="font-weight:600;font-size:12px;padding:7px 10px">${al.nombre}</td>
+        <td style="text-align:center;font-family:monospace;font-weight:700;font-size:13px;color:${color};padding:7px 10px">${p!==''&&p!==undefined?p:'-'}</td>
+      </tr>`;
+    });
+  });
+
+  // Resumen estadístico por ciclo
+  let statsRows='';
+  expResumenCombinado.grupos.forEach(grupo=>{
+    const apro=Number((grupo.cfg||{}).notaApro)||11;
+    const conNota=grupo.alumnos.filter(a=>a.promFinal!==''&&a.promFinal!==undefined);
+    const aprobados=conNota.filter(a=>a.promFinal>=apro).length;
+    const total=grupo.alumnos.length;
+    const pct=conNota.length?Math.round(aprobados/conNota.length*100):0;
+    statsRows+=`<tr>
+      <td style="padding:6px 12px;font-weight:600;font-size:12px">${grupo.ciclo}</td>
+      <td style="padding:6px 12px;text-align:center;font-size:12px">${total}</td>
+      <td style="padding:6px 12px;text-align:center;color:#059669;font-weight:700;font-size:12px">${aprobados}</td>
+      <td style="padding:6px 12px;text-align:center;color:#dc2626;font-weight:700;font-size:12px">${conNota.length-aprobados}</td>
+      <td style="padding:6px 12px;text-align:center;font-weight:700;font-size:12px">${pct}%</td>
+    </tr>`;
+  });
+
+  const htmlPDF=`<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<title>Registro de Notas - ${expSelCurso}</title>
+<style>
+@page{size:A4;margin:15mm 14mm 18mm 14mm}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#0f172a}
+.hdr-pdf{display:flex;align-items:center;gap:18px;padding-bottom:14px;border-bottom:2px solid #0a1628;margin-bottom:18px}
+.logo-box{width:80px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.logo-box img{max-width:80px;max-height:70px;object-fit:contain}
+.inst-info{flex:1}
+.inst-univ{font-size:10px;font-weight:700;color:#0a1628;text-transform:uppercase;letter-spacing:.6px;line-height:1.5}
+.inst-fac{font-size:9.5px;color:#334155;text-transform:uppercase;letter-spacing:.5px;line-height:1.5}
+.inst-esc{font-size:9.5px;color:#1d4ed8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;line-height:1.5}
+.titulo{margin-bottom:14px}
+.titulo h1{font-size:15px;font-weight:800;color:#0a1628;margin-bottom:3px}
+.titulo h2{font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:8px}
+.meta{display:flex;gap:18px;font-size:11px;color:#334155;flex-wrap:wrap}
+.meta-item{display:flex;gap:5px}
+.meta-item strong{color:#0a1628}
+table{width:100%;border-collapse:collapse;margin-top:6px}
+thead th{background:#0a1628;color:#fff;padding:9px 10px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.3px}
+thead th.c{text-align:center}
+tbody tr:nth-child(even){background:#f8faff}
+tbody tr:nth-child(odd){background:#fff}
+tbody td{border-bottom:1px solid #e2e8f0;vertical-align:middle}
+tbody tr:last-child td{border-bottom:2px solid #0a1628}
+.stats-section{margin-top:24px;page-break-inside:avoid}
+.stats-section h3{font-size:12px;font-weight:700;color:#0a1628;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}
+.stats-table{width:auto;min-width:60%}
+.stats-table thead th{font-size:10px}
+.stats-table tbody td{font-size:11px}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head>
+<body>
+<div class="hdr-pdf">
+  <div class="logo-box"><img src="${logoUrl}" alt="Logo" onerror="this.style.display='none'"></div>
+  <div class="inst-info">
+    <div class="inst-univ">Universidad Privada de Tacna</div>
+    <div class="inst-fac">Facultad de Ciencias de la Salud</div>
+    <div class="inst-esc">Escuela Profesional de Tecnologia Medica</div>
+  </div>
+</div>
+<div class="titulo">
+  <h1>${expSelCurso}</h1>
+  <h2>Registro consolidado por ciclo</h2>
+  <div class="meta">
+    ${semestre?`<div class="meta-item"><strong>Semestre:</strong><span>${semestre}</span></div>`:''}
+    <div class="meta-item"><strong>Ciclos:</strong><span>${expResumenCombinado.grupos.map(g=>g.ciclo).join(', ')}</span></div>
+    <div class="meta-item"><strong>Fecha:</strong><span>${fecha}</span></div>
+  </div>
+</div>
+<table>
+  <thead><tr>
+    <th class="c" style="width:34px">#</th>
+    <th style="width:80px">Ciclo</th>
+    <th style="width:100px">Codigo</th>
+    <th>Apellidos y Nombres</th>
+    <th class="c" style="width:90px">Prom. Final</th>
+  </tr></thead>
+  <tbody>${filas}</tbody>
+</table>
+<div class="stats-section">
+  <h3>Resumen por ciclo</h3>
+  <table class="stats-table">
+    <thead><tr>
+      <th>Ciclo</th>
+      <th class="c">Total</th>
+      <th class="c">Aprobados</th>
+      <th class="c">Desaprobados</th>
+      <th class="c">% Aprobacion</th>
+    </tr></thead>
+    <tbody>${statsRows}</tbody>
+  </table>
+</div>
+<script>window.onload=function(){window.print()}<\/script>
+</body></html>`;
+
+  try{
+    const blob=new Blob([htmlPDF],{type:'text/html;charset=utf-8'});
+    const burl=URL.createObjectURL(blob);
+    const win=window.open(burl,'_blank');
+    if(!win){toast('Habilita popups','','warn');URL.revokeObjectURL(burl);return}
+    setTimeout(()=>URL.revokeObjectURL(burl),60000);
+  }catch(ex){
+    const win=window.open('','_blank');
+    if(!win){toast('Habilita popups','','warn');return}
+    win.document.write(htmlPDF);win.document.close();
+  }
 }
 
 function exportarPDF(){
