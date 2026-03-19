@@ -900,7 +900,13 @@ body.rol-docente #adminOnlyBtns { display:none!important; }
         </div>
 
         <div class="card" id="edCard" style="display:none">
-          <div class="chdr"><h2 id="edTitle">Editor</h2><span class="badge" id="edBadge">-</span></div>
+          <div class="chdr" style="flex-wrap:wrap;gap:8px">
+  <h2 id="edTitle">Editor</h2>
+  <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
+    <span class="badge" id="edBadge">-</span>
+    <button onclick="editarPctExtraGlobal()" style="background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);border-radius:8px;color:#fff;font-size:11px;font-weight:700;padding:5px 12px;cursor:pointer;white-space:nowrap" title="Cambiar % extra de toda la hoja">&#9881; % Extra</button>
+  </div>
+</div>
           <div class="ed-filter" id="edFilter" style="display:none">
   <label>Buscar alumno:</label>
   <input class="filter-inp" id="filterText" placeholder="Escribe el nombre..." oninput="aplicarFiltro()">
@@ -3986,6 +3992,74 @@ async function guardarPctExtra(){
 }
 
 // Cerrar modal al hacer clic fuera
+g('pctExtraModal')&&g('pctExtraModal').addEventListener('click',function(e){
+  if(e.target===this) cerrarPctExtraModal();
+});
+// ── EDITAR % EXTRA GLOBAL (toda la hoja) ─────────────────
+function editarPctExtraGlobal(){
+  if(!hojaActiva||!hojaData){ toast('Abre una hoja primero','','warn'); return; }
+  // Detectar el pctExtra actual del primer subgrupo que encuentre
+  let pctActual = 20;
+  outer: for(const al of hojaData.alumnos){
+    for(const cu of al.cursos||[]){
+      for(const sg of cu.subgrupos||[]){
+        if(sg.pctExtra !== undefined){ pctActual = sg.pctExtra; break outer; }
+      }
+    }
+  }
+  const sub = g('pctExtraModalSub');
+  if(sub) sub.textContent = 'Se aplicará a todos los subgrupos de: ' + hojaActiva;
+  const inp = g('pctExtraInput');
+  if(inp) inp.value = pctActual;
+  const err = g('pctExtraErr');
+  if(err){ err.style.display='none'; err.textContent=''; }
+  const m = g('pctExtraModal');
+  if(m) m.style.display='flex';
+  setTimeout(()=>{ const i=g('pctExtraInput'); if(i){i.focus();i.select();} }, 100);
+}
+
+function cerrarPctExtraModal(){
+  const m = g('pctExtraModal');
+  if(m) m.style.display='none';
+}
+
+async function guardarPctExtra(){
+  const val = parseInt(g('pctExtraInput').value);
+  const err = g('pctExtraErr');
+  if(isNaN(val)||val<0||val>100){
+    err.textContent='Ingresa un valor entre 0 y 100';
+    err.style.display='block'; return;
+  }
+  showLoader('Actualizando % extra en toda la hoja...');
+  try{
+    const r = await apiPost({
+      action: 'guardarPctExtraGlobal',
+      hoja: hojaActiva,
+      pctExtra: val
+    });
+    hideLoader();
+    if(!r.ok) throw new Error(r.error||'Error al guardar');
+    // Actualizar hojaData localmente y todos los badges
+    if(hojaData){
+      hojaData.alumnos.forEach((al,ai)=>{
+        (al.cursos||[]).forEach((cu,ci)=>{
+          (cu.subgrupos||[]).forEach((sg,si)=>{
+            sg.pctExtra = val;
+            const badge = g('pctBadge_'+ai+'_'+ci+'_'+si);
+            if(badge) badge.textContent = val+'%extra';
+          });
+        });
+      });
+    }
+    toast('% extra actualizado', val+'% en toda la hoja', 'ok');
+    cerrarPctExtraModal();
+  }catch(e){
+    hideLoader();
+    err.textContent = e.message;
+    err.style.display = 'block';
+  }
+}
+
 g('pctExtraModal')&&g('pctExtraModal').addEventListener('click',function(e){
   if(e.target===this) cerrarPctExtraModal();
 });
