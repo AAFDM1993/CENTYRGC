@@ -3955,8 +3955,7 @@ async function abrirAsignarCasillero(codigo){
   var lb=g('listaAlumnosModal');
   if(lb)lb.innerHTML='<div style="padding:12px;text-align:center;color:var(--tx4);font-size:12px">Escribe para buscar...</div>';
   var sB=g('alumnoSelBox');if(sB)sB.style.display='none';
-  m.style.display='flex';
-  // Mostrar spinner mientras carga
+ m.style.display='flex';
   var lb=g('listaAlumnosModal');
   if(lb) lb.innerHTML='<div style="padding:12px;text-align:center;color:var(--tx4);font-size:12px">Cargando alumnos...</div>';
   cargarAlumnosDatalist().then(function(){
@@ -3964,7 +3963,8 @@ async function abrirAsignarCasillero(codigo){
     if(lb2) lb2.innerHTML='<div style="padding:12px;text-align:center;color:var(--tx4);font-size:12px">Escribe para buscar...</div>';
     var b=g('buscarAlumnoModal');if(b)b.focus();
   });
-   
+}
+
 var _alumnosModal=[];
 async function cargarAlumnosDatalist(){
   try{
@@ -3987,8 +3987,8 @@ function filtrarAlumnosModal(){
     return '<div onclick="selAlumnoModal(this.dataset.cod,this.dataset.nom)"'
       +' data-cod="'+c2+'" data-nom="'+n2+'"'
       +' style="padding:10px 14px;border-bottom:1px solid var(--bd2);cursor:pointer"'
-      +' onmouseover="this.style.background=\'var(--n050)\'" onmouseout="this.style.background=\'\'">'
-      +'<div style="font-size:13px;font-weight:600;color:var(--tx)">'+n2+'</div>'
+      +' onmouseover="this.style.background=\'var(--n050)\'" onmouseout="this.style.background=\'\'">'+
+      '<div style="font-size:13px;font-weight:600;color:var(--tx)">'+n2+'</div>'
       +'<div style="font-size:11px;color:var(--tx3)">'+c2+'</div></div>';
   }).join('');
 }
