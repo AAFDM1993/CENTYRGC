@@ -3256,8 +3256,15 @@ function renderCalendarioEst(){
     ? agendaCfg.franjas[agendaCfg.franjas.length-1].fin : '19:00';
   const semanaActualEst = fmt(getLunes(new Date()))===fmt(calEstFechaBase);
   let dias;
- // Estudiante siempre ve la semana completa (lun-vie) sin filtrar pasados
-  dias=todosLosDiasEst;
+ // Mostrar siempre 5 días hábiles desde hoy (incluyendo hoy si tiene slots)
+  const diasHabilesEst=[];
+  let cursorEst=new Date(); cursorEst.setHours(0,0,0,0);
+  while(diasHabilesEst.length<5){
+    const dow=cursorEst.getDay();
+    if(dow>=1&&dow<=5) diasHabilesEst.push(new Date(cursorEst));
+    cursorEst.setDate(cursorEst.getDate()+1);
+  }
+  dias=diasHabilesEst;
 
   // Ancho de columna de días
   const dw=window.innerWidth<=480?110:window.innerWidth<=768?140:200;
