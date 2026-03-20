@@ -2955,12 +2955,9 @@ function renderCalendario(){
         dias.forEach(d=>{
           const fechaStr=fmt(d);
           const pasado=new Date(fechaStr+'T'+hora+':00')<new Date();
-          const rsvEsp=agendaReservas.filter(r=>
-            String(r.fecha).trim()===String(fechaStr).trim() &&
-            String(r.horaInicio).trim()===String(hora).trim() &&
-            String(r.area).trim()===String(area.nombre).trim() &&
-            String(r.camilla).trim()===String(esp.nombre).trim()
-          );
+          const norm=s=>String(s).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+          const matchEsp=(r,en)=>{const rc=norm(r.camilla),ne=norm(en);return rc===ne||rc.startsWith(ne)||ne.startsWith(rc);};
+          const rsvEsp=agendaReservas.filter(r=>norm(r.fecha)===norm(fechaStr)&&norm(r.horaInicio)===norm(hora)&&norm(r.area)===norm(area.nombre)&&matchEsp(r,esp.nombre));
           const lleno=rsvEsp.length>=cap;
           const bloq=typeof esBloqueado==='function'&&esBloqueado(fechaStr,hora,area.nombre,esp.nombre);
 
@@ -3157,7 +3154,12 @@ async function confirmarReserva(){
     });
     hideLoader();if(!r.ok)throw new Error(r.error);
     cerrarReservaModal();toast('Reserva creada','','ok');
-    if(esEst){ await cargarReservasEst();renderCalendarioEst(); }
+    if(esEst){
+      await cargarReservasEst();
+      const _finSemC=new Date(calEstFechaBase);_finSemC.setDate(_finSemC.getDate()+4);
+      await cargarBloqueos(fmt(calEstFechaBase),fmt(_finSemC));
+      renderCalendarioEst();
+    }
     else if(fromModal){ const finM=new Date(calFechaBase);finM.setDate(finM.getDate()+4); await cargarReservasSemana(); await cargarBloqueos(fmt(calFechaBase),fmt(finM)); renderCalendarioModal(); }
     else { await cargarReservasSemana();renderCalendario(); }
   }catch(e){hideLoader();const er=g('rsvErr');er.textContent=e.message;er.style.display='block';}
@@ -3324,12 +3326,9 @@ function renderCalendarioEst(){
         dias.forEach(d=>{
           const fechaStr=fmt(d);
           const pasado=new Date(fechaStr+'T'+hora+':00')<new Date();
-          const rsvEsp=agendaEstReservas.filter(r=>
-            String(r.fecha).trim()===String(fechaStr).trim() &&
-            String(r.horaInicio).trim()===String(hora).trim() &&
-            String(r.area).trim()===String(area.nombre).trim() &&
-            String(r.camilla).trim()===String(esp.nombre).trim()
-          );
+          const norm=s=>String(s).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+          const matchEsp=(r,en)=>{const rc=norm(r.camilla),ne=norm(en);return rc===ne||rc.startsWith(ne)||ne.startsWith(rc);};
+          const rsvEsp=agendaEstReservas.filter(r=>norm(r.fecha)===norm(fechaStr)&&norm(r.horaInicio)===norm(hora)&&norm(r.area)===norm(area.nombre)&&matchEsp(r,esp.nombre));
           const lleno=rsvEsp.length>=cap;
           const bloq=typeof esBloqueado==='function'&&esBloqueado(fechaStr,hora,area.nombre,esp.nombre);
 
@@ -3692,8 +3691,11 @@ function mostrarSecEst(sec){
     if(sA)sA.style.display='block';
     if(bA){bA.style.background='var(--n500)';bA.style.borderColor='var(--n400)';bA.style.color='#fff';}
     if(bnA)bnA.style.color='#fff';
-    if(!agendaEstReservas.length||!agendaCfg.areas.length)iniciarAgendaEstudiante();
-    else renderCalendarioEst();
+    cargarReservasEst().then(()=>{
+      const _finSem=new Date(calEstFechaBase);_finSem.setDate(_finSem.getDate()+4);
+      cargarBloqueos(fmt(calEstFechaBase),fmt(_finSem)).then(renderCalendarioEst);
+    });
+    if(!agendaCfg.areas.length) iniciarAgendaEstudiante();
   }else if(sec==='casilleros'){
     if(sC)sC.style.display='block';
     if(bC){bC.style.background='var(--n500)';bC.style.borderColor='var(--n400)';bC.style.color='#fff';}
