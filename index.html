@@ -1997,9 +1997,14 @@ async function saveNota(inp){
   const key=alumno+'|'+curso+'|'+sgr+'|'+pac+'|'+tipo+'|'+idx;
   valor!==''?inp.classList.add('v'):inp.classList.remove('v');
   clearTimeout(saveTimers[key]);
-
- // Verificar mejoría en notas SS desde la 3ra sesión (idx >= 2)
-  if(tipo==='ss' && idx>=2 && valor!==''){
+   
+// Preguntar mejoría en el 25%, 50% y 75% del mínimo programado
+  // idx es base 0, atención N = idx N-1
+  const _p25 = Math.ceil(base * 0.25) - 1;
+  const _p50 = Math.ceil(base * 0.50) - 1;
+  const _p75 = Math.ceil(base * 0.75) - 1;
+  const _sesionesMejoria = new Set([_p25, _p50, _p75].filter(x => x >= 0));
+  if(tipo==='ss' && _sesionesMejoria.has(idx) && valor!==''){
     const notaActual = parseFloat(valor);
     const inputs = inp.closest('tr').querySelectorAll('input.nc:not(.ex)');
     const inputAnterior = inputs[idx-1];
