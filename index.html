@@ -2309,22 +2309,32 @@ function renderEstNotas(resultados) {
           </tr>`;
         }).join('');
 
-        return `<div class="est-sgr-hdr">${sg.nombre}</div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Paciente</th>${thS}${thE}<th class="th-pr">PROM</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+        return `<div class="est-sgr-hdr">${sg.nombre}</div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac" style="display:none"></th><th class="th-nom">Paciente</th>${thS}${thE}<th class="th-pr">PROM</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
       }).join('');
       return `<div class="est-cu-hdr">${cu.nombre}</div>${subgrupos}`;
     }).join('');
 
     const promFinal = (() => {
-  const todas = [];
-  res.cursos.forEach(cu => cu.subgrupos.forEach(sg => sg.pacientes.forEach(pac => { if(pac.prom !== '') todas.push(Number(pac.prom)); })));
-  if(!todas.length) return '';
-  const avg = Math.round(todas.reduce((a,b)=>a+b,0)/todas.length*100)/100;
-  const color = avg >= 11 ? 'var(--green)' : 'var(--red)';
-  return `<span style="font-family:'DM Mono',monospace;font-size:15px;font-weight:800;color:${color};margin-left:10px">${avg}</span>`;
-})();
-return `<div class="est-hoja"><div class="est-hoja-hdr" style="display:flex;align-items:center;justify-content:space-between"><div><h3>${res.asignatura}${promFinal}</h3><p>${res.hoja}</p></div></div>${bl}</div>`;
+      const todas = [];
+      res.cursos.forEach(cu => cu.subgrupos.forEach(sg => sg.pacientes.forEach(pac => { if(pac.prom !== '' && pac.prom !== undefined) todas.push(Number(pac.prom)); })));
+      if(!todas.length) return '';
+      const avg = Math.round(todas.reduce((a,b)=>a+b,0)/todas.length*100)/100;
+      const color = avg >= 11 ? 'var(--green)' : 'var(--red)';
+      return `<span style="font-family:'DM Mono',monospace;font-size:15px;font-weight:800;color:${color};margin-left:10px">${avg}</span>`;
+    })();
+
+   return `<div class="est-hoja"><div class="est-hoja-hdr" style="display:flex;align-items:center;justify-content:space-between"><div><h3>${res.asignatura}</h3><p>${res.hoja}</p></div>${promFinal}</div>${bl}</div>`;
   }).join('');
 }
+```
+
+---
+
+## Problema 2 — Columna ID sigue visible
+
+**Busca** en `renderEstNotas`:
+```
+return `<div class="est-sgr-hdr">${sg.nombre}</div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th>
 
 let _docPopupTimer = null;
 function mostrarDocenteNota(td){
