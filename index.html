@@ -1922,7 +1922,7 @@ function renderPreview(){
         for(let i=0;i<(sg.notasBase||0);i++){const lbl=i===0?'EV':'S'+i;thS+=`<th class="th-ss">${lbl}</th>`;tdS+='<td style="color:var(--tx4);text-align:center">.</td>'}
         for(let i=0;i<(sg.notasExtra||0);i++){thE+=`<th class="th-ex">E${i+1}</th>`;tdE+='<td style="color:#93c5fd;text-align:center">.</td>'}
         let rows='';for(let pi=0;pi<(sg.numPacientes||1);pi++)rows+=`<tr><td class="td-pac">PAC${pi+1}</td><td>-</td>${tdS}${tdE}<td><span class="pc">-</span></td></tr>`;
-        return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac" style="display:none"></th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+        return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac" style="display:none"></th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM</th></tr></thead><tbody>${rows}</tbody></table></div>`;
       }).join('');
       return`<div class="pv-cu-hdr">${c.label}</div>${sb}`;
     }).join('');
@@ -2295,14 +2295,18 @@ function renderEstNotas(resultados) {
             <td class="td-pac" style="display:none">${pac.label}</td>
             <td style="font-size:12px;font-weight:500;padding:7px 8px;color:var(--tx2)">${pac.nombre || '-'}</td>
             ${tSS}${tEx}
-            <td style="text-align:center"><span class="pc" style="background:var(--n800);color:var(--n300)">${ps !== '' && ps !== undefined ? ps : '-'}</span></td>
-            <td style="text-align:center"><span class="${pc}">${p !== '' && p !== undefined ? p : '-'}</span></td>
+            <td style="text-align:center"><span class="${pc}" style="${p!==''&&p!==undefined?(p>=11?'background:rgba(5,150,105,.15);color:var(--green)':'background:rgba(220,38,38,.12);color:var(--red)'):'background:var(--n800);color:var(--n300)'}">${p !== '' && p !== undefined ? p : '-'}</span></td>
           </tr>`;
         }).join('');
 
         return `<div class="est-sgr-hdr">${sg.nombre}</div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac" style="display:none"></th><th class="th-nom">Paciente</th>${thS}${thE}<th class="th-pr">PROM</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
       }).join('');
-      return `<div class="est-cu-hdr">${cu.nombre}</div>${subgrupos}`;
+      const _pC=[];cu.subgrupos.forEach(sg=>sg.pacientes.forEach(pac=>{if(pac.prom!==''&&pac.prom!==undefined)_pC.push(Number(pac.prom));}));
+      const _aC=_pC.length?Math.round(_pC.reduce((a,b)=>a+b,0)/_pC.length*100)/100:null;
+      const _cC=_aC!==null?(_aC>=11?'var(--green)':'var(--red)'):'var(--tx4)';
+      const _bgC=_aC!==null?(_aC>=11?'rgba(5,150,105,.15)':'rgba(220,38,38,.12)'):'transparent';
+      const _spC=_aC!==null?`<span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:800;color:${_cC};background:${_bgC};padding:2px 10px;border-radius:8px">${_aC}</span>`:'';
+      return `<div class="est-cu-hdr" style="display:flex;align-items:center;justify-content:space-between"><span>${cu.nombre}</span>${_spC}</div>${subgrupos}`;
     }).join('');
 
     const promFinal = (() => {
@@ -2314,7 +2318,7 @@ function renderEstNotas(resultados) {
       return `<span style="font-family:'DM Mono',monospace;font-size:15px;font-weight:800;color:${color};margin-left:10px">${avg}</span>`;
     })();
 
-    return `<div class="est-hoja"><div class="est-hoja-hdr" style="display:flex;align-items:center;justify-content:space-between"><div><h3>${res.asignatura}</h3><p>${res.hoja}</p></div>${promFinal}</div>${bl}</div>`;
+    return `<div class="est-hoja"><div class="est-hoja-hdr"><h3>${res.asignatura}</h3><p>${res.hoja}</p></div>${bl}</div>`;
   }).join('');
 }
 let _docPopupTimer = null;
