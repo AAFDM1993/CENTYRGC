@@ -1987,7 +1987,7 @@ function renderAlBlock(al,ai,apro){
     cu.subgrupos.forEach(sg2 => {
       sg2.pacientes.forEach(pac2 => {
         if(pac2.prom !== '' && pac2.prom !== undefined && pac2.prom !== null){
-  _sumaProms += Number(pac2.prom); _cntProms++;
+          _sumaProms += Number(pac2.prom); _cntProms++;
         }
       });
     });
@@ -2052,6 +2052,8 @@ async function saveNota(inp){
   const _p50 = Math.ceil(base * 0.50) - 1;
   const _p75 = Math.ceil(base * 0.75) - 1;
   const _sesionesMejoria = new Set([_p25, _p50, _p75].filter(x => x >= 0));
+  // Solo en 50% y 75% se ofrece paciente extra
+  const _checkpointsPacExtra = new Set([_p50, _p75].filter(x => x >= 0));
   if(tipo==='ss' && _sesionesMejoria.has(idx) && valor!==''){
     const notaActual = parseFloat(valor);
     const inputs = inp.closest('tr').querySelectorAll('input.nc:not(.ex)');
@@ -2074,9 +2076,8 @@ async function saveNota(inp){
           return;
         }
       }
-      // Al completar todas las SS sin mejoría → ofrecer paciente extra
-      const todasLlenas = Array.from(inputs).every(i => i.value.trim() !== '');
-      if(todasLlenas && !huboMejoria){
+      // Solo en checkpoint 50% y 75% sin mejoría → ofrecer paciente extra
+      if(!huboMejoria && _checkpointsPacExtra.has(idx)){
         setTimeout(()=>ofrecerPacienteExtra(alumno,curso,sgr,base,extra,inp), 800);
       }
     }
