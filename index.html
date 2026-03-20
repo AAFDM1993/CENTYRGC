@@ -3216,10 +3216,19 @@ function filtrarCalendarioEstPorArea(area){
 }
 
 async function cargarReservasEst(){
-  const ini=fmt(calEstFechaBase);
-  const finSemEst=new Date(calEstFechaBase);finSemEst.setDate(finSemEst.getDate()+4);
+  // Calcular rango de los próximos 5 días hábiles desde hoy
+  const hoy=new Date(); hoy.setHours(0,0,0,0);
+  const cursor=new Date(hoy);
+  const diasHabiles=[];
+  while(diasHabiles.length<5){
+    const dow=cursor.getDay();
+    if(dow>=1&&dow<=5) diasHabiles.push(fmt(new Date(cursor)));
+    cursor.setDate(cursor.getDate()+1);
+  }
+  const ini=diasHabiles[0];
+  const fin=diasHabiles[diasHabiles.length-1];
   try{
-    const r=await apiGet('leerReservas',{fechaInicio:ini,fechaFin:fmt(finSemEst)});
+    const r=await apiGet('leerReservas',{fechaInicio:ini,fechaFin:fin});
     if(r.ok) agendaEstReservas=r.reservas;
   }catch(e){ agendaEstReservas=[]; }
 }
@@ -3685,8 +3694,15 @@ function mostrarSecEst(sec){
     if(bA){bA.style.background='var(--n500)';bA.style.borderColor='var(--n400)';bA.style.color='#fff';}
     if(bnA)bnA.style.color='#fff';
     cargarReservasEst().then(()=>{
-      const _finSem=new Date(calEstFechaBase);_finSem.setDate(_finSem.getDate()+4);
-      cargarBloqueos(fmt(calEstFechaBase),fmt(_finSem)).then(renderCalendarioEst);
+      const hoy2=new Date(); hoy2.setHours(0,0,0,0);
+      const cursor2=new Date(hoy2);
+      const dias5=[];
+      while(dias5.length<5){
+        const dow=cursor2.getDay();
+        if(dow>=1&&dow<=5) dias5.push(fmt(new Date(cursor2)));
+        cursor2.setDate(cursor2.getDate()+1);
+      }
+      cargarBloqueos(dias5[0],dias5[dias5.length-1]).then(renderCalendarioEst);
     });
     if(!agendaCfg.areas.length) iniciarAgendaEstudiante();
   }else if(sec==='casilleros'){
