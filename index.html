@@ -3256,22 +3256,8 @@ function renderCalendarioEst(){
     ? agendaCfg.franjas[agendaCfg.franjas.length-1].fin : '19:00';
   const semanaActualEst = fmt(getLunes(new Date()))===fmt(calEstFechaBase);
   let dias;
-  if(semanaActualEst){
-    const diasHabilesEst=[];
-    let cursorEst=new Date(); cursorEst.setHours(0,0,0,0);
-    while(diasHabilesEst.length<7){
-      const dow=cursorEst.getDay();
-      if(dow>=1&&dow<=5){
-        const fd=fmt(cursorEst);
-        const finDia=new Date(fd+'T'+ultimaFranjaGEst+':00');
-        if(finDia>ahora2) diasHabilesEst.push(new Date(cursorEst));
-      }
-      cursorEst.setDate(cursorEst.getDate()+1);
-    }
-    dias=diasHabilesEst;
-  } else {
-    dias=todosLosDiasEst;
-  }
+ // Estudiante siempre ve la semana completa (lun-vie) sin filtrar pasados
+  dias=todosLosDiasEst;
 
   // Ancho de columna de días
   const dw=window.innerWidth<=480?110:window.innerWidth<=768?140:200;
