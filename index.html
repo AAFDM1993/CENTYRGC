@@ -4451,12 +4451,11 @@ let agendaRecReservas = [];
 async function iniciarVistaRecepcion(){
   document.body.className=(document.body.className||'').replace(/\brol-\S+/g,'').trim()+' rol-recepcion';
   g('viewRecepcion').style.display='block';
-  // Mostrar punto de conexión correcto
   const rdot=g('rolDot'); if(rdot) rdot.className='rdot recepcion';
   showLoader('Cargando calendario...');
   try{
     const rc = await apiGet('leerAgendaConfig');
-    if(rc.ok){
+    if(rc.ok && rc.config){
       agendaCfg = rc.config;
       agendaCfg.areas = (agendaCfg.areas||[]).map(function(a){
         if(!a.espacios&&a.camillas) a.espacios=Array.from({length:a.camillas},(_,i)=>({nombre:'Camilla '+(i+1),capacidad:1}));
@@ -4464,6 +4463,10 @@ async function iniciarVistaRecepcion(){
         return a;
       });
       if(!agendaCfg.franjas) agendaCfg.franjas=[{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}];
+    } else {
+      hideLoader();
+      g('calRecGrid').innerHTML='<div class="empty" style="padding:20px">⚠️ Error al cargar configuración: '+(rc.error||'Sin respuesta')+'</div>';
+      return;
     }
     renderAreaBtns('calRecAreaFiltro','filtrarCalendarioRecPorArea');
     calRecFechaBase = getLunes(new Date());
@@ -4472,7 +4475,7 @@ async function iniciarVistaRecepcion(){
     await cargarBloqueos(fmt(calRecFechaBase),fmt(finSem));
   }catch(e){
     hideLoader();
-    toast('Error al cargar agenda', e.message, 'err');
+    g('calRecGrid').innerHTML='<div class="empty" style="padding:20px">⚠️ Error: '+e.message+'</div>';
     return;
   }
   hideLoader();
