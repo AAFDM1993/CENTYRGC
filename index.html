@@ -2061,9 +2061,9 @@ function renderAlBlock(al,ai,apro){
       : Number(_notaFinalCurso) >= apro ? 'var(--green)' : 'var(--red)';
     const _nfBg = _notaFinalCurso === null ? 'rgba(255,255,255,.08)'
       : Number(_notaFinalCurso) >= apro ? 'rgba(5,150,105,.2)' : 'rgba(220,38,38,.2)';
-    return`<div class="pv-cu-hdr" style="justify-content:space-between">
+   return`<div class="pv-cu-hdr" style="justify-content:space-between">
       <span>${cu.nombre}</span>
-      <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:800;background:${_nfBg};color:${_nfColor};padding:2px 12px;border-radius:8px">
+      <span id="nfcurso_${ai}_${ci}" style="font-family:'DM Mono',monospace;font-size:13px;font-weight:800;background:${_nfBg};color:${_nfColor};padding:2px 12px;border-radius:8px">
         ${_notaFinalCurso !== null ? _notaFinalCurso : '-'}
       </span>
     </div>${sb}`;
@@ -2173,7 +2173,23 @@ async function saveNota(inp){
                 if(cellNF){cellNF.textContent=r.prom!==''&&r.prom!==undefined?r.prom:'-';cellNF.className='pc nf'+(r.prom!==''&&r.prom!==undefined?(r.prom>=apro?' ok':' no'):'');}
                 if(cellPS&&r.promSS!==undefined){cellPS.textContent=r.promSS!==''&&r.promSS!==undefined?r.promSS:'-';}
                 if(cellPE&&r.extraPond!==undefined){cellPE.textContent=r.extraPond!==''&&r.extraPond!==undefined?r.extraPond:'-';}
-              }
+                // Actualizar hojaData en memoria y recalcular badge del curso
+                hojaData.alumnos[ai].cursos[ci].subgrupos[si].pacientes[pi].prom = r.prom!==undefined?r.prom:'';
+                hojaData.alumnos[ai].cursos[ci].subgrupos[si].pacientes[pi].promSS = r.promSS!==undefined?r.promSS:'';
+                // Recalcular nota final del curso
+                let _s=0,_c=0;
+                hojaData.alumnos[ai].cursos[ci].subgrupos.forEach(sg2=>{
+                  sg2.pacientes.forEach(pac2=>{
+                    if(pac2.prom!==''&&pac2.prom!==undefined&&pac2.prom!==null){_s+=Number(pac2.prom);_c++;}
+                  });
+                });
+                const _nf=_c>0?(_s/_c).toFixed(2):null;
+                const _badgeCurso=g(`nfcurso_${ai}_${ci}`);
+                if(_badgeCurso){
+                  _badgeCurso.textContent=_nf!==null?_nf:'-';
+                  _badgeCurso.style.color=_nf===null?'var(--n300)':Number(_nf)>=apro?'var(--green)':'var(--red)';
+                  _badgeCurso.style.background=_nf===null?'rgba(255,255,255,.08)':Number(_nf)>=apro?'rgba(5,150,105,.2)':'rgba(220,38,38,.2)';
+                }
             }
           }
         }
