@@ -2054,9 +2054,12 @@ function renderAlBlock(al,ai,apro){
           <td><input class="nn ${nv?'has-val':''}" value="${esc2(nv)}" placeholder="Nombre paciente" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" onchange="saveNombrePac(this)" onfocus="this.select()">${esExtra?`<div style="margin-top:3px;display:flex;align-items:center;gap:4px">${extraBadge}${btnDelPacX}</div>`:''}</td>
           ${sc}${ec}
           <td style="text-align:center"><span class="pc" id="ps_${ai}_${ci}_${si}_${pi}" style="background:var(--n800);color:var(--n300)">${ps!==''&&ps!==undefined?ps:'-'}</span></td>
+          <td style="text-align:center"><span class="pc nf" id="pc_${ai}_${ci}_${si}_${pi}" style="${p!==''&&p!==undefined?(p>=apro?'background:rgba(5,150,105,.15);color:var(--green)':'background:rgba(220,38,38,.12);color:var(--red)'):'background:var(--n800);color:var(--n300)'}">${p!==''&&p!==undefined?p:'-'}</span></td>
         </tr>`;
       }).join('')||'<tr><td colspan="99" class="empty" style="padding:8px">Sin pacientes</td></tr>';
-      return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody>
+      ${(()=>{ const _pf=sg.pacientes.filter(p=>p.prom!==''&&p.prom!==undefined); const _nf=_pf.length?Math.round(_pf.reduce((a,p)=>a+Number(p.prom),0)/_pf.length*100)/100:null; const _col=_nf!==null?(_nf>=apro?'var(--green)':'var(--red)'):'var(--n300)'; const _bg=_nf!==null?(_nf>=apro?'rgba(5,150,105,.15)':'rgba(220,38,38,.12)'):'var(--n800)'; return `<tfoot><tr><td colspan="2" style="padding:6px 12px;font-size:11px;font-weight:700;color:var(--tx3);background:var(--n050);border-top:2px solid var(--bd2)">Nota Final Subgrupo</td><td colspan="${base+extra}" style="border-top:2px solid var(--bd2);background:var(--n050)"></td><td style="text-align:center;border-top:2px solid var(--bd2);background:${_bg}"><span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:800;color:${_col}">${_nf!==null?_nf:'-'}</span></td></tr></tfoot>`; })()}
+      </table></div>`;
     }).join('');
     // Calcular nota final del curso: promedio de todos los PROM de todos los pacientes
     let _sumaProms = 0, _cntProms = 0;
@@ -2295,11 +2298,12 @@ function renderEstNotas(resultados) {
             <td class="td-pac" style="display:none">${pac.label}</td>
             <td style="font-size:12px;font-weight:500;padding:7px 8px;color:var(--tx2)">${pac.nombre || '-'}</td>
             ${tSS}${tEx}
+            <td style="text-align:center"><span class="pc" style="background:var(--n800);color:var(--n300)">${ps !== '' && ps !== undefined ? ps : '-'}</span></td>
             <td style="text-align:center"><span class="${pc}" style="${p!==''&&p!==undefined?(p>=11?'background:rgba(5,150,105,.15);color:var(--green)':'background:rgba(220,38,38,.12);color:var(--red)'):'background:var(--n800);color:var(--n300)'}">${p !== '' && p !== undefined ? p : '-'}</span></td>
           </tr>`;
         }).join('');
 
-        return `<div class="est-sgr-hdr">${sg.nombre}</div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac" style="display:none"></th><th class="th-nom">Paciente</th>${thS}${thE}<th class="th-pr">PROM</th></tr></thead><tbody>${rows}</tbody>
+        return `<div class="est-sgr-hdr">${sg.nombre}</div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac" style="display:none"></th><th class="th-nom">Paciente</th>${thS}${thE}<th class="th-pr">PROM</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody>
         <tfoot><tr>
           <td colspan="2" style="padding:7px 12px;font-weight:700;font-size:12px;color:var(--n600);background:var(--n050);border-top:2px solid var(--bd2)">Nota Final del Subgrupo</td>
           ${(() => { const ps2=sg.pacientes.filter(p=>p.prom!==''&&p.prom!==undefined); const nf=ps2.length?Math.round(ps2.reduce((a,p)=>a+Number(p.prom),0)/ps2.length*100)/100:null; const col=nf!==null?(nf>=11?'var(--green)':'var(--red)'):'var(--tx4)'; const bg=nf!==null?(nf>=11?'rgba(5,150,105,.15)':'rgba(220,38,38,.12)'):'var(--n050)'; return `<td colspan="${base+extra+1}" style="text-align:center;background:${bg};border-top:2px solid var(--bd2)"><span style="font-family:'DM Mono',monospace;font-size:15px;font-weight:800;color:${col}">${nf!==null?nf:'-'}</span></td>`; })()}
