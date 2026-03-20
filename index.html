@@ -828,7 +828,8 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
           <button onclick="abrirPanelAdmin('al')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128100; Alumnos</button>
           <button onclick="abrirPanelAdmin('us')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128101; Usuarios</button>
           <button onclick="abrirPanelAdmin('pdf')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128196; PDF</button>
-          <button onclick="abrirPanelAdmin('log')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128202; Log</button> 
+          <button onclick="abrirPanelAdmin('log')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128202; Log</button>
+          <button onclick="abrirPanelAdmin('ho')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128193; Hojas</button>
         </div>
 
         <!-- Admin+Docente: hojas, casilleros y agenda -->
@@ -2020,7 +2021,7 @@ function renderAlBlock(al,ai,apro){
         const pc='pc'+(p!==''&&p!==undefined?(p>=apro?' ok':' no'):'');
         const esExtra = pac.label.indexOf('X')>=0 || (pi >= hojaData.alumnos[ai]?.cursos[ci]?.subgrupos[si]?.numPacientesBase);
         const rowBg = esExtra ? 'background:linear-gradient(90deg,rgba(217,119,6,.08),transparent);' : '';
-        const btnDelPacX = (esExtra && session && session.rol==='admin')
+        const btnDelPacX = (esExtra && session && (session.rol==='admin'||session.rol==='docente'))
           ? `<button onclick="eliminarPacX('${esc(al.nombre)}','${esc(cu.nombre)}','${esc(sg.nombre)}','${esc(pac.label)}')" style="background:none;border:none;color:var(--red);font-size:11px;cursor:pointer;padding:0;margin-left:4px" title="Eliminar PACX">&#128465;</button>`
           : '';
         const pacLabel = esExtra
