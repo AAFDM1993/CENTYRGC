@@ -4469,8 +4469,16 @@ async function iniciarVistaRecepcion(){
     await cargarReservasRec();
     const finSem=new Date(calRecFechaBase);finSem.setDate(finSem.getDate()+4);
     await cargarBloqueos(fmt(calRecFechaBase),fmt(finSem));
-  }catch(e){ console.warn('Error agenda recepcion:',e.message); }
+  }catch(e){
+    hideLoader();
+    toast('Error al cargar agenda', e.message, 'err');
+    return;
+  }
   hideLoader();
+  if(!agendaCfg.areas||!agendaCfg.areas.length){
+    g('calRecGrid').innerHTML='<div class="empty" style="padding:20px">Sin áreas configuradas. Contacta al administrador.</div>';
+    return;
+  }
   renderCalendarioRec();
 }
 
