@@ -837,6 +837,7 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
         <div id="docenteHojasBtns" style="display:flex;gap:5px;align-items:center;flex-shrink:0"><span style="font-size:12px;color:var(--n500)">Cargando...</span></div>
         <div style="width:1px;height:24px;background:var(--n700);margin:0 6px;flex-shrink:0"></div>
         <button onclick="abrirPanelAdmin('cas')" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:700;padding:6px 13px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.18)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128220; Casilleros</button>
+        <button onclick="irAHC()" style="display:flex;align-items:center;gap:6px;background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);border-radius:9px;color:#c4b5fd;font-size:12px;font-weight:700;padding:6px 13px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .2s" onmouseover="this.style.background='rgba(139,92,246,.28)'" onmouseout="this.style.background='rgba(139,92,246,.15)'">🏥 HC</button>
         <button id="btnTopbarAgenda" onclick="mostrarAgenda()" style="display:flex;align-items:center;gap:6px;background:var(--n600);border:1px solid var(--n500);border-radius:9px;color:#fff;font-size:12px;font-weight:700;padding:6px 13px;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:background .2s" onmouseover="this.style.background='var(--n500)'" onmouseout="this.style.background='var(--n600)'">
           &#128197; Agenda
         </button>
@@ -1150,6 +1151,9 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
     <button id="admBnAgenda" onclick="admNavAgenda()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
       <span style="font-size:26px;line-height:1">&#128197;</span><span>Agenda</span>
     </button>
+    <button onclick="irAHC()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:#c4b5fd;cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:26px;line-height:1">🏥</span><span>HC</span>
+    </button>
     <button onclick="abrirPassModal()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
       <span style="font-size:26px;line-height:1">&#128274;</span><span>Clave</span>
     </button>
@@ -1159,7 +1163,7 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
   </div>
 </div>
 
-<!-- Bottom Navigation estudiante (móvil ≤480px) -->
+   <!-- Bottom Navigation estudiante (móvil ≤480px) -->
 <div id="estBottomNav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--n900);border-top:1px solid var(--n700);z-index:200">
   <div style="display:flex;height:68px;width:100%;padding:0">
     <button id="estBnNotas" onclick="mostrarSecEst('notas')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:#fff;cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
@@ -1170,6 +1174,9 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
     </button>
     <button id="estBnAgenda" onclick="mostrarSecEst('agenda')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
       <span style="font-size:22px;line-height:1">&#128197;</span><span>Agenda</span>
+    </button>
+    <button onclick="irAHC()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:#c4b5fd;cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:22px;line-height:1">🏥</span><span>HC</span>
     </button>
     <button onclick="abrirPassModal()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
       <span style="font-size:22px;line-height:1">&#128274;</span><span>Clave</span>
@@ -4622,6 +4629,14 @@ function renderCalendarioRec(){
 
   html+='</div></div>';
   grid.innerHTML=html;
+}
+   function irAHC(){
+  if(!session) return;
+  var url='hc.html?token='+encodeURIComponent(session.token)
+    +'&rol='+encodeURIComponent(session.rol)
+    +'&nombre='+encodeURIComponent(session.nombre||session.codigo)
+    +'&codigo='+encodeURIComponent(session.codigo);
+  window.open(url,'_blank');
 }
 </script>
 </body>
