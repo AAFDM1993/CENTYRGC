@@ -1977,13 +1977,31 @@ function renderAlBlock(al,ai,apro){
           </td>
           <td><input class="nn ${nv?'has-val':''}" value="${esc2(nv)}" placeholder="Nombre paciente" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" onchange="saveNombrePac(this)" onfocus="this.select()"></td>
           ${sc}${ec}
-          <td style="text-align:center"><span class="pc" id="ps_${ai}_${ci}_${si}_${pi}"
-          <td style="text-align:center"><span class="${pc} nf" id="pc_${ai}_${ci}_${si}_${pi}">${p!==''&&p!==undefined?p:'-'}</span></td>
+          <td style="text-align:center"><span class="pc" id="ps_${ai}_${ci}_${si}_${pi}" style="background:var(--n800);color:var(--n300)">${ps!==''&&ps!==undefined?ps:'-'}</span></td>
         </tr>`;
       }).join('')||'<tr><td colspan="99" class="empty" style="padding:8px">Sin pacientes</td></tr>';
-      return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+      return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th></tr></thead><tbody>${rows}</tbody></table></div>`;
     }).join('');
-    return`<div class="pv-cu-hdr">${cu.nombre}</div>${sb}`;
+    // Calcular nota final del curso: promedio de todos los PROM de todos los pacientes
+    let _sumaProms = 0, _cntProms = 0;
+    cu.subgrupos.forEach(sg2 => {
+      sg2.pacientes.forEach(pac2 => {
+        if(pac2.prom !== '' && pac2.prom !== undefined && pac2.prom !== null){
+  _sumaProms += Number(pac2.prom); _cntProms++;
+        }
+      });
+    });
+    const _notaFinalCurso = _cntProms > 0 ? (_sumaProms / _cntProms).toFixed(2) : null;
+    const _nfColor = _notaFinalCurso === null ? 'var(--n300)'
+      : Number(_notaFinalCurso) >= apro ? 'var(--green)' : 'var(--red)';
+    const _nfBg = _notaFinalCurso === null ? 'rgba(255,255,255,.08)'
+      : Number(_notaFinalCurso) >= apro ? 'rgba(5,150,105,.2)' : 'rgba(220,38,38,.2)';
+    return`<div class="pv-cu-hdr" style="justify-content:space-between">
+      <span>${cu.nombre}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:800;background:${_nfBg};color:${_nfColor};padding:2px 12px;border-radius:8px">
+        ${_notaFinalCurso !== null ? _notaFinalCurso : '-'}
+      </span>
+    </div>${sb}`;
   }).join('');
   return`<div class="pv-al" data-idx="${ai}" data-nombre="${al.nombre.toLowerCase()}"><div class="pv-al-hdr"><span>${al.nombre}</span><span class="pv-al-code">${al.codigo||''}</span></div>${bl}</div>`;
 }
@@ -3938,17 +3956,22 @@ async function abrirAsignarCasillero(codigo){
   if(lb)lb.innerHTML='<div style="padding:12px;text-align:center;color:var(--tx4);font-size:12px">Escribe para buscar...</div>';
   var sB=g('alumnoSelBox');if(sB)sB.style.display='none';
   m.style.display='flex';
-  cargarAlumnosDatalist();
-  setTimeout(function(){var b=g('buscarAlumnoModal');if(b)b.focus();},100);
-}
-
+  // Mostrar spinner mientras carga
+  var lb=g('listaAlumnosModal');
+  if(lb) lb.innerHTML='<div style="padding:12px;text-align:center;color:var(--tx4);font-size:12px">Cargando alumnos...</div>';
+  cargarAlumnosDatalist().then(function(){
+    var lb2=g('listaAlumnosModal');
+    if(lb2) lb2.innerHTML='<div style="padding:12px;text-align:center;color:var(--tx4);font-size:12px">Escribe para buscar...</div>';
+    var b=g('buscarAlumnoModal');if(b)b.focus();
+  });
+   
 var _alumnosModal=[];
 async function cargarAlumnosDatalist(){
   try{
     var r=await apiGet('listarUsuarios');
-    if(!r.ok||!r.usuarios)return;
+    if(!r.ok||!r.usuarios){ toast('Error al cargar alumnos', r.error||'Sin datos', 'err'); return; }
     _alumnosModal=r.usuarios.filter(function(u){return u.rol==='estudiante';});
-  }catch(e){}
+  }catch(e){ toast('Error al cargar alumnos', e.message, 'err'); }
 }
 function filtrarAlumnosModal(){
   var q=(g('buscarAlumnoModal')?g('buscarAlumnoModal').value:'').toLowerCase().trim();
