@@ -2022,14 +2022,14 @@ function renderAlBlock(al,ai,apro){
         const esExtra = pac.label.indexOf('PACX')===0;
         const rowBg = esExtra ? 'background:linear-gradient(90deg,rgba(217,119,6,.08),transparent);' : '';
         const btnDelPacX = (esExtra && session && (session.rol==='admin'||session.rol==='docente'))
-          ? `<button onclick="eliminarPacX('${esc(al.nombre)}','${esc(cu.nombre)}','${esc(sg.nombre)}','${esc(pac.label)}')" style="background:none;border:none;color:var(--red);font-size:11px;cursor:pointer;padding:0;margin-left:4px" title="Eliminar PACX">&#128465;</button>`
+          ? `<button onclick="eliminarPacX('${esc(al.nombre)}','${esc(cu.nombre)}','${esc(sg.nombre)}','${esc(pac.label)}')" style="background:none;border:none;color:var(--red);font-size:11px;cursor:pointer;padding:2px 6px;margin-left:6px;border-radius:5px;background:var(--red2);border:1px solid var(--red)" title="Eliminar PACX">&#128465; Eliminar</button>`
           : '';
-        const pacLabel = esExtra
-          ? `${pac.label} <span style="background:var(--amber);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px">+patología</span>${btnDelPacX}`
-          : pac.label;
+        const extraBadge = esExtra
+          ? `<span style="background:var(--amber);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-right:4px">+patología</span>`
+          : '';
         return`<tr style="${rowBg}">
           <td class="td-pac">
-            ${pacLabel}
+            ${pac.label}
             <div style="margin-top:4px">
               <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:9px;font-weight:600;color:var(--tx4)">
                 <input type="checkbox" 
