@@ -940,6 +940,8 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
 
     </div>
   </div>
+</div><!-- /viewEstudiante -->
+
 <!-- Vista Recepción -->
 <div id="viewRecepcion" style="display:none">
   <div style="background:var(--n900);border-bottom:1px solid var(--n800);padding:0 16px;position:sticky;top:58px;z-index:100">
@@ -1013,7 +1015,6 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
       </div>
     </div>
   </div>
-</div>
 
 
 <!-- Modal cambio de contraseña -->
@@ -1395,25 +1396,21 @@ function logout(){
   g('lgCode').value='';g('lgPass').value='';g('lgErr').classList.remove('show');
 }
 function startApp(){
-  g('loginPage').style.display='none'; g('appPage').style.display='block';
-  // Ocultar todas las vistas antes de mostrar la correcta
-  g('viewAdmin').style.display='none';
-  g('viewEstudiante').style.display='none';
-  if(g('viewRecepcion')) g('viewRecepcion').style.display='none';
-
-  const rl={admin:'Admin', docente:'Docente', estudiante:'Estudiante', recepcion:'Recepción'};
-  g('rolLabel').textContent = rl[session.rol] || session.rol;
-  g('rolDot').className = 'rdot ' + session.rol;
+  g('loginPage').style.display='none';g('appPage').style.display='block';
+  const rl={admin:'Admin',docente:'Docente',estudiante:'Estudiante',recepcion:'Recepción'};
+  g('rolLabel').textContent=rl[session.rol]||session.rol;
+  g('rolDot').className='rdot '+session.rol;
   pingConn();
-
   if(session.rol==='estudiante'){
-    g('viewEstudiante').style.display='block'; iniciarVistaEstudiante();
+    g('viewAdmin').style.display='none';g('viewEstudiante').style.display='block';iniciarVistaEstudiante();
   } else if(session.rol==='recepcion'){
+    g('viewAdmin').style.display='none';g('viewEstudiante').style.display='none';
     iniciarVistaRecepcion();
   } else {
-    g('viewAdmin').style.display='block'; iniciarVistaAdmin();
+    g('viewAdmin').style.display='block';g('viewEstudiante').style.display='none';iniciarVistaAdmin();
   }
-}async function pingConn(){
+}
+async function pingConn(){
   try{const r=await apiGet('ping');setConn(r.ok,r.ok?'Conectado':'Sin respuesta')}
   catch(e){setConn(false,e.message)}
 }
@@ -4454,6 +4451,7 @@ let agendaRecReservas = [];
 async function iniciarVistaRecepcion(){
   document.body.className=(document.body.className||'').replace(/\brol-\S+/g,'').trim()+' rol-recepcion';
   g('viewRecepcion').style.display='block';
+  // Mostrar punto de conexión correcto
   const rdot=g('rolDot'); if(rdot) rdot.className='rdot recepcion';
   showLoader('Cargando calendario...');
   try{
@@ -4467,11 +4465,10 @@ async function iniciarVistaRecepcion(){
       });
       if(!agendaCfg.franjas) agendaCfg.franjas=[{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}];
     }
-    // Mover renderAreaBtns DESPUÉS de que agendaCfg ya tiene datos
     renderAreaBtns('calRecAreaFiltro','filtrarCalendarioRecPorArea');
     calRecFechaBase = getLunes(new Date());
     await cargarReservasRec();
-    const finSem=new Date(calRecFechaBase); finSem.setDate(finSem.getDate()+4);
+    const finSem=new Date(calRecFechaBase);finSem.setDate(finSem.getDate()+4);
     await cargarBloqueos(fmt(calRecFechaBase),fmt(finSem));
   }catch(e){
     hideLoader();
