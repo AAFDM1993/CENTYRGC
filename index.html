@@ -937,9 +937,6 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
       </button>
       <button id="btnEstCas" onclick="mostrarSecEst('casilleros')" style="display:flex;align-items:center;gap:7px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--n300);font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer">&#128220; Casilleros</button>
       <button onclick="irAHC()" style="display:flex;align-items:center;gap:7px;background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);border-radius:10px;color:#c4b5fd;font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap">🏥 HC</button>
-```
-
----
 
 ## Problema 2 — Promedio final al costado del curso
 
@@ -2327,12 +2324,6 @@ function renderEstNotas(resultados) {
   }).join('');
 }
 
----
-
-## Problema 2 — Columna ID sigue visible
-
-**Busca** en `renderEstNotas`:
-```
 return `<div class="est-sgr-hdr">${sg.nombre}</div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th>
 
 let _docPopupTimer = null;
