@@ -2956,10 +2956,10 @@ function renderCalendario(){
           const fechaStr=fmt(d);
           const pasado=new Date(fechaStr+'T'+hora+':00')<new Date();
           const rsvEsp=agendaReservas.filter(r=>
-            r.fecha===fechaStr &&
-            r.horaInicio===hora &&
-            r.area.trim()===area.nombre.trim() &&
-            r.camilla.trim()===esp.nombre.trim()
+            String(r.fecha).trim()===String(fechaStr).trim() &&
+            String(r.horaInicio).trim()===String(hora).trim() &&
+            String(r.area).trim()===String(area.nombre).trim() &&
+            String(r.camilla).trim()===String(esp.nombre).trim()
           );
           const lleno=rsvEsp.length>=cap;
           const bloq=typeof esBloqueado==='function'&&esBloqueado(fechaStr,hora,area.nombre,esp.nombre);
@@ -3325,10 +3325,10 @@ function renderCalendarioEst(){
           const fechaStr=fmt(d);
           const pasado=new Date(fechaStr+'T'+hora+':00')<new Date();
           const rsvEsp=agendaEstReservas.filter(r=>
-            r.fecha===fechaStr &&
-            r.horaInicio===hora &&
-            r.area.trim()===area.nombre.trim() &&
-            r.camilla.trim()===esp.nombre.trim()
+            String(r.fecha).trim()===String(fechaStr).trim() &&
+            String(r.horaInicio).trim()===String(hora).trim() &&
+            String(r.area).trim()===String(area.nombre).trim() &&
+            String(r.camilla).trim()===String(esp.nombre).trim()
           );
           const lleno=rsvEsp.length>=cap;
           const bloq=typeof esBloqueado==='function'&&esBloqueado(fechaStr,hora,area.nombre,esp.nombre);
