@@ -2077,8 +2077,17 @@ async function saveNota(inp){
         }
       }
       // Solo en checkpoint 50% y 75% sin mejoría → ofrecer paciente extra
+      // pero solo si ese paciente NO tiene ya un PACX vinculado
       if(!huboMejoria && _checkpointsPacExtra.has(idx)){
-        setTimeout(()=>ofrecerPacienteExtra(alumno,curso,sgr,base,extra,inp), 800);
+        // Verificar si este pac ya tiene un PACX vinculado
+        const yaTienePacX = hojaData && hojaData.alumnos.some(a => a.nombre===alumno &&
+          (a.cursos||[]).some(c => c.nombre===curso &&
+            (c.subgrupos||[]).some(s => s.nombre===sgr &&
+              (s.pacientes||[]).some(p => p.label.indexOf('PACX')===0 &&
+                p.label.indexOf('('+pac+')')>=0))));
+        if(!yaTienePacX){
+          setTimeout(()=>ofrecerPacienteExtra(alumno,curso,sgr,base,extra,inp), 800);
+        }
       }
     }
   }
@@ -2946,7 +2955,12 @@ function renderCalendario(){
         dias.forEach(d=>{
           const fechaStr=fmt(d);
           const pasado=new Date(fechaStr+'T'+hora+':00')<new Date();
-          const rsvEsp=agendaReservas.filter(r=>r.fecha===fechaStr&&r.horaInicio===hora&&r.area===area.nombre&&r.camilla===esp.nombre);
+          const rsvEsp=agendaReservas.filter(r=>
+            r.fecha===fechaStr &&
+            r.horaInicio===hora &&
+            r.area.trim()===area.nombre.trim() &&
+            r.camilla.trim()===esp.nombre.trim()
+          );
           const lleno=rsvEsp.length>=cap;
           const bloq=typeof esBloqueado==='function'&&esBloqueado(fechaStr,hora,area.nombre,esp.nombre);
 
@@ -3310,7 +3324,12 @@ function renderCalendarioEst(){
         dias.forEach(d=>{
           const fechaStr=fmt(d);
           const pasado=new Date(fechaStr+'T'+hora+':00')<new Date();
-          const rsvEsp=agendaEstReservas.filter(r=>r.fecha===fechaStr&&r.horaInicio===hora&&r.area===area.nombre&&r.camilla===esp.nombre);
+          const rsvEsp=agendaEstReservas.filter(r=>
+            r.fecha===fechaStr &&
+            r.horaInicio===hora &&
+            r.area.trim()===area.nombre.trim() &&
+            r.camilla.trim()===esp.nombre.trim()
+          );
           const lleno=rsvEsp.length>=cap;
           const bloq=typeof esBloqueado==='function'&&esBloqueado(fechaStr,hora,area.nombre,esp.nombre);
 
