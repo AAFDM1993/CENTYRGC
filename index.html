@@ -936,7 +936,17 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
         &#128203; Mis Notas
       </button>
       <button id="btnEstCas" onclick="mostrarSecEst('casilleros')" style="display:flex;align-items:center;gap:7px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--n300);font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer">&#128220; Casilleros</button>
-      <button id="btnEstAgenda" onclick="mostrarSecEst('agenda')" style="display:flex;align-items:center;gap:7px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--n300);font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap;transition:all .2s">
+      <button onclick="irAHC()" style="display:flex;align-items:center;gap:7px;background:rgba(139,92,246,.15);border:1px solid rgba(139,92,246,.3);border-radius:10px;color:#c4b5fd;font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap">🏥 HC</button>
+```
+
+---
+
+## Problema 2 — Promedio final al costado del curso
+
+**Busca** en la función `renderEstNotas`:
+```
+return `<div class="est-hoja"><div class="est-hoja-hdr"><h3>${res.asignatura}</h3><p>${res.hoja}</p></div>${bl}</div>`;
+       <button id="btnEstAgenda" onclick="mostrarSecEst('agenda')" style="display:flex;align-items:center;gap:7px;background:transparent;border:1px solid rgba(255,255,255,.2);border-radius:10px;color:var(--n300);font-size:12px;font-weight:700;padding:7px 14px;cursor:pointer;white-space:nowrap;transition:all .2s">
         &#128197; Agenda
       </button>
 
@@ -1921,7 +1931,7 @@ function renderPreview(){
         for(let i=0;i<(sg.notasBase||0);i++){const lbl=i===0?'EV':'S'+i;thS+=`<th class="th-ss">${lbl}</th>`;tdS+='<td style="color:var(--tx4);text-align:center">.</td>'}
         for(let i=0;i<(sg.notasExtra||0);i++){thE+=`<th class="th-ex">E${i+1}</th>`;tdE+='<td style="color:#93c5fd;text-align:center">.</td>'}
         let rows='';for(let pi=0;pi<(sg.numPacientes||1);pi++)rows+=`<tr><td class="td-pac">PAC${pi+1}</td><td>-</td>${tdS}${tdE}<td><span class="pc">-</span></td></tr>`;
-        return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+        return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac" style="display:none"></th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody></table></div>`;
       }).join('');
       return`<div class="pv-cu-hdr">${c.label}</div>${sb}`;
     }).join('');
@@ -2291,7 +2301,7 @@ function renderEstNotas(resultados) {
           const pc = 'pc' + (p !== '' && p !== undefined ? (p >= 11 ? ' ok' : ' no') : '');
           
           return `<tr>
-            <td class="td-pac">${pac.label}</td>
+            <td class="td-pac" style="display:none">${pac.label}</td>
             <td style="font-size:12px;font-weight:500;padding:7px 8px;color:var(--tx2)">${pac.nombre || '-'}</td>
             ${tSS}${tEx}
             <td style="text-align:center"><span class="pc" style="background:var(--n800);color:var(--n300)">${ps !== '' && ps !== undefined ? ps : '-'}</span></td>
@@ -2304,7 +2314,15 @@ function renderEstNotas(resultados) {
       return `<div class="est-cu-hdr">${cu.nombre}</div>${subgrupos}`;
     }).join('');
 
-    return `<div class="est-hoja"><div class="est-hoja-hdr"><h3>${res.asignatura}</h3><p>${res.hoja}</p></div>${bl}</div>`;
+    const promFinal = (() => {
+  const todas = [];
+  res.cursos.forEach(cu => cu.subgrupos.forEach(sg => sg.pacientes.forEach(pac => { if(pac.prom !== '') todas.push(Number(pac.prom)); })));
+  if(!todas.length) return '';
+  const avg = Math.round(todas.reduce((a,b)=>a+b,0)/todas.length*100)/100;
+  const color = avg >= 11 ? 'var(--green)' : 'var(--red)';
+  return `<span style="font-family:'DM Mono',monospace;font-size:15px;font-weight:800;color:${color};margin-left:10px">${avg}</span>`;
+})();
+return `<div class="est-hoja"><div class="est-hoja-hdr" style="display:flex;align-items:center;justify-content:space-between"><div><h3>${res.asignatura}${promFinal}</h3><p>${res.hoja}</p></div></div>${bl}</div>`;
   }).join('');
 }
 
