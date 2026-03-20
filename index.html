@@ -2002,6 +2002,23 @@ async function saveNombrePac(inp){
     catch(e){toast('Error al guardar nombre',e.message,'err')}
   },600);
 }
+
+// Mapa en memoria: clave = "alumno|curso|sgr|pac" → true/false
+const _mejoriaManual = {};
+
+function toggleMejoriaManual(chk, alumno, curso, sgr, pac){
+  const key = alumno+'|'+curso+'|'+sgr+'|'+pac;
+  _mejoriaManual[key] = chk.checked;
+  const lbl = chk.closest('label').querySelector('span');
+  if(chk.checked){
+    lbl.textContent = '✓ mejoría';
+    lbl.style.color = 'var(--green)';
+  } else {
+    lbl.textContent = 'mejoría';
+    lbl.style.color = 'var(--tx4)';
+  }
+}
+   
 async function saveNota(inp){
   const{al:alumno,cu:curso,sgr,pac}=inp.dataset;
   const tipo=inp.dataset.tipo,idx=+inp.dataset.idx,base=+inp.dataset.base,extra=+inp.dataset.extra;
@@ -2038,21 +2055,6 @@ async function saveNota(inp){
           return;
         }
       }
-// Mapa en memoria: clave = "alumno|curso|sgr|pac" → true/false
-const _mejoriaManual = {};
-
-function toggleMejoriaManual(chk, alumno, curso, sgr, pac){
-  const key = alumno+'|'+curso+'|'+sgr+'|'+pac;
-  _mejoriaManual[key] = chk.checked;
-  const lbl = chk.closest('label').querySelector('span');
-  if(chk.checked){
-    lbl.textContent = '✓ mejoría';
-    lbl.style.color = 'var(--green)';
-  } else {
-    lbl.textContent = 'mejoría';
-    lbl.style.color = 'var(--tx4)';
-  }
-}
       // Al completar todas las SS sin mejoría → ofrecer paciente extra
       const todasLlenas = Array.from(inputs).every(i => i.value.trim() !== '');
       if(todasLlenas && !huboMejoria){
@@ -4184,7 +4186,7 @@ function cerrarPacExtraModal(){
 async function confirmarPacienteExtra(){
   const m = g('pacExtraModal');
   if(!m||!m._ctx) return;
-  cconst {alumno, curso, sgr, notasBase, notasExtra} = m._ctx;
+  const {alumno, curso, sgr, notasBase, notasExtra} = m._ctx;
   const pacVinculado = m._ctx.pacVinculado ||
     (g('pacExtraSelector') ? g('pacExtraSelector').value : null);
   cerrarPacExtraModal();
