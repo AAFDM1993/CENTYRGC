@@ -178,7 +178,7 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
 <div id="appPage" style="display:none">
   <header class="hdr">
     <div style="display:flex;align-items:center;gap:10px">
-      <div class="hdr-mark">HC</div>
+      <div class="hdr-mark" style="background:none;padding:0;overflow:hidden"><img src="logo.png" alt="CENTYR" style="width:34px;height:34px;object-fit:contain;border-radius:10px" onerror="this.style.display='none';this.parentElement.textContent='HC';this.parentElement.style.background='linear-gradient(135deg,var(--n500),var(--purple))'"></div>
       <div><div class="hdr-t1">CENTYR · HC</div><div class="hdr-t2">Historias Clínicas</div></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
@@ -214,6 +214,17 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
   </div>
 </div>
 
+<!-- Modal selección de categoría -->
+<div id="modalCatSelect" style="display:none;position:fixed;inset:0;background:rgba(10,22,40,.75);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+  <div style="background:var(--surf);border:1px solid var(--bd);border-radius:18px;padding:24px;width:100%;max-width:440px;box-shadow:0 24px 60px rgba(0,0,0,.5)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#fff">Seleccionar categoría</div>
+      <button onclick="cerrarModalCategoria()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:8px;font-size:16px;cursor:pointer">✕</button>
+    </div>
+    <div id="catSelectList" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
+  </div>
+</div>
+
 <!-- Modal revisión -->
 <div class="modal-ov" id="modalRev">
   <div class="modal-box">
@@ -234,7 +245,7 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
 
 <script>
 // ─── Config ───────────────────────────────────────────
-const HC_URL = 'https://script.google.com/macros/s/AKfycbxtys2ye8rG5LiIEevCPrprGGV20DKEmI9s-M2gG9tS27qia1wupuyeUJA9mr7SimOx/exec';
+const HC_URL = 'https://script.google.com/macros/s/AKfycby_UNOt269xKHkEP7tM83H-aX9CoWqMqxX4oXMafhYp5OFZUMDnDTFZyP1Q_d1pU_80/exec';
 const SK = 'centyr_hc_s';
 const TTL = 6*60*60*1000;
 
@@ -335,7 +346,7 @@ async function renderPacs(){
           <option value="">Todas las categorías</option>
           ${cats.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('')}
         </select>
-        <button class="btn btn-primary btn-sm" onclick="abrirFrmPac()">+ Nuevo</button>
+        <button class="btn btn-primary btn-sm" onclick="abrirModalCategoria()">+ Nuevo paciente</button>
       </div>
     </div>
     <div id="pacBox"><div class="loader">⏳ Cargando...</div></div>`;
@@ -377,57 +388,35 @@ function filtrarPacs(){
 }
 
 // ─── Formulario Paciente ──────────────────────────────
-function abrirFrmPac(pac=null){
+function abrirFrmPac(pac=null, preCatId=null, preCatNombre=null){
+  const catId = pac?.categoriaId || preCatId || '';
+  const catNom = preCatNombre || getCat(catId).nombre || '';
   views.forEach(v=>g(v).style.display='none');
-  g('vEvalForm').style.display='block';
-  g('vEvalForm').innerHTML=`
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+  const v=g('vEvalForm'); v.style.display='block';
+  v.innerHTML=`
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
       <button class="btn btn-ghost btn-sm" onclick="navTo('pac')">← Volver</button>
-      <div class="card-title">${pac?'✏️ Editar':'➕ Nuevo'} Paciente</div>
+      <div>
+        <div class="card-title">${pac?'✏️ Editar':'📋 Nueva historia clínica'}</div>
+        <div style="font-size:12px;color:var(--tx3);margin-top:2px">${catPill(catId)} ${e2(catNom)}</div>
+      </div>
     </div>
-    <div class="card">
-      <div class="form-grid">
-        <div class="field form-full"><label>Nombre completo *</label>
-          <input class="inp" id="pN" value="${e2(pac?.nombre||'')}" placeholder="Apellidos y nombres"></div>
-        <div class="field"><label>DNI *</label>
-          <input class="inp" id="pD" value="${e2(pac?.dni||'')}" placeholder="12345678"></div>
-        <div class="field"><label>Fecha de nacimiento</label>
-          <input class="inp" id="pFN" type="date" value="${pac?.fechaNac||''}"></div>
-        <div class="field"><label>Sexo</label>
-          <select class="sel" id="pS">
-            <option value="">—</option>
-            <option value="M" ${pac?.sexo==='M'?'selected':''}>Masculino</option>
-            <option value="F" ${pac?.sexo==='F'?'selected':''}>Femenino</option>
-          </select></div>
-        <div class="field"><label>Teléfono</label>
-          <input class="inp" id="pT" value="${e2(pac?.telefono||'')}" placeholder="999 999 999"></div>
-        <div class="field"><label>Ocupación</label>
-          <input class="inp" id="pO" value="${e2(pac?.ocupacion||'')}" placeholder="Profesión"></div>
-        <div class="field"><label>Categoría *</label>
-          <select class="sel" id="pC">
-            <option value="">Seleccionar...</option>
-            ${cats.map(c=>`<option value="${c.id}" ${pac?.categoriaId===c.id?'selected':''}>${c.nombre}</option>`).join('')}
-          </select></div>
-        <div class="field"><label>Médico tratante</label>
-          <input class="inp" id="pM" value="${e2(pac?.medico||'')}" placeholder="Dr. Nombre"></div>
-        <div class="field"><label>Diagnóstico médico</label>
-          <input class="inp" id="pDx" value="${e2(pac?.dxMedico||'')}" placeholder="CIE-10 o descripción"></div>
-        <div class="field"><label>Fecha inicio atención</label>
-          <input class="inp" id="pFI" type="date" value="${pac?.fechaInicio||''}"></div>
-        <div class="field"><label>Responsable (si aplica)</label>
-          <input class="inp" id="pR" value="${e2(pac?.responsable||'')}" placeholder="Nombre del responsable"></div>
-        <div class="field"><label>Teléfono responsable</label>
-          <input class="inp" id="pTR" value="${e2(pac?.telResponsable||'')}" placeholder="999 999 999"></div>
-        <div class="field form-full"><label>Motivo de consulta</label>
-          <textarea class="ta" id="pMot" placeholder="Sintomatología principal y motivo...">${e2(pac?.motivo||'')}</textarea></div>
-        <div class="field form-full"><label>Antecedentes</label>
-          <textarea class="ta" id="pAnt" placeholder="Antecedentes médicos/quirúrgicos relevantes...">${e2(pac?.antecedentes||'')}</textarea></div>
-      </div>
-      <div class="btn-group" style="margin-top:16px">
-        <button class="btn btn-primary" onclick="guardarPac(${pac?`'${esc(pac.id)}'`:'null'})">💾 Guardar</button>
-        <button class="btn btn-ghost" onclick="navTo('pac')">Cancelar</button>
-      </div>
+    <input type="hidden" id="pC" value="${catId}">
+    ${plantillaHTML(catId, pac)}
+    <div class="btn-group" style="margin-top:20px;padding-bottom:40px">
+      <button class="btn btn-ghost btn-sm" onclick="guardarHC('${esc(catId)}','${pac?esc(pac.id):''}','borrador')">💾 Guardar borrador</button>
+      <button class="btn btn-primary" onclick="guardarHC('${esc(catId)}','${pac?esc(pac.id):''}','enviar')">📤 Guardar y enviar al docente</button>
+      <button class="btn btn-ghost" onclick="navTo('pac')">Cancelar</button>
     </div>`;
+  // Activar acordeones
+  v.querySelectorAll('.hc-sec-hdr').forEach(h=>{
+    h.onclick=()=>{
+      const b=h.nextElementSibling;
+      const chv=h.querySelector('.chv');
+      b.classList.toggle('open');
+      if(chv)chv.classList.toggle('open');
+    };
+  });
 }
 
 async function guardarPac(id){
@@ -965,6 +954,330 @@ async function reasignarPac(pacId){
   if(!r.ok){toast('Error',r.error,'err');return;}
   toast('Paciente reasignado','','ok');abrirPac(pacId);
 }
+// ══════════════════════════════════════════════════
+// PLANTILLAS POR CATEGORÍA
+// ══════════════════════════════════════════════════
+function plantillaHTML(catId, pac){
+  const d = pac?.datosEspecificos || {};
+  return secFiliacion(pac,d)
+       + secAnamnesis(catId,pac,d)
+       + (catId==='traumatologia' ? secTrauma(d) : secNeuroAdultos(d))
+       + secPlanTratamiento(d);
+}
+
+function secWrap(id, titulo, icono, contenido, abierta){
+  abierta = abierta===undefined ? false : abierta;
+  return '<div class="hc-sec" style="margin-bottom:10px">'
+    +'<div class="hc-sec-hdr">'
+    +'<div class="hc-sec-title"><span>'+icono+'</span> '+titulo+'</div>'
+    +'<span class="chv '+(abierta?'open':'')+'">▼</span>'
+    +'</div>'
+    +'<div class="hc-sec-body '+(abierta?'open':'')+'" id="sec-'+id+'">'
+    +contenido
+    +'</div></div>';
+}
+
+function secFiliacion(pac, d){
+  const p=pac||{};
+  const hoy=new Date().toISOString().slice(0,10);
+  return secWrap('fil','I. Filiación','👤',`
+    <div class="form-grid">
+      <div class="field form-full"><label>Nombres y apellidos *</label>
+        <input class="inp" id="pN" value="${e2(p.nombre||'')}" placeholder="Apellidos y nombres completos"></div>
+      <div class="field"><label>DNI *</label>
+        <input class="inp" id="pD" value="${e2(p.dni||'')}" placeholder="12345678"></div>
+      <div class="field"><label>Fecha de nacimiento</label>
+        <input class="inp" id="pFN" type="date" value="${p.fechaNac||''}"></div>
+      <div class="field"><label>Edad</label>
+        <input class="inp" id="pEdad" value="${e2(d.edad||'')}" placeholder="años" style="width:100px"></div>
+      <div class="field"><label>Sexo</label>
+        <select class="sel" id="pS">
+          <option value="">—</option>
+          <option value="M" ${p.sexo==='M'?'selected':''}>Masculino</option>
+          <option value="F" ${p.sexo==='F'?'selected':''}>Femenino</option>
+        </select></div>
+      <div class="field"><label>Ocupación</label>
+        <input class="inp" id="pO" value="${e2(p.ocupacion||'')}" placeholder="Profesión u ocupación"></div>
+      <div class="field"><label>Teléfono</label>
+        <input class="inp" id="pT" value="${e2(p.telefono||'')}" placeholder="999 999 999"></div>
+      <div class="field"><label>Fecha de evaluación</label>
+        <input class="inp" id="pFI" type="date" value="${p.fechaInicio||hoy}"></div>
+      <div class="field"><label>Responsable (si aplica)</label>
+        <input class="inp" id="pR" value="${e2(p.responsable||'')}" placeholder="Nombre del responsable"></div>
+      <div class="field"><label>Teléfono responsable</label>
+        <input class="inp" id="pTR" value="${e2(p.telResponsable||'')}" placeholder="999 999 999"></div>
+    </div>`,true);
+}
+
+function secAnamnesis(catId, pac, d){
+  const tienesDxMedico = catId==='traumatologia';
+  return secWrap('anam','II. Anamnesis','📋',`
+    ${tienesDxMedico?`<div class="field" style="margin-bottom:12px"><label>Diagnóstico médico</label>
+      <input class="inp" id="aDxMed" value="${e2(d.dxMedico||'')}" placeholder="Diagnóstico del médico tratante"></div>`:''}
+    <div class="field" style="margin-bottom:12px"><label>Diagnóstico fisioterapéutico</label>
+      <input class="inp" id="aDxFisio" value="${e2(d.dxFisio||'')}" placeholder="Diagnóstico fisioterapéutico"></div>
+    <div class="field" style="margin-bottom:12px"><label>Motivo de consulta / Examen subjetivo</label>
+      <textarea class="ta" id="aMotivo" rows="3" placeholder="Sintomatología principal, motivo de consulta, dolor, limitaciones referidas...">${e2(d.motivo||'')}</textarea></div>
+    <div class="field"><label>Antecedentes importantes y patológicos</label>
+      <textarea class="ta" id="aAntecedentes" rows="3" placeholder="Antecedentes médicos, quirúrgicos, familiares, farmacológicos...">${e2(d.antecedentes||'')}</textarea></div>
+  `,true);
+}
+
+// ── Plantilla Traumatológica ──────────────────────
+const ROM_MOV = {
+  'Cervical':['Flexión','Extensión','Inclinación D','Inclinación I','Rotación D','Rotación I'],
+  'Hombro D':['Flexión','Extensión','Abducción','Rot. Interna','Rot. Externa'],
+  'Hombro I':['Flexión','Extensión','Abducción','Rot. Interna','Rot. Externa'],
+  'Codo D':  ['Flexión','Extensión','Pronación','Supinación'],
+  'Codo I':  ['Flexión','Extensión','Pronación','Supinación'],
+  'Muñeca D':['Flexión','Extensión','Desv. Radial','Desv. Ulnar'],
+  'Muñeca I':['Flexión','Extensión','Desv. Radial','Desv. Ulnar'],
+  'Col. Dorsal':['Flexión','Extensión','Inclinación D','Inclinación I'],
+  'Col. Lumbar':['Flexión','Extensión','Inclinación D','Inclinación I'],
+  'Cadera D':['Flexión','Extensión','Abducción','Aducción','Rot. Int.','Rot. Ext.'],
+  'Cadera I':['Flexión','Extensión','Abducción','Aducción','Rot. Int.','Rot. Ext.'],
+  'Rodilla D':['Flexión','Extensión'],
+  'Rodilla I':['Flexión','Extensión'],
+  'Tobillo D':['Dorsiflexión','Plantiflexión','Inversión','Eversión'],
+  'Tobillo I':['Dorsiflexión','Plantiflexión','Inversión','Eversión'],
+};
+const FUERZA_GRP = {
+  'Cervical':  ['Flex. cervicales','Ext. cervicales'],
+  'Hombro D':  ['Flexores','Extensores','Abductores','Rotadores'],
+  'Hombro I':  ['Flexores','Extensores','Abductores','Rotadores'],
+  'Codo D':    ['Flexores','Extensores','Pronadores','Supinadores'],
+  'Codo I':    ['Flexores','Extensores','Pronadores','Supinadores'],
+  'Muñeca D':  ['Flexores','Extensores','Interóseos'],
+  'Muñeca I':  ['Flexores','Extensores','Interóseos'],
+  'Col. Dorsal':['Ext. dorsales','Rotadores'],
+  'Col. Lumbar':['Ext. lumbares','Abdominales'],
+  'Cadera D':  ['Flexores','Extensores','Abductores','Rotadores'],
+  'Cadera I':  ['Flexores','Extensores','Abductores','Rotadores'],
+  'Rodilla D': ['Cuádriceps','Isquiotibiales'],
+  'Rodilla I': ['Cuádriceps','Isquiotibiales'],
+  'Tobillo D': ['Dorsiflexores','Flex. plantares','Inversores','Eversores'],
+  'Tobillo I': ['Dorsiflexores','Flex. plantares','Inversores','Eversores'],
+};
+const TODAS_REGIONES = Object.keys(ROM_MOV);
+
+function mkRomRows(sel, romData){
+  if(!sel||!sel.length) return '<tr><td colspan="3" style="text-align:center;color:var(--tx4);font-size:12px;padding:10px">Selecciona regiones afectadas</td></tr>';
+  return sel.map(r=>{
+    const movs=ROM_MOV[r]||[];
+    return movs.map((m,i)=>{
+      const key=r+'_'+m;
+      return '<tr>'
+        +(i===0?'<td rowspan="'+movs.length+'" style="font-weight:700;font-size:11px;vertical-align:top;padding-top:8px;white-space:nowrap">'+r+'</td>':'')
+        +'<td style="font-size:12px">'+m+'</td>'
+        +'<td><input type="text" class="ri" data-rom="'+e2(key)+'" value="'+(romData&&romData[key]?e2(romData[key]):'')+'" placeholder="°" style="width:60px"></td>'
+        +'</tr>';
+    }).join('');
+  }).join('');
+}
+
+function mkFuerzaRows(sel, fData){
+  if(!sel||!sel.length) return '<tr><td colspan="3" style="text-align:center;color:var(--tx4);font-size:12px;padding:10px">Selecciona regiones afectadas</td></tr>';
+  return sel.map(r=>{
+    const gs=FUERZA_GRP[r]||[];
+    return gs.map((gn,i)=>{
+      const key=r+'_'+gn;
+      return '<tr>'
+        +(i===0?'<td rowspan="'+gs.length+'" style="font-weight:700;font-size:11px;vertical-align:top;padding-top:8px;white-space:nowrap">'+r+'</td>':'')
+        +'<td style="font-size:12px">'+gn+'</td>'
+        +'<td><input type="number" class="ri" data-fuerza="'+e2(key)+'" min="0" max="5" value="'+(fData&&fData[key]!==undefined?e2(String(fData[key])):'')+'" placeholder="0-5" style="width:60px"></td>'
+        +'</tr>';
+    }).join('');
+  }).join('');
+}
+
+function secTrauma(d){
+  const sel=d.regiones||[];
+  return secWrap('trauma','III. Examen objetivo — Fisioterapia Traumatológica','🦴',`
+    <div style="margin-bottom:16px">
+      <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px">Regiones afectadas</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px" id="regionesWrap">
+        ${TODAS_REGIONES.map(r=>`
+          <label style="display:flex;align-items:center;gap:5px;background:${sel.includes(r)?'rgba(29,78,216,.2)':'var(--surf2)'};border:1px solid ${sel.includes(r)?'var(--n400)':'var(--bd)'};border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px">
+            <input type="checkbox" value="${r}" ${sel.includes(r)?'checked':''} onchange="actualizarTablas()" style="accent-color:var(--n500)"> ${r}
+          </label>`).join('')}
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:14px"><label>Palpación</label>
+      <textarea class="ta" id="tPalpacion" rows="3" placeholder="Hallazgos a la palpación: dolor, temperatura, consistencia, puntos gatillo...">${e2(d.palpacion||'')}</textarea></div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Rangos articulares (grados)</div>
+      <div style="overflow-x:auto"><table class="tbl" id="tablaROM">
+        <thead><tr><th>Región</th><th>Movimiento</th><th style="text-align:center">Valor</th></tr></thead>
+        <tbody>${mkRomRows(sel,d.rom)}</tbody>
+      </table></div>
+    </div>
+    <div style="margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Fuerza muscular — Escala Daniels (0-5)</div>
+      <div style="overflow-x:auto"><table class="tbl" id="tablaFuerza">
+        <thead><tr><th>Región</th><th>Grupo muscular</th><th style="text-align:center">Valor</th></tr></thead>
+        <tbody>${mkFuerzaRows(sel,d.fuerza)}</tbody>
+      </table></div>
+    </div>
+    <div class="form-grid" style="margin-bottom:14px">
+      <div class="field"><label>Trofismo</label>
+        <select class="sel" id="tTrofismo">
+          <option value="">—</option>
+          ${['Normal','Hipotrofia leve','Hipotrofia moderada','Hipotrofia severa','Hipertrofia','Atrofia'].map(v=>`<option ${d.trofismo===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>EVA — Dolor (0-10)</label>
+        <div class="eva-wrap" style="margin-top:6px">
+          <div class="eva-track" style="position:relative">
+            <input type="range" class="eva-sl" id="tEva" min="0" max="10" step="1" value="${d.eva??0}" oninput="g('tEvaD').textContent=this.value">
+          </div>
+          <div class="eva-val" id="tEvaD">${d.eva??0}</div>
+        </div></div>
+      <div class="field"><label>Localización del dolor</label>
+        <input class="inp" id="tDolLoc" value="${e2(d.dolLoc||'')}" placeholder="Ej. Rodilla derecha medial"></div>
+      <div class="field"><label>Tipo de dolor</label>
+        <select class="sel" id="tDolTipo">
+          <option value="">—</option>
+          ${['Agudo','Crónico','Nociceptivo','Neuropático','Mixto','Referido'].map(v=>`<option ${d.dolTipo===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px">Neurológico</div>
+    <div class="field" style="margin-bottom:14px"><label>Sensibilidad y reflejos osteotendinosos</label>
+      <textarea class="ta" id="tNeuro" rows="3" placeholder="Sensibilidad superficial/profunda, reflejos osteotendinosos...">${e2(d.neuro||'')}</textarea></div>
+    <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px">Tegumentario</div>
+    <div class="field" style="margin-bottom:14px"><label>Inspección</label>
+      <textarea class="ta" id="tTegu" rows="3" placeholder="Coloración, edema, cicatrices, heridas, cambios cutáneos...">${e2(d.tegu||'')}</textarea></div>
+    <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px">Pruebas funcionales</div>
+    <div class="field" style="margin-bottom:14px"><label>Pruebas funcionales específicas</label>
+      <textarea class="ta" id="tPruebas" rows="3" placeholder="Nombre y resultado: Ej. Test de Jobe (+), Lachman (+)...">${e2(d.pruebas||'')}</textarea></div>
+    <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px">Exámenes auxiliares</div>
+    <div class="field"><label>Exámenes auxiliares</label>
+      <textarea class="ta" id="tAux" rows="3" placeholder="Radiografías, RMN, ecografías, laboratorio: hallazgos relevantes...">${e2(d.aux||'')}</textarea></div>
+  `,true);
+}
+
+function secNeuroAdultos(d){
+  return secWrap('neuro','III. Examen objetivo — Neurorehabilitación Adultos','🧠',
+    '<div class="empty" style="padding:20px">Plantilla en construcción — próximamente</div>',true);
+}
+
+function secPlanTratamiento(d){
+  return secWrap('plan','IV. Plan de tratamiento','🎯',`
+    <div class="form-grid">
+      <div class="field form-full"><label>Objetivos a corto plazo</label>
+        <textarea class="ta" id="planObjC" rows="2" placeholder="Objetivos 2-4 semanas...">${e2(d.objCorto||'')}</textarea></div>
+      <div class="field form-full"><label>Objetivos a largo plazo</label>
+        <textarea class="ta" id="planObjL" rows="2" placeholder="Objetivos funcionales finales...">${e2(d.objLargo||'')}</textarea></div>
+      <div class="field"><label>N° sesiones</label>
+        <input class="inp" id="planSes" type="number" min="1" value="${e2(d.planSesiones||'')}" placeholder="Ej. 12"></div>
+      <div class="field"><label>Frecuencia</label>
+        <select class="sel" id="planFreq">
+          <option value="">—</option>
+          ${['1 vez/semana','2 veces/semana','3 veces/semana','Diario'].map(v=>`<option ${d.planFrecuencia===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Precauciones / Contraindicaciones</label>
+        <textarea class="ta" id="planPrec" rows="2" placeholder="Precauciones especiales...">${e2(d.planPrecauciones||'')}</textarea></div>
+    </div>
+  `);
+}
+
+// ── Actualizar tablas dinámicamente al marcar regiones ──
+function actualizarTablas(){
+  const sel=Array.from(document.querySelectorAll('#regionesWrap input:checked')).map(c=>c.value);
+  document.querySelectorAll('#regionesWrap label').forEach(lbl=>{
+    const cb=lbl.querySelector('input');
+    lbl.style.background=cb.checked?'rgba(29,78,216,.2)':'var(--surf2)';
+    lbl.style.borderColor=cb.checked?'var(--n400)':'var(--bd)';
+  });
+  // Guardar valores existentes
+  const vROM={},vF={};
+  document.querySelectorAll('[data-rom]').forEach(el=>{if(el.value)vROM[el.dataset.rom]=el.value;});
+  document.querySelectorAll('[data-fuerza]').forEach(el=>{if(el.value)vF[el.dataset.fuerza]=el.value;});
+  // Reconstruir tbody ROM
+  const tROM=g('tablaROM');
+  if(tROM){const tb=tROM.querySelector('tbody');if(tb){tb.innerHTML=mkRomRows(sel,vROM);}}
+  // Reconstruir tbody Fuerza
+  const tF=g('tablaFuerza');
+  if(tF){const tb=tF.querySelector('tbody');if(tb){tb.innerHTML=mkFuerzaRows(sel,vF);}}
+}
+
+// ── Guardar historia clínica unificada ────────────
+async function guardarHC(catId, pacId, modo){
+  const nombre=g('pN')?.value?.trim()||'';
+  const dni=g('pD')?.value?.trim()||'';
+  if(!nombre||!dni){toast('Nombre y DNI son requeridos','','warn');return;}
+  const regiones=Array.from(document.querySelectorAll('#regionesWrap input:checked')||[]).map(c=>c.value);
+  const rom={};document.querySelectorAll('[data-rom]').forEach(el=>{if(el.value.trim())rom[el.dataset.rom]=el.value.trim();});
+  const fuerza={};document.querySelectorAll('[data-fuerza]').forEach(el=>{if(el.value.trim())fuerza[el.dataset.fuerza]=Number(el.value.trim());});
+  const datos={
+    edad:g('pEdad')?.value||'',
+    dxMedico:g('aDxMed')?.value||'',
+    dxFisio:g('aDxFisio')?.value||'',
+    motivo:g('aMotivo')?.value||'',
+    antecedentes:g('aAntecedentes')?.value||'',
+    regiones,rom,fuerza,
+    palpacion:g('tPalpacion')?.value||'',
+    trofismo:g('tTrofismo')?.value||'',
+    eva:Number(g('tEva')?.value||0),
+    dolLoc:g('tDolLoc')?.value||'',
+    dolTipo:g('tDolTipo')?.value||'',
+    neuro:g('tNeuro')?.value||'',
+    tegu:g('tTegu')?.value||'',
+    pruebas:g('tPruebas')?.value||'',
+    aux:g('tAux')?.value||'',
+    objCorto:g('planObjC')?.value||'',
+    objLargo:g('planObjL')?.value||'',
+    planSesiones:g('planSes')?.value||'',
+    planFrecuencia:g('planFreq')?.value||'',
+    planPrecauciones:g('planPrec')?.value||'',
+  };
+  // 1. Guardar paciente
+  const bPac={action:'guardarPaciente',nombre,dni,
+    sexo:g('pS')?.value||'',fechaNac:g('pFN')?.value||'',
+    telefono:g('pT')?.value||'',ocupacion:g('pO')?.value||'',
+    categoriaId:catId,fechaInicio:g('pFI')?.value||'',
+    responsable:g('pR')?.value||'',telResponsable:g('pTR')?.value||'',
+    estado:'activo'};
+  if(pacId)bPac.id=pacId;
+  const rPac=await apiPost(bPac);
+  if(!rPac.ok){toast('Error al guardar paciente',rPac.error,'err');return;}
+  const idPac=pacId||rPac.id;
+  // 2. Guardar evaluación
+  const estado=modo==='borrador'?'borrador':(session.rol==='estudiante'?'pendiente':'aprobada');
+  const rEval=await apiPost({action:'guardarEvaluacion',pacienteId:idPac,categoriaId:catId,
+    tipo:'inicial',estado,dxFisio:datos.dxFisio,aptaPatron:'',datosEspecificos:datos});
+  if(!rEval.ok){toast('Error al guardar evaluación',rEval.error,'err');return;}
+  const msgs={borrador:'💾 Borrador guardado',pendiente:'📤 Enviada al docente',aprobada:'✅ Historia guardada'};
+  toast(msgs[estado]||'Guardado','','ok');
+  abrirPac(idPac);
+}
+
+// ─── Modal selección de categoría ────────────────────
+function abrirModalCategoria(){
+  const m=g('modalCatSelect'), box=g('catSelectList');
+  if(!m||!box)return;
+  if(!cats.length){
+    box.innerHTML='<div style="grid-column:1/-1;color:var(--tx4);font-size:13px;text-align:center;padding:12px">Sin categorías. Ejecuta inicializarHC() en el GAS primero.</div>';
+    m.style.display='flex';return;
+  }
+  box.innerHTML=cats.map(c=>{
+    const color=c.color||'#3b82f6';
+    return `<div onclick="seleccionarCategoria('${esc(c.id)}','${esc(c.nombre)}')"
+      style="background:${color}18;border:1.5px solid ${color}44;border-radius:12px;
+             padding:14px 12px;cursor:pointer;transition:all .15s;text-align:center"
+      onmouseover="this.style.borderColor='${color}'" onmouseout="this.style.borderColor='${color}44'">
+      <div style="width:12px;height:12px;border-radius:50%;background:${color};margin:0 auto 8px"></div>
+      <div style="font-size:12px;font-weight:700;color:#fff;line-height:1.3">${e2(c.nombre)}</div>
+    </div>`;
+  }).join('');
+  m.style.display='flex';
+}
+function cerrarModalCategoria(){
+  const m=g('modalCatSelect');if(m)m.style.display='none';
+}
+function seleccionarCategoria(catId, catNombre){
+  cerrarModalCategoria();
+  abrirFrmPac(null, catId, catNombre);
+}
+
 </script>
 </body>
 </html>
