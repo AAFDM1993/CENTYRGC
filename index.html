@@ -668,6 +668,7 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
             <div id="secCursos" class="gen-section-body">
               <div id="crsList" class="crs-list"></div>
               <div class="row2" style="margin-bottom:8px">
+                <input class="inp" id="newCrsCod" placeholder="Código (ej: FIS-PED)" style="width:115px" onkeydown="if(event.key==='Enter')addCurso()">
                 <input class="inp" id="newCrs" placeholder="Nombre del curso..." style="flex:1" onkeydown="if(event.key==='Enter')addCurso()">
                 <button class="btn-sm" onclick="addCurso()">+</button>
               </div>
@@ -1559,17 +1560,33 @@ function importarFilas_(rows){
   var n=0;
   rows.forEach(function(p){
     if(!p||p.length<1)return;
-    var code='',name='';
-    if(p.length>=2){
+    var code='',name='',codigoCurso='';
+    if(p.length>=3){
+      var c0=String(p[0]).trim(),c1=String(p[1]).trim(),c2=String(p[2]).trim();
+      if(/^\d+$/.test(c0)||c0.length<=10){ code=c0; name=c1; codigoCurso=c2.toUpperCase(); }
+      else { name=c0+' '+c1; codigoCurso=c2.toUpperCase(); }
+    } else if(p.length>=2){
       var c0=String(p[0]).trim(),c1=String(p[1]).trim();
       if(/^\d+$/.test(c0)||c0.length<=10){code=c0;name=c1;}
       else{name=c0+' '+c1;}
-    } else {name=String(p[0]).trim();}
+    } else { name=String(p[0]).trim(); }
     name=name.trim();
     if(!name||name.toLowerCase()==='nombre'||name.toLowerCase()==='apellidos y nombres'||name.toLowerCase()==='apellidos'||name==='-')return;
     var nameNorm=name.toLowerCase().normalize('NFC');
-    if(alumnos.some(function(a){return a.name.toLowerCase().normalize('NFC')===nameNorm;}))return;
-    alumnos.push(makeAlumno(code,name));n++;
+    var existente=alumnos.find(function(a){return a.name.toLowerCase().normalize('NFC')===nameNorm;});
+    if(existente){
+      if(codigoCurso){
+        var cu=cursos.find(function(x){return x.codigo===codigoCurso;});
+        if(cu) existente.cursos[cu.label]=true;
+      }
+      return;
+    }
+    var al=makeAlumno(code,name);
+    if(codigoCurso){
+      var cu=cursos.find(function(x){return x.codigo===codigoCurso;});
+      if(cu) al.cursos[cu.label]=true;
+    }
+    alumnos.push(al); n++;
   });
   return n;
 }function addAlumno(){
@@ -1645,10 +1662,14 @@ function renderSgrCard(ci,si,sg){
 function toggleCurso(ci){cursos[ci].on=!cursos[ci].on;renderCursos();renderAlumnos();renderPreview()}
 function toggleCursoExpand(ci){const el=g('crsitem_'+ci);if(el)el.classList.toggle('expanded')}
 function addCurso(){
-  const inp=g('newCrs'),name=inp.value.trim();if(!name)return;
-  if(cursos.find(c=>c.label===name)){toast('Ya existe ese curso','','warn');return}
-  cursos.push({label:name,on:true,subgrupos:[{nombre:'Subgrupo 1',notasBase:15,notasExtra:0,numPacientes:5}]});
-  inp.value='';renderCursos();renderAlumnos();renderPreview();
+  const inp=g('newCrs'), inpCod=g('newCrsCod');
+  const name=inp.value.trim(); if(!name)return;
+  const codigo=inpCod?inpCod.value.trim().toUpperCase():'';
+  if(cursos.find(function(c){return c.label===name;})){toast('Ya existe ese curso','','warn');return;}
+  if(codigo && cursos.find(function(c){return c.codigo===codigo;})){toast('Ya existe ese código','','warn');return;}
+  cursos.push({label:name, codigo:codigo, on:true, subgrupos:[{nombre:'Subgrupo 1',notasBase:15,notasExtra:0,numPacientes:5}]});
+  inp.value=''; if(inpCod) inpCod.value='';
+  renderCursos();renderAlumnos();renderPreview();
 }
 function delCurso(ci){if(!confirm(`Eliminar "${cursos[ci].label}"?`))return;cursos.splice(ci,1);renderCursos();renderAlumnos();renderPreview()}
 function addSubgrupo(ci){const n=cursos[ci].subgrupos.length+1;cursos[ci].subgrupos.push({nombre:'Subgrupo '+n,notasBase:15,notasExtra:0,numPacientes:5});renderSgrList(ci);renderPreview()}
