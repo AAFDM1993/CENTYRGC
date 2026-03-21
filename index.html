@@ -686,13 +686,11 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
               <span class="gen-arrow" id="arrowSecConfig">&#9660;</span>
             </div>
             <div id="secConfig" class="gen-section-body">
-              <div class="field"><label>Asignatura</label><input class="inp" id="cfgAsig" placeholder="Ej. Tecnicas de Fisioterapia II"></div>
-             <div class="row2">
-  <div class="field"><label>Semestre</label><input class="inp" id="cfgSem" placeholder="Ej. 2025-I" style="width:100%"></div>
-  <div class="field"><label>Seccion</label><input class="inp" id="cfgSec" placeholder="Ej. Seccion A" style="width:100%"></div>
-</div>
-<div class="field"><label>Ciclo</label><input class="inp" id="cfgCiclo" placeholder="Ej. V Ciclo, VII Ciclo"></div>
+              <div class="field"><label>Semestre</label><input class="inp" id="cfgSem" placeholder="Ej. 2025-I"></div>
               <div class="field"><label>Nombre de la hoja</label><input class="inp" id="cfgHoja" placeholder="Ej. MyT II 2025-I"></div>
+              <input type="hidden" id="cfgAsig" value="">
+              <input type="hidden" id="cfgSec" value="">
+              <input type="hidden" id="cfgCiclo" value="">
               <input type="hidden" id="scApro" value="11">
             </div>
           </div>
@@ -1156,9 +1154,7 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
     <button onclick="irAHC()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:#c4b5fd;cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
       <span style="font-size:26px;line-height:1">🏥</span><span>HC</span>
     </button>
-     <button onclick="irAHC()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:#c4b5fd;cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
-      <span style="font-size:22px;line-height:1">🏥</span><span>HC</span>
-    </button>
+
     <button onclick="abrirPassModal()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
       <span style="font-size:26px;line-height:1">&#128274;</span><span>Clave</span>
     </button>
@@ -1673,12 +1669,13 @@ function renderAlumnos(){
   g('scnt').textContent=alumnos.length+' alumno'+(alumnos.length!==1?'s':'');
   g('prevBadge').textContent=alumnos.length+' alumnos';
   var cnt=g('secAlumnosCount');if(cnt)cnt.textContent=alumnos.length+' alumnos';
+  var btn=g('btnGen');if(btn)btn.disabled=!(alumnos.length>0&&cursos.filter(function(cx){return cx.on;}).length>0);
 }
 function renderCursos(){
   const el=g('crsList');if(!el)return;
+  var btn=g('btnGen');if(btn)btn.disabled=!(alumnos.length>0&&cursos.filter(function(cx){return cx.on;}).length>0);
   if(!cursos.length){el.innerHTML='<div class="empty" style="padding:8px">Agrega cursos abajo</div>';return}
   var cntEl=g('secCursosCount');if(cntEl){var act=cursos.filter(function(x){return x.on;}).length;cntEl.textContent=cursos.length+' cursos ('+act+' activos)';}
-  var btn=g('btnGen');if(btn)btn.disabled=!(alumnos.length>0&&cursos.filter(function(cx){return cx.on;}).length>0);
   el.innerHTML=cursos.map((c,ci)=>{
     const sh=c.subgrupos.length?c.subgrupos.map((sg,si)=>renderSgrCard(ci,si,sg)).join(''):'<div style="font-size:11px;color:var(--tx4);padding:4px 0">Sin subgrupos</div>';
     return `<div class="crs-item ${c.on?'on':''}" id="crsitem_${ci}">
@@ -4904,6 +4901,16 @@ async function regenerarHoja(){
     cerrarPanel();
     loadHojas();
   }catch(e){ hideLoader(); toast('Error', e.message, 'err'); }
+}
+
+function irAHC(){
+  if(!session) return;
+  var url = 'hc.html'
+    + '?token='  + encodeURIComponent(session.token)
+    + '&rol='    + encodeURIComponent(session.rol)
+    + '&nombre=' + encodeURIComponent(session.nombre||session.codigo)
+    + '&codigo=' + encodeURIComponent(session.codigo);
+  window.open(url, '_blank');
 }</script>
 </body>
 </html>
