@@ -4662,9 +4662,10 @@ function renderCalendarioRec(){
     hideLoader();
     if(!r.ok) throw new Error(r.error);
 
-    // Guardar alumnos en variable global para usarlos al guardar
     window._cfgHojaAlumnos = r.alumnos;
     window._cfgHojaNombre  = nombre;
+    // Guardar mapa curso→subgrupos para usarlo al guardar
+    window._cfgCursosMap   = {};
 
     // Agrupar por curso → subgrupo
     const cursosMap = {}, cursosOrd = [];
@@ -4673,28 +4674,32 @@ function renderCalendarioRec(){
         if(!cursosMap[cu.nombre]){ cursosMap[cu.nombre]={nombre:cu.nombre,subgrupos:{},sgrOrd:[]}; cursosOrd.push(cu.nombre); }
         cu.subgrupos.forEach(sg => {
           if(!cursosMap[cu.nombre].subgrupos[sg.nombre]){
-            // Contar pacientes normales (sin PACX)
             const numPac = sg.pacientes ? sg.pacientes.filter(p=>p.label.indexOf('PACX')<0).length : 1;
             cursosMap[cu.nombre].subgrupos[sg.nombre] = {
-              nombre: sg.nombre,
-              notasBase:  sg.notasBase  || 0,
-              notasExtra: sg.notasExtra || 0,
-              numPac: numPac
+              nombre: sg.nombre, notasBase: sg.notasBase||0,
+              notasExtra: sg.notasExtra||0, numPac: numPac
             };
             cursosMap[cu.nombre].sgrOrd.push(sg.nombre);
           }
         });
       });
     });
+    window._cfgCursosMap = cursosMap;
 
     let html = `<div style="font-size:12px;color:var(--tx3);margin-bottom:14px;background:var(--n050);border:1px solid var(--n200);border-radius:10px;padding:9px 12px">
-      <strong style="color:var(--n600)">&#9432;</strong> Los cambios se aplican a todos los alumnos del subgrupo. Las notas se conservan.
+      <strong style="color:var(--n600)">&#9432;</strong> Los cambios se aplican a todos los alumnos. Las notas se conservan.
     </div>`;
 
     cursosOrd.forEach((cuNom, ci) => {
       const cu = cursosMap[cuNom];
       html += `<div style="margin-bottom:16px">
-        <div style="background:var(--n700);color:var(--n200);padding:8px 14px;border-radius:10px 10px 0 0;font-size:12px;font-weight:700;font-style:italic">&#128218; ${cuNom}</div>`;
+        <div style="background:var(--n700);color:var(--n200);padding:8px 14px;border-radius:10px 10px 0 0;font-size:12px;font-weight:700;font-style:italic;display:flex;align-items:center;justify-content:space-between">
+          <span>&#128218; ${cuNom}</span>
+          <button onclick="guardarConfigCurso('${cuNom.replace(/'/g,"\'")}')"
+            style="background:var(--green);border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:700;padding:5px 12px;cursor:pointer">
+            &#10003; Guardar curso
+          </button>
+        </div>`;
       cu.sgrOrd.forEach((sgrNom, si) => {
         const sg = cu.subgrupos[sgrNom];
         const min = sg.notasBase;
@@ -4703,7 +4708,7 @@ function renderCalendarioRec(){
         const last = si === cu.sgrOrd.length - 1;
         html += `<div style="border:1px solid var(--bd2);border-top:none;padding:12px 14px;background:var(--surf2);${last?'border-radius:0 0 10px 10px':''}">
           <div style="font-size:12px;font-weight:700;color:var(--tx);margin-bottom:10px">&#128101; ${sgrNom}</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:flex-end">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
             <div>
               <label style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px">Mínimo</label>
               <input type="number" min="1" max="50" value="${min}" id="cfg_min_${ci}_${si}"
@@ -4719,10 +4724,6 @@ function renderCalendarioRec(){
               <input type="number" min="1" max="20" value="${np}" id="cfg_pac_${ci}_${si}"
                 style="width:100%;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-size:14px;font-family:'DM Mono',monospace;font-weight:800;outline:none;text-align:center">
             </div>
-            <button onclick="guardarConfigSubgrupo('${cuNom.replace(/'/g,"\\'")}','${sgrNom.replace(/'/g,"\\'")}',${ci},${si})"
-              style="background:var(--green);border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:700;padding:9px 16px;cursor:pointer;white-space:nowrap">
-              &#10003; Guardar
-            </button>
           </div>
         </div>`;
       });
@@ -4739,49 +4740,54 @@ function renderCalendarioRec(){
     if(g('agendaCard')) g('agendaCard').style.display = 'none';
     if(g('prevCard')) g('prevCard').style.display = 'none';
   }catch(e){ hideLoader(); toast('Error', e.message, 'err'); }
+}async function guardarConfigSubgrupo(curso, subgrupo, ci, si){
+  // Mantenida por compatibilidad — ahora se usa guardarConfigCurso
 }
-async function guardarConfigSubgrupo(curso, subgrupo, ci, si){
-  const minEl = g('cfg_min_'+ci+'_'+si);
-  const maxEl = g('cfg_max_'+ci+'_'+si);
-  const pacEl = g('cfg_pac_'+ci+'_'+si);
-  if(!minEl || !maxEl || !pacEl) return;
-  const min = parseInt(minEl.value);
-  const max = parseInt(maxEl.value);
-  const np  = parseInt(pacEl.value);
-  if(isNaN(min)||isNaN(max)||min<1||max<min){
-    toast('Valores inválidos','Mínimo ≥ 1 y máximo ≥ mínimo','warn'); return;
-  }
-  if(isNaN(np)||np<1){
-    toast('Valores inválidos','Pacientes debe ser ≥ 1','warn'); return;
-  }
+
+async function guardarConfigCurso(cuNom){
   const hoja    = window._cfgHojaNombre;
   const alumnos = (window._cfgHojaAlumnos||[]).map(a=>a.nombre);
+  const cursosMap = window._cfgCursosMap||{};
   if(!hoja||!alumnos.length){ toast('Error','No hay hoja cargada','err'); return; }
-  showLoader('Guardando en '+alumnos.length+' alumnos...');
+
+  const cu = cursosMap[cuNom];
+  if(!cu){ toast('Error','Curso no encontrado','err'); return; }
+
+  // Leer valores actuales de los inputs
+  const cursosOrd = Object.keys(cursosMap);
+  const ci = cursosOrd.indexOf(cuNom);
+
+  const subgruposData = [];
+  cu.sgrOrd.forEach((sgrNom, si) => {
+    const min = parseInt((g('cfg_min_'+ci+'_'+si)||{}).value||0);
+    const max = parseInt((g('cfg_max_'+ci+'_'+si)||{}).value||0);
+    const np  = parseInt((g('cfg_pac_'+ci+'_'+si)||{}).value||1);
+    if(!isNaN(min)&&!isNaN(max)&&min>=1&&max>=min)
+      subgruposData.push({ subgrupo: sgrNom, notasBase: min, notasExtra: max-min, numPacientes: np });
+  });
+
+  if(!subgruposData.length){ toast('Sin cambios válidos','','warn'); return; }
+
+  showLoader('Guardando '+cuNom+'...');
   try{
     const errores = [];
     for(const alumno of alumnos){
-      const r = await apiPost({
-        action:'actualizarSubgrupo',
-        hoja, alumno, curso, subgrupo,
-        notasBase:  min,
-        notasExtra: max - min,
-        numPacientes: np
-      });
-      if(!r.ok) errores.push(alumno+': '+(r.error||'error'));
+      for(const sg of subgruposData){
+        const r = await apiPost({
+          action:'actualizarSubgrupo',
+          hoja, alumno, curso: cuNom,
+          subgrupo: sg.subgrupo,
+          notasBase: sg.notasBase,
+          notasExtra: sg.notasExtra,
+          numPacientes: sg.numPacientes
+        });
+        if(!r.ok) errores.push(alumno+'/'+sg.subgrupo+': '+(r.error||'error'));
+      }
     }
     hideLoader();
-    if(errores.length) toast('Errores parciales', errores.slice(0,3).join(', '), 'warn');
-    else toast('Guardado', subgrupo+' — mín '+min+' / máx '+max+' / '+np+' pac — '+alumnos.length+' alumnos', 'ok');
+    if(errores.length) toast('Errores', errores.slice(0,3).join(' | '), 'warn');
+    else toast('Guardado', cuNom+' — '+alumnos.length+' alumnos', 'ok');
   }catch(e){ hideLoader(); toast('Error', e.message, 'err'); }
-}   function irAHC(){
-  if(!session) return;
-  var url='hc.html?token='+encodeURIComponent(session.token)
-    +'&rol='+encodeURIComponent(session.rol)
-    +'&nombre='+encodeURIComponent(session.nombre||session.codigo)
-    +'&codigo='+encodeURIComponent(session.codigo);
-  window.open(url,'_blank');
-}
-</script>
+}</script>
 </body>
 </html>
