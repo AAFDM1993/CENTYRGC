@@ -1313,7 +1313,7 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
 // ==========================
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzuYCxaHC-huce7Y28LaCAQdVGq1LgGC6y29k-Zz1gJF0lrXBJz-XsioqF7gUoz6-8yvw/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwKC8lniHbSClrN44Z3yCPJ3FLFaR2v658rNw-K98M_oCiby-rwIoNRyFCBetNfwlrEyw/exec';
 // ====================================================
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
@@ -4677,7 +4677,11 @@ function renderCalendarioRec(){
       });
     });
     window._cfgCursosArr = cursosArr;
-    let html = '';
+    let html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
+          + '<div style="font-size:12px;color:var(--tx3);background:var(--n050);border:1px solid var(--n200);border-radius:10px;padding:9px 12px;flex:1;margin-right:10px">'
+          + '<strong style="color:var(--n600)">&#9432;</strong> Cambios aplican a todos los alumnos. Las notas se conservan.</div>'
+          + '<button onclick="regenerarHoja()" style="background:var(--red);border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:700;padding:9px 16px;cursor:pointer;white-space:nowrap;flex-shrink:0">&#128260; Regenerar hoja</button>'
+          + '</div>';
     cursosArr.forEach(function(cu, ci){
       html += '<div style="margin-bottom:16px">'
             + '<div style="background:var(--n700);color:var(--n200);padding:8px 14px;border-radius:10px 10px 0 0;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:space-between">'
@@ -4748,6 +4752,21 @@ async function guardarConfigCurso(ci){
       toast('Completado con advertencias', r.errores.slice(0,3).join(' | '), 'warn');
     else
       toast('Guardado', cu.nombre+' — '+alumnos.length+' alumnos', 'ok');
+  }catch(e){ hideLoader(); toast('Error', e.message, 'err'); }
+}
+
+async function regenerarHoja(){
+  const hoja = window._cfgHojaNombre;
+  if(!hoja){ toast('Error','No hay hoja cargada','err'); return; }
+  if(!confirm('Regenerar "'+ hoja +'"?\n\nSe ELIMINARÁN todas las notas. ¿Continuar?')) return;
+  showLoader('Regenerando hoja...');
+  try{
+    const r = await apiPost({action:'regenerarHoja', hoja});
+    hideLoader();
+    if(!r.ok) throw new Error(r.error||'Error en el GAS');
+    toast('Hoja regenerada', hoja, 'ok');
+    cerrarPanel();
+    loadHojas();
   }catch(e){ hideLoader(); toast('Error', e.message, 'err'); }
 }</script>
 </body>
