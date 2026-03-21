@@ -1313,7 +1313,7 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
 // ==========================
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyQwlVWKjadY4O6kjduPPPO5YkzWB9F7bfekDDTm52oBmjvMyVEL-GEufspWBX_O2jBpw/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzuYCxaHC-huce7Y28LaCAQdVGq1LgGC6y29k-Zz1gJF0lrXBJz-XsioqF7gUoz6-8yvw/exec';
 // ====================================================
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
@@ -4768,17 +4768,19 @@ async function guardarConfigCurso(ci){
   if(!subgruposData.length){ toast('Sin cambios válidos','','warn'); return; }
   showLoader('Guardando '+cu.nombre+'...');
   try{
-    const errores=[];
-    for(const alumno of alumnos){
-      for(const sg of subgruposData){
-        const r=await apiPost({action:'actualizarSubgrupo', hoja, alumno, curso:cu.nombre,
-          subgrupo:sg.subgrupo, notasBase:sg.notasBase, notasExtra:sg.notasExtra, numPacientes:sg.numPacientes});
-        if(!r.ok) errores.push(alumno+'/'+sg.subgrupo+': '+(r.error||'error'));
-      }
-    }
+    const r = await apiPost({
+      action: 'actualizarCursoCompleto',
+      hoja,
+      curso:    cu.nombre,
+      alumnos:  alumnos,
+      subgrupos: subgruposData
+    });
     hideLoader();
-    if(errores.length) toast('Errores', errores.slice(0,3).join(' | '), 'warn');
-    else toast('Guardado', cu.nombre+' — '+alumnos.length+' alumnos', 'ok');
+    if(!r.ok) throw new Error(r.error||'Error en el GAS');
+    if(r.errores && r.errores.length)
+      toast('Completado con advertencias', r.errores.slice(0,3).join(' | '), 'warn');
+    else
+      toast('Guardado', cu.nombre+' — '+alumnos.length+' alumnos', 'ok');
   }catch(e){ hideLoader(); toast('Error', e.message, 'err'); }
 }</script>
 </body>
