@@ -1670,12 +1670,37 @@ function renderCursos(){
   }).join('');
 }
 function renderSgrCard(ci,si,sg){
-  return `<div class="sgr-card"><div class="sgr-card-top"><input class="sgr-name-inp" value="${esc2(sg.nombre)}" placeholder="Nombre" oninput="updateSgrNombre(${ci},${si},this.value)"><button class="sgr-del" onclick="delSubgrupo(${ci},${si})">&#128465;</button></div>
-    <div class="sgr-controls">
-      <div class="sgr-ctrl"><label>Pacientes</label><div class="counter"><button onclick="changeSgr(${ci},${si},'numPacientes',-1)">-</button><span id="sgr_pac_${ci}_${si}">${sg.numPacientes||1}</span><button onclick="changeSgr(${ci},${si},'numPacientes',+1)">+</button></div></div>
-      <div class="sgr-ctrl"><label>Atenciones</label><div class="counter"><button onclick="changeSgr(${ci},${si},'notasBase',-1)">-</button><span id="sgr_base_${ci}_${si}">${sg.notasBase||15}</span><button onclick="changeSgr(${ci},${si},'notasBase',+1)">+</button></div></div>
-      <div class="sgr-ctrl"><label>Extras</label><div class="counter"><button onclick="changeSgr(${ci},${si},'notasExtra',-1)">-</button><span id="sgr_extra_${ci}_${si}">${sg.notasExtra||0}</span><button onclick="changeSgr(${ci},${si},'notasExtra',+1)">+</button></div></div>
-    </div></div>`;
+  const pac   = sg.numPacientes||1;
+  const base  = sg.notasBase||15;
+  const total = base + (sg.notasExtra||0);
+  const inpStyle = 'width:100%;border:1px solid var(--bd);border-radius:8px;padding:6px 8px;font-size:14px;font-family:\'DM Mono\',monospace;font-weight:800;outline:none;text-align:center;background:#fff;';
+  const lblStyle = 'font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.6px;display:block;margin-bottom:4px;';
+  return `<div class="sgr-card">
+    <div class="sgr-card-top">
+      <input class="sgr-name-inp" value="${esc2(sg.nombre)}" placeholder="Nombre subgrupo" oninput="updateSgrNombre(${ci},${si},this.value)">
+      <button class="sgr-del" onclick="delSubgrupo(${ci},${si})">&#128465;</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">
+      <div>
+        <label style="${lblStyle}">Pacientes</label>
+        <input type="number" min="1" max="20" value="${pac}"
+          style="${inpStyle}"
+          oninput="setSgrVal(${ci},${si},'numPacientes',+this.value)">
+      </div>
+      <div>
+        <label style="${lblStyle}">Atenc. mínimas</label>
+        <input type="number" min="1" max="50" value="${base}"
+          style="${inpStyle}"
+          oninput="setSgrValBase(${ci},${si},+this.value,+this.closest('.sgr-card').querySelector('[data-total]').value)">
+      </div>
+      <div>
+        <label style="${lblStyle}">Atenc. totales</label>
+        <input type="number" min="1" max="100" value="${total}" data-total
+          style="${inpStyle}"
+          oninput="setSgrValTotal(${ci},${si},+this.closest('.sgr-card').querySelector('input[type=number]:nth-child(1)').value||${base},+this.value)">
+      </div>
+    </div>
+  </div>`;
 }
 function toggleCurso(ci){cursos[ci].on=!cursos[ci].on;renderCursos();renderAlumnos();renderPreview()}
 function toggleCursoExpand(ci){const el=g('crsitem_'+ci);if(el)el.classList.toggle('expanded')}
@@ -1690,10 +1715,37 @@ function addSubgrupo(ci){const n=cursos[ci].subgrupos.length+1;cursos[ci].subgru
 function delSubgrupo(ci,si){cursos[ci].subgrupos.splice(si,1);renderSgrList(ci);renderPreview()}
 function renderSgrList(ci){const el=g('sgrlist_'+ci);if(!el)return;el.innerHTML=cursos[ci].subgrupos.length?cursos[ci].subgrupos.map((sg,si)=>renderSgrCard(ci,si,sg)).join(''):'<div style="font-size:11px;color:var(--tx4)">Sin subgrupos</div>'}
 function updateSgrNombre(ci,si,val){cursos[ci].subgrupos[si].nombre=val;renderPreview()}
-function changeSgr(ci,si,f,d){
-  const sg=cursos[ci].subgrupos[si];sg[f]=Math.max(f==='notasExtra'?0:1,(sg[f]||0)+d);
-  const ids={numPacientes:'pac',notasBase:'base',notasExtra:'extra'};
-  const el=g('sgr_'+ids[f]+'_'+ci+'_'+si);if(el)el.textContent=sg[f];renderPreview();
+function changeSgr(ci,si,field,delta){
+  if(!cursos[ci]||!cursos[ci].subgrupos[si])return;
+  var sg=cursos[ci].subgrupos[si];
+  var min=field==='notasExtra'?0:1;
+  sg[field]=Math.max(min,(sg[field]||0)+delta);
+  renderCursos();renderPreview();
+}
+
+function setSgrVal(ci,si,field,val){
+  if(!cursos[ci]||!cursos[ci].subgrupos[si])return;
+  var v=isNaN(val)?1:Math.max(1,Math.round(val));
+  cursos[ci].subgrupos[si][field]=v;
+  renderPreview();
+}
+
+function setSgrValBase(ci,si,base,total){
+  if(!cursos[ci]||!cursos[ci].subgrupos[si])return;
+  base=isNaN(base)?1:Math.max(1,Math.round(base));
+  total=isNaN(total)?base:Math.max(base,Math.round(total));
+  cursos[ci].subgrupos[si].notasBase=base;
+  cursos[ci].subgrupos[si].notasExtra=total-base;
+  renderPreview();
+}
+
+function setSgrValTotal(ci,si,base,total){
+  if(!cursos[ci]||!cursos[ci].subgrupos[si])return;
+  base=isNaN(base)?1:Math.max(1,Math.round(base));
+  total=isNaN(total)?base:Math.max(base,Math.round(total));
+  cursos[ci].subgrupos[si].notasBase=base;
+  cursos[ci].subgrupos[si].notasExtra=total-base;
+  renderPreview();
 }
 function guardarCursos(){localStorage.setItem('ft_cursos_v6',JSON.stringify(cursos));toast('Cursos guardados','','ok')}
 function resetCursos(){if(!confirm('Borrar todos los cursos?'))return;cursos=[];localStorage.removeItem('ft_cursos_v6');renderCursos();renderAlumnos();renderPreview()}
