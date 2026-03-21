@@ -640,10 +640,10 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
             <div id="secAlumnos" class="gen-section-body">
               <!-- Importar CSV/XLSX/TXT -->
               <div class="upload" id="uploadZone" onclick="document.getElementById('csvIn').click()" style="margin-bottom:10px">
-                <div class="ico">&#128194;</div><p>Importar CSV / XLSX / TXT</p>
-                <small>Columnas: CODIGO, APELLIDOS Y NOMBRES</small>
+                <div class="ico">&#128194;</div><p>Importar CSV / XLSX / TXT (múltiples)</p>
+                <small>Duplicados se eliminan automáticamente</small>
               </div>
-              <input id="csvIn" type="file" accept=".csv,.txt,.xlsx,.xls" style="display:none" onchange="loadCSV(event)">
+              <input id="csvIn" type="file" accept=".csv,.txt,.xlsx,.xls,.pdf" style="display:none" multiple onchange="loadCSVMulti(event)">
               <!-- Añadir manual -->
               <div class="row2" style="margin-bottom:8px">
                 <input class="inp" id="mCode" placeholder="Codigo" style="width:82px">
@@ -1521,78 +1521,105 @@ function initGenSections(){
   });
 }
 
-function loadCSV(e){
-  var file=e.target.files[0];if(!file)return;
-  var ext=file.name.split('.').pop().toLowerCase();
-  if(ext==='xlsx'||ext==='xls'){
-    // Usar SheetJS para leer XLSX
-    var reader=new FileReader();
-    reader.onload=function(ev){
-      try{
-        var wb=XLSX.read(ev.target.result,{type:'array'});
-        var ws=wb.Sheets[wb.SheetNames[0]];
-        var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-        var n=0;
-        rows.forEach(function(row){
-          if(!row||row.length<1)return;
-          // Intentar detectar código y nombre
-          var code='',name='';
-          if(row.length>=2){
-            // Asumir primera col=código, segunda=nombre
-            var c0=String(row[0]).trim(),c1=String(row[1]).trim();
-            // Si c0 es numérico o corto, es código
-            if(/^\d+$/.test(c0)||c0.length<=10){code=c0;name=c1;}
-            else{name=c0+' '+c1;}
-          } else {
-            name=String(row[0]).trim();
-          }
-          if(!name||name.toLowerCase()==='nombre'||name.toLowerCase()==='apellidos')return;
-          alumnos.push(makeAlumno(code,name));n++;
-        });
-        renderAlumnos();renderPreview();
-        toast(n+' alumnos importados','','ok');
-      }catch(ex){toast('Error al leer XLSX',ex.message,'err');}
-    };
-    reader.readAsArrayBuffer(file);
-  } else {
-    // CSV / TXT
-    var reader2=new FileReader();
-    reader2.onload=function(ev){
-      var lines=ev.target.result.split('\n').filter(function(l){return l.trim();});var n=0;
-      lines.forEach(function(l){
-        var p=l.split(/[,;\t]/).map(function(x){return x.trim();}).filter(Boolean);
-        if(p.length<1)return;
-        var code='',name='';
-        if(p.length>=2){code=p[0];name=p.slice(1).join(' ');}
-        else{name=p[0];}
-        if(!name||name.toLowerCase()==='nombre'||name.toLowerCase()==='apellidos y nombres')return;
-        alumnos.push(makeAlumno(code,name));n++;
-      });
-      renderAlumnos();renderPreview();
-      toast(n+' alumnos importados','','ok');
-    };
-    reader2.readAsText(file);
-  }
+function loadCSV(e){ loadCSVMulti(e); }
+
+function loadCSVMulti(e){
+  var files=Array.from(e.target.files||[]);
+  if(!files.length)return;
+  var pendiente=files.length,totalN=0;
+  function done(){ pendiente--; if(pendiente===0){renderAlumnos();renderPreview();toast(totalN+' alumnos importados (sin duplicados)','','ok');} }
+  files.forEach(function(file){
+    var ext=file.name.split('.').pop().toLowerCase();
+    if(ext==='xlsx'||ext==='xls'){
+      var r=new FileReader();
+      r.onload=function(ev){
+        try{
+          var wb=XLSX.read(ev.target.result,{type:'array'});
+          var ws=wb.Sheets[wb.SheetNames[0]];
+          var rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+          totalN+=importarFilas_(rows.map(function(row){return row.map(function(x){return String(x);});}));
+        }catch(ex){toast('Error XLSX: '+file.name,ex.message,'err');}
+        done();
+      };
+      r.readAsArrayBuffer(file);
+    } else {
+      var r2=new FileReader();
+      r2.onload=function(ev){
+        var lines=ev.target.result.split('\n').filter(function(l){return l.trim();});
+        totalN+=importarFilas_(lines.map(function(l){return l.split(/[,;\t]/).map(function(x){return x.trim();});}));
+        done();
+      };
+      r2.readAsText(file,'UTF-8');
+    }
+  });
   e.target.value='';
+}
+
+function importarFilas_(rows){
+  var n=0;
+  rows.forEach(function(p){
+    if(!p||p.length<1)return;
+    var code='',name='';
+    if(p.length>=2){
+      var c0=String(p[0]).trim(),c1=String(p[1]).trim();
+      if(/^\d+$/.test(c0)||c0.length<=10){code=c0;name=c1;}
+      else{name=c0+' '+c1;}
+    } else {name=String(p[0]).trim();}
+    name=name.trim();
+    if(!name||name.toLowerCase()==='nombre'||name.toLowerCase()==='apellidos y nombres'||name.toLowerCase()==='apellidos'||name==='-')return;
+    var nameNorm=name.toLowerCase().normalize('NFC');
+    if(alumnos.some(function(a){return a.name.toLowerCase().normalize('NFC')===nameNorm;}))return;
+    alumnos.push(makeAlumno(code,name));n++;
+  });
+  return n;
 }function addAlumno(){
   const code=vi('mCode').trim(),name=vi('mName').trim();if(!name)return;
+  const nn=name.toLowerCase().normalize('NFC');
+  if(alumnos.some(function(a){return a.name.toLowerCase().normalize('NFC')===nn;})){
+    toast('Duplicado','Ya existe: '+name,'warn');return;
+  }
   alumnos.push(makeAlumno(code,name));g('mCode').value='';g('mName').value='';
   renderAlumnos();renderPreview();g('mCode').focus();
 }
 function remAlumno(i){alumnos.splice(i,1);renderAlumnos();renderPreview()}
 function clearAlumnos(){if(!alumnos.length||!confirm('Limpiar lista?'))return;alumnos=[];renderAlumnos();renderPreview()}
 function renderAlumnos(){
-  const list=g('slist'),activos=cursos.filter(c=>c.on);
-  if(!alumnos.length){list.innerHTML='<div class="empty">Sin alumnos</div>'}
-  else list.innerHTML=alumnos.map((a,i)=>{
-    const n=activos.filter(c=>a.cursos[c.label]===true).length;
-    return `<div class="al-row"><span class="sn">${i+1}</span><span class="sname">${a.name}</span><span class="scode">${a.code||'-'}</span><span class="al-badge ${n===0?'none':''}" id="albadge_${i}" onclick="openDrawer(${i})">${n}/${activos.length} cursos</span><button class="sdel" onclick="remAlumno(${i})">x</button></div>`;
+  var list=g('slist'), activos=cursos.filter(function(c){return c.on;});
+  if(!alumnos.length){list.innerHTML='<div class="empty">Sin alumnos</div>';}
+  else list.innerHTML=alumnos.map(function(a,i){
+    var chks='';
+    if(activos.length){
+      chks='<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-left:auto">'+
+        activos.map(function(cu){
+          var checked=a.cursos[cu.label]===true;
+          var lbl=cu.label.length>16?cu.label.substring(0,16)+'…':cu.label;
+          return '<label style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;color:var(--tx3);cursor:pointer;white-space:nowrap">'+
+            '<input type="checkbox" class="al-curso-chk"'+(checked?' checked':'')
+            +' data-ai="'+i+'" data-label="'+cu.label.replace(/"/g,'&quot;')+'"'
+            +' style="accent-color:var(--n500);width:13px;height:13px;cursor:pointer">'+lbl+'</label>';
+        }).join('')+
+      '</div>';
+    }
+    return '<div class="al-row" style="flex-wrap:wrap;gap:4px;align-items:center">'+
+      '<span class="sn">'+(i+1)+'</span>'+
+      '<span class="sname">'+a.name+'</span>'+
+      '<span class="scode">'+(a.code||'-')+'</span>'+
+      chks+
+      '<button class="sdel" onclick="remAlumno('+i+')">x</button>'+
+      '</div>';
   }).join('');
+  // Delegar eventos de checkbox
+  list.querySelectorAll('.al-curso-chk').forEach(function(chk){
+    chk.addEventListener('change',function(){
+      var ai=parseInt(this.getAttribute('data-ai'));
+      var label=this.getAttribute('data-label');
+      if(alumnos[ai]) alumnos[ai].cursos[label]=this.checked;
+      renderPreview();
+    });
+  });
   g('scnt').textContent=alumnos.length+' alumno'+(alumnos.length!==1?'s':'');
   g('prevBadge').textContent=alumnos.length+' alumnos';
-  var cnt=g('secAlumnosCount');if(cnt)cnt.textContent=alumnos.length+' alumno'+(alumnos.length!==1?'s':'');
-  var btn=g('btnGen');
-  if(btn)btn.disabled=!(alumnos.length>0&&cursos.filter(function(cx){return cx.on;}).length>0);
+  var cnt=g('secAlumnosCount');if(cnt)cnt.textContent=alumnos.length+' alumnos';
 }
 function renderCursos(){
   const el=g('crsList');if(!el)return;
