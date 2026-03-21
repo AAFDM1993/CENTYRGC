@@ -4700,6 +4700,7 @@ function renderCalendarioRec(){
       });
       html += '</div>';
     });
+    const paneHo=g('pane-ho'); if(paneHo) paneHo.innerHTML='';
     const body=g('panelCardBody'); if(body) body.innerHTML=html;
     const title=g('panelCardTitle'); if(title) title.innerHTML='&#9881; '+nombre;
     const pc=g('panelCard'); if(pc) pc.style.display='block';
