@@ -2187,7 +2187,7 @@ function renderAlBlock(al,ai,apro){
           <td><input class="nn ${nv?'has-val':''}" value="${esc2(nv)}" placeholder="Nombre paciente" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" onchange="saveNombrePac(this)" onfocus="this.select()">${esExtra?`<div style="margin-top:3px;display:flex;align-items:center;gap:4px">${extraBadge}${btnDelPacX}</div>`:''}</td>
           ${sc}${ec}
           <td style="text-align:center"><span class="pc" id="ps_${ai}_${ci}_${si}_${pi}" style="background:var(--n800);color:var(--n300)">${ps!==''&&ps!==undefined?ps:'-'}</span></td>
-          <td style="text-align:center"><span class="pc nf" id="pc_${ai}_${ci}_${si}_${pi}" style="${p!==''&&p!==undefined?(p>=apro?'background:rgba(5,150,105,.15);color:var(--green)':'background:rgba(220,38,38,.12);color:var(--red)'):'background:var(--n800);color:var(--n300)'}">${p!==''&&p!==undefined?p:'-'}</span></td>
+          <td></td>
         </tr>`;
       }).join('')||'<tr><td colspan="99" class="empty" style="padding:8px">Sin pacientes</td></tr>';
       return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody>
@@ -2432,7 +2432,7 @@ function renderEstNotas(resultados) {
             <td style="font-size:12px;font-weight:500;padding:7px 8px;color:var(--tx2)">${pac.nombre || '-'}</td>
             ${tSS}${tEx}
             <td style="text-align:center"><span class="pc" style="background:var(--n800);color:var(--n300)">${ps !== '' && ps !== undefined ? ps : '-'}</span></td>
-            <td style="text-align:center"><span class="${pc}" style="${p!==''&&p!==undefined?(p>=11?'background:rgba(5,150,105,.15);color:var(--green)':'background:rgba(220,38,38,.12);color:var(--red)'):'background:var(--n800);color:var(--n300)'}">${p !== '' && p !== undefined ? p : '-'}</span></td>
+            <td></td>
           </tr>`;
         }).join('');
 
