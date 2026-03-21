@@ -40,8 +40,8 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 #appPage{display:none}
 .wrap{max-width:100%;padding:0;display:block}
 .card{background:var(--surf);border:1px solid var(--bd2);border-radius:var(--r);box-shadow:var(--sh);overflow:hidden}
-.chdr{background:var(--n900);padding:12px 18px;display:flex;align-items:center;justify-content:space-between}.chdr h2{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:#fff}
-.cbody{padding:18px}
+.chdr{background:var(--n900);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;border-radius:14px 14px 0 0}.chdr h2{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:#fff}
+.cbody{padding:18px;border-radius:0 0 14px 14px}
 .tabs{display:grid;background:var(--n900)}.tabs.t5{grid-template-columns:repeat(5,1fr)}.tabs.t4{grid-template-columns:repeat(4,1fr)}
 .tab{background:none;border:none;border-bottom:2px solid transparent;color:var(--n300);font-family:'Syne',sans-serif;font-weight:700;font-size:10px;padding:11px 3px;cursor:pointer;transition:all .2s;white-space:nowrap}.tab:hover{color:#fff}.tab.on{color:#fff;border-bottom-color:var(--n400);background:rgba(59,130,246,.07)}
 .pane{display:none;padding:16px}.pane.on{display:block}
@@ -153,7 +153,10 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 .est-no-data{text-align:center;padding:40px;color:var(--tx4)}.est-no-data .ico{font-size:40px;margin-bottom:10px}
 .hi{display:flex;align-items:center;gap:11px;background:var(--surf2);border:1px solid var(--bd2);border-radius:9px;padding:10px 13px;margin-bottom:7px;cursor:pointer;transition:all .2s}.hi:hover{border-color:var(--n500);background:var(--n050)}
 .hi-ico{font-size:18px;flex-shrink:0}.hi-info{flex:1}.hi-name{font-weight:700;font-size:13px}.hi-meta{font-size:11px;color:var(--tx4);font-family:'DM Mono',monospace;margin-top:1px}
-.hi-del{background:none;border:none;color:var(--tx4);font-size:14px;cursor:pointer;padding:4px}.hi-del:hover{color:var(--red)}
+.hi-del{background:none;border:none;color:var(--tx4);font-size:14px;cursor:pointer;padding:4px;border-radius:8px}
+.table-wrap{overflow-x:auto;border-radius:12px}
+.nt thead tr:first-child th:first-child{border-radius:12px 0 0 0}
+.nt thead tr:first-child th:last-child{border-radius:0 12px 0 0}.hi-del:hover{color:var(--red)}
 .hint{display:flex;align-items:flex-start;gap:8px;background:var(--amber2);border:1px solid rgba(217,119,6,.3);border-radius:14px;padding:10px 13px;font-size:12px;color:#92400e;line-height:1.6}
 .hint-b{display:flex;align-items:flex-start;gap:8px;background:var(--n050);border:1px solid var(--n200);border-radius:14px;padding:10px 13px;font-size:12px;color:var(--n600);line-height:1.6}
 .hint-g{display:flex;align-items:flex-start;gap:8px;background:var(--green2);border:1px solid #a7f3d0;border-radius:14px;padding:10px 13px;font-size:12px;color:#065f46;line-height:1.6}
@@ -170,8 +173,9 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
    ══════════════════════════════════════════════ */
 
 /* ── PANEL CARD visual ── */
-#panelCard{padding-top:4px}
-#panelCard>div{box-shadow:0 4px 20px rgba(10,22,40,.12)}
+#panelCard{padding-top:4px;border-radius:16px;overflow:hidden}
+#panelCard>div{box-shadow:0 4px 20px rgba(10,22,40,.12);border-radius:16px;overflow:hidden}
+#edCard,#agendaCard,#prevCard{border-radius:16px;overflow:hidden}
 
 /* Tablet */
 @media(max-width:1024px){
@@ -506,7 +510,7 @@ input,select,textarea{font-size:16px!important}
 
 /* ── PANEL GENERADOR (secciones colapsables) ── */
 .gen-section{border:1px solid var(--bd2);border-radius:12px;overflow:hidden;margin-bottom:8px}
-.gen-section-hdr{display:flex;align-items:center;gap:8px;padding:11px 14px;background:var(--surf2);cursor:pointer;user-select:none;font-size:13px;font-weight:700;color:var(--tx)}
+.gen-section-hdr{display:flex;align-items:center;gap:8px;padding:11px 14px;background:var(--surf2);cursor:pointer;user-select:none;font-size:13px;font-weight:700;color:var(--tx);border-radius:12px 12px 0 0}
 .gen-section-hdr:hover{background:var(--n100)}
 .gen-section-hdr span:nth-child(2){flex:1}
 .gen-arrow{font-size:11px;color:var(--tx4);transition:transform .2s}
@@ -2089,6 +2093,11 @@ async function loadHojas(){
     var hojasFiltradas=r.hojas.filter(function(h){return HOJAS_SIS.indexOf(h.nombre)<0;});
     // Poblar SIEMPRE los botones del topbar
     renderDocenteHojasBtns(hojasFiltradas);
+    // Docente: abrir primera hoja automáticamente si no hay hoja activa
+    if(session && session.rol==='docente' && !hojaActiva && hojasFiltradas.length>0){
+      abrirHoja(hojasFiltradas[0].nombre);
+      return;
+    }
     // Poblar el panel de hojas solo si está en el DOM visible
     if(!box)return;
     if(!hojasFiltradas.length){box.innerHTML='<div class="empty">Sin hojas creadas</div>';return}
@@ -4017,10 +4026,9 @@ function abrirPanelAdmin(tab){
       if(prevPane){ while(body.firstChild) prevPane.appendChild(body.firstChild); }
       body.removeAttribute('data-tab');
     } else if(prevTab === tab){
-      // Mismo panel: ya está abierto, solo asegurarse que sea visible
-      const pc = g('panelCard');
-      if(pc) pc.style.display='block';
-      return;
+      // Mismo panel: limpiar para recargar
+      body.innerHTML = '';
+      body.removeAttribute('data-tab');
     }
   }
 
