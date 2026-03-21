@@ -4751,40 +4751,31 @@ async function guardarConfigCurso(ci){
   const alumnos = (window._cfgHojaAlumnos||[]).map(a=>a.nombre);
   const cursosArr = window._cfgCursosArr||[];
   if(!hoja||!alumnos.length){ toast('Error','No hay hoja cargada','err'); return; }
-
   const cu = cursosArr[ci];
   if(!cu){ toast('Error','Curso no encontrado','err'); return; }
-
   const subgruposData = [];
-  cu.sgrOrd.forEach((sgrNom, si) => {
-    const min = parseInt((g('cfg_min_'+ci+'_'+si)||{}).value||0);
-    const max = parseInt((g('cfg_max_'+ci+'_'+si)||{}).value||0);
-    const np  = parseInt((g('cfg_pac_'+ci+'_'+si)||{}).value||1);
+  cu.subgrupos.forEach((sg, si) => {
+    const min=parseInt((g('cfg_min_'+ci+'_'+si)||{}).value||0);
+    const max=parseInt((g('cfg_max_'+ci+'_'+si)||{}).value||0);
+    const np =parseInt((g('cfg_pac_'+ci+'_'+si)||{}).value||1);
     if(!isNaN(min)&&!isNaN(max)&&min>=1&&max>=min)
-      subgruposData.push({ subgrupo: sgrNom, notasBase: min, notasExtra: max-min, numPacientes: np });
+      subgruposData.push({subgrupo:sg.nombre, notasBase:min, notasExtra:max-min, numPacientes:np});
+    else toast('Valor inválido en '+sg.nombre,'Mínimo ≥ 1 y máximo ≥ mínimo','warn');
   });
-
   if(!subgruposData.length){ toast('Sin cambios válidos','','warn'); return; }
-
-  showLoader('Guardando '+cuNom+'...');
+  showLoader('Guardando '+cu.nombre+'...');
   try{
-    const errores = [];
+    const errores=[];
     for(const alumno of alumnos){
       for(const sg of subgruposData){
-        const r = await apiPost({
-          action:'actualizarSubgrupo',
-          hoja, alumno, curso: cuNom,
-          subgrupo: sg.subgrupo,
-          notasBase: sg.notasBase,
-          notasExtra: sg.notasExtra,
-          numPacientes: sg.numPacientes
-        });
+        const r=await apiPost({action:'actualizarSubgrupo', hoja, alumno, curso:cu.nombre,
+          subgrupo:sg.subgrupo, notasBase:sg.notasBase, notasExtra:sg.notasExtra, numPacientes:sg.numPacientes});
         if(!r.ok) errores.push(alumno+'/'+sg.subgrupo+': '+(r.error||'error'));
       }
     }
     hideLoader();
     if(errores.length) toast('Errores', errores.slice(0,3).join(' | '), 'warn');
-    else toast('Guardado', cuNom+' — '+alumnos.length+' alumnos', 'ok');
+    else toast('Guardado', cu.nombre+' — '+alumnos.length+' alumnos', 'ok');
   }catch(e){ hideLoader(); toast('Error', e.message, 'err'); }
 }</script>
 </body>
