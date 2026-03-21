@@ -668,7 +668,6 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
             <div id="secCursos" class="gen-section-body">
               <div id="crsList" class="crs-list"></div>
               <div class="row2" style="margin-bottom:8px">
-                <input class="inp" id="newCrsCod" placeholder="Código (ej: FIS-PED)" style="width:115px" onkeydown="if(event.key==='Enter')addCurso()">
                 <input class="inp" id="newCrs" placeholder="Nombre del curso..." style="flex:1" onkeydown="if(event.key==='Enter')addCurso()">
                 <button class="btn-sm" onclick="addCurso()">+</button>
               </div>
@@ -1547,7 +1546,7 @@ function loadCSVMulti(e){
       var r2=new FileReader();
       r2.onload=function(ev){
         var lines=ev.target.result.split('\n').filter(function(l){return l.trim();});
-        totalN+=importarFilas_(lines.map(function(l){return l.split(/[,;\t]/).map(function(x){return x.trim();});}));
+        totalN+=importarFilas_(lines.map(function(l){return parsearLineaCSV_(l);}));
         done();
       };
       r2.readAsText(file,'UTF-8');
@@ -1556,37 +1555,56 @@ function loadCSVMulti(e){
   e.target.value='';
 }
 
+function parsearLineaCSV_(linea){
+  // Detectar separador principal: tab > punto y coma > coma
+  var sep = linea.indexOf('\t')!==-1 ? '\t' : linea.indexOf(';')!==-1 ? ';' : ',';
+  if(sep !== ',') return linea.split(sep).map(function(x){return x.trim();});
+  // Con coma: primera col podría ser código numérico
+  var partes = linea.split(',').map(function(x){return x.trim();});
+  if(partes.length<=1) return partes;
+  // Si primera parte es numérica (código de alumno)
+  if(/^\d+$/.test(partes[0])||partes[0].length<=10){
+    // código + nombre (puede tener comas) + código_curso (último si parece código corto)
+    var codigo = partes[0];
+    // El último elemento podría ser código de curso (corto, sin espacios, alfanumérico)
+    var ultimo = partes[partes.length-1];
+    var esCodCurso = partes.length>2 && /^[A-Z0-9\-]{2,15}$/i.test(ultimo) && ultimo.indexOf(' ')===-1;
+    if(esCodCurso){
+      var nombre = partes.slice(1, partes.length-1).join(',').trim();
+      return [codigo, nombre, ultimo];
+    } else {
+      var nombre = partes.slice(1).join(',').trim();
+      return [codigo, nombre];
+    }
+  } else {
+    // Sin código: todo es el nombre (puede tener comas: "APELLIDO, NOMBRE")
+    // Si último elemento parece código de curso
+    var ultimo = partes[partes.length-1];
+    var esCodCurso = partes.length>1 && /^[A-Z0-9\-]{2,15}$/i.test(ultimo) && ultimo.indexOf(' ')===-1;
+    if(esCodCurso){
+      var nombre = partes.slice(0, partes.length-1).join(',').trim();
+      return ['', nombre, ultimo];
+    } else {
+      return ['', partes.join(',').trim()];
+    }
+  }
+}
+
 function importarFilas_(rows){
   var n=0;
   rows.forEach(function(p){
     if(!p||p.length<1)return;
-    var code='',name='',codigoCurso='';
-    if(p.length>=3){
-      var c0=String(p[0]).trim(),c1=String(p[1]).trim(),c2=String(p[2]).trim();
-      if(/^\d+$/.test(c0)||c0.length<=10){ code=c0; name=c1; codigoCurso=c2.toUpperCase(); }
-      else { name=c0+' '+c1; codigoCurso=c2.toUpperCase(); }
-    } else if(p.length>=2){
+    var code='',name='';
+    if(p.length>=2){
       var c0=String(p[0]).trim(),c1=String(p[1]).trim();
       if(/^\d+$/.test(c0)||c0.length<=10){code=c0;name=c1;}
       else{name=c0+' '+c1;}
-    } else { name=String(p[0]).trim(); }
+    } else {name=String(p[0]).trim();}
     name=name.trim();
     if(!name||name.toLowerCase()==='nombre'||name.toLowerCase()==='apellidos y nombres'||name.toLowerCase()==='apellidos'||name==='-')return;
     var nameNorm=name.toLowerCase().normalize('NFC');
-    var existente=alumnos.find(function(a){return a.name.toLowerCase().normalize('NFC')===nameNorm;});
-    if(existente){
-      if(codigoCurso){
-        var cu=cursos.find(function(x){return x.codigo===codigoCurso;});
-        if(cu) existente.cursos[cu.label]=true;
-      }
-      return;
-    }
-    var al=makeAlumno(code,name);
-    if(codigoCurso){
-      var cu=cursos.find(function(x){return x.codigo===codigoCurso;});
-      if(cu) al.cursos[cu.label]=true;
-    }
-    alumnos.push(al); n++;
+    if(alumnos.some(function(a){return a.name.toLowerCase().normalize('NFC')===nameNorm;}))return;
+    alumnos.push(makeAlumno(code,name));n++;
   });
   return n;
 }function addAlumno(){
@@ -1662,14 +1680,10 @@ function renderSgrCard(ci,si,sg){
 function toggleCurso(ci){cursos[ci].on=!cursos[ci].on;renderCursos();renderAlumnos();renderPreview()}
 function toggleCursoExpand(ci){const el=g('crsitem_'+ci);if(el)el.classList.toggle('expanded')}
 function addCurso(){
-  const inp=g('newCrs'), inpCod=g('newCrsCod');
-  const name=inp.value.trim(); if(!name)return;
-  const codigo=inpCod?inpCod.value.trim().toUpperCase():'';
-  if(cursos.find(function(c){return c.label===name;})){toast('Ya existe ese curso','','warn');return;}
-  if(codigo && cursos.find(function(c){return c.codigo===codigo;})){toast('Ya existe ese código','','warn');return;}
-  cursos.push({label:name, codigo:codigo, on:true, subgrupos:[{nombre:'Subgrupo 1',notasBase:15,notasExtra:0,numPacientes:5}]});
-  inp.value=''; if(inpCod) inpCod.value='';
-  renderCursos();renderAlumnos();renderPreview();
+  const inp=g('newCrs'),name=inp.value.trim();if(!name)return;
+  if(cursos.find(c=>c.label===name)){toast('Ya existe ese curso','','warn');return}
+  cursos.push({label:name,on:true,subgrupos:[{nombre:'Subgrupo 1',notasBase:15,notasExtra:0,numPacientes:5}]});
+  inp.value='';renderCursos();renderAlumnos();renderPreview();
 }
 function delCurso(ci){if(!confirm(`Eliminar "${cursos[ci].label}"?`))return;cursos.splice(ci,1);renderCursos();renderAlumnos();renderPreview()}
 function addSubgrupo(ci){const n=cursos[ci].subgrupos.length+1;cursos[ci].subgrupos.push({nombre:'Subgrupo '+n,notasBase:15,notasExtra:0,numPacientes:5});renderSgrList(ci);renderPreview()}
