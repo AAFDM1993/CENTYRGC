@@ -202,12 +202,14 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
         <div class="sb-sec">Admin</div>
         <button class="sb-btn" id="sbCats" onclick="navTo('cats')"><span>🏷️</span> Categorías</button>
         <button class="sb-btn" id="sbFirmas" onclick="navTo('firmas')"><span>&#128395;</span> Firmas</button>
+        <button class="sb-btn" id="sbExportHC" onclick="navTo('exporthc')"><span>&#128196;</span> Exportar HC</button>
       </div>
     </aside>
 
     <main class="main">
       <div id="vPac"></div>
       <div id="vFirmas" style="display:none"></div>
+      <div id="vExportHC" style="display:none"></div>
       <div id="vBusqHC" style="display:none"></div>
       <div id="vDetalle" style="display:none"></div>
       <div id="vEvalForm" style="display:none"></div>
@@ -323,8 +325,8 @@ async function iniciarApp(){
 }
 
 // ─── Nav ──────────────────────────────────────────────
-const views=['vPac','vDetalle','vEvalForm','vSesForm','vPend','vCats','vBusqHC','vFirmas'];
-const sbs=['sbPac','sbPend','sbCats','sbBusqHC','sbFirmas'];
+const views=['vPac','vDetalle','vEvalForm','vSesForm','vPend','vCats','vBusqHC','vFirmas','vExportHC'];
+const sbs=['sbPac','sbPend','sbCats','sbBusqHC','sbFirmas','sbExportHC'];
 function navTo(v){
   views.forEach(x=>g(x).style.display='none');
   sbs.forEach(x=>{const e=g(x);if(e)e.classList.remove('active');});
@@ -333,6 +335,7 @@ function navTo(v){
   if(v==='cats'){g('vCats').style.display='block';g('sbCats')?.classList.add('active');renderCats();}
   if(v==='busqhc'){g('vBusqHC').style.display='block';g('sbBusqHC')?.classList.add('active');renderBusqHC();}
   if(v==='firmas'){g('vFirmas').style.display='block';g('sbFirmas')?.classList.add('active');renderFirmas();}
+  if(v==='exporthc'){g('vExportHC').style.display='block';g('sbExportHC')?.classList.add('active');renderExportHC();}
 }
 
 // ─── Helpers ──────────────────────────────────────────
@@ -401,9 +404,13 @@ function mkSelloDocente(doc){
   if(!doc) return '';
   var nombre=doc.nombre||doc.codigo||'';
   var ctmp=doc.ctmp||'';
-  var firma=doc.firma||''; // base64 imagen
+  var firma=doc.firma||'';
+  var imgTag='';
+  if(firma&&firma.startsWith('data:image')){
+    imgTag='<img src="'+firma+'" style="max-width:130px;max-height:65px;display:block;margin:0 auto 6px">';
+  }
   return '<div class="sello-doc">'
-    +(firma?'<img src="'+firma+'" style="max-width:120px;max-height:60px;display:block;margin:0 auto 6px">':'')
+    +imgTag
     +'<div style="border-top:1.5px solid #1e3a5f;width:160px;margin:0 auto 4px"></div>'
     +'<div style="font-weight:700;font-size:11px;text-align:center;color:#0f172a">'+e2(nombre)+'</div>'
     +(ctmp?'<div style="font-size:10px;text-align:center;color:#475569">CTMP: '+e2(ctmp)+'</div>':'')
@@ -527,53 +534,360 @@ function buildSesHTML(s,pac,firmaHTML){
 
 // ─── GESTIÓN DE FIRMAS (Admin) ─────────────────────────
 var _firmasDocentes=[];
+
+// ─── EXPORTAR HC COMPLETA (admin/docente) ──────────────────
+
+async function resolverFirma_(firma){
+  if(!firma||firma.length<5) return '';
+  if(firma.startsWith('data:image')) return firma;
+  var rF=await apiGet('getFirma',{fileId:firma}).catch(function(){return {ok:false};});
+  if(rF.ok&&rF.data) return 'data:'+(rF.mimeType||'image/png')+';base64,'+rF.data;
+  return '';
+}
+async function resolverFirmaDoc_(doc){
+  if(doc&&doc.firma) doc.firma=await resolverFirma_(doc.firma);
+  return doc;
+}
+async function previsualizarFirma(codigo,idx){
+  var docs=_firmasDocentes||[];
+  var doc=docs.find(function(d){return d.codigo===codigo;});
+  if(!doc||!doc.firma){toast('Sin firma registrada','','warn');return;}
+  var b64=await resolverFirma_(doc.firma);
+  if(!b64){toast('No se pudo cargar la firma','Verifica el GAS','err');return;}
+  var cards=document.querySelectorAll('#vFirmas .card');
+  if(!cards[idx]) return;
+  var box=cards[idx].querySelector('[style*="min-height"]');
+  if(!box) return;
+  var img=box.querySelector('img.fp')||document.createElement('img');
+  img.className='fp'; img.src=b64;
+  img.style.cssText='max-width:130px;max-height:52px;object-fit:contain;display:block;margin:0 auto 4px';
+  if(!img.parentNode) box.insertBefore(img,box.firstChild);
+}
+async function exportarHC(pacId){
+  toast('\u23F3 Preparando exportaci\u00F3n...','','ok');
+  const [rP,rE,rS]=await Promise.all([
+    apiGet('obtenerPaciente',{id:pacId}),
+    apiGet('listarEvaluaciones',{pacienteId:pacId}),
+    apiGet('listarSesiones',{pacienteId:pacId})
+  ]);
+  if(!rP.ok){toast('Error al cargar paciente',rP.error,'err');return;}
+  const pac=rP.paciente;
+  const evals=(rE.evaluaciones||[]).filter(function(ev){return ev.estado==='aprobada';});
+  const ses=rS.sesiones||[];
+  var firmasMap={};
+  var rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
+  if(rU.ok){
+    await Promise.all((rU.usuarios||[]).map(async function(u){
+      await resolverFirmaDoc_(u);
+      firmasMap[u.nombre]=u; firmasMap[u.codigo]=u;
+    }));
+  }
+  exportarDocumento(
+    'HC_'+e2(pac.nombre||pacId).replace(/\s+/g,'_'),
+    buildHCCompletaHTML(pac,evals,ses,firmasMap)
+  );
+}
+
+// ─── RENDERIZAR VISTA ADMIN: EXPORTAR HC ──────────────────
+function renderExportHC(){
+  var v=g('vExportHC');
+  v.innerHTML='<div class="card-hdr"><div class="card-title">&#128196; Exportar Historia Cl&iacute;nica</div></div>'
+    +'<div class="card" style="margin-bottom:16px">'
+    +'<p style="font-size:13px;color:var(--tx3);margin-bottom:14px">Busca al paciente por DNI o nombre para exportar su historia cl&iacute;nica completa (evaluaciones aprobadas y sesiones).</p>'
+    +'<div class="form-grid">'
+    +'<div class="field form-full"><input class="inp" id="expDNI" placeholder="&#128269; Buscar por DNI o nombre del paciente..." oninput="buscarPacExport()" autocomplete="off" style="font-size:14px"></div>'
+    +'</div>'
+    +'</div>'
+    +'<div id="expResultados"><div class="empty">Escribe para buscar...</div></div>';
+}
+
+async function buscarPacExport(){
+  var q=(g('expDNI')?.value||'').trim().toLowerCase();
+  var box=g('expResultados');
+  if(!q||q.length<2){box.innerHTML='<div class="empty">Escribe al menos 2 caracteres...</div>';return;}
+  box.innerHTML='<div class="loader">&#9203; Buscando...</div>';
+  var r=await apiGet('listarPacientes');
+  if(!r.ok){box.innerHTML='<div class="err-box">'+e2(r.error)+'</div>';return;}
+  var pacs=(r.pacientes||[]).filter(function(p){
+    return (p.dni||'').toLowerCase().includes(q)||(p.nombre||'').toLowerCase().includes(q);
+  });
+  if(!pacs.length){box.innerHTML='<div class="empty">Sin resultados para &ldquo;'+e2(q)+'&rdquo;</div>';return;}
+  box.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">'
+    +pacs.map(function(p){
+      var cat=getCat(p.categoriaId);
+      return '<div class="card" style="display:flex;flex-direction:column;gap:10px">'
+        +'<div style="display:flex;align-items:center;gap:10px">'
+        +'<div class="pac-avatar" style="background:'+cat.color+'33;color:'+cat.color+';border:1.5px solid '+cat.color+'55;font-size:13px;font-weight:700">'+((p.nombre||'?').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase())+'</div>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-weight:700;font-size:14px;color:var(--tx)">'+e2(p.nombre)+'</div>'
+        +'<div style="font-size:11px;color:var(--tx4)">DNI: '+e2(p.dni)+(p.fechaNac?' &middot; '+edad(p.fechaNac)+' a':'')+'</div>'
+        +'<div style="margin-top:3px">'+catPill(p.categoriaId)+'</div>'
+        +'</div></div>'
+        +'<div style="display:flex;gap:8px">'
+        +'<button class="btn btn-ghost btn-sm" style="flex:1" data-pid="'+e2(p.id)+'" onclick="abrirPac(\''+e2(p.id)+'\')">&#128065; Ver ficha</button>'
+        +'<button class="btn btn-primary btn-sm" style="flex:1" data-pid="'+e2(p.id)+'" onclick="exportarHC(\''+e2(p.id)+'\')">&#128196; Exportar HC</button>'
+        +'</div>'
+        +'</div>';
+    }).join('')+'</div>';
+}
+
+// ─── BUILD HC COMPLETA ─────────────────────────────────────
+function buildHCCompletaHTML(pac, evals, ses, firmasMap){
+  var html='';
+
+  // ── PORTADA ──
+  var cat=getCat(pac.categoriaId);
+  html+='<div style="border:2px solid #1e3a5f;border-radius:12px;padding:20px 24px;margin-bottom:20px;background:#eff6ff">'
+    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">'
+    +'<div>'
+    +'<div style="font-family:sans-serif;font-weight:800;font-size:20px;color:#1e3a5f;margin-bottom:4px">'+e2(pac.nombre||'&mdash;')+'</div>'
+    +'<div style="font-size:12px;color:#475569">DNI: '+e2(pac.dni||'&mdash;')
+      +(pac.fechaNac?' &nbsp;&bull;&nbsp; Nacimiento: '+e2(pac.fechaNac):'')
+      +(pac.sexo?' &nbsp;&bull;&nbsp; '+(pac.sexo==='M'?'Masculino':'Femenino'):'')+' </div>'
+    +(pac.telefono?'<div style="font-size:12px;color:#475569">Tel: '+e2(pac.telefono)+'</div>':'')
+    +(pac.ocupacion?'<div style="font-size:12px;color:#475569">Ocupaci&oacute;n: '+e2(pac.ocupacion)+'</div>':'')
+    +'</div>'
+    +'<div style="text-align:right">'
+    +'<div style="font-size:11px;font-weight:700;background:'+cat.color+'22;color:'+cat.color+';border:1px solid '+cat.color+'44;border-radius:20px;padding:4px 12px;margin-bottom:6px">'+e2(cat.nombre||'—')+'</div>'
+    +(pac.dxMedico?'<div style="font-size:11px;color:#475569">Dx m&eacute;dico: '+e2(pac.dxMedico)+'</div>':'')
+    +(pac.asignadoA?'<div style="font-size:11px;color:#475569">Estudiante: '+e2(pac.asignadoA)+'</div>':'')
+    +'</div></div></div>';
+
+  // ── EVALUACIONES APROBADAS ──
+  if(evals.length){
+    evals.forEach(function(ev,ei){
+      var d=ev.datosEspecificos||ev||{};
+      html+='<div style="margin-bottom:20px">';
+      html+='<div style="background:#1e3a5f;color:#fff;font-weight:700;font-size:12px;padding:8px 16px;border-radius:8px 8px 0 0;text-transform:uppercase;letter-spacing:.5px">';
+      html+=(ei===0?'Evaluaci&oacute;n Inicial':'Reevaluaci&oacute;n #'+ei)+' &mdash; '+e2(formatFecha(ev.fecha||''))+'</div>';
+      // Anamnesis
+      html+='<div class="sec"><div class="sec-hdr">Anamnesis</div><div class="sec-body full">'
+        +(d.dxMedico?'<div><div class="field-lbl">Dx m&eacute;dico</div><div class="field-val">'+e2(d.dxMedico)+'</div></div>':'')
+        +'<div><div class="field-lbl">Dx fisioterapéutico</div><div class="field-val">'+e2(d.dxFisio||ev.dxFisio||'&mdash;')+'</div></div>'
+        +'<div><div class="field-lbl">Antecedentes</div><div class="field-val">'+e2(d.antecedentes||'&mdash;')+'</div></div>'
+        +'<div><div class="field-lbl">Motivo de consulta</div><div class="field-val">'+e2(d.motivo||'&mdash;')+'</div></div>'
+        +'</div></div>';
+      // Examen objetivo
+      html+='<div class="sec"><div class="sec-hdr">Examen Objetivo</div><div class="sec-body">'
+        +'<div><div class="field-lbl">EVA</div><div class="field-val">'+e2(String(ev.evaValor??'&mdash;'))+'/10</div></div>'
+        +(d.trofismo?'<div><div class="field-lbl">Trofismo</div><div class="field-val">'+e2(d.trofismo)+'</div></div>':'')
+        +(d.palpacion?'<div style="grid-column:1/-1"><div class="field-lbl">Palpaci&oacute;n</div><div class="field-val">'+e2(d.palpacion)+'</div></div>':'')
+        +(d.neuro?'<div style="grid-column:1/-1"><div class="field-lbl">Neurol&oacute;gico</div><div class="field-val">'+e2(d.neuro)+'</div></div>':'')
+        +(d.pruebas?'<div style="grid-column:1/-1"><div class="field-lbl">Pruebas funcionales</div><div class="field-val">'+e2(d.pruebas)+'</div></div>':'')
+        +'</div>'
+        +(d.rom&&Object.keys(d.rom).length?buildRomTable(d.rom):'')
+        +'</div>';
+      // Plan tratamiento
+      html+='<div class="sec"><div class="sec-hdr">Plan de Tratamiento</div><div class="sec-body full">'
+        +(d.meta?'<div><div class="field-lbl">Meta</div><div class="field-val">'+e2(d.meta)+'</div></div>':'')
+        +(d.objGeneral?'<div><div class="field-lbl">Objetivo general</div><div class="field-val">'+e2(d.objGeneral)+'</div></div>':'')
+        +(d.objEspecificos?'<div><div class="field-lbl">Objetivos espec&iacute;ficos</div><div class="field-val">'+e2(d.objEspecificos)+'</div></div>':'')
+        +(d.planGeneral?'<div><div class="field-lbl">Plan general</div><div class="field-val">'+e2(d.planGeneral)+'</div></div>':'')
+        +'</div></div>';
+      // Sello docente (sin comentario al alumno)
+      if(ev.revisadoPor&&firmasMap[ev.revisadoPor]){
+        html+=mkSelloDocente(firmasMap[ev.revisadoPor]);
+      }
+      html+='</div>';
+    });
+  } else {
+    html+='<div class="sec"><div class="sec-hdr">Evaluaciones</div><div class="sec-body full"><div class="field-val" style="color:var(--tx4)">Sin evaluaciones aprobadas.</div></div></div>';
+  }
+
+  // ── SESIONES ──
+  if(ses.length){
+    html+='<div style="margin-bottom:8px">'
+      +'<div style="background:#1e3a5f;color:#fff;font-weight:700;font-size:12px;padding:8px 16px;border-radius:8px 8px 0 0;text-transform:uppercase;letter-spacing:.5px">Sesiones de Tratamiento ('+ses.length+')</div>'
+      +'<table class="tbl-rom" style="width:100%"><thead><tr>'
+      +'<th style="text-align:left">#</th><th style="text-align:left">Fecha</th>'
+      +'<th style="text-align:left">Estudiante</th><th style="text-align:left">Descripci&oacute;n</th>'
+      +'<th>EVA</th><th>Respuesta</th><th>Estado</th>'
+      +'</tr></thead><tbody>';
+    ses.forEach(function(s){
+      var estadoColor=s.estado==='aprobada'?'#16a34a':s.estado==='pendiente'?'#d97706':'#94a3b8';
+      html+='<tr>'
+        +'<td style="font-weight:700">'+e2(String(s.numero))+'</td>'
+        +'<td style="white-space:nowrap">'+e2(formatFecha(s.fecha||''))+'</td>'
+        +'<td>'+e2(s.estudiante||s.terapeuta||'&mdash;')+'</td>'
+        +'<td style="font-size:11px">'+e2((s.descripcion||'&mdash;').substring(0,120))+(s.descripcion&&s.descripcion.length>120?'...':'')+'</td>'
+        +'<td style="text-align:center">'+e2(String(s.evaValor||'&mdash;'))+'</td>'
+        +'<td style="text-align:center;font-size:11px">'+e2(s.respuesta||'&mdash;')+'</td>'
+        +'<td style="text-align:center"><span style="font-size:10px;font-weight:700;color:'+estadoColor+'">'+e2(s.estado).toUpperCase()+'</span></td>'
+        +'</tr>';
+    });
+    html+='</tbody></table></div>';
+
+    // Sello del último docente que aprobó una sesión
+    var ultAprobada=ses.filter(function(s){return s.estado==='aprobada';}).pop();
+    if(ultAprobada&&ultAprobada.revisadoPor&&firmasMap[ultAprobada.revisadoPor]){
+      html+=mkSelloDocente(firmasMap[ultAprobada.revisadoPor]);
+    }
+  }
+
+  return html;
+}
+
 async function renderFirmas(){
   var v=g('vFirmas');
-  v.innerHTML='<div class="loader">&#9203; Cargando...</div>';
-  var r=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
+  v.innerHTML='<div class="card-hdr"><div class="card-title">&#128395; Firmas y Sellos de Docentes</div></div>'
+    +'<div class="empty" style="padding:24px">&#9203; Cargando docentes...</div>';
+
+  var r=await apiGet('listarUsuarios').catch(function(){return {ok:false,error:'Error de red'};});
+  if(!r.ok){
+    v.innerHTML='<div class="card-hdr"><div class="card-title">&#128395; Firmas y Sellos de Docentes</div></div>'
+      +'<div class="err-box">&#9888; No se pudo cargar la lista de usuarios: '+(r.error||'Error desconocido')+'<br><br>'
+      +'<small>Verifica que el GAS est&eacute; desplegado y que la acci&oacute;n <b>listarUsuarios</b> est&eacute; registrada en <b>doGet</b>.</small></div>';
+    return;
+  }
   var docs=(r.usuarios||[]).filter(function(u){return u.rol==='docente';});
   _firmasDocentes=docs;
-  v.innerHTML='<div class="card-hdr"><div class="card-title">&#128395; Firmas y Sellos de Docentes</div></div>'
-    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">'
+
+  if(!docs.length){
+    v.innerHTML='<div class="card-hdr"><div class="card-title">&#128395; Firmas y Sellos de Docentes</div></div>'
+      +'<div class="empty" style="padding:32px;text-align:center">'
+      +'<div style="font-size:32px;margin-bottom:12px">&#128100;</div>'
+      +'<div style="font-weight:700;margin-bottom:6px">No hay docentes registrados</div>'
+      +'<div style="font-size:12px;color:var(--tx4)">Crea usuarios con rol <b>docente</b> en el Google Sheet (_usuarios) y vuelve a cargar.</div>'
+      +'</div>';
+    return;
+  }
+
+  v.innerHTML='<div class="card-hdr">'
+    +'<div class="card-title">&#128395; Firmas y Sellos de Docentes</div>'
+    +'<div style="font-size:12px;color:var(--tx4)">'+docs.length+' docente'+(docs.length!==1?'s':'')+' encontrado'+(docs.length!==1?'s':'')+'</div>'
+    +'</div>'
+    +'<div style="background:var(--surf3);border:1px solid var(--bd2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--tx3)">'
+    +'<b>&#128161; Instrucciones:</b> Sube una imagen PNG/JPG de la firma (m&aacute;x 40KB recomendado para que quepa en Google Sheets). '
+    +'O pega directamente el c&oacute;digo Base64 de la imagen en el campo de texto. '
+    +'El n&uacute;mero CTMP es la colegiatura del docente (solo n&uacute;meros).'
+    +'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">'
     +docs.map(function(doc,i){
-      var hasFirma=!!doc.firma;
+      var hasFirma=!!(doc.firma&&doc.firma.length>10);
+      var firmaOk=hasFirma&&(doc.firma.startsWith('data:image')||doc.firma.startsWith('/9j/')||doc.firma.startsWith('iVBOR'));
       return '<div class="card" style="position:relative">'
-        +'<div style="font-weight:700;font-size:13px;color:var(--tx);margin-bottom:4px">'+e2(doc.nombre||doc.codigo)+'</div>'
-        +'<div style="font-size:11px;color:var(--tx4);margin-bottom:10px">'+e2(doc.codigo)+(doc.ctmp?' &bull; CTMP: '+e2(doc.ctmp):'')+'</div>'
-        +(hasFirma?'<img src="'+doc.firma+'" style="max-width:100%;height:70px;object-fit:contain;border:1px solid var(--bd);border-radius:8px;margin-bottom:8px;display:block">':'<div style="height:70px;border:2px dashed var(--bd);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--tx4);margin-bottom:8px">Sin firma</div>')
-        +'<div style="font-size:11px;color:var(--tx3);margin-bottom:10px">Colegiatura CTMP: <input class="inp" id="ctmp_'+i+'" value="'+e2(doc.ctmp||'')+'" placeholder="000000" style="width:90px;display:inline-block;padding:3px 8px;font-size:11px"></div>'
-        +'<div class="btn-group">'
-        +'<label class="btn btn-ghost btn-sm" style="cursor:pointer">&#128247; Subir firma<input type="file" accept="image/*" style="display:none" onchange="subirFirma(this,\''+e2(doc.codigo)+'\','+i+')"></label>'
-        +(hasFirma?'<button class="btn btn-ghost btn-sm" onclick="eliminarFirma(\''+e2(doc.codigo)+'\','+i+')" style="color:var(--red)">&#128465; Quitar</button>':'')
-        +'<button class="btn btn-primary btn-sm" onclick="guardarCtmp(\''+e2(doc.codigo)+'\','+i+')">&#128190; Guardar</button>'
+        // Header docente
+        +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'
+        +'<div style="width:38px;height:38px;border-radius:50%;background:var(--n100);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--n500);flex-shrink:0">'
+        +e2((doc.nombre||doc.codigo||'?').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase())
         +'</div>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-weight:700;font-size:13px;color:var(--tx)">'+e2(doc.nombre||doc.codigo)+'</div>'
+        +'<div style="font-size:11px;color:var(--tx4)">'+e2(doc.codigo)+(doc.ctmp?' &bull; CTMP: <b>'+e2(doc.ctmp)+'</b>':'')+'</div>'
+        +'</div></div>'
+        // Previsualización firma
+        +'<div style="margin-bottom:10px">'
+        +'<div style="font-size:10px;font-weight:700;color:var(--tx4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Vista previa sello</div>'
+        +'<div style="border:1px solid var(--bd);border-radius:8px;padding:12px;background:var(--surf2);min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center">'
+        +(firmaOk?'<img src="'+doc.firma+'" style="max-width:140px;max-height:56px;object-fit:contain;display:block;margin-bottom:6px" onerror="this.style.display=\'none\'">'
+                 :'<div style="font-size:11px;color:var(--tx4);margin-bottom:6px">[Sin firma]</div>')
+        +'<div style="border-top:1.5px solid var(--n900);width:160px;margin-bottom:4px"></div>'
+        +'<div style="font-weight:700;font-size:10px;text-align:center;color:var(--tx)">'+e2(doc.nombre||doc.codigo)+'</div>'
+        +(doc.ctmp?'<div style="font-size:10px;text-align:center;color:var(--tx3)">CTMP: '+e2(doc.ctmp)+'</div>':'<div style="font-size:10px;color:var(--tx4)">[Sin colegiatura]</div>')
+        +'</div></div>'
+        // CTMP
+        +'<div class="field" style="margin-bottom:10px">'
+        +'<label style="font-size:11px">N&uacute;mero colegiatura (CTMP)</label>'
+        +'<input class="inp" id="ctmp_'+i+'" value="'+e2(doc.ctmp||'')+'" placeholder="Ej: 123456" style="font-size:13px">'
+        +'</div>'
+        // Base64 manual
+        +'<div class="field" style="margin-bottom:10px">'
+        +'<label style="font-size:11px">Pegar Base64 de firma <span style="color:var(--tx4);font-weight:400">(alternativa a subir imagen)</span></label>'
+        +'<textarea class="ta" id="b64_'+i+'" rows="2" placeholder="data:image/png;base64,iVBORw0KGgo... (o solo el c&oacute;digo sin prefijo)" style="font-size:10px;font-family:monospace"></textarea>'
+        +'</div>'
+        // Botones
+        +'<div class="btn-group" style="flex-wrap:wrap;gap:6px">'
+        +'<label class="btn btn-ghost btn-sm" style="cursor:pointer;flex:1">&#128247; Subir imagen<input type="file" accept="image/png,image/jpeg,image/gif" style="display:none" onchange="subirFirma(this,\''+e2(doc.codigo)+'\','+i+')"></label>'
+        +'<button class="btn btn-ghost btn-sm" style="flex:1" onclick="guardarB64(\''+e2(doc.codigo)+'\','+i+')">&#128203; Usar Base64</button>'
+        +(hasFirma?'<button class="btn btn-ghost btn-sm" onclick="eliminarFirma(\''+e2(doc.codigo)+'\','+i+')" style="color:var(--red)">&#128465;</button>':'')
+        +'</div>'
+        +'<div style="margin-top:8px">'
+        +'<button class="btn btn-primary btn-sm" style="width:100%" onclick="guardarCtmp(\''+e2(doc.codigo)+'\','+i+')">&#128190; Guardar CTMP</button>'
+        +'</div>'
+        +(hasFirma?'<div style="font-size:10px;color:var(--green);margin-top:6px">&#10003; Firma en Drive &nbsp;<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px" onclick="previsualizarFirma(\"'+e2(doc.codigo)+'\",'+i+')">&#128065; Ver previa</button></div>':'')
         +'</div>';
     }).join('')
     +'</div>';
 }
+
 function subirFirma(input, codigo, idx){
   var file=input.files[0]; if(!file) return;
-  if(file.size>500000){toast('Imagen demasiado grande','Máx 500KB','warn');return;}
+  // Comprimir/redimensionar antes de enviar a Sheets (límite ~50K chars = ~37KB imagen)
+  var MAX_B64=35000; // ~26KB imagen para dejar margen
   var reader=new FileReader();
-  reader.onload=async function(e){
-    var b64=e.target.result;
-    var r=await apiPost({action:'guardarFirmaDocente',codigo:codigo,firma:b64}).catch(function(){return {ok:false};});
-    if(!r.ok){toast('Error al guardar firma',r.error||'','err');return;}
-    toast('&#128247; Firma guardada','','ok');
-    renderFirmas();
+  reader.onload=function(e){
+    var src=e.target.result;
+    // Usar canvas para redimensionar
+    var img=new Image();
+    img.onload=function(){
+      var canvas=document.createElement('canvas');
+      var MAX_DIM=300; // max 300px en cualquier dimensión
+      var w=img.width, h=img.height;
+      if(w>MAX_DIM||h>MAX_DIM){
+        if(w>h){h=Math.round(h*MAX_DIM/w);w=MAX_DIM;}
+        else{w=Math.round(w*MAX_DIM/h);h=MAX_DIM;}
+      }
+      canvas.width=w; canvas.height=h;
+      var ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,w,h);
+      // Intentar calidad progresiva hasta que quepa
+      var q=0.85, b64='';
+      do{
+        b64=canvas.toDataURL('image/png');
+        if(b64.length>MAX_B64) b64=canvas.toDataURL('image/jpeg',q);
+        q-=0.1;
+      }while(b64.length>MAX_B64&&q>0.2);
+      if(b64.length>MAX_B64){
+        toast('Imagen muy grande incluso comprimida','Usa una firma m\u00e1s simple o menor resoluci\u00f3n','warn');
+        return;
+      }
+      _enviarFirma(codigo,idx,b64);
+    };
+    img.src=src;
   };
   reader.readAsDataURL(file);
 }
+
+async function guardarB64(codigo, idx){
+  var raw=(g('b64_'+idx)?.value||'').trim();
+  if(!raw){toast('Pega el c\u00f3digo Base64 primero','','warn');return;}
+  var b64=raw;
+  if(!b64.startsWith('data:')){
+    // Detectar tipo
+    var tipo='image/png';
+    if(b64.startsWith('/9j/')) tipo='image/jpeg';
+    else if(b64.startsWith('R0lGOD')) tipo='image/gif';
+    b64='data:'+tipo+';base64,'+b64;
+  }
+  if(b64.length>45000){
+    toast('Base64 demasiado largo para Google Sheets','M\u00e1x ~35KB. Usa una imagen m\u00e1s peque\u00f1a.','warn');
+    return;
+  }
+  _enviarFirma(codigo,idx,b64);
+}
+
+async function _enviarFirma(codigo,idx,b64){
+  toast('\u23F3 Guardando firma en Drive...','','ok');
+  var r=await apiPost({action:'guardarFirmaDocente',codigo:codigo,firma:b64}).catch(function(){return {ok:false,error:'Error de red'};});
+  if(!r.ok){toast('Error al guardar',r.error||'Verifica el GAS','err');return;}
+  toast('\u2705 Firma guardada en Drive','','ok');
+  renderFirmas();
+}
+
 async function eliminarFirma(codigo, idx){
+  if(!confirm('¿Eliminar la firma de este docente?')) return;
   var r=await apiPost({action:'guardarFirmaDocente',codigo:codigo,firma:''}).catch(function(){return {ok:false};});
   if(!r.ok){toast('Error',r.error||'','err');return;}
   toast('Firma eliminada','','ok'); renderFirmas();
 }
+
 async function guardarCtmp(codigo, idx){
   var val=(g('ctmp_'+idx)?.value||'').trim();
-  var r=await apiPost({action:'guardarCtmpDocente',codigo:codigo,ctmp:val}).catch(function(){return {ok:false};});
-  if(!r.ok){toast('Error',r.error||'','err');return;}
-  toast('CTMP guardado','','ok');
+  if(!val){toast('Escribe el n\u00famero CTMP primero','','warn');return;}
+  var r=await apiPost({action:'guardarCtmpDocente',codigo:codigo,ctmp:val}).catch(function(){return {ok:false,error:'Error de red'};});
+  if(!r.ok){toast('Error al guardar CTMP',r.error||'Verifica el GAS','err');return;}
+  toast('&#9989; CTMP '+val+' guardado para '+codigo,'','ok');
+  renderFirmas();
 }
 
 async function renderPacs(){
@@ -696,6 +1010,7 @@ async function abrirPac(id){
         ${puedeEditar?`<button class="btn btn-ghost btn-sm" onclick="editarPac('${esc(pac.id)}')">✏️ Editar</button>`:''}
         ${session.rol==='admin'?`<button class="btn btn-danger btn-sm" onclick="eliminarPac('${esc(pac.id)}','${esc(pac.nombre)}')">🗑️</button>`:''}
       </div>
+        ${session.rol==='admin'||session.rol==='docente'?`<button class="btn btn-primary btn-sm" onclick="exportarHC('${esc(pac.id)}')">&#128196; Exportar HC</button>`:''}\n      </div>
     </div>
 
     <div class="card" style="margin-bottom:14px">
@@ -1213,16 +1528,15 @@ async function verEval(evalId, pacId){
   const ev=r.evaluacion;
   const rP=await apiGet('obtenerPaciente',{id:pacId});
   const pac=rP.ok?rP.paciente:{};
-  // Buscar firma del docente revisor
   var firmaHTML='';
   if(ev.estado==='aprobada'&&ev.revisadoPor){
-    const rU=await apiGet('listarUsuarios').catch(()=>({ok:false}));
+    const rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
     if(rU.ok){
       var docRev=(rU.usuarios||[]).find(function(u){return u.nombre===ev.revisadoPor||u.codigo===ev.revisadoPor;});
-      if(docRev&&docRev.firma) firmaHTML=mkSelloDocente(docRev);
+      if(docRev){await resolverFirmaDoc_(docRev);firmaHTML=mkSelloDocente(docRev);}
     }
   }
-  exportarDocumento('Evaluacion_'+e2(pac.nombre||evalId), buildEvalHTML(ev,pac,firmaHTML));
+  exportarDocumento('Evaluacion_'+e2(pac.nombre||evalId),buildEvalHTML(ev,pac,firmaHTML));
 }
 
 async function verSes(sesId, pacId){
@@ -1233,13 +1547,13 @@ async function verSes(sesId, pacId){
   const pac=rP.ok?rP.paciente:{};
   var firmaHTML='';
   if(s.estado==='aprobada'&&s.revisadoPor){
-    const rU=await apiGet('listarUsuarios').catch(()=>({ok:false}));
+    const rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
     if(rU.ok){
       var docRev=(rU.usuarios||[]).find(function(u){return u.nombre===s.revisadoPor||u.codigo===s.revisadoPor;});
-      if(docRev&&docRev.firma) firmaHTML=mkSelloDocente(docRev);
+      if(docRev){await resolverFirmaDoc_(docRev);firmaHTML=mkSelloDocente(docRev);}
     }
   }
-  exportarDocumento('Sesion_'+s.numero+'_'+e2(pac.nombre||sesId), buildSesHTML(s,pac,firmaHTML));
+  exportarDocumento('Sesion_'+s.numero+'_'+e2(pac.nombre||sesId),buildSesHTML(s,pac,firmaHTML));
 }
 
 async function editarPac(id){
