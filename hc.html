@@ -201,11 +201,13 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
         <div class="sb-divider"></div>
         <div class="sb-sec">Admin</div>
         <button class="sb-btn" id="sbCats" onclick="navTo('cats')"><span>🏷️</span> Categorías</button>
+        <button class="sb-btn" id="sbFirmas" onclick="navTo('firmas')"><span>&#128395;</span> Firmas</button>
       </div>
     </aside>
 
     <main class="main">
       <div id="vPac"></div>
+      <div id="vFirmas" style="display:none"></div>
       <div id="vBusqHC" style="display:none"></div>
       <div id="vDetalle" style="display:none"></div>
       <div id="vEvalForm" style="display:none"></div>
@@ -321,8 +323,8 @@ async function iniciarApp(){
 }
 
 // ─── Nav ──────────────────────────────────────────────
-const views=['vPac','vDetalle','vEvalForm','vSesForm','vPend','vCats','vBusqHC'];
-const sbs=['sbPac','sbPend','sbCats','sbBusqHC'];
+const views=['vPac','vDetalle','vEvalForm','vSesForm','vPend','vCats','vBusqHC','vFirmas'];
+const sbs=['sbPac','sbPend','sbCats','sbBusqHC','sbFirmas'];
 function navTo(v){
   views.forEach(x=>g(x).style.display='none');
   sbs.forEach(x=>{const e=g(x);if(e)e.classList.remove('active');});
@@ -330,6 +332,7 @@ function navTo(v){
   if(v==='pend'){g('vPend').style.display='block';g('sbPend')?.classList.add('active');renderPend();}
   if(v==='cats'){g('vCats').style.display='block';g('sbCats')?.classList.add('active');renderCats();}
   if(v==='busqhc'){g('vBusqHC').style.display='block';g('sbBusqHC')?.classList.add('active');renderBusqHC();}
+  if(v==='firmas'){g('vFirmas').style.display='block';g('sbFirmas')?.classList.add('active');renderFirmas();}
 }
 
 // ─── Helpers ──────────────────────────────────────────
@@ -390,6 +393,187 @@ async function buscarHC(){
   box.querySelectorAll('[data-pid]').forEach(function(el){
     el.addEventListener('click',function(){abrirPac(el.getAttribute('data-pid'));});
   });
+}
+
+
+// ─── SELLO DIGITAL DOCENTE ────────────────────────────
+function mkSelloDocente(doc){
+  if(!doc) return '';
+  var nombre=doc.nombre||doc.codigo||'';
+  var ctmp=doc.ctmp||'';
+  var firma=doc.firma||''; // base64 imagen
+  return '<div class="sello-doc">'
+    +(firma?'<img src="'+firma+'" style="max-width:120px;max-height:60px;display:block;margin:0 auto 6px">':'')
+    +'<div style="border-top:1.5px solid #1e3a5f;width:160px;margin:0 auto 4px"></div>'
+    +'<div style="font-weight:700;font-size:11px;text-align:center;color:#0f172a">'+e2(nombre)+'</div>'
+    +(ctmp?'<div style="font-size:10px;text-align:center;color:#475569">CTMP: '+e2(ctmp)+'</div>':'')
+    +'</div>';
+}
+
+// ─── EXPORTAR COMO VENTANA IMPRIMIBLE ─────────────────
+function exportarDocumento(titulo, bodyHTML){
+  var w=window.open('','_blank','width=900,height=700');
+  if(!w){toast('Permite ventanas emergentes para exportar','','warn');return;}
+  w.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
+    +'<title>'+titulo+'</title>'
+    +'<style>'
+    +'*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact}'
+    +'body{font-family:"Plus Jakarta Sans",Arial,sans-serif;font-size:12px;color:#0f172a;background:#fff;padding:24px}'
+    +'.doc-header{display:flex;align-items:center;justify-content:space-between;border-bottom:2.5px solid #1e3a5f;padding-bottom:12px;margin-bottom:18px}'
+    +'.doc-logo{font-family:sans-serif;font-weight:800;font-size:18px;color:#1e3a5f;letter-spacing:-0.5px}'
+    +'.doc-logo span{color:#1d4ed8}'
+    +'.doc-subtitle{font-size:10px;color:#475569;margin-top:2px}'
+    +'.sec{margin-bottom:16px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden}'
+    +'.sec-hdr{background:#1e3a5f;color:#fff;font-weight:700;font-size:11px;padding:7px 14px;text-transform:uppercase;letter-spacing:.5px}'
+    +'.sec-body{padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}'
+    +'.sec-body.full{grid-template-columns:1fr}'
+    +'.field-lbl{font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}'
+    +'.field-val{font-size:12px;color:#0f172a}'
+    +'.tbl-rom{width:100%;border-collapse:collapse;font-size:11px}'
+    +'.tbl-rom th{background:#eff6ff;color:#1e3a5f;padding:5px 8px;text-align:center;border:1px solid #e2e8f0;font-weight:700}'
+    +'.tbl-rom td{border:1px solid #e2e8f0;padding:4px 8px;text-align:center}'
+    +'.sello-doc{position:fixed;bottom:28px;right:28px;text-align:center;min-width:170px}'
+    +'@media print{body{padding:14px}.sello-doc{position:fixed;bottom:14px;right:14px}}'
+    +'</style>'
+    +'<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">'
+    +'</head><body>'
+    +'<div class="doc-header"><div><div class="doc-logo">CEN<span>TYR</span></div><div class="doc-subtitle">Historia Cl&iacute;nica Fisioterapia</div></div>'
+    +'<div style="text-align:right;font-size:10px;color:#64748b">Generado: '+new Date().toLocaleDateString('es-PE')+'</div>'
+    +'</div>'
+    +bodyHTML
+    +'</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print();},600);
+}
+
+// ─── BUILD HTML EVALUACIÓN ────────────────────────────
+function buildEvalHTML(ev,pac,firmaHTML){
+  var d=ev.datosEspecificos||ev||{};
+  var rows='';
+  var fld=function(lbl,val,full){return val?'<div'+(full?' class="field-lbl" style="grid-column:1/-1"':' class="field-lbl"')+'>'+(full?'<div class="field-lbl">'+lbl+'</div><div class="field-val">'+val+'</div>':'<div class="field-lbl">'+lbl+'</div><div class="field-val">'+(val||'&mdash;')+'</div>')+'</div>':'';};
+  // Filiacion
+  rows+='<div class="sec"><div class="sec-hdr">I. Filiaci&oacute;n</div><div class="sec-body">'
+    +'<div><div class="field-lbl">Nombres y Apellidos</div><div class="field-val">'+e2(pac.nombre||'')+'</div></div>'
+    +'<div><div class="field-lbl">DNI</div><div class="field-val">'+e2(pac.dni||'')+'</div></div>'
+    +'<div><div class="field-lbl">Fecha de nacimiento</div><div class="field-val">'+e2(pac.fechaNac||'')+'</div></div>'
+    +'<div><div class="field-lbl">Ocupaci&oacute;n</div><div class="field-val">'+e2(pac.ocupacion||d.ocupacion||'&mdash;')+'</div></div>'
+    +'</div></div>';
+  // Anamnesis
+  rows+='<div class="sec"><div class="sec-hdr">II. Anamnesis</div><div class="sec-body full">'
+    +(d.dxMedico?'<div><div class="field-lbl">Diagn&oacute;stico M&eacute;dico</div><div class="field-val">'+e2(d.dxMedico)+'</div></div>':'')
+    +'<div><div class="field-lbl">Diagn&oacute;stico Fisioterapéutico</div><div class="field-val">'+e2(d.dxFisio||ev.dxFisio||'&mdash;')+'</div></div>'
+    +'<div><div class="field-lbl">Antecedentes</div><div class="field-val">'+e2(d.antecedentes||'&mdash;')+'</div></div>'
+    +'<div><div class="field-lbl">Motivo de consulta</div><div class="field-val">'+e2(d.motivo||'&mdash;')+'</div></div>'
+    +'</div></div>';
+  // Examen objetivo
+  rows+='<div class="sec"><div class="sec-hdr">III. Examen Objetivo</div><div class="sec-body">'
+    +'<div><div class="field-lbl">EVA</div><div class="field-val">'+e2(String(ev.evaValor??'&mdash;'))+'/10</div></div>'
+    +'<div><div class="field-lbl">Trofismo</div><div class="field-val">'+e2(d.trofismo||'&mdash;')+'</div></div>'
+    +(d.palpacion?'<div style="grid-column:1/-1"><div class="field-lbl">Palpaci&oacute;n</div><div class="field-val">'+e2(d.palpacion)+'</div></div>':'')
+    +'</div>'
+    // ROM table si existe
+    +(d.rom&&Object.keys(d.rom).length?buildRomTable(d.rom):'')
+    +'</div>';
+  // Plan
+  rows+='<div class="sec"><div class="sec-hdr">IV. Plan de Tratamiento</div><div class="sec-body full">'
+    +(d.meta?'<div><div class="field-lbl">Meta</div><div class="field-val">'+e2(d.meta)+'</div></div>':'')
+    +(d.objGeneral?'<div><div class="field-lbl">Objetivo General</div><div class="field-val">'+e2(d.objGeneral)+'</div></div>':'')
+    +(d.objEspecificos?'<div><div class="field-lbl">Objetivos Espec&iacute;ficos</div><div class="field-val">'+e2(d.objEspecificos)+'</div></div>':'')
+    +(d.planGeneral?'<div><div class="field-lbl">Plan General</div><div class="field-val">'+e2(d.planGeneral)+'</div></div>':'')
+    +'</div></div>';
+  // Estado
+  if(ev.estado==='aprobada'){
+    rows+='<div class="sec" style="border-color:#16a34a">'
+      +'<div class="sec-hdr" style="background:#16a34a">&#10003; Evaluaci&oacute;n Aprobada</div>'
+      +'<div class="sec-body"><div><div class="field-lbl">Revisado por</div><div class="field-val">'+e2(ev.revisadoPor||'&mdash;')+'</div></div>'
+      +'<div><div class="field-lbl">Comentario</div><div class="field-val">'+e2(ev.comentarioDocente||'&mdash;')+'</div></div>'
+      +'</div></div>';
+  }
+  return rows+firmaHTML;
+}
+
+function buildRomTable(rom){
+  var keys=Object.keys(rom);
+  if(!keys.length) return '';
+  var html='<div style="overflow-x:auto;margin-top:8px;padding:0 14px 12px"><table class="tbl-rom"><thead><tr><th>Regi&oacute;n / Movimiento</th><th>Valor</th></tr></thead><tbody>';
+  keys.forEach(function(k){
+    var parts=k.split('_');
+    html+='<tr><td style="text-align:left">'+e2(k.replace(/_/g,' / '))+'</td><td>'+e2(String(rom[k]))+'&deg;</td></tr>';
+  });
+  return html+'</tbody></table></div>';
+}
+
+// ─── BUILD HTML SESIÓN ────────────────────────────────
+function buildSesHTML(s,pac,firmaHTML){
+  var rows='<div class="sec"><div class="sec-hdr">Datos del Paciente</div><div class="sec-body">'
+    +'<div><div class="field-lbl">Nombre</div><div class="field-val">'+e2(pac.nombre||'&mdash;')+'</div></div>'
+    +'<div><div class="field-lbl">DNI</div><div class="field-val">'+e2(pac.dni||'&mdash;')+'</div></div>'
+    +'</div></div>';
+  rows+='<div class="sec"><div class="sec-hdr">Sesi&oacute;n #'+s.numero+' &mdash; '+e2(formatFecha(s.fecha||''))+'</div><div class="sec-body">'
+    +'<div><div class="field-lbl">Estudiante</div><div class="field-val">'+e2(s.estudiante||s.terapeuta||'&mdash;')+'</div></div>'
+    +'<div><div class="field-lbl">Docente supervisor</div><div class="field-val">'+e2(s.docente||'&mdash;')+'</div></div>'
+    +'<div><div class="field-lbl">EVA</div><div class="field-val">'+e2(String(s.evaValor??'&mdash;'))+'/10</div></div>'
+    +(s.respuesta?'<div><div class="field-lbl">Respuesta del paciente</div><div class="field-val">'+e2(s.respuesta)+'</div></div>':'')
+    +'<div style="grid-column:1/-1"><div class="field-lbl">Descripci&oacute;n</div><div class="field-val">'+e2(s.descripcion||'&mdash;')+'</div></div>'
+    +'</div></div>';
+  if(s.estado==='aprobada'){
+    rows+='<div class="sec" style="border-color:#16a34a"><div class="sec-hdr" style="background:#16a34a">&#10003; Sesi&oacute;n Aprobada</div>'
+      +'<div class="sec-body"><div><div class="field-lbl">Revisado por</div><div class="field-val">'+e2(s.revisadoPor||'&mdash;')+'</div></div>'
+      +'<div><div class="field-lbl">Comentario</div><div class="field-val">'+e2(s.comentarioDocente||'&mdash;')+'</div></div>'
+      +'</div></div>';
+  }
+  return rows+firmaHTML;
+}
+
+// ─── GESTIÓN DE FIRMAS (Admin) ─────────────────────────
+var _firmasDocentes=[];
+async function renderFirmas(){
+  var v=g('vFirmas');
+  v.innerHTML='<div class="loader">&#9203; Cargando...</div>';
+  var r=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
+  var docs=(r.usuarios||[]).filter(function(u){return u.rol==='docente';});
+  _firmasDocentes=docs;
+  v.innerHTML='<div class="card-hdr"><div class="card-title">&#128395; Firmas y Sellos de Docentes</div></div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">'
+    +docs.map(function(doc,i){
+      var hasFirma=!!doc.firma;
+      return '<div class="card" style="position:relative">'
+        +'<div style="font-weight:700;font-size:13px;color:var(--tx);margin-bottom:4px">'+e2(doc.nombre||doc.codigo)+'</div>'
+        +'<div style="font-size:11px;color:var(--tx4);margin-bottom:10px">'+e2(doc.codigo)+(doc.ctmp?' &bull; CTMP: '+e2(doc.ctmp):'')+'</div>'
+        +(hasFirma?'<img src="'+doc.firma+'" style="max-width:100%;height:70px;object-fit:contain;border:1px solid var(--bd);border-radius:8px;margin-bottom:8px;display:block">':'<div style="height:70px;border:2px dashed var(--bd);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--tx4);margin-bottom:8px">Sin firma</div>')
+        +'<div style="font-size:11px;color:var(--tx3);margin-bottom:10px">Colegiatura CTMP: <input class="inp" id="ctmp_'+i+'" value="'+e2(doc.ctmp||'')+'" placeholder="000000" style="width:90px;display:inline-block;padding:3px 8px;font-size:11px"></div>'
+        +'<div class="btn-group">'
+        +'<label class="btn btn-ghost btn-sm" style="cursor:pointer">&#128247; Subir firma<input type="file" accept="image/*" style="display:none" onchange="subirFirma(this,\''+e2(doc.codigo)+'\','+i+')"></label>'
+        +(hasFirma?'<button class="btn btn-ghost btn-sm" onclick="eliminarFirma(\''+e2(doc.codigo)+'\','+i+')" style="color:var(--red)">&#128465; Quitar</button>':'')
+        +'<button class="btn btn-primary btn-sm" onclick="guardarCtmp(\''+e2(doc.codigo)+'\','+i+')">&#128190; Guardar</button>'
+        +'</div>'
+        +'</div>';
+    }).join('')
+    +'</div>';
+}
+function subirFirma(input, codigo, idx){
+  var file=input.files[0]; if(!file) return;
+  if(file.size>500000){toast('Imagen demasiado grande','Máx 500KB','warn');return;}
+  var reader=new FileReader();
+  reader.onload=async function(e){
+    var b64=e.target.result;
+    var r=await apiPost({action:'guardarFirmaDocente',codigo:codigo,firma:b64}).catch(function(){return {ok:false};});
+    if(!r.ok){toast('Error al guardar firma',r.error||'','err');return;}
+    toast('&#128247; Firma guardada','','ok');
+    renderFirmas();
+  };
+  reader.readAsDataURL(file);
+}
+async function eliminarFirma(codigo, idx){
+  var r=await apiPost({action:'guardarFirmaDocente',codigo:codigo,firma:''}).catch(function(){return {ok:false};});
+  if(!r.ok){toast('Error',r.error||'','err');return;}
+  toast('Firma eliminada','','ok'); renderFirmas();
+}
+async function guardarCtmp(codigo, idx){
+  var val=(g('ctmp_'+idx)?.value||'').trim();
+  var r=await apiPost({action:'guardarCtmpDocente',codigo:codigo,ctmp:val}).catch(function(){return {ok:false};});
+  if(!r.ok){toast('Error',r.error||'','err');return;}
+  toast('CTMP guardado','','ok');
 }
 
 async function renderPacs(){
@@ -599,7 +783,7 @@ function evalCard(ev, pac){
       <div><div style="font-size:12px;font-weight:700;color:${ev.estado==='aprobada'?'var(--green)':ev.estado==='rechazada'?'var(--red)':'var(--amber)'}">${ev.estado==='aprobada'?'Aprobada':'Rechazada'} — ${e2(ev.revisadoPor)}</div>
         <div class="rev-comment">${e2(ev.comentarioDocente)}</div></div></div>`:''}
     <div class="btn-group">
-      <button class="btn btn-ghost btn-sm" onclick="verEval('${esc(ev.id)}','${esc(pac.id)}')">👁️ Ver</button>
+      <button class="btn btn-ghost btn-sm" onclick="verEval('${esc(ev.id)}','${esc(pac.id)}')">&#128196; Exportar</button>
       ${ev.estado==='borrador'||ev.estado==='rechazada'?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmEval('${esc(pac.id)}','${esc(ev.id)}','${esc(pac.categoriaId)}')">✏️ Editar</button>`:''}
       ${puedeSend?`<button class="btn btn-primary btn-sm" onclick="enviarEval('${esc(ev.id)}','${esc(pac.id)}')">📤 Enviar al docente</button>`:''}
       ${pr&&ev.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('eval','${esc(ev.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
@@ -623,7 +807,7 @@ function sesCard(s, pac, evalAp){
         <div><div style="font-size:11px;font-weight:700;color:${s.estado==='aprobada'?'var(--green)':'var(--red)'}">${s.estado==='aprobada'?'Aprobada':'Rechazada'} — ${e2(s.revisadoPor)}</div>
           ${s.comentarioDocente?`<div class="rev-comment">${e2(s.comentarioDocente)}</div>`:''}</div></div>`:''}
       <div class="btn-group">
-        <button class="btn btn-ghost btn-sm" onclick="verSes('${esc(s.id)}','${esc(pac.id)}')">👁️ Ver</button>
+        <button class="btn btn-ghost btn-sm" onclick="verSes('${esc(s.id)}','${esc(pac.id)}')">&#128196; Exportar</button>
         ${s.estado==='borrador'||s.estado==='rechazada'?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmSes('${esc(pac.id)}','${esc(s.evaluacionId)}',${s.numero},'${esc(s.id)}')">✏️ Editar</button>`:''}
         ${puedeSend&&(s.estado==='borrador'||s.estado==='rechazada')?`<button class="btn btn-primary btn-sm" onclick="enviarSes('${esc(s.id)}','${esc(pac.id)}')">📤 Enviar</button>`:''}
         ${pr&&s.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('ses','${esc(s.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
@@ -869,7 +1053,7 @@ async function abrirFrmSes(pacId, evalId, num, sesId=null){
   const mostrarRespuesta=(num%3===0);
   // Cargar docentes para el selector
   var docentes=[];
-  try{const ru=await apiGet('listarUsuarios');docentes=(ru.usuarios||[]).filter(u=>u.rol==='docente'||u.rol==='admin');}catch(e){}
+  try{const ru=await apiGet('listarUsuarios');docentes=(ru.usuarios||[]).filter(u=>u.rol==='docente');}catch(e){}
   const docenteActual=ses?.docente||'';
 
   v.innerHTML=`
@@ -1027,16 +1211,35 @@ async function verEval(evalId, pacId){
   const r=await apiGet('obtenerEvaluacion',{id:evalId});
   if(!r.ok){toast('Error',r.error,'err');return;}
   const ev=r.evaluacion;
-  const info=['Diagnóstico: '+(ev.dxFisio||'—'),'APTA: '+(ev.aptaPatron||'—'),'Pronóstico: '+(ev.pronostico||'—'),'EVA: '+ev.evaValor+'/10','Obj. corto: '+(ev.objCorto||'—'),'Sesiones: '+(ev.planSesiones||'—')+' · '+(ev.planFrecuencia||'—')].join('\n');
-  alert('EVALUACIÓN FISIOTERAPÉUTICA\n\n'+info);
+  const rP=await apiGet('obtenerPaciente',{id:pacId});
+  const pac=rP.ok?rP.paciente:{};
+  // Buscar firma del docente revisor
+  var firmaHTML='';
+  if(ev.estado==='aprobada'&&ev.revisadoPor){
+    const rU=await apiGet('listarUsuarios').catch(()=>({ok:false}));
+    if(rU.ok){
+      var docRev=(rU.usuarios||[]).find(function(u){return u.nombre===ev.revisadoPor||u.codigo===ev.revisadoPor;});
+      if(docRev&&docRev.firma) firmaHTML=mkSelloDocente(docRev);
+    }
+  }
+  exportarDocumento('Evaluacion_'+e2(pac.nombre||evalId), buildEvalHTML(ev,pac,firmaHTML));
 }
 
 async function verSes(sesId, pacId){
-  const r=await apiGet('listarSesiones',{pacienteId:pacId});
-  const s=(r.sesiones||[]).find(x=>x.id===sesId);
+  const rS=await apiGet('listarSesiones',{pacienteId:pacId});
+  const s=(rS.sesiones||[]).find(x=>x.id===sesId);
   if(!s){toast('No encontrada','','err');return;}
-  const tecs=Array.isArray(s.tecnicas)?s.tecnicas.join(', '):String(s.tecnicas||'—');
-  alert(`SESIÓN #${s.numero} · ${s.fecha}\nTerapeuta: ${s.terapeuta}\nTécnicas: ${tecs}\n\nDescripción:\n${s.descripcion||'—'}\n\nEvolución:\n${s.evolucion||'—'}\n\nEVA: ${s.evaValor}/10 · Respuesta: ${s.respuesta||'—'}`);
+  const rP=await apiGet('obtenerPaciente',{id:pacId});
+  const pac=rP.ok?rP.paciente:{};
+  var firmaHTML='';
+  if(s.estado==='aprobada'&&s.revisadoPor){
+    const rU=await apiGet('listarUsuarios').catch(()=>({ok:false}));
+    if(rU.ok){
+      var docRev=(rU.usuarios||[]).find(function(u){return u.nombre===s.revisadoPor||u.codigo===s.revisadoPor;});
+      if(docRev&&docRev.firma) firmaHTML=mkSelloDocente(docRev);
+    }
+  }
+  exportarDocumento('Sesion_'+s.numero+'_'+e2(pac.nombre||sesId), buildSesHTML(s,pac,firmaHTML));
 }
 
 async function editarPac(id){
