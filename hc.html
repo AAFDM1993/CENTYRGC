@@ -196,6 +196,7 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
       <button class="sb-btn" id="sbPend" onclick="navTo('pend')">
         <span>⏳</span> Pendientes <span class="sb-badge" id="sbBadge" style="display:none">0</span>
       </button>
+      <button class="sb-btn" id="sbBusqHC" onclick="navTo('busqhc')"><span>🔍</span> Buscar HC</button>
       <div id="sbAdminSec" style="display:none">
         <div class="sb-divider"></div>
         <div class="sb-sec">Admin</div>
@@ -205,6 +206,7 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
 
     <main class="main">
       <div id="vPac"></div>
+      <div id="vBusqHC" style="display:none"></div>
       <div id="vDetalle" style="display:none"></div>
       <div id="vEvalForm" style="display:none"></div>
       <div id="vSesForm" style="display:none"></div>
@@ -319,14 +321,15 @@ async function iniciarApp(){
 }
 
 // ─── Nav ──────────────────────────────────────────────
-const views=['vPac','vDetalle','vEvalForm','vSesForm','vPend','vCats'];
-const sbs=['sbPac','sbPend','sbCats'];
+const views=['vPac','vDetalle','vEvalForm','vSesForm','vPend','vCats','vBusqHC'];
+const sbs=['sbPac','sbPend','sbCats','sbBusqHC'];
 function navTo(v){
   views.forEach(x=>g(x).style.display='none');
   sbs.forEach(x=>{const e=g(x);if(e)e.classList.remove('active');});
   if(v==='pac'){g('vPac').style.display='block';g('sbPac').classList.add('active');renderPacs();}
   if(v==='pend'){g('vPend').style.display='block';g('sbPend')?.classList.add('active');renderPend();}
   if(v==='cats'){g('vCats').style.display='block';g('sbCats')?.classList.add('active');renderCats();}
+  if(v==='busqhc'){g('vBusqHC').style.display='block';g('sbBusqHC')?.classList.add('active');renderBusqHC();}
 }
 
 // ─── Helpers ──────────────────────────────────────────
@@ -336,16 +339,65 @@ function bdg(estado){const m={borrador:'📝 Borrador',pendiente:'⏳ Pendiente'
 function edad(fn){const d=new Date(fn),h=new Date();let a=h.getFullYear()-d.getFullYear();if(h<new Date(h.getFullYear(),d.getMonth(),d.getDate()))a--;return isNaN(a)?'':a;}
 
 // ─── Vista: Pacientes ─────────────────────────────────
+async 
+function renderBusqHC(){
+  var v=g('vBusqHC');
+  v.innerHTML=`
+    <div class="card-hdr">
+      <div class="card-title">&#128269; Buscar Historia Cl&iacute;nica</div>
+    </div>
+    <div class="card" style="margin-bottom:16px">
+      <div class="form-grid">
+        <div class="field form-full">
+          <input class="inp" id="hcBusca" placeholder="Buscar por nombre, DNI o diagn&oacute;stico..." oninput="buscarHC()" style="font-size:14px">
+        </div>
+      </div>
+    </div>
+    <div id="hcResultados"><div class="empty">Escribe para buscar historias cl&iacute;nicas...</div></div>`;
+}
+async function buscarHC(){
+  var q=(g('hcBusca')?.value||'').toLowerCase().trim();
+  var box=g('hcResultados');
+  if(!q||q.length<2){box.innerHTML='<div class="empty">Escribe al menos 2 caracteres...</div>';return;}
+  box.innerHTML='<div class="loader">&#9203; Buscando...</div>';
+  var r=await apiGet('listarPacientes');
+  if(!r.ok){box.innerHTML='<div class="err-box">'+e2(r.error)+'</div>';return;}
+  var pacs=(r.pacientes||[]).filter(function(p){
+    return (p.nombre||'').toLowerCase().includes(q)
+      ||(p.dni||'').includes(q)
+      ||(p.dxFisio||'').toLowerCase().includes(q)
+      ||(p.dxMedico||'').toLowerCase().includes(q);
+  });
+  if(!pacs.length){box.innerHTML='<div class="empty">Sin resultados para &ldquo;'+e2(q)+'&rdquo;</div>';return;}
+  var html='<div style="font-size:12px;color:var(--tx4);margin-bottom:10px">'+pacs.length+' resultado'+(pacs.length!==1?'s':'')+' encontrado'+(pacs.length!==1?'s':'')+'</div><div class="pac-grid">';
+  pacs.forEach(function(p){
+    var cat=getCat(p.categoriaId);
+    var ini=(p.nombre||'?').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase();
+    html+='<div class="pac-card" data-pid="'+e2(p.id)+'" style="cursor:pointer">'
+      +'<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px">'
+      +'<div class="pac-avatar" style="background:'+cat.color+'33;color:'+cat.color+';border:1.5px solid '+cat.color+'55">'+ini+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-weight:700;font-size:14px;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+e2(p.nombre)+'</div>'
+      +'<div style="font-size:11px;color:var(--tx3);margin-top:1px">'+e2(p.dni)+(p.fechaNac?' &middot; '+edad(p.fechaNac)+' a':'')+'</div>'
+      +'<div style="margin-top:4px">'+catPill(p.categoriaId)+'</div>'
+      +(p.dxFisio?'<div style="font-size:11px;color:var(--tx3);margin-top:3px">Dx: '+e2(p.dxFisio)+'</div>':'')
+      +'</div>'+bdg(p.estado||'activo')+'</div>'
+      +'<div style="font-size:11px;color:var(--tx4)">&#128203; '+(p.evalTotal||0)+' evaluaci'+(p.evalTotal===1?'ón':'ones')+'</div>'
+      +'</div>';
+  });
+  html+='</div>';
+  box.innerHTML=html;
+  box.querySelectorAll('[data-pid]').forEach(function(el){
+    el.addEventListener('click',function(){abrirPac(el.getAttribute('data-pid'));});
+  });
+}
+
 async function renderPacs(){
   g('vPac').innerHTML=`
     <div class="card-hdr">
       <div><div class="card-title">👤 Pacientes</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <input class="inp" id="fBusca" placeholder="🔍 Buscar..." oninput="filtrarPacs()" style="width:180px">
-        <select class="sel" id="fCat" onchange="filtrarPacs()" style="width:170px">
-          <option value="">Todas las categorías</option>
-          ${cats.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('')}
-        </select>
         <button class="btn btn-primary btn-sm" onclick="abrirModalCategoria()">+ Nuevo paciente</button>
       </div>
     </div>
@@ -357,11 +409,10 @@ async function renderPacs(){
 }
 
 function filtrarPacs(){
-  const q=(g('fBusca')?.value||'').toLowerCase(),cat=g('fCat')?.value||'';
+  const q=(g('fBusca')?.value||'').toLowerCase();
   const lista=(window._pacs||[]).filter(p=>{
     const mq=!q||(p.nombre||'').toLowerCase().includes(q)||(p.dni||'').includes(q);
-    const mc=!cat||p.categoriaId===cat;
-    return mq&&mc;
+    return mq;
   });
   const box=g('pacBox');if(!box)return;
   if(!lista.length){box.innerHTML='<div class="empty">Sin pacientes. Usa "+ Nuevo" para crear el primero.</div>';return;}
@@ -563,7 +614,7 @@ function sesCard(s, pac, evalAp){
     <div class="tl-dot ${s.estado}">S${s.numero}</div>
     <div style="background:var(--surf2);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-left:4px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:6px">
-        <div style="font-size:12px;color:var(--tx4)">Sesión #${s.numero} · ${formatFecha(s.fecha)}</div>
+        <div style="font-size:12px;color:var(--tx4)">Sesión #${s.numero} · ${formatFecha(s.fecha)}${s.estudiante||s.terapeuta?'<br><span style="font-size:11px">&#127891; '+(s.estudiante||s.terapeuta||'')+'</span>':''}${s.docente?'<span style="font-size:11px;margin-left:8px">&#128203; '+s.docente+'</span>':'' }</div>
         ${bdg(s.estado)}
       </div>
       ${s.descripcion?`<div style="font-size:13px;margin-bottom:8px">${e2(s.descripcion.substring(0,100))}${s.descripcion.length>100?'...':''}</div>`:''}
@@ -784,26 +835,61 @@ async function enviarEval(evalId, pacId){
 }
 
 // ─── Formulario Sesión ────────────────────────────────
+async 
+function filtrarDocentes(val, docentes){
+  var dd=g('docenteDD');
+  if(!val||!val.trim()){dd.style.display='none';return;}
+  var v=val.toLowerCase();
+  var matches=docentes.filter(function(d){
+    return (d.nombre||'').toLowerCase().includes(v)||(d.codigo||'').toLowerCase().includes(v);
+  });
+  if(!matches.length){dd.style.display='none';return;}
+  dd.innerHTML=matches.map(function(d){
+    return '<div data-dnm="'+encodeURIComponent(d.nombre||d.codigo)+'" style="padding:9px 14px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px">'
+      +'<span style="font-size:10px;background:var(--n100);color:var(--n900);border-radius:4px;padding:1px 5px;font-weight:700">'+e2(d.rol)+'</span>'+e2(d.nombre||d.codigo)+'</div>';
+  }).join('');
+  dd.style.display='block';
+  dd.querySelectorAll('[data-dnm]').forEach(function(el){
+    el.addEventListener('click',function(){ selDoc(el.getAttribute('data-dnm')); });
+  });
+}
+function selDoc(enc){
+  var nombre=decodeURIComponent(enc);
+  var inp=g('sDocInput'); if(inp) inp.value=nombre;
+  var hid=g('sDoc'); if(hid) hid.value=nombre;
+  var dd=g('docenteDD'); if(dd) dd.style.display='none';
+}
 async function abrirFrmSes(pacId, evalId, num, sesId=null){
   views.forEach(v=>g(v).style.display='none');
   const v=g('vSesForm'); v.style.display='block';
   let ses=null;
   if(sesId){const r=await apiGet('listarSesiones',{pacienteId:pacId});ses=(r.sesiones||[]).find(s=>s.id===sesId);}
   const hoy=new Date().toISOString().slice(0,10);
-  const tecsList=['Electroterapia','Ultrasonido','TENS','Termoterapia','Crioterapia','Masoterapia','Kinesioterapia','Hidroterapia','Ejercicio terapéutico','Vendaje neuromuscular','Punción seca','Otras'];
-  const selTecs=Array.isArray(ses?.tecnicas)?ses.tecnicas:[];
+  // Respuesta del paciente solo cada 3 sesiones (ses 3,6,9,...)
+  const mostrarRespuesta=(num%3===0);
+  // Cargar docentes para el selector
+  var docentes=[];
+  try{const ru=await apiGet('listarUsuarios');docentes=(ru.usuarios||[]).filter(u=>u.rol==='docente'||u.rol==='admin');}catch(e){}
+  const docenteActual=ses?.docente||'';
 
   v.innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
-      <button class="btn btn-ghost btn-sm" onclick="abrirPac('${esc(pacId)}')">← Volver</button>
-      <div class="card-title">🗓️ ${sesId?'Editar':'Nueva'} Sesión #${num}</div>
+      <button class="btn btn-ghost btn-sm" onclick="abrirPac('${esc(pacId)}')">&#8592; Volver</button>
+      <div class="card-title">&#128197; ${sesId?'Editar':'Nueva'} Sesi&oacute;n #${num}</div>
     </div>
     <div class="card">
       <div class="form-grid">
         <div class="field"><label>Fecha *</label>
           <input class="inp" id="sF" type="date" value="${ses?.fecha||hoy}"></div>
-        <div class="field"><label>Terapeuta</label>
-          <input class="inp" id="sT" value="${e2(ses?.terapeuta||session.nombre||session.codigo)}" placeholder="Nombre del terapeuta"></div>
+        <div class="field"><label>Estudiante</label>
+          <input class="inp" id="sEst" value="${e2(ses?.estudiante||session.nombre||session.codigo)}" placeholder="Nombre del estudiante" ${session.rol==='estudiante'?'readonly style="background:var(--surf2);cursor:default"':''}></div>
+        <div class="field"><label>Docente</label>
+          <div style="position:relative">
+            <input class="inp" id="sDocInput" placeholder="Buscar docente..." value="${e2(docenteActual)}" oninput="filtrarDocentes(this.value,${JSON.stringify(docentes)})" autocomplete="off">
+            <div id="docenteDD" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surf);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:50;max-height:180px;overflow-y:auto;margin-top:4px"></div>
+          </div>
+          <input type="hidden" id="sDoc" value="${e2(docenteActual)}">
+        </div>
         <div class="field"><label>EVA inicial (0-10)</label>
           <div class="eva-wrap" style="margin-top:6px">
             <div class="eva-track" style="position:relative">
@@ -811,40 +897,40 @@ async function abrirFrmSes(pacId, evalId, num, sesId=null){
             </div>
             <div class="eva-val" id="sesEvaD">${ses?.evaValor??0}</div>
           </div></div>
-        <div class="field form-full"><label>Técnicas aplicadas *</label>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
-            ${tecsList.map(t=>{const s2=selTecs.includes(t);return`<label style="display:flex;align-items:center;gap:5px;background:${s2?'rgba(29,78,216,.2)':'var(--surf2)'};border:1px solid ${s2?'var(--n400)':'var(--bd)'};border-radius:8px;padding:5px 10px;cursor:pointer;font-size:12px">
-              <input type="checkbox" value="${t}" ${s2?'checked':''} style="accent-color:var(--n500)"> ${t}</label>`;}).join('')}
-          </div></div>
-        <div class="field form-full"><label>Otras técnicas</label>
-          <input class="inp" id="sTO" value="${e2(ses?.tecnicasOtras||'')}" placeholder="Especificar..."></div>
-        <div class="field form-full"><label>Descripción de la sesión *</label>
-          <textarea class="ta" id="sDes" rows="4" placeholder="Procedimientos realizados, parámetros, áreas tratadas...">${e2(ses?.descripcion||'')}</textarea></div>
-        <div class="field form-full"><label>Evolución / Respuesta</label>
-          <textarea class="ta" id="sEvo" rows="3" placeholder="Cambios observados, comparación con sesión anterior...">${e2(ses?.evolucion||'')}</textarea></div>
-        <div class="field"><label>Respuesta del paciente</label>
+        <div class="field form-full"><label>Descripci&oacute;n de la sesi&oacute;n *</label>
+          <textarea class="ta" id="sDes" rows="5" placeholder="Procedimientos realizados, par&aacute;metros, &aacute;reas tratadas...">${e2(ses?.descripcion||'')}</textarea></div>
+        ${mostrarRespuesta?`<div class="field form-full">
+          <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;padding:7px 12px;background:var(--surf3);border-radius:8px">&#128203; Respuesta del paciente (sesi&oacute;n #${num})</div>
           <select class="sel" id="sRes">
             <option value="">—</option>
             ${['Muy buena','Buena','Regular','Sin cambios','Deterioro leve','Intolerancia'].map(r=>`<option ${ses?.respuesta===r?'selected':''}>${r}</option>`).join('')}
-          </select></div>
+          </select></div>`:''}
       </div>
       <div class="btn-group" style="margin-top:16px">
-        <button class="btn btn-ghost btn-sm" onclick="guardarSes('${esc(pacId)}','${esc(evalId)}',${num},'${sesId||''}','borrador')">💾 Borrador</button>
-        <button class="btn btn-primary" onclick="guardarSes('${esc(pacId)}','${esc(evalId)}',${num},'${sesId||''}','enviar')">📤 Enviar al docente</button>
+        <button class="btn btn-ghost btn-sm" onclick="guardarSes('${esc(pacId)}','${esc(evalId)}',${num},'${sesId||''}','borrador')">&#128190; Borrador</button>
+        <button class="btn btn-primary" onclick="guardarSes('${esc(pacId)}','${esc(evalId)}',${num},'${sesId||''}','enviar')">&#128228; Enviar al docente</button>
         <button class="btn btn-ghost" onclick="abrirPac('${esc(pacId)}')">Cancelar</button>
       </div>
     </div>`;
+  // Cerrar dropdown docente al click fuera
+  setTimeout(function(){
+    document.addEventListener('click',function _ddClose(e){
+      var dd=g('docenteDD');
+      if(dd&&!dd.contains(e.target)&&e.target.id!=='sDocInput'){dd.style.display='none';document.removeEventListener('click',_ddClose);}
+    });
+  },100);
 }
 
 async function guardarSes(pacId, evalId, num, sesId, modo){
-  const tecs=Array.from(document.querySelectorAll('input[type=checkbox]:checked')).map(c=>c.value);
   const des=g('sDes')?.value?.trim()||'';
-  if(modo==='enviar'&&(!tecs.length||!des)){toast('Completa técnicas y descripción','','warn');return;}
+  if(modo==='enviar'&&!des){toast('Completa la descripción de la sesión','','warn');return;}
   const estado=modo==='borrador'?'borrador':(session.rol==='estudiante'?'pendiente':'aprobada');
   const b={action:'guardarSesion',pacienteId:pacId,evaluacionId:evalId,numero:num,
-    fecha:g('sF')?.value||'',terapeuta:g('sT')?.value||'',evaValor:Number(g('sesEva')?.value||0),
-    tecnicas:tecs,tecnicasOtras:g('sTO')?.value||'',descripcion:des,
-    evolucion:g('sEvo')?.value||'',respuesta:g('sRes')?.value||'',estado};
+    fecha:g('sF')?.value||'',
+    estudiante:g('sEst')?.value||session.nombre||session.codigo,
+    docente:g('sDoc')?.value||g('sDocInput')?.value||'',
+    evaValor:Number(g('sesEva')?.value||0),
+    descripcion:des,respuesta:g('sRes')?.value||'',estado};
   if(sesId) b.id=sesId;
   const r=await apiPost(b);
   if(!r.ok){toast('Error',r.error,'err');return;}
