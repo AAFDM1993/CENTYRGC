@@ -50,7 +50,7 @@ body{background:#f1f5f9;color:var(--tx);font-family:'Plus Jakarta Sans',sans-ser
 /* Cards */
 .card{background:var(--surf);border:1px solid var(--bd);border-radius:16px;padding:20px;margin-bottom:16px;}
 .card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
-.card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:#fff;}
+.card-title{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--tx);}
 
 /* Estado badges */
 .badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
@@ -62,7 +62,7 @@ body{background:#f1f5f9;color:var(--tx);font-family:'Plus Jakarta Sans',sans-ser
 
 /* Pacientes */
 .pac-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
-.pac-card{background:var(--surf2);border:1px solid var(--bd);border-radius:14px;padding:16px;cursor:pointer;transition:all .15s;}
+.pac-card{background:var(--surf2);border:1px solid var(--bd);border-radius:14px;padding:16px;cursor:pointer;transition:all .15s;color:var(--tx);}
 .pac-card:hover{border-color:var(--n400);background:var(--surf3);}
 .pac-avatar{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#fff;flex-shrink:0;}
 
@@ -80,7 +80,7 @@ body{background:#f1f5f9;color:var(--tx);font-family:'Plus Jakarta Sans',sans-ser
 .btn-primary{background:var(--n500);color:#fff;} .btn-primary:hover{opacity:.9;}
 .btn-success{background:rgba(34,197,94,.15);color:var(--green);border:1px solid rgba(34,197,94,.3);}
 .btn-danger{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.25);}
-.btn-ghost{background:var(--surf2);color:var(--tx2);border:1px solid var(--bd);}
+.btn-ghost{background:var(--surf2);color:var(--tx);border:1px solid var(--bd);}
 .btn-sm{padding:6px 13px;font-size:12px;}
 .btn-group{display:flex;gap:8px;flex-wrap:wrap;}
 
@@ -512,16 +512,35 @@ async function abrirPac(id){
   }
 }
 
+
+function formatFecha(raw){
+  if(!raw) return '';
+  var d=new Date(raw);
+  if(isNaN(d.getTime())){
+    // intentar parsear string tipo "admincentyr · Sat Mar 21..."
+    var m=raw.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    if(m) d=new Date(m[3].length===2?'20'+m[3]:m[3],m[2]-1,m[1]);
+    else return raw;
+  }
+  var dd=String(d.getDate()).padStart(2,'0');
+  var mm=String(d.getMonth()+1).padStart(2,'0');
+  var yy=String(d.getFullYear()).slice(-2);
+  var h=d.getHours();
+  var mi=String(d.getMinutes()).padStart(2,'0');
+  var ap=h>=12?'PM':'AM';
+  h=h%12||12;
+  return dd+'/'+mm+'/'+yy+' '+h+':'+mi+' '+ap;
+}
 function evalCard(ev, pac){
   const pr=session.rol==='admin'||session.rol==='docente';
-  const puedeSend=(ev.estado==='borrador'||ev.estado==='rechazada')&&(session.rol!=='estudiante'||pac.asignadoA===session.codigo||pac.creadoPor===session.codigo);
+  const puedeSend=(ev.estado==='borrador'||ev.estado==='rechazada')&&session.rol==='estudiante'&&(pac.asignadoA===session.codigo||pac.creadoPor===session.codigo||ev.autor===session.codigo||ev.autorCodigo===session.codigo);
   return `<div style="background:var(--surf3);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:8px">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
       <div style="display:flex;align-items:center;gap:8px">
         <span style="font-weight:700;font-size:13px">${ev.tipo==='inicial'?'Evaluación inicial':'Reevaluación'}</span>
         ${bdg(ev.estado)}
       </div>
-      <div style="font-size:11px;color:var(--tx4)">${e2(ev.autor)} · ${e2(ev.fecha)}</div>
+      <div style="font-size:11px;color:var(--tx4)">${e2(ev.autor)} · ${formatFecha(ev.fecha)}</div>
     </div>
     ${ev.dxFisio?`<div style="font-size:12px;color:var(--tx2);margin-bottom:8px">Dx: ${e2(ev.dxFisio)}</div>`:''}
     ${ev.comentarioDocente&&ev.estado!=='borrador'?`<div class="rev-bar ${ev.estado}">
@@ -539,12 +558,12 @@ function evalCard(ev, pac){
 
 function sesCard(s, pac, evalAp){
   const pr=session.rol==='admin'||session.rol==='docente';
-  const puedeSend=(s.estado==='borrador'||s.estado==='rechazada')&&evalAp;
+  const puedeSend=(s.estado==='borrador'||s.estado==='rechazada')&&evalAp&&session.rol==='estudiante'&&(s.autor===session.codigo||s.autorCodigo===session.codigo||pac.asignadoA===session.codigo||pac.creadoPor===session.codigo);
   return `<div class="tl-item">
     <div class="tl-dot ${s.estado}">S${s.numero}</div>
     <div style="background:var(--surf2);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-left:4px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:6px">
-        <div style="font-size:12px;color:var(--tx4)">Sesión #${s.numero} · ${e2(s.fecha)}</div>
+        <div style="font-size:12px;color:var(--tx4)">Sesión #${s.numero} · ${formatFecha(s.fecha)}</div>
         ${bdg(s.estado)}
       </div>
       ${s.descripcion?`<div style="font-size:13px;margin-bottom:8px">${e2(s.descripcion.substring(0,100))}${s.descripcion.length>100?'...':''}</div>`:''}
@@ -1323,7 +1342,7 @@ function abrirModalCategoria(){
              padding:14px 12px;cursor:pointer;transition:all .15s;text-align:center"
       onmouseover="this.style.borderColor='${color}'" onmouseout="this.style.borderColor='${color}44'">
       <div style="width:12px;height:12px;border-radius:50%;background:${color};margin:0 auto 8px"></div>
-      <div style="font-size:12px;font-weight:700;color:#fff;line-height:1.3">${e2(c.nombre)}</div>
+      <div style="font-size:12px;font-weight:700;color:var(--tx);line-height:1.3">${e2(c.nombre)}</div>
     </div>`;
   }).join('');
   m.style.display='flex';
@@ -1338,6 +1357,25 @@ function seleccionarCategoria(catId, catNombre){
 
 
 document.addEventListener('click',function(e){var dd=g('regionDropdown');if(dd&&!dd.contains(e.target)&&e.target.id!=='regionSearch')dd.style.display='none';});
+
+var _pendCount=0;
+function iniciarPollingPendientes(){
+  if(session.rol==='estudiante') return;
+  setInterval(async function(){
+    try{
+      var r=await apiGet('pendientesRevision').catch(function(){return {ok:false};});
+      if(!r.ok) return;
+      var tot=(r.evaluaciones?.length||0)+(r.sesiones?.length||0);
+      var b=g('sbBadge');
+      if(b){b.textContent=tot;b.style.display=tot?'':'none';}
+      if(tot>_pendCount&&_pendCount>=0){
+        var nuevos=tot-_pendCount;
+        toast('\uD83D\uDD14 '+nuevos+' nuevo'+(nuevos>1?'s':'')+(nuevos===1?' elemento':' elementos')+' pendiente'+(nuevos>1?'s':''),'Evalúa en la sección Pendientes','ok');
+      }
+      _pendCount=tot;
+    }catch(e){}
+  },30000);
+}
 </script>
 </body>
 </html>
