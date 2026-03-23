@@ -1719,7 +1719,7 @@ function renderSgrCard(ci,si,sg){
         <label style="${lblStyle}">Atenc. totales</label>
         <input type="number" min="1" max="100" value="${total}" data-total
           style="${inpStyle}"
-          oninput="setSgrValTotal(${ci},${si},+this.closest('.sgr-card').querySelector('input[type=number]:nth-child(1)').value||${base},+this.value)">
+          oninput="setSgrValTotal(${ci},${si},+this.closest('.sgr-card').querySelectorAll('input[type=number]')[1].value||${base},+this.value)">
       </div>
     </div>
   </div>`;
