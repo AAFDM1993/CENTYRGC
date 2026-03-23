@@ -146,11 +146,31 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
 .lg-card{background:var(--surf);border:1px solid var(--bd);border-radius:20px;padding:36px 28px;width:100%;max-width:360px;}
 
 /* Responsive */
+/* ─── BOTTOM NAV MOBILE ─── */
+#mobileNav{display:none;position:fixed;bottom:0;left:0;right:0;height:60px;background:var(--n900);
+  border-top:1px solid rgba(255,255,255,.12);z-index:200;align-items:stretch;}
+#mobileNav button{flex:1;background:none;border:none;color:#93c5fd;font-size:10px;font-weight:600;
+  padding:6px 2px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;cursor:pointer;transition:color .15s;}
+#mobileNav button.active{color:#fff;}
+#mobileNav button span{font-size:18px;line-height:1;}
+#mobileNav button .lbl{font-size:9px;text-transform:uppercase;letter-spacing:.4px;}
 @media(max-width:768px){
-  .sidebar{display:none;}
-  .main{padding:14px;}
+  .sidebar{display:none!important;}
+  .layout{height:calc(100vh - 58px);}
+  .main{padding:12px;padding-bottom:70px;}
   .pac-grid{grid-template-columns:1fr;}
   .form-grid{grid-template-columns:1fr;}
+  #mobileNav{display:flex;}
+  .card{padding:14px;}
+  .card-hdr{flex-direction:column;align-items:flex-start;gap:8px;}
+  .btn-group{flex-wrap:wrap;}
+  .btn,.btn-sm{min-height:40px;font-size:12px;}
+  .pac-avatar{width:40px;height:40px;font-size:13px;}
+  .tl-item{margin-left:0;}
+  .form-grid .field.form-full{grid-column:1;}
+  #vSesForm .card,.#vEvalForm .card{margin-bottom:10px;}
+  .inp,.sel,.ta{font-size:16px;}
 }
 .empty{text-align:center;padding:36px;color:var(--tx4);font-size:13px;}
 .loader{text-align:center;padding:28px;color:var(--tx3);font-size:13px;}
@@ -357,7 +377,10 @@ async function iniciarApp(){
   g('appPage').style.display='block';
   const hn=g('hdrNombre'); if(hn){hn.textContent=session.nombre||session.codigo;hn.style.display='';}
   const hr=g('hdrRol'); hr.textContent=session.rol; hr.className='rol-pill '+session.rol;
-  if(session.rol==='admin') g('sbAdminSec').style.display='block';
+  if(session.rol==='admin'){
+    g('sbAdminSec').style.display='block';
+    var mn=g('mnAdmin'); if(mn) mn.style.display='flex';
+  }
   const rc=await apiGet('listarCategorias');
   if(rc.ok) cats=rc.categorias||[];
   if(session.rol!=='estudiante') cargarBadge();
@@ -367,6 +390,13 @@ async function iniciarApp(){
 // ─── Nav ──────────────────────────────────────────────
 const views=['vPac','vDetalle','vEvalForm','vSesForm','vPend','vCats','vBusqHC','vFirmas','vExportHC'];
 const sbs=['sbPac','sbPend','sbCats','sbBusqHC','sbFirmas','sbExportHC'];
+
+function setMobileActive(id){
+  ['mnPac','mnPend','mnBusq','mnAdmin'].forEach(function(b){
+    var el=g(b); if(el) el.classList.remove('active');
+  });
+  var el=g(id); if(el) el.classList.add('active');
+}
 function navTo(v){
   views.forEach(x=>g(x).style.display='none');
   sbs.forEach(x=>{const e=g(x);if(e)e.classList.remove('active');});
@@ -700,23 +730,25 @@ async function buscarPacExport(){
     return (p.dni||'').toLowerCase().includes(q)||(p.nombre||'').toLowerCase().includes(q);
   });
   if(!pacs.length){box.innerHTML='<div class="empty">Sin resultados para &ldquo;'+e2(q)+'&rdquo;</div>';return;}
-  box.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">'
-    +pacs.map(function(p){
-      var cat=getCat(p.categoriaId);
-      return '<div class="card" style="display:flex;flex-direction:column;gap:10px">'
-        +'<div style="display:flex;align-items:center;gap:10px">'
-        +'<div class="pac-avatar" style="background:'+cat.color+'33;color:'+cat.color+';border:1.5px solid '+cat.color+'55;font-size:13px;font-weight:700">'+((p.nombre||'?').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase())+'</div>'
-        +'<div style="flex:1;min-width:0">'
-        +'<div style="font-weight:700;font-size:14px;color:var(--tx)">'+e2(p.nombre)+'</div>'
-        +'<div style="font-size:11px;color:var(--tx4)">DNI: '+e2(p.dni)+(p.fechaNac?' &middot; '+edad(p.fechaNac)+' a':'')+'</div>'
-        +'<div style="margin-top:3px">'+catPill(p.categoriaId)+'</div>'
-        +'</div></div>'
-        +'<div style="display:flex;gap:8px">'
-        +'<button class="btn btn-ghost btn-sm" style="flex:1" data-pid="'+e2(p.id)+'" onclick="abrirPac(\''+e2(p.id)+'\')">&#128065; Ver ficha</button>'
-        +'<button class="btn btn-primary btn-sm" style="flex:1" data-pid="'+e2(p.id)+'" onclick="exportarHC(\''+e2(p.id)+'\')">&#128196; Exportar HC</button>'
-        +'</div>'
-        +'</div>';
-    }).join('')+'</div>';
+  var html='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">';
+  pacs.forEach(function(p){
+    var cat=getCat(p.categoriaId);
+    var ini=(p.nombre||'?').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase();
+    html+='<div class="card" style="display:flex;flex-direction:column;gap:10px">'
+      +'<div style="display:flex;align-items:center;gap:10px">'
+      +'<div class="pac-avatar" style="background:'+cat.color+'33;color:'+cat.color+';border:1.5px solid '+cat.color+'55;font-size:13px;font-weight:700">'+ini+'</div>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-weight:700;font-size:14px;color:var(--tx)">'+e2(p.nombre)+'</div>'
+      +'<div style="font-size:11px;color:var(--tx4)">DNI: '+e2(p.dni)+(p.fechaNac?' &middot; '+edad(p.fechaNac)+' a':'')+'</div>'
+      +'<div style="margin-top:3px">'+catPill(p.categoriaId)+'</div>'
+      +'</div></div>'
+      +'<div style="display:flex;gap:8px">'
+      +'<button class="btn btn-ghost btn-sm" style="flex:1" data-pid="'+e2(p.id)+'" onclick="abrirPac(this.dataset.pid)">&#128065; Ver ficha</button>'
+      +'<button class="btn btn-primary btn-sm" style="flex:1" data-pid="'+e2(p.id)+'" onclick="exportarHC(this.dataset.pid)">&#128196; Exportar HC</button>'
+      +'</div></div>';
+  });
+  html+='</div>';
+  box.innerHTML=html;
 }
 
 // ─── BUILD HC COMPLETA ─────────────────────────────────────
@@ -1091,7 +1123,7 @@ async function abrirPac(id){
         ${puedeEditar?`<button class="btn btn-ghost btn-sm" onclick="editarPac('${esc(pac.id)}')">✏️ Editar</button>`:''}
         ${session.rol==='admin'?`<button class="btn btn-danger btn-sm" onclick="eliminarPac('${esc(pac.id)}','${esc(pac.nombre)}')">🗑️</button>`:''}
       </div>
-        ${session.rol==='admin'||session.rol==='docente'?`<button class="btn btn-primary btn-sm" onclick="exportarHC('${esc(pac.id)}')">&#128196; Exportar HC</button>`:''}\n      </div>
+        ${session.rol==='admin'?`<button class="btn btn-primary btn-sm" onclick="exportarHC('${esc(pac.id)}')">&#128196; Exportar HC</button>`:''}\n      </div>
     </div>
 
     <div class="card" style="margin-bottom:14px">
@@ -1179,7 +1211,7 @@ function evalCard(ev, pac){
       <div><div style="font-size:12px;font-weight:700;color:${ev.estado==='aprobada'?'var(--green)':ev.estado==='rechazada'?'var(--red)':'var(--amber)'}">${ev.estado==='aprobada'?'Aprobada':'Rechazada'} — ${e2(ev.revisadoPor)}</div>
         <div class="rev-comment">${e2(ev.comentarioDocente)}</div></div></div>`:''}
     <div class="btn-group">
-      <button class="btn btn-ghost btn-sm" onclick="verEval('${esc(ev.id)}','${esc(pac.id)}')">&#128196; Exportar</button>
+      ${session.rol==='admin'?`<button class="btn btn-ghost btn-sm" onclick="verEval('${esc(ev.id)}','${esc(pac.id)}')">&#128196; Exportar</button>`:''}
       ${ev.estado==='borrador'||ev.estado==='rechazada'?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmEval('${esc(pac.id)}','${esc(ev.id)}','${esc(pac.categoriaId)}')">✏️ Editar</button>`:''}
       ${puedeSend?`<button class="btn btn-primary btn-sm" onclick="enviarEval('${esc(ev.id)}','${esc(pac.id)}')">📤 Enviar al docente</button>`:''}
       ${pr&&ev.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('eval','${esc(ev.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
@@ -1203,7 +1235,7 @@ function sesCard(s, pac, evalAp){
         <div><div style="font-size:11px;font-weight:700;color:${s.estado==='aprobada'?'var(--green)':'var(--red)'}">${s.estado==='aprobada'?'Aprobada':'Rechazada'} — ${e2(s.revisadoPor)}</div>
           ${s.comentarioDocente?`<div class="rev-comment">${e2(s.comentarioDocente)}</div>`:''}</div></div>`:''}
       <div class="btn-group">
-        <button class="btn btn-ghost btn-sm" onclick="verSes('${esc(s.id)}','${esc(pac.id)}')">&#128196; Exportar</button>
+        ${session.rol==='admin'?`<button class="btn btn-ghost btn-sm" onclick="verSes('${esc(s.id)}','${esc(pac.id)}')">&#128196; Exportar</button>`:''}
         ${s.estado==='borrador'||s.estado==='rechazada'?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmSes('${esc(pac.id)}','${esc(s.evaluacionId)}',${s.numero},'${esc(s.id)}')">✏️ Editar</button>`:''}
         ${puedeSend&&(s.estado==='borrador'||s.estado==='rechazada')?`<button class="btn btn-primary btn-sm" onclick="enviarSes('${esc(s.id)}','${esc(pac.id)}')">📤 Enviar</button>`:''}
         ${pr&&s.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('ses','${esc(s.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
@@ -1416,7 +1448,8 @@ async function enviarEval(evalId, pacId){
 
 // ─── Formulario Sesión ────────────────────────────────
 async 
-function filtrarDocentes(val, docentes){
+function filtrarDocentes(val, docentesParam){
+  var docentes=docentesParam||window._docentesList||[];
   var dd=g('docenteDD');
   if(!val||!val.trim()){dd.style.display='none';return;}
   var v=val.toLowerCase();
@@ -1450,6 +1483,7 @@ async function abrirFrmSes(pacId, evalId, num, sesId=null){
   // Cargar docentes para el selector
   var docentes=[];
   try{const ru=await apiGet('listarUsuarios');docentes=(ru.usuarios||[]).filter(u=>u.rol==='docente');}catch(e){}
+  window._docentesList=docentes; // guardar para el input
   const docenteActual=ses?.docente||'';
 
   v.innerHTML=`
@@ -1465,7 +1499,7 @@ async function abrirFrmSes(pacId, evalId, num, sesId=null){
           <input class="inp" id="sEst" value="${e2(ses?.estudiante||session.nombre||session.codigo)}" placeholder="Nombre del estudiante" ${session.rol==='estudiante'?'readonly style="background:var(--surf2);cursor:default"':''}></div>
         <div class="field"><label>Docente</label>
           <div style="position:relative">
-            <input class="inp" id="sDocInput" placeholder="Buscar docente..." value="${e2(docenteActual)}" oninput="filtrarDocentes(this.value,${JSON.stringify(docentes)})" autocomplete="off">
+            <input class="inp" id="sDocInput" placeholder="Buscar docente..." value="${e2(docenteActual)}" oninput="filtrarDocentes(this.value)" autocomplete="off">
             <div id="docenteDD" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surf);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:50;max-height:180px;overflow-y:auto;margin-top:4px"></div>
           </div>
           <input type="hidden" id="sDoc" value="${e2(docenteActual)}">
@@ -1537,8 +1571,25 @@ async function confirmarRev(estado){
   const com=g('modalRevCom')?.value?.trim()||'';
   if(estado==='rechazada'&&!com){toast('Escribe un comentario para el alumno','','warn');return;}
   const action=revTarget.tipo==='eval'?'revisarEvaluacion':'revisarSesion';
-  const r=await apiPost({action,id:revTarget.id,estado,comentario:com});
+  // Incluir nombre del docente revisor (session actual)
+  const revisadoPor=session?.nombre||session?.codigo||'';
+  const r=await apiPost({action,id:revTarget.id,estado,comentario:com,revisadoPor});
   if(!r.ok){toast('Error',r.error,'err');return;}
+  // Si se aprobó, precargar firma del docente para el sello
+  if(estado==='aprobada'&&session){
+    try{
+      var rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
+      if(rU.ok){
+        var docMe=(rU.usuarios||[]).find(function(u){
+          return u.codigo===session.codigo||u.nombre===session.nombre;
+        });
+        if(docMe&&docMe.firma){
+          await resolverFirmaDoc_(docMe);
+          window._firmaRevisorActual=docMe;
+        }
+      }
+    }catch(e){}
+  }
   toast(estado==='aprobada'?'✅ Aprobado':'❌ Rechazado','','ok');
   cerrarRev(); if(revTarget?.pacId)abrirPac(revTarget.pacId); cargarBadge();
 }
@@ -2079,6 +2130,15 @@ function iniciarPollingPendientes(){
       <button class="btn btn-primary" onclick="confirmarExportConFirma()">&#128196; Exportar</button>
     </div>
   </div>
+</div>
+
+
+<!-- Mobile bottom nav -->
+<div id="mobileNav">
+  <button id="mnPac" onclick="navTo('pac');setMobileActive('mnPac')"><span>&#128100;</span><span class="lbl">Pacientes</span></button>
+  <button id="mnPend" onclick="navTo('pend');setMobileActive('mnPend')"><span>&#9203;</span><span class="lbl">Pendientes</span></button>
+  <button id="mnBusq" onclick="navTo('busqhc');setMobileActive('mnBusq')"><span>&#128269;</span><span class="lbl">Buscar</span></button>
+  <button id="mnAdmin" style="display:none" onclick="navTo('exporthc');setMobileActive('mnAdmin')"><span>&#128196;</span><span class="lbl">Exportar</span></button>
 </div>
 
 </body>
