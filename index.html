@@ -4916,6 +4916,20 @@ async function regenerarHoja(){
 
 function irAHC(){
   if(!session) return;
+  // Mostrar overlay de carga
+  var ov=document.createElement('div');
+  ov.id='hcLoadingOverlay';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(10,22,40,.82);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;backdrop-filter:blur(6px)';
+  ov.innerHTML='<div style="width:48px;height:48px;border:4px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:hcSpin .8s linear infinite"></div>'
+    +'<div style="color:#fff;font-size:15px;font-weight:600">Cargando m\u00F3dulo de Historias Cl\u00EDnicas...</div>'
+    +'<div style="color:rgba(255,255,255,.5);font-size:12px">Por favor espere</div>';
+  if(!document.getElementById('hcSpinStyle')){
+    var st=document.createElement('style');
+    st.id='hcSpinStyle';
+    st.textContent='@keyframes hcSpin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(st);
+  }
+  document.body.appendChild(ov);
   var cred='';
   try{cred=sessionStorage.getItem('_hcCred')||'';}catch(e){}
   var url='hc.html'
@@ -4923,7 +4937,12 @@ function irAHC(){
     +'&nombre='+encodeURIComponent(session.nombre||session.codigo)
     +'&codigo='+encodeURIComponent(session.codigo)
     +(cred?'&cred='+encodeURIComponent(cred):'');
-  window.open(url,'_blank');
+  var w=window.open(url,'_blank');
+  // Quitar overlay después de 2.5s (tiempo suficiente para que abra)
+  setTimeout(function(){
+    var el=document.getElementById('hcLoadingOverlay');
+    if(el){el.style.opacity='0';el.style.transition='opacity .4s';setTimeout(function(){el.remove();},400);}
+  },2500);
 }</script>
 </body>
 </html>
