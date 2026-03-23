@@ -305,10 +305,40 @@ function doLogout(){localStorage.removeItem(SK);session=null;g('appPage').style.
 // ─── Init ─────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded',async()=>{
   const p=new URLSearchParams(location.search);
-  const tk=p.get('token');
-  if(tk){session={token:tk,rol:p.get('rol')||'',nombre:p.get('nombre')||'',codigo:p.get('codigo')||''};
-    saveSess(session);history.replaceState({},'',location.pathname);}
-  else session=loadSess();
+  const cred=p.get('cred');       // base64(codigo:pass) desde index
+  const rolParam=p.get('rol')||'';
+  const nombreParam=p.get('nombre')||'';
+  const codigoParam=p.get('codigo')||'';
+  // Limpiar URL para no exponer credenciales
+  if(cred||rolParam) history.replaceState({},'',location.pathname);
+
+  if(cred){
+    // Login silencioso: decodificar cred y autenticar con el GAS del HC
+    try{
+      const dec=atob(cred);
+      const col=dec.indexOf(':');
+      if(col>0){
+        const cod=dec.slice(0,col);
+        const pass=dec.slice(col+1);
+        g('lgPage').classList.add('on'); // mostrar pantalla de carga
+        const r=await fetch(HC_URL+'?action=login&codigo='+encodeURIComponent(cod)+'&password='+encodeURIComponent(pass)).then(x=>x.json()).catch(()=>({ok:false}));
+        if(r.ok){
+          session={token:r.token,rol:r.rol,nombre:r.nombre||nombreParam,codigo:r.codigo||cod};
+          saveSess(session);
+          iniciarApp();
+          return;
+        } else {
+          // Login falló — puede que el usuario no exista en el HC
+          // Mostrar mensaje informativo en el login
+          const err=g('lgErr');
+          if(err){err.textContent='Tu usuario no existe en el sistema HC. Pide al administrador que te registre.';err.style.display='block';}
+        }
+      }
+    }catch(e){ console.warn('Auto-login HC falló:',e); }
+  }
+
+  // Sin auto-login: intentar sesión guardada
+  session=loadSess();
   if(session) iniciarApp(); else g('lgPage').classList.add('on');
 });
 
