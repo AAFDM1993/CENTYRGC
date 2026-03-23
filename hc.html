@@ -404,6 +404,7 @@ function mkSelloDocente(doc){
   if(!doc) return '';
   var nombre=doc.nombre||doc.codigo||'';
   var ctmp=doc.ctmp||'';
+  var cargo=doc.cargo||'';
   var firma=doc.firma||'';
   var imgTag='';
   if(firma&&firma.startsWith('data:image')){
@@ -414,10 +415,54 @@ function mkSelloDocente(doc){
     +'<div style="border-top:1.5px solid #1e3a5f;width:160px;margin:0 auto 4px"></div>'
     +'<div style="font-weight:700;font-size:11px;text-align:center;color:#0f172a">'+e2(nombre)+'</div>'
     +(ctmp?'<div style="font-size:10px;text-align:center;color:#475569">CTMP: '+e2(ctmp)+'</div>':'')
+    +(cargo?'<div style="font-size:9px;text-align:center;color:#475569;max-width:180px;line-height:1.3;margin-top:2px">'+e2(cargo)+'</div>':'')
     +'</div>';
 }
 
 // ─── EXPORTAR COMO VENTANA IMPRIMIBLE ─────────────────
+
+var _exportCallback=null;
+
+function abrirModalFirmaExport(callback){
+  _exportCallback=callback;
+  // Pre-rellenar con datos del usuario logueado si es docente
+  var nom=g('firmaExNombre'); var ctmp=g('firmaExCtmp');
+  if(nom&&!nom.value&&session&&session.nombre) nom.value=session.nombre;
+  var m=g('modalFirmaExport');
+  if(m) m.style.display='flex';
+  if(nom) setTimeout(function(){nom.focus();},100);
+}
+
+function cerrarModalFirmaExport(){
+  var m=g('modalFirmaExport'); if(m) m.style.display='none';
+  _exportCallback=null;
+}
+
+async function confirmarExportConFirma(){
+  var nombre=(g('firmaExNombre')?.value||'').trim();
+  var ctmp=(g('firmaExCtmp')?.value||'').trim();
+  var cargo='Coordinador del Centro Docente de Terapia Física y Rehabilitación “CENTYR-UPT”';
+  if(!nombre){toast('Ingresa los apellidos y nombres','','warn');return;}
+  if(!ctmp){toast('Ingresa el número de colegiatura CTMP','','warn');return;}
+  cerrarModalFirmaExport();
+  // Buscar firma del usuario en sistema
+  var docFirmante={nombre:nombre,ctmp:ctmp,cargo:cargo,firma:''};
+  try{
+    var rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
+    if(rU.ok){
+      var match=(rU.usuarios||[]).find(function(u){
+        return (u.nombre||'').toLowerCase()===nombre.toLowerCase()
+            ||(u.codigo||'').toLowerCase()===(session&&session.codigo||'').toLowerCase();
+      });
+      if(match&&match.firma){
+        await resolverFirmaDoc_(match);
+        docFirmante.firma=match.firma;
+      }
+    }
+  }catch(e){}
+  if(_exportCallback) _exportCallback(docFirmante);
+}
+
 function exportarDocumento(titulo, bodyHTML){
   var w=window.open('','_blank','width=900,height=700');
   if(!w){toast('Permite ventanas emergentes para exportar','','warn');return;}
@@ -564,28 +609,31 @@ async function previsualizarFirma(codigo,idx){
   if(!img.parentNode) box.insertBefore(img,box.firstChild);
 }
 async function exportarHC(pacId){
-  toast('\u23F3 Preparando exportaci\u00F3n...','','ok');
-  const [rP,rE,rS]=await Promise.all([
-    apiGet('obtenerPaciente',{id:pacId}),
-    apiGet('listarEvaluaciones',{pacienteId:pacId}),
-    apiGet('listarSesiones',{pacienteId:pacId})
-  ]);
-  if(!rP.ok){toast('Error al cargar paciente',rP.error,'err');return;}
-  const pac=rP.paciente;
-  const evals=(rE.evaluaciones||[]).filter(function(ev){return ev.estado==='aprobada';});
-  const ses=rS.sesiones||[];
-  var firmasMap={};
-  var rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
-  if(rU.ok){
-    await Promise.all((rU.usuarios||[]).map(async function(u){
-      await resolverFirmaDoc_(u);
-      firmasMap[u.nombre]=u; firmasMap[u.codigo]=u;
-    }));
-  }
-  exportarDocumento(
-    'HC_'+e2(pac.nombre||pacId).replace(/\s+/g,'_'),
-    buildHCCompletaHTML(pac,evals,ses,firmasMap)
-  );
+  abrirModalFirmaExport(async function(docFirmante){
+    toast('\u23F3 Preparando exportaci\u00F3n...','','ok');
+    const [rP,rE,rS]=await Promise.all([
+      apiGet('obtenerPaciente',{id:pacId}),
+      apiGet('listarEvaluaciones',{pacienteId:pacId}),
+      apiGet('listarSesiones',{pacienteId:pacId})
+    ]);
+    if(!rP.ok){toast('Error al cargar paciente',rP.error,'err');return;}
+    const pac=rP.paciente;
+    const evals=(rE.evaluaciones||[]).filter(function(ev){return ev.estado==='aprobada';});
+    const ses=rS.sesiones||[];
+    var firmasMap={};
+    var rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
+    if(rU.ok){
+      await Promise.all((rU.usuarios||[]).map(async function(u){
+        await resolverFirmaDoc_(u);
+        firmasMap[u.nombre]=u; firmasMap[u.codigo]=u;
+      }));
+    }
+    var selloFirmante=mkSelloDocente(docFirmante);
+    exportarDocumento(
+      'HC_'+e2(pac.nombre||pacId).replace(/\s+/g,'_'),
+      buildHCCompletaHTML(pac,evals,ses,firmasMap,selloFirmante)
+    );
+  });
 }
 
 // ─── RENDERIZAR VISTA ADMIN: EXPORTAR HC ──────────────────
@@ -632,7 +680,7 @@ async function buscarPacExport(){
 }
 
 // ─── BUILD HC COMPLETA ─────────────────────────────────────
-function buildHCCompletaHTML(pac, evals, ses, firmasMap){
+function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
   var html='';
 
   // ── PORTADA ──
@@ -724,90 +772,83 @@ function buildHCCompletaHTML(pac, evals, ses, firmasMap){
     }
   }
 
+  if(selloFirmante) html+=selloFirmante;
   return html;
 }
 
 async function renderFirmas(){
   var v=g('vFirmas');
-  v.innerHTML='<div class="card-hdr"><div class="card-title">&#128395; Firmas y Sellos de Docentes</div></div>'
-    +'<div class="empty" style="padding:24px">&#9203; Cargando docentes...</div>';
-
+  v.innerHTML='<div class="loader">&#9203; Cargando...</div>';
   var r=await apiGet('listarUsuarios').catch(function(){return {ok:false,error:'Error de red'};});
   if(!r.ok){
-    v.innerHTML='<div class="card-hdr"><div class="card-title">&#128395; Firmas y Sellos de Docentes</div></div>'
-      +'<div class="err-box">&#9888; No se pudo cargar la lista de usuarios: '+(r.error||'Error desconocido')+'<br><br>'
-      +'<small>Verifica que el GAS est&eacute; desplegado y que la acci&oacute;n <b>listarUsuarios</b> est&eacute; registrada en <b>doGet</b>.</small></div>';
+    v.innerHTML='<div class="card-hdr"><div class="card-title">&#128395; Firmas</div></div>'
+      +'<div class="err-box">&#9888; '+e2(r.error||'Error')+'<br><small>Verifica que <b>listarUsuarios</b> est&eacute; en doGet del GAS y redesplegar.</small></div>';
     return;
   }
   var docs=(r.usuarios||[]).filter(function(u){return u.rol==='docente';});
   _firmasDocentes=docs;
-
   if(!docs.length){
-    v.innerHTML='<div class="card-hdr"><div class="card-title">&#128395; Firmas y Sellos de Docentes</div></div>'
-      +'<div class="empty" style="padding:32px;text-align:center">'
-      +'<div style="font-size:32px;margin-bottom:12px">&#128100;</div>'
-      +'<div style="font-weight:700;margin-bottom:6px">No hay docentes registrados</div>'
-      +'<div style="font-size:12px;color:var(--tx4)">Crea usuarios con rol <b>docente</b> en el Google Sheet (_usuarios) y vuelve a cargar.</div>'
-      +'</div>';
+    v.innerHTML='<div class="card-hdr"><div class="card-title">&#128395; Firmas</div></div>'
+      +'<div class="empty" style="padding:32px;text-align:center"><div style="font-size:32px;margin-bottom:12px">&#128100;</div>'
+      +'<b>No hay docentes registrados</b><br><span style="font-size:12px;color:var(--tx4)">Crea usuarios con rol <b>docente</b> en el Sheet (_usuarios).</span></div>';
     return;
   }
-
-  v.innerHTML='<div class="card-hdr">'
-    +'<div class="card-title">&#128395; Firmas y Sellos de Docentes</div>'
-    +'<div style="font-size:12px;color:var(--tx4)">'+docs.length+' docente'+(docs.length!==1?'s':'')+' encontrado'+(docs.length!==1?'s':'')+'</div>'
-    +'</div>'
+  v.innerHTML='<div class="card-hdr"><div class="card-title">&#128395; Firmas y Sellos de Docentes</div>'
+    +'<div style="font-size:12px;color:var(--tx4)">'+docs.length+' docente'+(docs.length!==1?'s':'')+'</div></div>'
     +'<div style="background:var(--surf3);border:1px solid var(--bd2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--tx3)">'
-    +'<b>&#128161; Instrucciones:</b> Sube una imagen PNG/JPG de la firma (m&aacute;x 40KB recomendado para que quepa en Google Sheets). '
-    +'O pega directamente el c&oacute;digo Base64 de la imagen en el campo de texto. '
-    +'El n&uacute;mero CTMP es la colegiatura del docente (solo n&uacute;meros).'
-    +'</div>'
+    +'<b>&#128161;</b> Sube PNG/JPG (m&aacute;x 40KB) o pega Base64. El CTMP es la colegiatura del docente.</div>'
     +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">'
     +docs.map(function(doc,i){
+      var ini=(doc.nombre||doc.codigo||'?').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase();
       var hasFirma=!!(doc.firma&&doc.firma.length>10);
-      var firmaOk=hasFirma&&(doc.firma.startsWith('data:image')||doc.firma.startsWith('/9j/')||doc.firma.startsWith('iVBOR'));
-      return '<div class="card" style="position:relative">'
-        // Header docente
+      return '<div class="card">'
         +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'
-        +'<div style="width:38px;height:38px;border-radius:50%;background:var(--n100);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--n500);flex-shrink:0">'
-        +e2((doc.nombre||doc.codigo||'?').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase())
+        +'<div style="width:38px;height:38px;border-radius:50%;background:var(--n100);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--n500);flex-shrink:0">'+ini+'</div>'
+        +'<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px;color:var(--tx)">'+e2(doc.nombre||doc.codigo)+'</div>'
+        +'<div style="font-size:11px;color:var(--tx4)">'+e2(doc.codigo)+(doc.ctmp?' &bull; CTMP: <b>'+e2(doc.ctmp)+'</b>':'')+'</div></div></div>'
+        // Preview: cargará imagen async después del render
+        +'<div id="selloPreview_'+i+'" style="border:1px solid var(--bd);border-radius:8px;padding:12px;background:var(--surf2);min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:10px">'
+        +(hasFirma?'<div style="font-size:11px;color:var(--tx4)">&#9203; Cargando...</div>'
+          :'<div style="font-size:11px;color:var(--tx4);margin-bottom:4px">Sin firma</div>'
+            +'<div style="border-top:1.5px solid #1e3a5f;width:130px;margin:0 auto 3px"></div>'
+            +'<div style="font-size:10px;font-weight:700;text-align:center;color:var(--tx)">'+e2(doc.nombre||doc.codigo)+'</div>'
+            +(doc.ctmp?'<div style="font-size:10px;text-align:center;color:var(--tx3)">CTMP: '+e2(doc.ctmp)+'</div>':''))
         +'</div>'
-        +'<div style="flex:1;min-width:0">'
-        +'<div style="font-weight:700;font-size:13px;color:var(--tx)">'+e2(doc.nombre||doc.codigo)+'</div>'
-        +'<div style="font-size:11px;color:var(--tx4)">'+e2(doc.codigo)+(doc.ctmp?' &bull; CTMP: <b>'+e2(doc.ctmp)+'</b>':'')+'</div>'
-        +'</div></div>'
-        // Previsualización firma
-        +'<div style="margin-bottom:10px">'
-        +'<div style="font-size:10px;font-weight:700;color:var(--tx4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Vista previa sello</div>'
-        +'<div style="border:1px solid var(--bd);border-radius:8px;padding:12px;background:var(--surf2);min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center">'
-        +(firmaOk?'<img src="'+doc.firma+'" style="max-width:140px;max-height:56px;object-fit:contain;display:block;margin-bottom:6px" onerror="this.style.display=\'none\'">'
-                 :'<div style="font-size:11px;color:var(--tx4);margin-bottom:6px">[Sin firma]</div>')
-        +'<div style="border-top:1.5px solid var(--n900);width:160px;margin-bottom:4px"></div>'
-        +'<div style="font-weight:700;font-size:10px;text-align:center;color:var(--tx)">'+e2(doc.nombre||doc.codigo)+'</div>'
-        +(doc.ctmp?'<div style="font-size:10px;text-align:center;color:var(--tx3)">CTMP: '+e2(doc.ctmp)+'</div>':'<div style="font-size:10px;color:var(--tx4)">[Sin colegiatura]</div>')
-        +'</div></div>'
-        // CTMP
-        +'<div class="field" style="margin-bottom:10px">'
-        +'<label style="font-size:11px">N&uacute;mero colegiatura (CTMP)</label>'
-        +'<input class="inp" id="ctmp_'+i+'" value="'+e2(doc.ctmp||'')+'" placeholder="Ej: 123456" style="font-size:13px">'
-        +'</div>'
-        // Base64 manual
-        +'<div class="field" style="margin-bottom:10px">'
-        +'<label style="font-size:11px">Pegar Base64 de firma <span style="color:var(--tx4);font-weight:400">(alternativa a subir imagen)</span></label>'
-        +'<textarea class="ta" id="b64_'+i+'" rows="2" placeholder="data:image/png;base64,iVBORw0KGgo... (o solo el c&oacute;digo sin prefijo)" style="font-size:10px;font-family:monospace"></textarea>'
-        +'</div>'
-        // Botones
+        +'<div class="field" style="margin-bottom:10px"><label style="font-size:11px">N&uacute;mero colegiatura CTMP</label>'
+        +'<input class="inp" id="ctmp_'+i+'" value="'+e2(doc.ctmp||'')+'" placeholder="Ej: 123456"></div>'
+        +'<div class="field" style="margin-bottom:10px"><label style="font-size:11px">Pegar Base64 <span style="color:var(--tx4);font-weight:400">(alternativa)</span></label>'
+        +'<textarea class="ta" id="b64_'+i+'" rows="2" placeholder="data:image/png;base64,..." style="font-size:10px;font-family:monospace"></textarea></div>'
         +'<div class="btn-group" style="flex-wrap:wrap;gap:6px">'
-        +'<label class="btn btn-ghost btn-sm" style="cursor:pointer;flex:1">&#128247; Subir imagen<input type="file" accept="image/png,image/jpeg,image/gif" style="display:none" onchange="subirFirma(this,\''+e2(doc.codigo)+'\','+i+')"></label>'
-        +'<button class="btn btn-ghost btn-sm" style="flex:1" onclick="guardarB64(\''+e2(doc.codigo)+'\','+i+')">&#128203; Usar Base64</button>'
+        +'<label class="btn btn-ghost btn-sm" style="cursor:pointer;flex:1">&#128247; Subir imagen'
+        +'<input type="file" accept="image/png,image/jpeg,image/gif" style="display:none" onchange="subirFirma(this,\''+e2(doc.codigo)+'\','+i+')"></label>'
+        +'<button class="btn btn-ghost btn-sm" style="flex:1" onclick="guardarB64(\''+e2(doc.codigo)+'\','+i+')">&#128203; Base64</button>'
         +(hasFirma?'<button class="btn btn-ghost btn-sm" onclick="eliminarFirma(\''+e2(doc.codigo)+'\','+i+')" style="color:var(--red)">&#128465;</button>':'')
         +'</div>'
-        +'<div style="margin-top:8px">'
-        +'<button class="btn btn-primary btn-sm" style="width:100%" onclick="guardarCtmp(\''+e2(doc.codigo)+'\','+i+')">&#128190; Guardar CTMP</button>'
-        +'</div>'
-        +(hasFirma?'<div style="font-size:10px;color:var(--green);margin-top:6px">&#10003; Firma en Drive &nbsp;<button class="btn btn-ghost btn-sm" style="font-size:10px;padding:2px 6px" onclick="previsualizarFirma(\"'+e2(doc.codigo)+'\",'+i+')">&#128065; Ver previa</button></div>':'')
+        +'<div style="margin-top:8px"><button class="btn btn-primary btn-sm" style="width:100%" onclick="guardarCtmp(\''+e2(doc.codigo)+'\','+i+')">&#128190; Guardar CTMP</button></div>'
+        +(hasFirma?'<div style="font-size:10px;color:var(--green);margin-top:6px">&#10003; Firma registrada en Drive</div>':'')
         +'</div>';
-    }).join('')
-    +'</div>';
+    }).join('')+'</div>';
+  // Cargar previews async para docentes con firma
+  docs.forEach(function(doc,i){
+    if(doc.firma&&doc.firma.length>10) _cargarPreviewFirma(doc,i);
+  });
+}
+
+async function _cargarPreviewFirma(doc,idx){
+  var box=g('selloPreview_'+idx);
+  if(!box) return;
+  var b64=await resolverFirma_(doc.firma);
+  if(!b64){
+    box.innerHTML='<div style="font-size:11px;color:var(--red)">&#9888; No se pudo cargar la imagen</div>'
+      +'<div style="border-top:1.5px solid #1e3a5f;width:130px;margin:6px auto 3px"></div>'
+      +'<div style="font-size:10px;font-weight:700;text-align:center;color:var(--tx)">'+e2(doc.nombre||doc.codigo)+'</div>'
+      +(doc.ctmp?'<div style="font-size:10px;text-align:center;color:var(--tx3)">CTMP: '+e2(doc.ctmp)+'</div>':'');
+    return;
+  }
+  box.innerHTML='<img src="'+b64+'" style="max-width:130px;max-height:52px;object-fit:contain;display:block;margin:0 auto 4px">'
+    +'<div style="border-top:1.5px solid #1e3a5f;width:130px;margin:0 auto 3px"></div>'
+    +'<div style="font-size:10px;font-weight:700;text-align:center;color:var(--tx)">'+e2(doc.nombre||doc.codigo)+'</div>'
+    +(doc.ctmp?'<div style="font-size:10px;text-align:center;color:var(--tx3)">CTMP: '+e2(doc.ctmp)+'</div>':'');
 }
 
 function subirFirma(input, codigo, idx){
@@ -1523,37 +1564,27 @@ function renderCats(){
 
 // ─── Ver detalle ──────────────────────────────────────
 async function verEval(evalId, pacId){
-  const r=await apiGet('obtenerEvaluacion',{id:evalId});
-  if(!r.ok){toast('Error',r.error,'err');return;}
-  const ev=r.evaluacion;
-  const rP=await apiGet('obtenerPaciente',{id:pacId});
-  const pac=rP.ok?rP.paciente:{};
-  var firmaHTML='';
-  if(ev.estado==='aprobada'&&ev.revisadoPor){
-    const rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
-    if(rU.ok){
-      var docRev=(rU.usuarios||[]).find(function(u){return u.nombre===ev.revisadoPor||u.codigo===ev.revisadoPor;});
-      if(docRev){await resolverFirmaDoc_(docRev);firmaHTML=mkSelloDocente(docRev);}
-    }
-  }
-  exportarDocumento('Evaluacion_'+e2(pac.nombre||evalId),buildEvalHTML(ev,pac,firmaHTML));
+  abrirModalFirmaExport(async function(docFirmante){
+    const r=await apiGet('obtenerEvaluacion',{id:evalId});
+    if(!r.ok){toast('Error',r.error,'err');return;}
+    const ev=r.evaluacion;
+    const rP=await apiGet('obtenerPaciente',{id:pacId});
+    const pac=rP.ok?rP.paciente:{};
+    var firmaHTML=mkSelloDocente(docFirmante);
+    exportarDocumento('Evaluacion_'+e2(pac.nombre||evalId),buildEvalHTML(ev,pac,firmaHTML));
+  });
 }
 
 async function verSes(sesId, pacId){
-  const rS=await apiGet('listarSesiones',{pacienteId:pacId});
-  const s=(rS.sesiones||[]).find(x=>x.id===sesId);
-  if(!s){toast('No encontrada','','err');return;}
-  const rP=await apiGet('obtenerPaciente',{id:pacId});
-  const pac=rP.ok?rP.paciente:{};
-  var firmaHTML='';
-  if(s.estado==='aprobada'&&s.revisadoPor){
-    const rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
-    if(rU.ok){
-      var docRev=(rU.usuarios||[]).find(function(u){return u.nombre===s.revisadoPor||u.codigo===s.revisadoPor;});
-      if(docRev){await resolverFirmaDoc_(docRev);firmaHTML=mkSelloDocente(docRev);}
-    }
-  }
-  exportarDocumento('Sesion_'+s.numero+'_'+e2(pac.nombre||sesId),buildSesHTML(s,pac,firmaHTML));
+  abrirModalFirmaExport(async function(docFirmante){
+    const rS=await apiGet('listarSesiones',{pacienteId:pacId});
+    const s=(rS.sesiones||[]).find(x=>x.id===sesId);
+    if(!s){toast('No encontrada','','err');return;}
+    const rP=await apiGet('obtenerPaciente',{id:pacId});
+    const pac=rP.ok?rP.paciente:{};
+    var firmaHTML=mkSelloDocente(docFirmante);
+    exportarDocumento('Sesion_'+s.numero+'_'+e2(pac.nombre||sesId),buildSesHTML(s,pac,firmaHTML));
+  });
 }
 
 async function editarPac(id){
@@ -1980,5 +2011,35 @@ function iniciarPollingPendientes(){
   },30000);
 }
 </script>
+
+<!-- Modal Firma Exportación -->
+<div id="modalFirmaExport" style="display:none;position:fixed;inset:0;background:rgba(10,22,40,.65);z-index:900;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+  <div style="background:var(--surf);border:1px solid var(--bd);border-radius:18px;padding:24px;width:100%;max-width:420px;box-shadow:0 24px 60px rgba(0,0,0,.3)">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--tx);margin-bottom:4px">&#128393; Datos del firmante</div>
+    <div style="font-size:12px;color:var(--tx4);margin-bottom:16px">Estos datos aparecerán en el sello del documento exportado.</div>
+    <div class="form-grid">
+      <div class="field form-full">
+        <label>Apellidos y nombres *</label>
+        <input class="inp" id="firmaExNombre" placeholder="Ej: Quispe Mamani, Carlos Alberto">
+      </div>
+      <div class="field form-full">
+        <label>N° Colegiatura CTMP *</label>
+        <input class="inp" id="firmaExCtmp" placeholder="Ej: 123456">
+      </div>
+      <div class="field form-full">
+        <label>Cargo</label>
+        <input class="inp" id="firmaExCargo" value="Coordinador del Centro Docente de Terapia F&#237;sica y Rehabilitaci&#243;n &ldquo;CENTYR-UPT&rdquo;" readonly style="background:var(--surf2);color:var(--tx3);cursor:default;font-size:11px">
+      </div>
+    </div>
+    <div style="margin-top:6px;padding:8px 12px;background:var(--surf3);border-radius:8px;font-size:11px;color:var(--tx3)">
+      <b>Firma digital:</b> Se adjuntará automáticamente si el firmante tiene firma registrada en el sistema.
+    </div>
+    <div class="btn-group" style="margin-top:16px">
+      <button class="btn btn-ghost btn-sm" onclick="cerrarModalFirmaExport()">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmarExportConFirma()">&#128196; Exportar</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
