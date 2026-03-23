@@ -22,6 +22,7 @@
   font-size:14px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}
+@keyframes hcSpin{to{transform:rotate(360deg)}}
 body{background:#f1f5f9;color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;min-height:100vh;}
 
 /* Topbar */
@@ -175,6 +176,7 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
 </div>
 
 <!-- App -->
+<div id="hcInitOverlay" style="position:fixed;inset:0;background:#1e3a5f;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><div style="width:48px;height:48px;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:hcSpin .8s linear infinite"></div><div style="color:#fff;font-size:15px;font-weight:600;font-family:'Syne',sans-serif">Cargando Historias Cl&#237;nicas...</div><div style="color:rgba(255,255,255,.5);font-size:12px">CENTYR &mdash; UPT</div></div>
 <div id="appPage" style="display:none">
   <header class="hdr">
     <div style="display:flex;align-items:center;gap:10px">
@@ -339,10 +341,18 @@ window.addEventListener('DOMContentLoaded',async()=>{
 
   // Sin auto-login: intentar sesión guardada
   session=loadSess();
-  if(session) iniciarApp(); else g('lgPage').classList.add('on');
+  if(session){ iniciarApp(); }
+  else{
+    var ov2=g('hcInitOverlay');
+    if(ov2){ov2.style.transition='opacity .4s';ov2.style.opacity='0';setTimeout(function(){ov2.style.display='none';},400);}
+    g('lgPage').classList.add('on');
+  }
 });
 
 async function iniciarApp(){
+  // Ocultar overlay de carga inicial
+  var ov=g('hcInitOverlay');
+  if(ov){ov.style.transition='opacity .4s';ov.style.opacity='0';setTimeout(function(){ov.style.display='none';},400);}
   g('lgPage').classList.remove('on');
   g('appPage').style.display='block';
   const hn=g('hdrNombre'); if(hn){hn.textContent=session.nombre||session.codigo;hn.style.display='';}
@@ -690,26 +700,23 @@ async function buscarPacExport(){
     return (p.dni||'').toLowerCase().includes(q)||(p.nombre||'').toLowerCase().includes(q);
   });
   if(!pacs.length){box.innerHTML='<div class="empty">Sin resultados para &ldquo;'+e2(q)+'&rdquo;</div>';return;}
-  var html='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">';
-  pacs.forEach(function(p){
-    var cat=getCat(p.categoriaId);
-    var ini=(p.nombre||'?').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase();
-    var pid=e2(p.id);
-    html+='<div class="card" style="display:flex;flex-direction:column;gap:10px">'
-      +'<div style="display:flex;align-items:center;gap:10px">'
-      +'<div class="pac-avatar" style="background:'+cat.color+'33;color:'+cat.color+';border:1.5px solid '+cat.color+'55;font-size:13px;font-weight:700">'+ini+'</div>'
-      +'<div style="flex:1;min-width:0">'
-      +'<div style="font-weight:700;font-size:14px;color:var(--tx)">'+e2(p.nombre)+'</div>'
-      +'<div style="font-size:11px;color:var(--tx4)">DNI: '+e2(p.dni)+(p.fechaNac?' &middot; '+edad(p.fechaNac)+' a':'')+'</div>'
-      +'<div style="margin-top:3px">'+catPill(p.categoriaId)+'</div>'
-      +'</div></div>'
-      +'<div style="display:flex;gap:8px">'
-      +'<button class="btn btn-ghost btn-sm" style="flex:1" onclick="abrirPac(this.dataset.pid)" data-pid="'+pid+'">&#128065; Ver ficha</button>'
-      +'<button class="btn btn-primary btn-sm" style="flex:1" onclick="exportarHC(this.dataset.pid)" data-pid="'+pid+'">&#128196; Exportar HC</button>'
-      +'</div></div>';
-  });
-  html+='</div>';
-  box.innerHTML=html;
+  box.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px">'
+    +pacs.map(function(p){
+      var cat=getCat(p.categoriaId);
+      return '<div class="card" style="display:flex;flex-direction:column;gap:10px">'
+        +'<div style="display:flex;align-items:center;gap:10px">'
+        +'<div class="pac-avatar" style="background:'+cat.color+'33;color:'+cat.color+';border:1.5px solid '+cat.color+'55;font-size:13px;font-weight:700">'+((p.nombre||'?').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase())+'</div>'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-weight:700;font-size:14px;color:var(--tx)">'+e2(p.nombre)+'</div>'
+        +'<div style="font-size:11px;color:var(--tx4)">DNI: '+e2(p.dni)+(p.fechaNac?' &middot; '+edad(p.fechaNac)+' a':'')+'</div>'
+        +'<div style="margin-top:3px">'+catPill(p.categoriaId)+'</div>'
+        +'</div></div>'
+        +'<div style="display:flex;gap:8px">'
+        +'<button class="btn btn-ghost btn-sm" style="flex:1" data-pid="'+e2(p.id)+'" onclick="abrirPac(\''+e2(p.id)+'\')">&#128065; Ver ficha</button>'
+        +'<button class="btn btn-primary btn-sm" style="flex:1" data-pid="'+e2(p.id)+'" onclick="exportarHC(\''+e2(p.id)+'\')">&#128196; Exportar HC</button>'
+        +'</div>'
+        +'</div>';
+    }).join('')+'</div>';
 }
 
 // ─── BUILD HC COMPLETA ─────────────────────────────────────
@@ -870,34 +877,14 @@ async function renderFirmas(){
 async function _cargarPreviewFirma(doc,idx){
   var box=g('selloPreview_'+idx);
   if(!box) return;
-  var firma=doc.firma||'';
-  // Si la firma ya es base64, mostrar directo
-  if(firma.startsWith('data:image')){
-    _renderPreviewBox(box,firma,doc);
-    return;
-  }
-  // Es fileId de Drive — resolver via GAS
-  if(firma.length>10){
-    var b64=await resolverFirma_(firma);
-    if(b64){
-      _renderPreviewBox(box,b64,doc);
-      return;
-    }
-    // Error al resolver — mostrar sello sin imagen + mensaje
-    box.innerHTML='<div style="font-size:10px;color:var(--amber);margin-bottom:4px">&#9888; Firma en Drive (no previsualizable)</div>'
-      +'<div style="font-size:9px;color:var(--tx4);margin-bottom:4px">La firma se adjunta al exportar</div>'
-      +'<div style="border-top:1.5px solid #1e3a5f;width:130px;margin:0 auto 3px"></div>'
+  var b64=await resolverFirma_(doc.firma);
+  if(!b64){
+    box.innerHTML='<div style="font-size:11px;color:var(--red)">&#9888; No se pudo cargar la imagen</div>'
+      +'<div style="border-top:1.5px solid #1e3a5f;width:130px;margin:6px auto 3px"></div>'
       +'<div style="font-size:10px;font-weight:700;text-align:center;color:var(--tx)">'+e2(doc.nombre||doc.codigo)+'</div>'
       +(doc.ctmp?'<div style="font-size:10px;text-align:center;color:var(--tx3)">CTMP: '+e2(doc.ctmp)+'</div>':'');
     return;
   }
-  // Sin firma
-  box.innerHTML='<div style="font-size:11px;color:var(--tx4);margin-bottom:4px">Sin firma</div>'
-    +'<div style="border-top:1.5px solid #1e3a5f;width:130px;margin:0 auto 3px"></div>'
-    +'<div style="font-size:10px;font-weight:700;text-align:center;color:var(--tx)">'+e2(doc.nombre||doc.codigo)+'</div>'
-    +(doc.ctmp?'<div style="font-size:10px;text-align:center;color:var(--tx3)">CTMP: '+e2(doc.ctmp)+'</div>':'');
-}
-function _renderPreviewBox(box,b64,doc){
   box.innerHTML='<img src="'+b64+'" style="max-width:130px;max-height:52px;object-fit:contain;display:block;margin:0 auto 4px">'
     +'<div style="border-top:1.5px solid #1e3a5f;width:130px;margin:0 auto 3px"></div>'
     +'<div style="font-size:10px;font-weight:700;text-align:center;color:var(--tx)">'+e2(doc.nombre||doc.codigo)+'</div>'
@@ -1605,7 +1592,7 @@ function renderCats(){
       ${cats.map(c=>`<div style="background:var(--surf2);border:1px solid ${c.color}44;border-radius:14px;padding:16px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
           <div style="width:12px;height:12px;border-radius:50%;background:${c.color};flex-shrink:0"></div>
-          <div style="font-weight:700;font-size:14px;color:var(--tx)">${e2(c.nombre)}</div>
+          <div style="font-weight:700;font-size:14px;color:#fff">${e2(c.nombre)}</div>
         </div>
         <div style="font-size:12px;color:var(--tx3)">${e2(c.descripcion)}</div>
       </div>`).join('')}
