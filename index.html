@@ -1399,12 +1399,15 @@ async function doLogin(){
     hideLoader();
     if(!r.ok){lgErr(r.error||'Error de autenticacion');return}
     session={token:r.token,rol:r.rol,nombre:r.nombre,codigo:code};
-    saveSession(session);startApp();
+    saveSession(session);
+    // Guardar cred temporalmente solo para abrir HC en la misma sesión
+    try{sessionStorage.setItem('_hcCred',btoa(code+':'+pass));}catch(e){}
+    startApp();
   }catch(e){hideLoader();lgErr('Error: '+e.message)}
 }
 function lgErr(m){const el=g('lgErr');el.textContent=m;el.classList.add('show')}
 function logout(){
-  session=null;clearSession();hojaActiva=null;hojaData=null;
+  session=null;clearSession();try{sessionStorage.removeItem('_hcCred');}catch(e){}hojaActiva=null;hojaData=null;
   g('appPage').style.display='none';g('loginPage').style.display='flex';
   g('lgCode').value='';g('lgPass').value='';g('lgErr').classList.remove('show');
 }
@@ -4913,12 +4916,14 @@ async function regenerarHoja(){
 
 function irAHC(){
   if(!session) return;
-  var url = 'hc.html'
-    + '?token='  + encodeURIComponent(session.token)
-    + '&rol='    + encodeURIComponent(session.rol)
-    + '&nombre=' + encodeURIComponent(session.nombre||session.codigo)
-    + '&codigo=' + encodeURIComponent(session.codigo);
-  window.open(url, '_blank');
+  var cred='';
+  try{cred=sessionStorage.getItem('_hcCred')||'';}catch(e){}
+  var url='hc.html'
+    +'?rol='+encodeURIComponent(session.rol)
+    +'&nombre='+encodeURIComponent(session.nombre||session.codigo)
+    +'&codigo='+encodeURIComponent(session.codigo)
+    +(cred?'&cred='+encodeURIComponent(cred):'');
+  window.open(url,'_blank');
 }</script>
 </body>
 </html>
