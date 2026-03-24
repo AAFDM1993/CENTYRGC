@@ -2272,12 +2272,17 @@ async function saveNota(inp){
    
 // Preguntar mejoría en el 25%, 50% y 75% del mínimo programado
   // idx es base 0, atención N = idx N-1
-  const _p25 = Math.ceil(base * 0.25) - 1;
-  const _p50 = Math.ceil(base * 0.50) - 1;
-  const _p75 = Math.ceil(base * 0.75) - 1;
-  const _sesionesMejoria = new Set([_p25, _p50, _p75].filter(x => x >= 0));
+  // Checkpoints desde S1 (idx=1), excluyendo EV (idx=0)
+  // sesBase = sesiones reales (base - 1, sin contar EV)
+  const _sesBase = Math.max(base - 1, 1);
+  // Índices absolutos (0-based): EV=0, S1=1, S2=2...
+  // p25/p50/p75 del total de sesiones S1..SN, desplazados +1 por la EV
+  const _p25 = Math.ceil(_sesBase * 0.25) - 1 + 1; // +1 para saltar EV
+  const _p50 = Math.ceil(_sesBase * 0.50) - 1 + 1;
+  const _p75 = Math.ceil(_sesBase * 0.75) - 1 + 1;
+  const _sesionesMejoria = new Set([_p25, _p50, _p75].filter(x => x >= 1)); // mínimo idx=1 (S1)
   // Solo en 50% y 75% se ofrece paciente extra
-  const _checkpointsPacExtra = new Set([_p50, _p75].filter(x => x >= 0));
+  const _checkpointsPacExtra = new Set([_p50, _p75].filter(x => x >= 1));
   if(tipo==='ss' && _sesionesMejoria.has(idx) && valor!==''){
     const notaActual = parseFloat(valor);
     const inputs = inp.closest('tr').querySelectorAll('input.nc:not(.ex)');
