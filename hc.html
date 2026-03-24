@@ -291,19 +291,48 @@ function toast(msg, sub, tipo='ok'){
   setTimeout(()=>d.remove(),3500);
 }
 
-// ─── API ──────────────────────────────────────────────
+// ─── API + Caché en memoria ───────────────────────────
+const _cache = new Map();
+const _CACHE_TTL = {
+  listarPacientes: 30000, listarCategorias: 300000,
+  listarUsuarios: 60000,  obtenerPaciente: 20000,
+  listarEvaluaciones: 15000, listarSesiones: 15000,
+  pendientesRevision: 10000
+};
+function _cacheKey(action, p){ return action+'|'+JSON.stringify(p); }
+function invalidarCache(prefijos){
+  (prefijos||[]).forEach(function(p){
+    _cache.forEach(function(_,k){ if(k.startsWith(p)) _cache.delete(k); });
+  });
+}
 async function apiGet(action, p={}){
+  const ttl=_CACHE_TTL[action];
+  const key=_cacheKey(action,p);
+  if(ttl){
+    const hit=_cache.get(key);
+    if(hit&&Date.now()-hit.ts<ttl) return hit.data;
+  }
   const u=new URL(HC_URL);
   u.searchParams.set('action',action);
   if(session) u.searchParams.set('token',session.token);
   Object.entries(p).forEach(([k,v])=>u.searchParams.set(k,String(v)));
   const r=await fetch(u.toString());
-  return r.json();
+  const data=await r.json();
+  if(ttl&&data.ok!==false) _cache.set(key,{data,ts:Date.now()});
+  return data;
 }
 async function apiPost(body){
   const r=await fetch(HC_URL,{method:'POST',headers:{'Content-Type':'text/plain'},
     body:JSON.stringify({...body,token:session?.token||''})});
-  return r.json();
+  const data=await r.json();
+  // Invalida caché relevante según la acción
+  const a=body.action||'';
+  if(a.includes('Paciente')) invalidarCache(['listarPacientes','obtenerPaciente']);
+  if(a.includes('Evaluacion')||a.includes('evaluacion')) invalidarCache(['listarEvaluaciones','obtenerEvaluacion','listarPacientes']);
+  if(a.includes('Sesion')||a.includes('sesion')) invalidarCache(['listarSesiones','listarPacientes']);
+  if(a.includes('revisar')) invalidarCache(['listarEvaluaciones','listarSesiones','pendientesRevision','listarPacientes']);
+  if(a.includes('Firma')||a.includes('Ctmp')) invalidarCache(['listarUsuarios']);
+  return data;
 }
 
 // ─── Auth ─────────────────────────────────────────────
@@ -662,11 +691,25 @@ var _firmasDocentes=[];
 
 // ─── EXPORTAR HC COMPLETA (admin/docente) ──────────────────
 
+var _firmaCache={};
 async function resolverFirma_(firma){
   if(!firma||firma.length<5) return '';
   if(firma.startsWith('data:image')) return firma;
-  var rF=await apiGet('getFirma',{fileId:firma}).catch(function(){return {ok:false};});
-  if(rF.ok&&rF.data) return 'data:'+(rF.mimeType||'image/png')+';base64,'+rF.data;
+  if(_firmaCache[firma]) return _firmaCache[firma];
+  try{
+    var rF=await fetch(HC_URL+'?action=getFirma&fileId='+encodeURIComponent(firma)+(session?'&token='+encodeURIComponent(session.token):'')).then(function(r){return r.json();}).catch(function(){return {ok:false};});
+    if(rF.ok&&rF.data){
+      var b64='data:'+(rF.mimeType||'image/png')+';base64,'+rF.data;
+      _firmaCache[firma]=b64;
+      return b64;
+    }
+    // Intentar como URL directa si el GAS la devuelve como url
+    if(rF.ok&&rF.url){
+      _firmaCache[firma]=rF.url;
+      return rF.url;
+    }
+    console.warn('resolverFirma_: no se pudo cargar fileId='+firma, rF);
+  }catch(err){console.warn('resolverFirma_ error:',err);}
   return '';
 }
 async function resolverFirmaDoc_(doc){
@@ -1217,51 +1260,200 @@ function formatFecha(raw){
 function evalCard(ev, pac){
   const pr=session.rol==='admin'||session.rol==='docente';
   const puedeSend=(ev.estado==='borrador'||ev.estado==='rechazada')&&session.rol==='estudiante'&&(pac.asignadoA===session.codigo||pac.creadoPor===session.codigo||ev.autor===session.codigo||ev.autorCodigo===session.codigo);
+  const uid='eval_'+ev.id.replace(/[^a-z0-9]/gi,'_');
+  const d=ev.datosEspecificos||ev||{};
+  // Construir contenido expandible
+  var detalle='<div id="'+uid+'" style="display:none;margin-top:14px;border-top:1px solid var(--bd);padding-top:14px">';
+  // Examen físico
+  if(ev.evaValor!==undefined||d.dolLoc||d.postura||d.marcha){
+    detalle+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Examen físico</div>';
+    detalle+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:12px">';
+    if(ev.evaValor!==undefined) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">EVA DOLOR</div><div style="font-size:13px;font-weight:700;color:var(--red)">'+e2(String(ev.evaValor))+'/10</div></div>';
+    if(d.dolLoc) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">LOCALIZACIÓN</div><div style="font-size:12px">'+e2(d.dolLoc)+'</div></div>';
+    if(d.dolTipo) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">TIPO DOLOR</div><div style="font-size:12px">'+e2(d.dolTipo)+'</div></div>';
+    if(d.postura) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">POSTURA</div><div style="font-size:12px">'+e2(d.postura)+'</div></div>';
+    if(d.marcha) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">MARCHA</div><div style="font-size:12px">'+e2(d.marcha)+'</div></div>';
+    detalle+='</div>';
+  }
+  // ROM
+  if(d.rom&&Object.keys(d.rom).length){
+    detalle+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">ROM</div>';
+    detalle+='<div style="overflow-x:auto;margin-bottom:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">';
+    detalle+='<tr><th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--bd);color:var(--tx4)">Región/Movimiento</th><th style="padding:4px 8px;border-bottom:1px solid var(--bd);color:var(--tx4)">D</th><th style="padding:4px 8px;border-bottom:1px solid var(--bd);color:var(--tx4)">I</th></tr>';
+    var romKeys=Object.keys(d.rom);
+    // Agrupar por región
+    var grupos={};
+    romKeys.forEach(function(k){
+      var parts=k.split('_');
+      var reg=parts[0];
+      if(!grupos[reg])grupos[reg]=[];
+      grupos[reg].push(k);
+    });
+    Object.keys(grupos).forEach(function(reg){
+      grupos[reg].forEach(function(k,i){
+        var mov=k.replace(reg+'_','').replace(/_[DI]$/,'');
+        var vD=d.rom[k.replace(/_[DI]$/,'_D')]||'';
+        var vI=d.rom[k.replace(/_[DI]$/,'_I')]||'';
+        if(k.endsWith('_D')||(!k.endsWith('_I')&&!k.endsWith('_D'))){
+          detalle+='<tr style="border-bottom:1px solid var(--bd2)">';
+          if(i===0) detalle+='<td style="font-weight:700;font-size:10px;padding:3px 8px;color:var(--tx2)" rowspan="'+grupos[reg].filter(function(x){return x.endsWith('_D');}).length+'">'+reg+'</td>';
+          detalle+='<td style="padding:3px 8px;font-size:11px">'+mov+'</td>';
+          detalle+='<td style="text-align:center;padding:3px 8px">'+e2(vD||'—')+'</td>';
+          detalle+='<td style="text-align:center;padding:3px 8px">'+e2(vI||'—')+'</td></tr>';
+        }
+      });
+    });
+    detalle+='</table></div>';
+  }
+  // Diagnóstico
+  if(ev.dxFisio||d.aptaPatron||d.icfDeterioro){
+    detalle+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Diagnóstico</div>';
+    detalle+='<div style="display:grid;gap:6px;margin-bottom:12px">';
+    if(ev.aptaPatron||d.aptaPatron) detalle+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">PATRÓN APTA: </span><span style="font-size:12px">'+e2(ev.aptaPatron||d.aptaPatron)+'</span></div>';
+    if(ev.dxFisio||d.dxFisio) detalle+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">DX FISIO: </span><span style="font-size:12px">'+e2(ev.dxFisio||d.dxFisio)+'</span></div>';
+    if(d.icfDeterioro) detalle+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF DETERIORO: </span><span style="font-size:12px">'+e2(d.icfDeterioro)+'</span></div>';
+    if(d.icfActividad) detalle+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF ACTIVIDAD: </span><span style="font-size:12px">'+e2(d.icfActividad)+'</span></div>';
+    if(d.pronostico) detalle+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">PRONÓSTICO: </span><span style="font-size:12px">'+e2(d.pronostico)+'</span></div>';
+    detalle+='</div>';
+  }
+  // Plan
+  if(d.objCorto||d.objLargo||d.planSesiones){
+    detalle+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Plan de tratamiento</div>';
+    detalle+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:12px">';
+    if(d.planSesiones) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">N° SESIONES</div><div style="font-size:13px;font-weight:700">'+e2(d.planSesiones)+'</div></div>';
+    if(d.planFrecuencia) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">FRECUENCIA</div><div style="font-size:12px">'+e2(d.planFrecuencia)+'</div></div>';
+    if(d.planDuracion) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">DURACIÓN</div><div style="font-size:12px">'+e2(d.planDuracion)+'</div></div>';
+    detalle+='</div>';
+    if(d.objCorto) detalle+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBJ. CORTO PLAZO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.objCorto)+'</div></div>';
+    if(d.objLargo) detalle+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBJ. LARGO PLAZO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.objLargo)+'</div></div>';
+  }
+  // Observaciones
+  if(d.obsExamen) detalle+='<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px;text-transform:uppercase">Observaciones</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.obsExamen)+'</div></div>';
+  detalle+='</div>';
+
   return `<div style="background:var(--surf3);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:8px">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
-      <div style="display:flex;align-items:center;gap:8px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="toggleEvalInline('${uid}',this)">
+        <span style="font-size:15px;transition:transform .2s" id="ico_${uid}">▶</span>
         <span style="font-weight:700;font-size:13px">${ev.tipo==='inicial'?'Evaluación inicial':'Reevaluación'}</span>
         ${bdg(ev.estado)}
       </div>
       <div style="font-size:11px;color:var(--tx4)">${e2(ev.autor)} · ${formatFecha(ev.fecha)}</div>
     </div>
-    ${ev.dxFisio?`<div style="font-size:12px;color:var(--tx2);margin-bottom:8px">Dx: ${e2(ev.dxFisio)}</div>`:''}
-    ${ev.comentarioDocente&&ev.estado!=='borrador'?`<div class="rev-bar ${ev.estado}">
+    ${ev.dxFisio?`<div style="font-size:12px;color:var(--tx2);margin-bottom:6px;cursor:pointer" onclick="toggleEvalInline('${uid}',null)">Dx: ${e2(ev.dxFisio)}</div>`:''}
+    ${ev.comentarioDocente&&ev.estado!=='borrador'?`<div class="rev-bar ${ev.estado}" style="margin-bottom:8px">
       <div style="font-size:18px">${ev.estado==='aprobada'?'✅':ev.estado==='rechazada'?'❌':'⏳'}</div>
       <div><div style="font-size:12px;font-weight:700;color:${ev.estado==='aprobada'?'var(--green)':ev.estado==='rechazada'?'var(--red)':'var(--amber)'}">${ev.estado==='aprobada'?'Aprobada':'Rechazada'} — ${e2(ev.revisadoPor)}</div>
         <div class="rev-comment">${e2(ev.comentarioDocente)}</div></div></div>`:''}
-    <div class="btn-group">
-      <button class="btn btn-ghost btn-sm" onclick="verEval('${esc(ev.id)}','${esc(pac.id)}')">&#128065; Ver</button>
+    ${detalle}
+    <div class="btn-group" style="margin-top:8px">
       ${ev.estado==='borrador'||ev.estado==='rechazada'?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmEval('${esc(pac.id)}','${esc(ev.id)}','${esc(pac.categoriaId)}')">✏️ Editar</button>`:''}
       ${puedeSend?`<button class="btn btn-primary btn-sm" onclick="enviarEval('${esc(ev.id)}','${esc(pac.id)}')">📤 Enviar al docente</button>`:''}
       ${pr&&ev.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('eval','${esc(ev.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
+      <button class="btn btn-ghost btn-sm" onclick="exportarEvalModal('${esc(ev.id)}','${esc(pac.id)}')">&#128196; Exportar</button>
     </div>
   </div>`;
+}
+
+function toggleEvalInline(uid, headerEl){
+  var el=document.getElementById(uid);
+  if(!el) return;
+  var ico=document.getElementById('ico_'+uid);
+  var open=el.style.display==='none'||el.style.display==='';
+  el.style.display=open?'block':'none';
+  if(ico) ico.style.transform=open?'rotate(90deg)':'';
+}
+
+function exportarEvalModal(evalId, pacId){
+  abrirModalFirmaExport(function(docFirmante){
+    verEvalConFirma(evalId, pacId, docFirmante);
+  });
+}
+async function verEvalConFirma(evalId, pacId, docFirmante){
+  try{
+    const r=await apiGet('obtenerEvaluacion',{id:evalId});
+    if(!r.ok){toast('Error',r.error,'err');return;}
+    const ev=r.evaluacion;
+    const rP=await apiGet('obtenerPaciente',{id:pacId});
+    const pac=rP.ok?rP.paciente:{};
+    var firmaHTML='';
+    if(docFirmante) firmaHTML=mkSelloDocente(docFirmante);
+    else if(ev.revisadoPor){
+      const rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
+      if(rU.ok){
+        var docRev=(rU.usuarios||[]).find(function(u){return u.nombre===ev.revisadoPor||u.codigo===ev.revisadoPor;});
+        if(docRev&&docRev.firma){await resolverFirmaDoc_(docRev);firmaHTML=mkSelloDocente(docRev);}
+      }
+    }
+    exportarDocumento('Evaluacion_'+e2(pac.nombre||evalId),buildEvalHTML(ev,pac,firmaHTML));
+  }catch(err){toast('Error al generar documento',err.message||'','err');}
 }
 
 function sesCard(s, pac, evalAp){
   const pr=session.rol==='admin'||session.rol==='docente';
   const puedeSend=(s.estado==='borrador'||s.estado==='rechazada')&&evalAp&&session.rol==='estudiante'&&(s.autor===session.codigo||s.autorCodigo===session.codigo||pac.asignadoA===session.codigo||pac.creadoPor===session.codigo);
+  const uid='ses_'+s.id.replace(/[^a-z0-9]/gi,'_');
   return `<div class="tl-item">
     <div class="tl-dot ${s.estado}">S${s.numero}</div>
     <div style="background:var(--surf2);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-left:4px">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:6px">
-        <div style="font-size:12px;color:var(--tx4)">Sesión #${s.numero} · ${formatFecha(s.fecha)}${s.estudiante||s.terapeuta?'<br><span style="font-size:11px">&#127891; '+(s.estudiante||s.terapeuta||'')+'</span>':''}${s.docente?'<span style="font-size:11px;margin-left:8px">&#128203; '+s.docente+'</span>':'' }</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:6px;cursor:pointer" onclick="toggleEvalInline('${uid}',null)">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:13px;transition:transform .2s" id="ico_${uid}">▶</span>
+          <div style="font-size:12px;color:var(--tx)">
+            <b>Sesión #${s.numero}</b> · ${formatFecha(s.fecha)}
+            ${s.estudiante||s.terapeuta?'<br><span style="font-size:11px;color:var(--tx4)">&#127891; '+(s.estudiante||s.terapeuta||'')+'</span>':''}
+            ${s.docente?'<span style="font-size:11px;color:var(--tx4);margin-left:8px">&#128203; '+s.docente+'</span>':'' }
+          </div>
+        </div>
         ${bdg(s.estado)}
       </div>
-      ${s.descripcion?`<div style="font-size:13px;margin-bottom:8px">${e2(s.descripcion.substring(0,100))}${s.descripcion.length>100?'...':''}</div>`:''}
+      ${s.descripcion?`<div style="font-size:12px;color:var(--tx3);margin-bottom:6px">${e2(s.descripcion.substring(0,120))}${s.descripcion.length>120?'...':''}</div>`:''}
       ${s.comentarioDocente&&s.estado!=='borrador'?`<div class="rev-bar ${s.estado}" style="margin-bottom:8px">
         <div style="font-size:16px">${s.estado==='aprobada'?'✅':'❌'}</div>
         <div><div style="font-size:11px;font-weight:700;color:${s.estado==='aprobada'?'var(--green)':'var(--red)'}">${s.estado==='aprobada'?'Aprobada':'Rechazada'} — ${e2(s.revisadoPor)}</div>
           ${s.comentarioDocente?`<div class="rev-comment">${e2(s.comentarioDocente)}</div>`:''}</div></div>`:''}
-      <div class="btn-group">
-        <button class="btn btn-ghost btn-sm" onclick="verSes('${esc(s.id)}','${esc(pac.id)}')">&#128065; Ver</button>
+      <!-- Detalle expandible -->
+      <div id="${uid}" style="display:none;margin-top:10px;border-top:1px solid var(--bd);padding-top:10px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:10px">
+          <div><div style="font-size:10px;color:var(--tx4);font-weight:700">EVA</div><div style="font-size:13px;font-weight:700;color:var(--red)">${s.evaValor??'—'}/10</div></div>
+          ${s.respuesta?`<div><div style="font-size:10px;color:var(--tx4);font-weight:700">RESPUESTA PACIENTE</div><div style="font-size:12px">${e2(s.respuesta)}</div></div>`:''}
+          ${s.docente?`<div><div style="font-size:10px;color:var(--tx4);font-weight:700">DOCENTE</div><div style="font-size:12px">${e2(s.docente)}</div></div>`:''}
+        </div>
+        ${s.descripcion?`<div><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:4px;text-transform:uppercase">Descripción completa</div><div style="font-size:12px;background:var(--surf3);border-radius:8px;padding:10px;line-height:1.6">${e2(s.descripcion)}</div></div>`:''}
+      </div>
+      <div class="btn-group" style="margin-top:8px">
         ${s.estado==='borrador'||s.estado==='rechazada'?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmSes('${esc(pac.id)}','${esc(s.evaluacionId)}',${s.numero},'${esc(s.id)}')">✏️ Editar</button>`:''}
         ${puedeSend&&(s.estado==='borrador'||s.estado==='rechazada')?`<button class="btn btn-primary btn-sm" onclick="enviarSes('${esc(s.id)}','${esc(pac.id)}')">📤 Enviar</button>`:''}
         ${pr&&s.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('ses','${esc(s.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="exportarSesModal('${esc(s.id)}','${esc(pac.id)}')">&#128196; Exportar</button>
       </div>
     </div>
   </div>`;
+}
+
+function exportarSesModal(sesId, pacId){
+  abrirModalFirmaExport(function(docFirmante){
+    verSesConFirma(sesId, pacId, docFirmante);
+  });
+}
+async function verSesConFirma(sesId, pacId, docFirmante){
+  try{
+    const rS=await apiGet('listarSesiones',{pacienteId:pacId});
+    const s=(rS.sesiones||[]).find(x=>x.id===sesId);
+    if(!s){toast('No encontrada','','err');return;}
+    const rP=await apiGet('obtenerPaciente',{id:pacId});
+    const pac=rP.ok?rP.paciente:{};
+    var firmaHTML='';
+    if(docFirmante) firmaHTML=mkSelloDocente(docFirmante);
+    else if(s.revisadoPor){
+      const rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
+      if(rU.ok){
+        var docRev=(rU.usuarios||[]).find(function(u){return u.nombre===s.revisadoPor||u.codigo===s.revisadoPor;});
+        if(docRev&&docRev.firma){await resolverFirmaDoc_(docRev);firmaHTML=mkSelloDocente(docRev);}
+      }
+    }
+    exportarDocumento('Sesion_'+s.numero+'_'+e2(pac.nombre||sesId),buildSesHTML(s,pac,firmaHTML));
+  }catch(err){toast('Error al generar documento',err.message||'','err');}
 }
 
 // ─── Formulario Evaluación ────────────────────────────
@@ -1673,57 +1865,9 @@ function renderCats(){
 }
 
 // ─── Ver detalle ──────────────────────────────────────
-async function verEval(evalId, pacId){
-  try{
+function verEval(evalId,pacId){exportarEvalModal(evalId,pacId);}
 
-  const r=await apiGet('obtenerEvaluacion',{id:evalId});
-  if(!r.ok){toast('Error',r.error,'err');return;}
-  const ev=r.evaluacion;
-  const rP=await apiGet('obtenerPaciente',{id:pacId});
-  const pac=rP.ok?rP.paciente:{};
-  // Cargar firma del docente revisor automáticamente
-  var firmaHTML='';
-  if(ev.revisadoPor){
-    const rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
-    if(rU.ok){
-      var docRev=(rU.usuarios||[]).find(function(u){
-        return u.nombre===ev.revisadoPor||u.codigo===ev.revisadoPor;
-      });
-      if(docRev&&docRev.firma){
-        await resolverFirmaDoc_(docRev);
-        firmaHTML=mkSelloDocente(docRev);
-      }
-    }
-  }
-  exportarDocumento('Evaluacion_'+e2(pac.nombre||evalId),buildEvalHTML(ev,pac,firmaHTML));
-  }catch(err){toast('Error al generar documento',err.message||'','err');console.error(err);}
-}
-
-async function verSes(sesId, pacId){
-  try{
-
-  const rS=await apiGet('listarSesiones',{pacienteId:pacId});
-  const s=(rS.sesiones||[]).find(x=>x.id===sesId);
-  if(!s){toast('No encontrada','','err');return;}
-  const rP=await apiGet('obtenerPaciente',{id:pacId});
-  const pac=rP.ok?rP.paciente:{};
-  // Cargar firma del docente revisor automáticamente
-  var firmaHTML='';
-  if(s.revisadoPor){
-    const rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
-    if(rU.ok){
-      var docRev=(rU.usuarios||[]).find(function(u){
-        return u.nombre===s.revisadoPor||u.codigo===s.revisadoPor;
-      });
-      if(docRev&&docRev.firma){
-        await resolverFirmaDoc_(docRev);
-        firmaHTML=mkSelloDocente(docRev);
-      }
-    }
-  }
-  exportarDocumento('Sesion_'+s.numero+'_'+e2(pac.nombre||sesId),buildSesHTML(s,pac,firmaHTML));
-  }catch(err){toast('Error al generar documento',err.message||'','err');console.error(err);}
-}
+function verSes(sesId,pacId){exportarSesModal(sesId,pacId);}
 
 async function editarPac(id){
   const r=await apiGet('obtenerPaciente',{id});
