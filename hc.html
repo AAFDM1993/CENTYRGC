@@ -415,7 +415,6 @@ function bdg(estado){const m={borrador:'📝 Borrador',pendiente:'⏳ Pendiente'
 function edad(fn){const d=new Date(fn),h=new Date();let a=h.getFullYear()-d.getFullYear();if(h<new Date(h.getFullYear(),d.getMonth(),d.getDate()))a--;return isNaN(a)?'':a;}
 
 // ─── Vista: Pacientes ─────────────────────────────────
-async 
 function renderBusqHC(){
   var v=g('vBusqHC');
   v.innerHTML=`
@@ -1445,7 +1444,6 @@ async function enviarEval(evalId, pacId){
 }
 
 // ─── Formulario Sesión ────────────────────────────────
-async 
 function filtrarDocentes(val, docentesParam){
   var docentes=docentesParam||window._docentesList||[];
   var dd=g('docenteDD');
