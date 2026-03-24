@@ -513,7 +513,6 @@ async function confirmarExportConFirma(){
   var ctmp=(g('firmaExCtmp')?.value||'').trim();
   var cargo='Coordinador del Centro Docente de Terapia Física y Rehabilitación “CENTYR-UPT”';
   if(!nombre){toast('Ingresa los apellidos y nombres','','warn');return;}
-  if(!ctmp){toast('Ingresa el número de colegiatura CTMP','','warn');return;}
   cerrarModalFirmaExport();
   // Buscar firma del usuario en sistema
   var docFirmante={nombre:nombre,ctmp:ctmp,cargo:cargo,firma:''};
@@ -679,6 +678,10 @@ async function previsualizarFirma(codigo,idx){
   if(!img.parentNode) box.insertBefore(img,box.firstChild);
 }
 async function exportarHC(pacId){
+  // Pre-rellenar nombre si el usuario logueado es admin/docente
+  var nomEl=g('firmaExNombre');
+  if(nomEl&&!nomEl.value&&session&&session.nombre) nomEl.value=session.nombre;
+  // Abrir modal para confirmar datos del firmante
   abrirModalFirmaExport(async function(docFirmante){
     toast('\u23F3 Preparando exportaci\u00F3n...','','ok');
     const [rP,rE,rS]=await Promise.all([
@@ -690,6 +693,7 @@ async function exportarHC(pacId){
     const pac=rP.paciente;
     const evals=(rE.evaluaciones||[]).filter(function(ev){return ev.estado==='aprobada';});
     const ses=rS.sesiones||[];
+    // Cargar todas las firmas de usuarios para el sello
     var firmasMap={};
     var rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
     if(rU.ok){
@@ -816,36 +820,31 @@ function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
 
   // ── SESIONES ──
   if(ses.length){
-    html+='<div style="margin-bottom:8px">'
-      +'<div style="background:#1e3a5f;color:#fff;font-weight:700;font-size:12px;padding:8px 16px;border-radius:8px 8px 0 0;text-transform:uppercase;letter-spacing:.5px">Sesiones de Tratamiento ('+ses.length+')</div>'
-      +'<table class="tbl-rom" style="width:100%"><thead><tr>'
-      +'<th style="text-align:left">#</th><th style="text-align:left">Fecha</th>'
-      +'<th style="text-align:left">Estudiante</th><th style="text-align:left">Descripci&oacute;n</th>'
-      +'<th>EVA</th><th>Respuesta</th><th>Estado</th>'
-      +'</tr></thead><tbody>';
+    html+='<div style="margin-bottom:20px">'
+      +'<div style="background:#1e3a5f;color:#fff;font-weight:700;font-size:12px;padding:8px 16px;border-radius:8px 8px 0 0;text-transform:uppercase;letter-spacing:.5px">Sesiones de Tratamiento ('+ses.length+')</div>';
     ses.forEach(function(s){
       var estadoColor=s.estado==='aprobada'?'#16a34a':s.estado==='pendiente'?'#d97706':'#94a3b8';
-      html+='<tr>'
-        +'<td style="font-weight:700">'+e2(String(s.numero))+'</td>'
-        +'<td style="white-space:nowrap">'+e2(formatFecha(s.fecha||''))+'</td>'
-        +'<td>'+e2(s.estudiante||s.terapeuta||'&mdash;')+'</td>'
-        +'<td style="font-size:11px">'+e2((s.descripcion||'&mdash;').substring(0,120))+(s.descripcion&&s.descripcion.length>120?'...':'')+'</td>'
-        +'<td style="text-align:center">'+e2(String(s.evaValor||'&mdash;'))+'</td>'
-        +'<td style="text-align:center;font-size:11px">'+e2(s.respuesta||'&mdash;')+'</td>'
-        +'<td style="text-align:center"><span style="font-size:10px;font-weight:700;color:'+estadoColor+'">'+e2(s.estado).toUpperCase()+'</span></td>'
-        +'</tr>';
+      html+='<div class="sec" style="border-radius:0;margin-bottom:0;border-top:none">'
+        +'<div class="sec-hdr" style="background:'+estadoColor+';display:flex;align-items:center;justify-content:space-between">'
+        +'<span>Sesi&oacute;n #'+e2(String(s.numero))+' &mdash; '+e2(formatFecha(s.fecha||''))+'</span>'
+        +'<span style="font-size:10px;opacity:.85">'+e2(s.estado).toUpperCase()+'</span>'
+        +'</div>'
+        +'<div class="sec-body">'
+        +'<div><div class="field-lbl">Estudiante</div><div class="field-val">'+e2(s.estudiante||s.terapeuta||'&mdash;')+'</div></div>'
+        +(s.docente?'<div><div class="field-lbl">Docente supervisor</div><div class="field-val">'+e2(s.docente)+'</div></div>':'')
+        +'<div><div class="field-lbl">EVA</div><div class="field-val">'+e2(String(s.evaValor??'&mdash;'))+'/10</div></div>'
+        +(s.respuesta?'<div><div class="field-lbl">Respuesta paciente</div><div class="field-val">'+e2(s.respuesta)+'</div></div>':'')
+        +(s.descripcion?'<div style="grid-column:1/-1"><div class="field-lbl">Descripci&oacute;n</div><div class="field-val">'+e2(s.descripcion)+'</div></div>':'')
+        +'</div></div>';
+      // Sello del docente que aprobó esta sesión
+      if(s.estado==='aprobada'&&s.revisadoPor&&firmasMap[s.revisadoPor]){
+        html+=mkSelloDocente(firmasMap[s.revisadoPor]);
+      }
     });
-    html+='</tbody></table></div>';
-
-    // Sello del último docente que aprobó una sesión
-    var ultAprobada=ses.filter(function(s){return s.estado==='aprobada';}).pop();
-    if(ultAprobada&&ultAprobada.revisadoPor&&firmasMap[ultAprobada.revisadoPor]){
-      html+=mkSelloDocente(firmasMap[ultAprobada.revisadoPor]);
-    }
+    html+='</div>';
   }
 
-  if(selloFirmante) html+=selloFirmante;
-  return html;
+    return html;
 }
 
 async function renderFirmas(){
@@ -1122,7 +1121,6 @@ async function abrirPac(id){
       <div class="btn-group">
         ${puedeEditar?`<button class="btn btn-ghost btn-sm" onclick="editarPac('${esc(pac.id)}')">✏️ Editar</button>`:''}
         ${session.rol==='admin'?`<button class="btn btn-danger btn-sm" onclick="eliminarPac('${esc(pac.id)}','${esc(pac.nombre)}')">🗑️</button>`:''}
-        ${session.rol==='admin'?`<button class="btn btn-primary btn-sm" onclick="exportarHC('${esc(pac.id)}')">&#128196; Exportar HC</button>`:''}
       </div>
     </div>
 
@@ -1211,7 +1209,7 @@ function evalCard(ev, pac){
       <div><div style="font-size:12px;font-weight:700;color:${ev.estado==='aprobada'?'var(--green)':ev.estado==='rechazada'?'var(--red)':'var(--amber)'}">${ev.estado==='aprobada'?'Aprobada':'Rechazada'} — ${e2(ev.revisadoPor)}</div>
         <div class="rev-comment">${e2(ev.comentarioDocente)}</div></div></div>`:''}
     <div class="btn-group">
-      ${session.rol==='admin'?`<button class="btn btn-ghost btn-sm" onclick="verEval('${esc(ev.id)}','${esc(pac.id)}')">&#128196; Exportar</button>`:''}
+      <button class="btn btn-ghost btn-sm" onclick="verEval('${esc(ev.id)}','${esc(pac.id)}')">&#128065; Ver</button>
       ${ev.estado==='borrador'||ev.estado==='rechazada'?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmEval('${esc(pac.id)}','${esc(ev.id)}','${esc(pac.categoriaId)}')">✏️ Editar</button>`:''}
       ${puedeSend?`<button class="btn btn-primary btn-sm" onclick="enviarEval('${esc(ev.id)}','${esc(pac.id)}')">📤 Enviar al docente</button>`:''}
       ${pr&&ev.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('eval','${esc(ev.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
@@ -1235,7 +1233,7 @@ function sesCard(s, pac, evalAp){
         <div><div style="font-size:11px;font-weight:700;color:${s.estado==='aprobada'?'var(--green)':'var(--red)'}">${s.estado==='aprobada'?'Aprobada':'Rechazada'} — ${e2(s.revisadoPor)}</div>
           ${s.comentarioDocente?`<div class="rev-comment">${e2(s.comentarioDocente)}</div>`:''}</div></div>`:''}
       <div class="btn-group">
-        ${session.rol==='admin'?`<button class="btn btn-ghost btn-sm" onclick="verSes('${esc(s.id)}','${esc(pac.id)}')">&#128196; Exportar</button>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="verSes('${esc(s.id)}','${esc(pac.id)}')">&#128065; Ver</button>
         ${s.estado==='borrador'||s.estado==='rechazada'?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmSes('${esc(pac.id)}','${esc(s.evaluacionId)}',${s.numero},'${esc(s.id)}')">✏️ Editar</button>`:''}
         ${puedeSend&&(s.estado==='borrador'||s.estado==='rechazada')?`<button class="btn btn-primary btn-sm" onclick="enviarSes('${esc(s.id)}','${esc(pac.id)}')">📤 Enviar</button>`:''}
         ${pr&&s.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('ses','${esc(s.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
@@ -1655,27 +1653,49 @@ function renderCats(){
 
 // ─── Ver detalle ──────────────────────────────────────
 async function verEval(evalId, pacId){
-  abrirModalFirmaExport(async function(docFirmante){
-    const r=await apiGet('obtenerEvaluacion',{id:evalId});
-    if(!r.ok){toast('Error',r.error,'err');return;}
-    const ev=r.evaluacion;
-    const rP=await apiGet('obtenerPaciente',{id:pacId});
-    const pac=rP.ok?rP.paciente:{};
-    var firmaHTML=mkSelloDocente(docFirmante);
-    exportarDocumento('Evaluacion_'+e2(pac.nombre||evalId),buildEvalHTML(ev,pac,firmaHTML));
-  });
+  const r=await apiGet('obtenerEvaluacion',{id:evalId});
+  if(!r.ok){toast('Error',r.error,'err');return;}
+  const ev=r.evaluacion;
+  const rP=await apiGet('obtenerPaciente',{id:pacId});
+  const pac=rP.ok?rP.paciente:{};
+  // Cargar firma del docente revisor automáticamente
+  var firmaHTML='';
+  if(ev.revisadoPor){
+    const rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
+    if(rU.ok){
+      var docRev=(rU.usuarios||[]).find(function(u){
+        return u.nombre===ev.revisadoPor||u.codigo===ev.revisadoPor;
+      });
+      if(docRev&&docRev.firma){
+        await resolverFirmaDoc_(docRev);
+        firmaHTML=mkSelloDocente(docRev);
+      }
+    }
+  }
+  exportarDocumento('Evaluacion_'+e2(pac.nombre||evalId),buildEvalHTML(ev,pac,firmaHTML));
 }
 
 async function verSes(sesId, pacId){
-  abrirModalFirmaExport(async function(docFirmante){
-    const rS=await apiGet('listarSesiones',{pacienteId:pacId});
-    const s=(rS.sesiones||[]).find(x=>x.id===sesId);
-    if(!s){toast('No encontrada','','err');return;}
-    const rP=await apiGet('obtenerPaciente',{id:pacId});
-    const pac=rP.ok?rP.paciente:{};
-    var firmaHTML=mkSelloDocente(docFirmante);
-    exportarDocumento('Sesion_'+s.numero+'_'+e2(pac.nombre||sesId),buildSesHTML(s,pac,firmaHTML));
-  });
+  const rS=await apiGet('listarSesiones',{pacienteId:pacId});
+  const s=(rS.sesiones||[]).find(x=>x.id===sesId);
+  if(!s){toast('No encontrada','','err');return;}
+  const rP=await apiGet('obtenerPaciente',{id:pacId});
+  const pac=rP.ok?rP.paciente:{};
+  // Cargar firma del docente revisor automáticamente
+  var firmaHTML='';
+  if(s.revisadoPor){
+    const rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
+    if(rU.ok){
+      var docRev=(rU.usuarios||[]).find(function(u){
+        return u.nombre===s.revisadoPor||u.codigo===s.revisadoPor;
+      });
+      if(docRev&&docRev.firma){
+        await resolverFirmaDoc_(docRev);
+        firmaHTML=mkSelloDocente(docRev);
+      }
+    }
+  }
+  exportarDocumento('Sesion_'+s.numero+'_'+e2(pac.nombre||sesId),buildSesHTML(s,pac,firmaHTML));
 }
 
 async function editarPac(id){
