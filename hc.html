@@ -677,22 +677,19 @@ async function previsualizarFirma(codigo,idx){
   if(!img.parentNode) box.insertBefore(img,box.firstChild);
 }
 async function exportarHC(pacId){
-  // Pre-rellenar nombre si el usuario logueado es admin/docente
-  var nomEl=g('firmaExNombre');
-  if(nomEl&&!nomEl.value&&session&&session.nombre) nomEl.value=session.nombre;
-  // Abrir modal para confirmar datos del firmante
-  abrirModalFirmaExport(async function(docFirmante){
-    toast('\u23F3 Preparando exportaci\u00F3n...','','ok');
+  if(!pacId){toast('ID de paciente no válido','','err');return;}
+  toast('\u23F3 Preparando exportación...','','ok');
+  try{
     const [rP,rE,rS]=await Promise.all([
       apiGet('obtenerPaciente',{id:pacId}),
       apiGet('listarEvaluaciones',{pacienteId:pacId}),
       apiGet('listarSesiones',{pacienteId:pacId})
     ]);
-    if(!rP.ok){toast('Error al cargar paciente',rP.error,'err');return;}
+    if(!rP.ok){toast('Error al cargar paciente',rP.error||'','err');return;}
     const pac=rP.paciente;
     const evals=(rE.evaluaciones||[]).filter(function(ev){return ev.estado==='aprobada';});
     const ses=rS.sesiones||[];
-    // Cargar todas las firmas de usuarios para el sello
+    // Cargar firmas
     var firmasMap={};
     var rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
     if(rU.ok){
@@ -701,12 +698,22 @@ async function exportarHC(pacId){
         firmasMap[u.nombre]=u; firmasMap[u.codigo]=u;
       }));
     }
+    // Sello del usuario logueado (si tiene firma)
+    var docFirmante={
+      nombre: session?.nombre||session?.codigo||'',
+      ctmp: (firmasMap[session?.nombre||'']||firmasMap[session?.codigo||'']||{}).ctmp||'',
+      cargo: 'Coordinador del Centro Docente de Terapia F\u00EDsica y Rehabilitaci\u00F3n \u201CCENTYR-UPT\u201D',
+      firma: (firmasMap[session?.nombre||'']||firmasMap[session?.codigo||'']||{}).firma||''
+    };
     var selloFirmante=mkSelloDocente(docFirmante);
     exportarDocumento(
       'HC_'+e2(pac.nombre||pacId).replace(/\s+/g,'_'),
       buildHCCompletaHTML(pac,evals,ses,firmasMap,selloFirmante)
     );
-  });
+  }catch(err){
+    toast('Error al exportar',err.message||'','err');
+    console.error('exportarHC error:',err);
+  }
 }
 
 // ─── RENDERIZAR VISTA ADMIN: EXPORTAR HC ──────────────────
@@ -1651,6 +1658,8 @@ function renderCats(){
 
 // ─── Ver detalle ──────────────────────────────────────
 async function verEval(evalId, pacId){
+  try{
+
   const r=await apiGet('obtenerEvaluacion',{id:evalId});
   if(!r.ok){toast('Error',r.error,'err');return;}
   const ev=r.evaluacion;
@@ -1671,9 +1680,12 @@ async function verEval(evalId, pacId){
     }
   }
   exportarDocumento('Evaluacion_'+e2(pac.nombre||evalId),buildEvalHTML(ev,pac,firmaHTML));
+  }catch(err){toast('Error al generar documento',err.message||'','err');console.error(err);}
 }
 
 async function verSes(sesId, pacId){
+  try{
+
   const rS=await apiGet('listarSesiones',{pacienteId:pacId});
   const s=(rS.sesiones||[]).find(x=>x.id===sesId);
   if(!s){toast('No encontrada','','err');return;}
@@ -1694,6 +1706,7 @@ async function verSes(sesId, pacId){
     }
   }
   exportarDocumento('Sesion_'+s.numero+'_'+e2(pac.nombre||sesId),buildSesHTML(s,pac,firmaHTML));
+  }catch(err){toast('Error al generar documento',err.message||'','err');console.error(err);}
 }
 
 async function editarPac(id){
