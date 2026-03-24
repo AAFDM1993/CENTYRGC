@@ -479,7 +479,7 @@ function mkSelloDocente(doc){
   if(firma&&firma.startsWith('data:image')){
     imgTag='<img src="'+firma+'" style="max-width:130px;max-height:65px;display:block;margin:0 auto 6px">';
   }
-  return '<div class="sello-doc">'
+  return '<div class="sello-doc" style="border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;display:inline-block">'
     +imgTag
     +'<div style="border-top:1.5px solid #1e3a5f;width:160px;margin:0 auto 4px"></div>'
     +'<div style="font-weight:700;font-size:11px;text-align:center;color:#0f172a">'+e2(nombre)+'</div>'
@@ -556,8 +556,8 @@ function exportarDocumento(titulo, bodyHTML){
     +'.tbl-rom{width:100%;border-collapse:collapse;font-size:11px}'
     +'.tbl-rom th{background:#eff6ff;color:#1e3a5f;padding:5px 8px;text-align:center;border:1px solid #e2e8f0;font-weight:700}'
     +'.tbl-rom td{border:1px solid #e2e8f0;padding:4px 8px;text-align:center}'
-    +'.sello-doc{position:fixed;bottom:28px;right:28px;text-align:center;min-width:170px}'
-    +'@media print{body{padding:14px}.sello-doc{position:fixed;bottom:14px;right:14px}}'
+    +'.sello-doc{text-align:center;min-width:170px;padding:10px 14px 10px}'
+    +'@media print{body{padding:14px}}'
     +'</style>'
     +'<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">'
     +'</head><body>'
@@ -607,13 +607,17 @@ function buildEvalHTML(ev,pac,firmaHTML){
     +'</div></div>';
   // Estado
   if(ev.estado==='aprobada'){
-    rows+='<div class="sec" style="border-color:#16a34a">'
+    rows+='<div class="sec" style="border-color:#16a34a;position:relative">'
       +'<div class="sec-hdr" style="background:#16a34a">&#10003; Evaluaci&oacute;n Aprobada</div>'
-      +'<div class="sec-body"><div><div class="field-lbl">Revisado por</div><div class="field-val">'+e2(ev.revisadoPor||'—')+'</div></div>'
+      +'<div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:12px 14px">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;flex:1">'
+      +'<div><div class="field-lbl">Revisado por</div><div class="field-val">'+e2(ev.revisadoPor||'—')+'</div></div>'
       +'<div><div class="field-lbl">Comentario</div><div class="field-val">'+e2(ev.comentarioDocente||'—')+'</div></div>'
+      +'</div>'
+      +firmaHTML
       +'</div></div>';
   }
-  return rows+firmaHTML;
+  return rows;
 }
 
 function buildRomTable(rom){
@@ -641,12 +645,16 @@ function buildSesHTML(s,pac,firmaHTML){
     +'<div style="grid-column:1/-1"><div class="field-lbl">Descripci&oacute;n</div><div class="field-val">'+e2(s.descripcion||'—')+'</div></div>'
     +'</div></div>';
   if(s.estado==='aprobada'){
-    rows+='<div class="sec" style="border-color:#16a34a"><div class="sec-hdr" style="background:#16a34a">&#10003; Sesi&oacute;n Aprobada</div>'
-      +'<div class="sec-body"><div><div class="field-lbl">Revisado por</div><div class="field-val">'+e2(s.revisadoPor||'—')+'</div></div>'
+    rows+='<div class="sec" style="border-color:#16a34a;position:relative"><div class="sec-hdr" style="background:#16a34a">&#10003; Sesi&oacute;n Aprobada</div>'
+      +'<div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:12px 14px">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;flex:1">'
+      +'<div><div class="field-lbl">Revisado por</div><div class="field-val">'+e2(s.revisadoPor||'—')+'</div></div>'
       +'<div><div class="field-lbl">Comentario</div><div class="field-val">'+e2(s.comentarioDocente||'—')+'</div></div>'
+      +'</div>'
+      +firmaHTML
       +'</div></div>';
   }
-  return rows+firmaHTML;
+  return rows;
 }
 
 // ─── GESTIÓN DE FIRMAS (Admin) ─────────────────────────
@@ -818,9 +826,11 @@ function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
         +(d.objEspecificos?'<div><div class="field-lbl">Objetivos espec&iacute;ficos</div><div class="field-val">'+e2(d.objEspecificos)+'</div></div>':'')
         +(d.planGeneral?'<div><div class="field-lbl">Plan general</div><div class="field-val">'+e2(d.planGeneral)+'</div></div>':'')
         +'</div></div>';
-      // Sello docente (sin comentario al alumno)
+      // Sello docente dentro del bloque de evaluación aprobada
       if(ev.revisadoPor&&firmasMap[ev.revisadoPor]){
-        html+=mkSelloDocente(firmasMap[ev.revisadoPor]);
+        html+='<div style="border-top:1px solid #d1fae5;margin-top:12px;padding-top:10px;display:flex;justify-content:flex-end">'
+          +mkSelloDocente(firmasMap[ev.revisadoPor])
+          +'</div>';
       }
       html+='</div>';
     });
@@ -846,9 +856,11 @@ function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
         +(s.respuesta?'<div><div class="field-lbl">Respuesta paciente</div><div class="field-val">'+e2(s.respuesta)+'</div></div>':'')
         +(s.descripcion?'<div style="grid-column:1/-1"><div class="field-lbl">Descripci&oacute;n</div><div class="field-val">'+e2(s.descripcion)+'</div></div>':'')
         +'</div></div>';
-      // Sello del docente que aprobó esta sesión
+      // Sello del docente dentro del bloque de sesión aprobada
       if(s.estado==='aprobada'&&s.revisadoPor&&firmasMap[s.revisadoPor]){
-        html+=mkSelloDocente(firmasMap[s.revisadoPor]);
+        html+='<div style="border-top:1px solid #d1fae5;margin-top:4px;padding:8px 14px;display:flex;justify-content:flex-end">'
+          +mkSelloDocente(firmasMap[s.revisadoPor])
+          +'</div>';
       }
     });
     html+='</div>';
