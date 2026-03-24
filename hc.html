@@ -491,6 +491,7 @@ function mkSelloDocente(doc){
 // ─── EXPORTAR COMO VENTANA IMPRIMIBLE ─────────────────
 
 var _exportCallback=null;
+var _exportando=false;
 
 function abrirModalFirmaExport(callback){
   _exportCallback=callback;
@@ -508,6 +509,8 @@ function cerrarModalFirmaExport(){
 }
 
 async function confirmarExportConFirma(){
+  if(_exportando){toast('Exportación en curso...','Espera un momento','warn');return;}
+  _exportando=true;
   var nombre=(g('firmaExNombre')?.value||'').trim();
   var ctmp=(g('firmaExCtmp')?.value||'').trim();
   var cargo='Coordinador del Centro Docente de Terapia Física y Rehabilitación “CENTYR-UPT”';
@@ -529,6 +532,7 @@ async function confirmarExportConFirma(){
     }
   }catch(e){}
   if(_exportCallback) _exportCallback(docFirmante);
+  _exportando=false;
 }
 
 function exportarDocumento(titulo, bodyHTML){
@@ -570,25 +574,25 @@ function exportarDocumento(titulo, bodyHTML){
 function buildEvalHTML(ev,pac,firmaHTML){
   var d=ev.datosEspecificos||ev||{};
   var rows='';
-  var fld=function(lbl,val,full){return val?'<div'+(full?' class="field-lbl" style="grid-column:1/-1"':' class="field-lbl"')+'>'+(full?'<div class="field-lbl">'+lbl+'</div><div class="field-val">'+val+'</div>':'<div class="field-lbl">'+lbl+'</div><div class="field-val">'+(val||'&mdash;')+'</div>')+'</div>':'';};
+  var fld=function(lbl,val,full){return val?'<div'+(full?' class="field-lbl" style="grid-column:1/-1"':' class="field-lbl"')+'>'+(full?'<div class="field-lbl">'+lbl+'</div><div class="field-val">'+val+'</div>':'<div class="field-lbl">'+lbl+'</div><div class="field-val">'+(val||'—')+'</div>')+'</div>':'';};
   // Filiacion
   rows+='<div class="sec"><div class="sec-hdr">I. Filiaci&oacute;n</div><div class="sec-body">'
     +'<div><div class="field-lbl">Nombres y Apellidos</div><div class="field-val">'+e2(pac.nombre||'')+'</div></div>'
     +'<div><div class="field-lbl">DNI</div><div class="field-val">'+e2(pac.dni||'')+'</div></div>'
     +'<div><div class="field-lbl">Fecha de nacimiento</div><div class="field-val">'+e2(pac.fechaNac||'')+'</div></div>'
-    +'<div><div class="field-lbl">Ocupaci&oacute;n</div><div class="field-val">'+e2(pac.ocupacion||d.ocupacion||'&mdash;')+'</div></div>'
+    +'<div><div class="field-lbl">Ocupaci&oacute;n</div><div class="field-val">'+e2(pac.ocupacion||d.ocupacion||'—')+'</div></div>'
     +'</div></div>';
   // Anamnesis
   rows+='<div class="sec"><div class="sec-hdr">II. Anamnesis</div><div class="sec-body full">'
     +(d.dxMedico?'<div><div class="field-lbl">Diagn&oacute;stico M&eacute;dico</div><div class="field-val">'+e2(d.dxMedico)+'</div></div>':'')
-    +'<div><div class="field-lbl">Diagn&oacute;stico Fisioterapéutico</div><div class="field-val">'+e2(d.dxFisio||ev.dxFisio||'&mdash;')+'</div></div>'
-    +'<div><div class="field-lbl">Antecedentes</div><div class="field-val">'+e2(d.antecedentes||'&mdash;')+'</div></div>'
-    +'<div><div class="field-lbl">Motivo de consulta</div><div class="field-val">'+e2(d.motivo||'&mdash;')+'</div></div>'
+    +'<div><div class="field-lbl">Diagn&oacute;stico Fisioterapéutico</div><div class="field-val">'+e2(d.dxFisio||ev.dxFisio||'—')+'</div></div>'
+    +'<div><div class="field-lbl">Antecedentes</div><div class="field-val">'+e2(d.antecedentes||'—')+'</div></div>'
+    +'<div><div class="field-lbl">Motivo de consulta</div><div class="field-val">'+e2(d.motivo||'—')+'</div></div>'
     +'</div></div>';
   // Examen objetivo
   rows+='<div class="sec"><div class="sec-hdr">III. Examen Objetivo</div><div class="sec-body">'
-    +'<div><div class="field-lbl">EVA</div><div class="field-val">'+e2(String(ev.evaValor??'&mdash;'))+'/10</div></div>'
-    +'<div><div class="field-lbl">Trofismo</div><div class="field-val">'+e2(d.trofismo||'&mdash;')+'</div></div>'
+    +'<div><div class="field-lbl">EVA</div><div class="field-val">'+e2(String(ev.evaValor??'—'))+'/10</div></div>'
+    +'<div><div class="field-lbl">Trofismo</div><div class="field-val">'+e2(d.trofismo||'—')+'</div></div>'
     +(d.palpacion?'<div style="grid-column:1/-1"><div class="field-lbl">Palpaci&oacute;n</div><div class="field-val">'+e2(d.palpacion)+'</div></div>':'')
     +'</div>'
     // ROM table si existe
@@ -605,8 +609,8 @@ function buildEvalHTML(ev,pac,firmaHTML){
   if(ev.estado==='aprobada'){
     rows+='<div class="sec" style="border-color:#16a34a">'
       +'<div class="sec-hdr" style="background:#16a34a">&#10003; Evaluaci&oacute;n Aprobada</div>'
-      +'<div class="sec-body"><div><div class="field-lbl">Revisado por</div><div class="field-val">'+e2(ev.revisadoPor||'&mdash;')+'</div></div>'
-      +'<div><div class="field-lbl">Comentario</div><div class="field-val">'+e2(ev.comentarioDocente||'&mdash;')+'</div></div>'
+      +'<div class="sec-body"><div><div class="field-lbl">Revisado por</div><div class="field-val">'+e2(ev.revisadoPor||'—')+'</div></div>'
+      +'<div><div class="field-lbl">Comentario</div><div class="field-val">'+e2(ev.comentarioDocente||'—')+'</div></div>'
       +'</div></div>';
   }
   return rows+firmaHTML;
@@ -626,20 +630,20 @@ function buildRomTable(rom){
 // ─── BUILD HTML SESIÓN ────────────────────────────────
 function buildSesHTML(s,pac,firmaHTML){
   var rows='<div class="sec"><div class="sec-hdr">Datos del Paciente</div><div class="sec-body">'
-    +'<div><div class="field-lbl">Nombre</div><div class="field-val">'+e2(pac.nombre||'&mdash;')+'</div></div>'
-    +'<div><div class="field-lbl">DNI</div><div class="field-val">'+e2(pac.dni||'&mdash;')+'</div></div>'
+    +'<div><div class="field-lbl">Nombre</div><div class="field-val">'+e2(pac.nombre||'—')+'</div></div>'
+    +'<div><div class="field-lbl">DNI</div><div class="field-val">'+e2(pac.dni||'—')+'</div></div>'
     +'</div></div>';
   rows+='<div class="sec"><div class="sec-hdr">Sesi&oacute;n #'+s.numero+' &mdash; '+e2(formatFecha(s.fecha||''))+'</div><div class="sec-body">'
-    +'<div><div class="field-lbl">Estudiante</div><div class="field-val">'+e2(s.estudiante||s.terapeuta||'&mdash;')+'</div></div>'
-    +'<div><div class="field-lbl">Docente supervisor</div><div class="field-val">'+e2(s.docente||'&mdash;')+'</div></div>'
-    +'<div><div class="field-lbl">EVA</div><div class="field-val">'+e2(String(s.evaValor??'&mdash;'))+'/10</div></div>'
+    +'<div><div class="field-lbl">Estudiante</div><div class="field-val">'+e2(s.estudiante||s.terapeuta||'—')+'</div></div>'
+    +'<div><div class="field-lbl">Docente supervisor</div><div class="field-val">'+e2(s.docente||'—')+'</div></div>'
+    +'<div><div class="field-lbl">EVA</div><div class="field-val">'+e2(String(s.evaValor??'—'))+'/10</div></div>'
     +(s.respuesta?'<div><div class="field-lbl">Respuesta del paciente</div><div class="field-val">'+e2(s.respuesta)+'</div></div>':'')
-    +'<div style="grid-column:1/-1"><div class="field-lbl">Descripci&oacute;n</div><div class="field-val">'+e2(s.descripcion||'&mdash;')+'</div></div>'
+    +'<div style="grid-column:1/-1"><div class="field-lbl">Descripci&oacute;n</div><div class="field-val">'+e2(s.descripcion||'—')+'</div></div>'
     +'</div></div>';
   if(s.estado==='aprobada'){
     rows+='<div class="sec" style="border-color:#16a34a"><div class="sec-hdr" style="background:#16a34a">&#10003; Sesi&oacute;n Aprobada</div>'
-      +'<div class="sec-body"><div><div class="field-lbl">Revisado por</div><div class="field-val">'+e2(s.revisadoPor||'&mdash;')+'</div></div>'
-      +'<div><div class="field-lbl">Comentario</div><div class="field-val">'+e2(s.comentarioDocente||'&mdash;')+'</div></div>'
+      +'<div class="sec-body"><div><div class="field-lbl">Revisado por</div><div class="field-val">'+e2(s.revisadoPor||'—')+'</div></div>'
+      +'<div><div class="field-lbl">Comentario</div><div class="field-val">'+e2(s.comentarioDocente||'—')+'</div></div>'
       +'</div></div>';
   }
   return rows+firmaHTML;
@@ -770,8 +774,8 @@ function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
   html+='<div style="border:2px solid #1e3a5f;border-radius:12px;padding:20px 24px;margin-bottom:20px;background:#eff6ff">'
     +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">'
     +'<div>'
-    +'<div style="font-family:sans-serif;font-weight:800;font-size:20px;color:#1e3a5f;margin-bottom:4px">'+e2(pac.nombre||'&mdash;')+'</div>'
-    +'<div style="font-size:12px;color:#475569">DNI: '+e2(pac.dni||'&mdash;')
+    +'<div style="font-family:sans-serif;font-weight:800;font-size:20px;color:#1e3a5f;margin-bottom:4px">'+e2(pac.nombre||'—')+'</div>'
+    +'<div style="font-size:12px;color:#475569">DNI: '+e2(pac.dni||'—')
       +(pac.fechaNac?' &nbsp;&bull;&nbsp; Nacimiento: '+e2(pac.fechaNac):'')
       +(pac.sexo?' &nbsp;&bull;&nbsp; '+(pac.sexo==='M'?'Masculino':'Femenino'):'')+' </div>'
     +(pac.telefono?'<div style="font-size:12px;color:#475569">Tel: '+e2(pac.telefono)+'</div>':'')
@@ -793,13 +797,13 @@ function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
       // Anamnesis
       html+='<div class="sec"><div class="sec-hdr">Anamnesis</div><div class="sec-body full">'
         +(d.dxMedico?'<div><div class="field-lbl">Dx m&eacute;dico</div><div class="field-val">'+e2(d.dxMedico)+'</div></div>':'')
-        +'<div><div class="field-lbl">Dx fisioterapéutico</div><div class="field-val">'+e2(d.dxFisio||ev.dxFisio||'&mdash;')+'</div></div>'
-        +'<div><div class="field-lbl">Antecedentes</div><div class="field-val">'+e2(d.antecedentes||'&mdash;')+'</div></div>'
-        +'<div><div class="field-lbl">Motivo de consulta</div><div class="field-val">'+e2(d.motivo||'&mdash;')+'</div></div>'
+        +'<div><div class="field-lbl">Dx fisioterapéutico</div><div class="field-val">'+e2(d.dxFisio||ev.dxFisio||'—')+'</div></div>'
+        +'<div><div class="field-lbl">Antecedentes</div><div class="field-val">'+e2(d.antecedentes||'—')+'</div></div>'
+        +'<div><div class="field-lbl">Motivo de consulta</div><div class="field-val">'+e2(d.motivo||'—')+'</div></div>'
         +'</div></div>';
       // Examen objetivo
       html+='<div class="sec"><div class="sec-hdr">Examen Objetivo</div><div class="sec-body">'
-        +'<div><div class="field-lbl">EVA</div><div class="field-val">'+e2(String(ev.evaValor??'&mdash;'))+'/10</div></div>'
+        +'<div><div class="field-lbl">EVA</div><div class="field-val">'+e2(String(ev.evaValor??'—'))+'/10</div></div>'
         +(d.trofismo?'<div><div class="field-lbl">Trofismo</div><div class="field-val">'+e2(d.trofismo)+'</div></div>':'')
         +(d.palpacion?'<div style="grid-column:1/-1"><div class="field-lbl">Palpaci&oacute;n</div><div class="field-val">'+e2(d.palpacion)+'</div></div>':'')
         +(d.neuro?'<div style="grid-column:1/-1"><div class="field-lbl">Neurol&oacute;gico</div><div class="field-val">'+e2(d.neuro)+'</div></div>':'')
@@ -836,9 +840,9 @@ function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
         +'<span style="font-size:10px;opacity:.85">'+e2(s.estado).toUpperCase()+'</span>'
         +'</div>'
         +'<div class="sec-body">'
-        +'<div><div class="field-lbl">Estudiante</div><div class="field-val">'+e2(s.estudiante||s.terapeuta||'&mdash;')+'</div></div>'
+        +'<div><div class="field-lbl">Estudiante</div><div class="field-val">'+e2(s.estudiante||s.terapeuta||'—')+'</div></div>'
         +(s.docente?'<div><div class="field-lbl">Docente supervisor</div><div class="field-val">'+e2(s.docente)+'</div></div>':'')
-        +'<div><div class="field-lbl">EVA</div><div class="field-val">'+e2(String(s.evaValor??'&mdash;'))+'/10</div></div>'
+        +'<div><div class="field-lbl">EVA</div><div class="field-val">'+e2(String(s.evaValor??'—'))+'/10</div></div>'
         +(s.respuesta?'<div><div class="field-lbl">Respuesta paciente</div><div class="field-val">'+e2(s.respuesta)+'</div></div>':'')
         +(s.descripcion?'<div style="grid-column:1/-1"><div class="field-lbl">Descripci&oacute;n</div><div class="field-val">'+e2(s.descripcion)+'</div></div>':'')
         +'</div></div>';
