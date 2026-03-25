@@ -1902,13 +1902,17 @@ function plantillaHTML(catId, pac){
     secciones += secNeuroAdultos(d);
   } else if(catId === 'neuro_pediatrica'){
     secciones += secNeuroPediatrica(d);
+   } else if(catId === 'cardiorespiratorio'){
+    secciones += secCardiorespiratorio(d);
+  } else if(catId === 'geriatria'){
+    secciones += secGeriatria(d);
   } else {
-    // Genérica para cardiorespiratorio, geriatria, postural y otras
-    // (se implementará en Entregas 2 y 3; por ahora usa la base)
     secciones += secWrap('examen_gen','III. Examen objetivo','🔬',`
       <div class="form-grid">
         <div class="field form-full"><label>Hallazgos del examen objetivo</label>
-          <textarea class="ta" id="examObjetivo" rows="5" placeholder="Describe los hallazgos del examen físico...">${e2(d.examObjetivo||'')}</textarea></div>
+          <textarea class="ta" id="examObjetivo" rows="5"
+            placeholder="Describe los hallazgos del examen físico..."
+            >${e2(d.examObjetivo||'')}</textarea></div>
       </div>`,true);
   }
 
@@ -3570,6 +3574,644 @@ function calcularWeeFIM(id){
 // SECCIÓN D: FICHA NEURO ADULTOS
 // ══════════════════════════════════════════════════════════════
 
+// ENTREGA 2 — Fichas Cardiorrespiratoria y Geriátrica
+//
+// INSTRUCCIONES DE INSERCIÓN:
+//
+// PASO 1: Ubica esta función en el archivo (línea ~1905):
+//
+//   } else {
+//     // Genérica para cardiorespiratorio, geriatria, postural y otras
+//     // (se implementará en Entregas 2 y 3; por ahora usa la base)
+//     secciones += secWrap('examen_gen','III. Examen objetivo','🔬',`
+//       <div class="form-grid">
+//         <div class="field form-full"><label>Hallazgos del examen objetivo</label>
+//           <textarea class="ta" id="examObjetivo" rows="5" ...></textarea></div>
+//       </div>`,true);
+//   }
+//
+// REEMPLAZA ese bloque } else { ... } completo con:
+//
+//   } else if(catId === 'cardiorespiratorio'){
+//     secciones += secCardiorespiratorio(d);
+//   } else if(catId === 'geriatria'){
+//     secciones += secGeriatria(d);
+//   } else {
+//     secciones += secWrap('examen_gen','III. Examen objetivo','🔬',`
+//       <div class="form-grid">
+//         <div class="field form-full"><label>Hallazgos del examen objetivo</label>
+//           <textarea class="ta" id="examObjetivo" rows="5"
+//             placeholder="Describe los hallazgos del examen físico..."
+//             >${e2(d.examObjetivo||'')}</textarea></div>
+//       </div>`,true);
+//   }
+//
+// PASO 2: Ubica la línea (aprox. 3573):
+//   function secNeuroAdultos(d){
+//
+// INSERTA TODO EL CÓDIGO DE ESTE ARCHIVO justo ANTES de esa línea.
+//
+// PASO 3: Ubica la función guardarHC (aprox. línea 4166).
+// REEMPLAZA las líneas del bloque "datosNeuro" y "datosPed"
+// (desde "const datosNeuro = catId==='neuro_adultos' ?"
+//  hasta el "} : {};" del datosPed inclusive)
+// con la versión ampliada que está al final de este archivo.
+// ══════════════════════════════════════════════════════════════
+
+
+// ══════════════════════════════════════════════════════════════
+// FICHA CARDIORRESPIRATORIA
+// ══════════════════════════════════════════════════════════════
+
+function secCardiorespiratorio(d){
+  return secAnamnesisCardio(d)
+       + secSignosVitales(d)
+       + secEvalRespiratoria(d)
+       + secEvalCardiaca(d)
+       + secFuerzaResistenciaCardio(d)
+       + secCapacidadFuncionalCardio(d)
+       + secCIFNeuro(d);  // reutiliza la sección CIF existente
+}
+
+function secAnamnesisCardio(d){
+  return secWrap('anam_cardio','II. Anamnesis Cardiorrespiratoria','📋',`
+    <div class="form-grid">
+      <div class="field form-full"><label>Diagnóstico médico principal (CIE-10)</label>
+        <input class="inp" id="aDxMed" value="${e2(d.dxMedico||'')}"
+          placeholder="Ej: J44 EPOC, I50 Insuficiencia cardíaca..."></div>
+      <div class="field form-full"><label>Diagnóstico(s) secundario(s) / comorbilidades</label>
+        <input class="inp" id="dxSecundario" value="${e2(d.dxSecundario||'')}"
+          placeholder="HTA, DM, obesidad..."></div>
+      <div class="field form-full"><label>Diagnóstico fisioterapéutico</label>
+        <input class="inp" id="aDxFisio" value="${e2(d.dxFisio||'')}"
+          placeholder="Diagnóstico fisioterapéutico"></div>
+      <div class="field form-full"><label>Motivo de derivación a fisioterapia</label>
+        <textarea class="ta" id="aMotivo" rows="2"
+          placeholder="Motivo de la derivación, sintomatología principal...">${e2(d.motivo||'')}</textarea></div>
+      <div class="field"><label>Tiempo de evolución</label>
+        <input class="inp" id="tiempoEvol" value="${e2(d.tiempoEvol||'')}"
+          placeholder="Ej: 6 meses, 2 años..."></div>
+      <div class="field"><label>Hospitalizaciones recientes</label>
+        <input class="inp" id="hospitRecientes" value="${e2(d.hospitRecientes||'')}"
+          placeholder="Motivo y fecha"></div>
+      <div class="field form-full"><label>Cirugías cardíacas o torácicas previas</label>
+        <input class="inp" id="cirugiasPrev" value="${e2(d.cirugiasPrev||'')}"
+          placeholder="Tipo y fecha"></div>
+      <div class="field form-full"><label>Antecedentes patológicos relevantes</label>
+        <textarea class="ta" id="aAntecedentes" rows="3"
+          placeholder="HTA, DM, tabaquismo (paquetes/año), EPOC, asma, ICC, arritmias, marcapasos/DAI...">${e2(d.antecedentes||'')}</textarea></div>
+      <div class="field form-full"><label>Medicación actual</label>
+        <textarea class="ta" id="medicacionActual" rows="2"
+          placeholder="Broncodilatadores, anticoagulantes, betabloqueantes, diuréticos...">${e2(d.medicacionActual||'')}</textarea></div>
+    </div>`,true);
+}
+
+function secSignosVitales(d){
+  return secWrap('sv_cardio','III. Signos vitales y parámetros basales','🩺',`
+    <div class="form-grid">
+      <div class="field"><label>FC en reposo (lpm)</label>
+        <input class="inp" id="fcReposo" type="number" min="0" max="250"
+          value="${d.fcReposo||''}" placeholder="lpm"></div>
+      <div class="field"><label>FR en reposo (rpm)</label>
+        <input class="inp" id="frReposo" type="number" min="0" max="60"
+          value="${d.frReposo||''}" placeholder="rpm"></div>
+      <div class="field"><label>TA sistólica (mmHg)</label>
+        <input class="inp" id="taSistolica" type="number" min="0" max="300"
+          value="${d.taSistolica||''}" placeholder="mmHg"></div>
+      <div class="field"><label>TA diastólica (mmHg)</label>
+        <input class="inp" id="taDiastolica" type="number" min="0" max="200"
+          value="${d.taDiastolica||''}" placeholder="mmHg"></div>
+      <div class="field"><label>SpO₂ en reposo (%)</label>
+        <input class="inp" id="spo2Reposo" type="number" min="0" max="100"
+          value="${d.spo2Reposo||''}" placeholder="%"></div>
+      <div class="field"><label>Temperatura (°C)</label>
+        <input class="inp" id="temperatura" type="number" min="30" max="45" step="0.1"
+          value="${d.temperatura||''}" placeholder="°C"></div>
+      <div class="field"><label>Peso (kg)</label>
+        <input class="inp" id="peso" type="number" min="0" max="300" step="0.1"
+          value="${d.peso||''}" placeholder="kg"></div>
+      <div class="field"><label>Talla (cm)</label>
+        <input class="inp" id="talla" type="number" min="0" max="250"
+          value="${d.talla||''}" placeholder="cm"></div>
+      <div class="field"><label>IMC (kg/m²)</label>
+        <input class="inp" id="imc" value="${d.imc||''}" placeholder="Calculado" readonly
+          style="background:var(--surf2);cursor:default"></div>
+      <div class="field"><label>O₂ suplementario</label>
+        <select class="sel" id="o2Suplem">
+          <option value="">—</option>
+          ${['No requiere','Cánula nasal','Mascarilla simple','Mascarilla con reservorio','VNI','VMI'].map(v=>`<option ${d.o2Suplem===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Flujo O₂ (L/min)</label>
+        <input class="inp" id="flujoO2" type="number" min="0" max="60" step="0.5"
+          value="${d.flujoO2||''}" placeholder="L/min"></div>
+    </div>
+    <script>
+      (function(){
+        var p=document.getElementById('peso'), t=document.getElementById('talla'), i=document.getElementById('imc');
+        function calcIMC(){if(p&&t&&i&&p.value&&t.value){var h=Number(t.value)/100;i.value=h>0?(Number(p.value)/(h*h)).toFixed(1):'';}};
+        if(p)p.addEventListener('input',calcIMC);
+        if(t)t.addEventListener('input',calcIMC);
+      })();
+    <\/script>`);
+}
+
+function secEvalRespiratoria(d){
+  return secWrap('resp_cardio','IV. Evaluación respiratoria','🫁',`
+    <div class="form-grid">
+      <div class="field"><label>Patrón respiratorio</label>
+        <select class="sel" id="patronResp">
+          <option value="">—</option>
+          ${['Normal','Paradójico','Abdominal predominante','Apical predominante','Mixto'].map(v=>`<option ${d.patronResp===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Uso musculatura accesoria</label>
+        <select class="sel" id="muscAccesoria">
+          <option value="">—</option>
+          ${['No','Leve','Moderado','Importante'].map(v=>`<option ${d.muscAccesoria===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Tiraje</label>
+        <select class="sel" id="tiraje">
+          <option value="">—</option>
+          ${['Ninguno','Supraclavicular','Intercostal','Subcostal','Mixto'].map(v=>`<option ${d.tiraje===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Tipo de tórax</label>
+        <select class="sel" id="tipoTorax">
+          <option value="">—</option>
+          ${['Normal','En barril','Pectus excavatum','Pectus carinatum','Cifoescoliosis','Asimétrico'].map(v=>`<option ${d.tipoTorax===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Expansión torácica</label>
+        <select class="sel" id="expansionToracica">
+          <option value="">—</option>
+          ${['Simétrica y conservada','Asimétrica D > I','Asimétrica I > D','Disminuida bilateral','Muy reducida'].map(v=>`<option ${d.expansionToracica===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Tos</label>
+        <select class="sel" id="tos">
+          <option value="">—</option>
+          ${['Ausente','Seca','Productiva eficaz','Productiva ineficaz','Crónica'].map(v=>`<option ${d.tos===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Auscultación pulmonar</label>
+        <textarea class="ta" id="auscultacion" rows="3"
+          placeholder="Descripción por zonas (apex, medio, base D/I): murmullo vesicular, crepitantes, sibilancias, roncus, frotes...">${e2(d.auscultacion||'')}</textarea></div>
+      <div class="field form-full"><label>Expectoración</label>
+        <textarea class="ta" id="expectoracion" rows="2"
+          placeholder="Color, consistencia y cantidad diaria estimada...">${e2(d.expectoracion||'')}</textarea></div>
+      <div class="field"><label>PEF (L/min)</label>
+        <input class="inp" id="pef" type="number" min="0" max="900"
+          value="${d.pef||''}" placeholder="L/min (si disponible)"></div>
+      <div class="field"><label>FVC (L)</label>
+        <input class="inp" id="fvc" type="number" min="0" max="10" step="0.01"
+          value="${d.fvc||''}" placeholder="L (espirometría)"></div>
+      <div class="field"><label>FEV1 (L)</label>
+        <input class="inp" id="fev1" type="number" min="0" max="10" step="0.01"
+          value="${d.fev1||''}" placeholder="L (espirometría)"></div>
+      <div class="field"><label>FEV1/FVC (%)</label>
+        <input class="inp" id="fev1fvc" type="number" min="0" max="100" step="0.1"
+          value="${d.fev1fvc||''}" placeholder="% (espirometría)"></div>
+    </div>`);
+}
+
+function secEvalCardiaca(d){
+  return secWrap('card_func','V. Evaluación cardíaca funcional','❤️',`
+    <div class="form-grid">
+      <div class="field"><label>Disnea en reposo</label>
+        <select class="sel" id="disneaReposo">
+          <option value="">—</option>
+          ${['No','Sí — leve','Sí — moderada','Sí — grave'].map(v=>`<option ${d.disneaReposo===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Ortopnea</label>
+        <select class="sel" id="ortopnea">
+          <option value="">—</option>
+          ${['No','1 almohada','2 almohadas','3 o más almohadas','Decúbito imposible'].map(v=>`<option ${d.ortopnea===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Edema MMII</label>
+        <select class="sel" id="edemaMmii">
+          <option value="">—</option>
+          ${['Ausente','Grado 1 — leve maleolar','Grado 2 — hasta la rodilla','Grado 3 — hasta el muslo','Grado 4 — anasarca'].map(v=>`<option ${d.edemaMmii===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Dolor torácico al esfuerzo</label>
+        <select class="sel" id="dolorToracico">
+          <option value="">—</option>
+          ${['No','Sí — ocasional','Sí — frecuente'].map(v=>`<option ${d.dolorToracico===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Palpitaciones</label>
+        <select class="sel" id="palpitaciones">
+          <option value="">—</option>
+          ${['No','En reposo','Con esfuerzo','Frecuentes'].map(v=>`<option ${d.palpitaciones===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Tos nocturna</label>
+        <select class="sel" id="tosNocturna">
+          <option value="">—</option>
+          ${['No','Ocasional','Frecuente'].map(v=>`<option ${d.tosNocturna===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Actividades que desencadenan síntomas</label>
+        <textarea class="ta" id="activDesencan" rows="2"
+          placeholder="Subir escaleras, caminar distancias largas, actividad doméstica...">${e2(d.activDesencan||'')}</textarea></div>
+      <div class="field form-full"><label>Aspectos psicosociales</label>
+        <textarea class="ta" id="psicosocial" rows="2"
+          placeholder="Ansiedad, depresión, tabaquismo activo, red de apoyo, adherencia estimada...">${e2(d.psicosocial||'')}</textarea></div>
+    </div>
+    <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
+      💡 Cuantifica con <b>MRC disnea</b> y <b>NYHA</b> en la sección de Escalas.
+    </div>`);
+}
+
+function secFuerzaResistenciaCardio(d){
+  const mrc=['0 — Sin contracción','1 — Contracción visible','2 — Movimiento sin gravedad','3 — Vence gravedad','4 — Vence resistencia parcial','5 — Fuerza normal'];
+  return secWrap('fuerza_cardio','VI. Fuerza y resistencia muscular','💪',`
+    <div class="form-grid">
+      <div class="field"><label>Fuerza MMSS D — MRC</label>
+        <select class="sel" id="fuerzaMmssDCard">
+          <option value="">—</option>
+          ${mrc.map(v=>`<option ${d.fuerzaMmssDCard===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Fuerza MMSS I — MRC</label>
+        <select class="sel" id="fuerzaMmssICard">
+          <option value="">—</option>
+          ${mrc.map(v=>`<option ${d.fuerzaMmssICard===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Fuerza MMII D — MRC</label>
+        <select class="sel" id="fuerzaMmiiDCard">
+          <option value="">—</option>
+          ${mrc.map(v=>`<option ${d.fuerzaMmiiDCard===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Fuerza MMII I — MRC</label>
+        <select class="sel" id="fuerzaMmiiICard">
+          <option value="">—</option>
+          ${mrc.map(v=>`<option ${d.fuerzaMmiiICard===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Dinamometría prensión D (kg)</label>
+        <input class="inp" id="dinamoD" type="number" min="0" max="100" step="0.1"
+          value="${d.dinamoD||''}" placeholder="kg"></div>
+      <div class="field"><label>Dinamometría prensión I (kg)</label>
+        <input class="inp" id="dinamoI" type="number" min="0" max="100" step="0.1"
+          value="${d.dinamoI||''}" placeholder="kg"></div>
+      <div class="field form-full"><label>Observaciones de fuerza y resistencia</label>
+        <textarea class="ta" id="obsFuerzaCard" rows="2"
+          placeholder="Fatiga precoz, debilidad generalizada, asimetrías...">${e2(d.obsFuerzaCard||'')}</textarea></div>
+    </div>
+    <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
+      💡 Cuantifica resistencia con <b>6MWT</b> y <b>Sit-to-Stand 30s</b> en la sección de Escalas.
+    </div>`);
+}
+
+function secCapacidadFuncionalCardio(d){
+  return secWrap('funcional_cardio','VII. Capacidad funcional y AVD','🏃',`
+    <div class="form-grid">
+      <div class="field"><label>Limitación en AVD por disnea o fatiga</label>
+        <select class="sel" id="limitAVD">
+          <option value="">—</option>
+          ${['Ninguna','Leve (actividades intensas)','Moderada (actividades cotidianas)','Grave (mínimo esfuerzo)','Total (reposo)'].map(v=>`<option ${d.limitAVD===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Sueño y descanso</label>
+        <select class="sel" id="suenio">
+          <option value="">—</option>
+          ${['Conservado','Insomnio leve','Insomnio moderado','Usa CPAP nocturno','Apneas referidas'].map(v=>`<option ${d.suenio===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Observaciones funcionales</label>
+        <textarea class="ta" id="obsFuncCard" rows="2"
+          placeholder="AVD afectadas, tolerancia al esfuerzo, independencia general...">${e2(d.obsFuncCard||'')}</textarea></div>
+    </div>
+    <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
+      💡 Cuantifica con el <b>Índice de Barthel</b> en la sección de Escalas si aplica.
+    </div>`);
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// FICHA GERIÁTRICA
+// ══════════════════════════════════════════════════════════════
+
+function secGeriatria(d){
+  return secAnamnesisGeriatria(d)
+       + secValoracionGlobalGer(d)
+       + secValoracionNutricionalGer(d)
+       + secFragilidadGer(d)
+       + secExamenMusculoEsqueleticoGer(d)
+       + secEquilibrioRiesgoCaidaGer(d)
+       + secMarchaMovilidadGer(d)
+       + secAVDDependenciaGer(d)
+       + secCuidadorGer(d)
+       + secCIFNeuro(d);  // reutiliza la sección CIF existente
+}
+
+function secAnamnesisGeriatria(d){
+  return secWrap('anam_ger','II. Anamnesis Geriátrica','📋',`
+    <div class="form-grid">
+      <div class="field form-full"><label>Diagnóstico médico principal y secundarios</label>
+        <input class="inp" id="aDxMed" value="${e2(d.dxMedico||'')}"
+          placeholder="Diagnóstico médico principal (CIE-10) y comorbilidades"></div>
+      <div class="field form-full"><label>Diagnóstico fisioterapéutico</label>
+        <input class="inp" id="aDxFisio" value="${e2(d.dxFisio||'')}"
+          placeholder="Diagnóstico fisioterapéutico"></div>
+      <div class="field form-full"><label>Motivo de consulta</label>
+        <textarea class="ta" id="aMotivo" rows="2"
+          placeholder="Motivo principal de derivación...">${e2(d.motivo||'')}</textarea></div>
+      <div class="field"><label>Con quién vive</label>
+        <select class="sel" id="convivencia">
+          <option value="">—</option>
+          ${['Solo','Con familiar','Con cuidador profesional','Institución/residencia'].map(v=>`<option ${d.convivencia===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Estado civil</label>
+        <select class="sel" id="estadoCivil">
+          <option value="">—</option>
+          ${['Soltero/a','Casado/a','Viudo/a','Divorciado/a','Unión libre'].map(v=>`<option ${d.estadoCivil===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Antecedentes patológicos relevantes</label>
+        <textarea class="ta" id="aAntecedentes" rows="3"
+          placeholder="Fractura cadera, ACV, Parkinson, demencia, osteoporosis, artrosis, HTA, DM, ICC, prótesis...">${e2(d.antecedentes||'')}</textarea></div>
+      <div class="field"><label>Polifarmacia (≥5 medicamentos)</label>
+        <select class="sel" id="polifarmacia">
+          <option value="">—</option>
+          ${['No (< 5 medicamentos)','Sí (5-9 medicamentos)','Polifarmacia extrema (≥10)'].map(v=>`<option ${d.polifarmacia===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Medicamentos de riesgo de caída</label>
+        <select class="sel" id="medRiesgoCaida">
+          <option value="">—</option>
+          ${['No','Sí — benzodiacepinas','Sí — antihipertensivos','Sí — diuréticos','Sí — antipsicóticos','Sí — múltiples'].map(v=>`<option ${d.medRiesgoCaida===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Caídas en el último año</label>
+        <select class="sel" id="caidasAnio">
+          <option value="">—</option>
+          ${['Ninguna','1 caída','2 caídas','3 o más caídas'].map(v=>`<option ${d.caidasAnio===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Circunstancias y consecuencias de caídas</label>
+        <textarea class="ta" id="circunstanciaCaidas" rows="2"
+          placeholder="Dónde ocurrió, qué hacía, lesiones resultantes...">${e2(d.circunstanciaCaidas||'')}</textarea></div>
+    </div>`,true);
+}
+
+function secValoracionGlobalGer(d){
+  return secWrap('global_ger','III. Valoración cognitiva y comunicación','🧠',`
+    <div class="form-grid">
+      <div class="field"><label>MMSE / MoCA (puntaje)</label>
+        <input class="inp" id="mmseScore" type="number" min="0" max="30"
+          value="${d.mmseScore||''}" placeholder="0-30"></div>
+      <div class="field"><label>Interpretación cognitiva</label>
+        <select class="sel" id="cognitivo">
+          <option value="">—</option>
+          ${['Normal','Deterioro cognitivo leve','Deterioro cognitivo moderado','Deterioro cognitivo grave','Demencia establecida'].map(v=>`<option ${d.cognitivo===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Estado de ánimo</label>
+        <select class="sel" id="estadoAnimo">
+          <option value="">—</option>
+          ${['Eutímico','Depresión leve','Depresión moderada','Depresión grave','Ansiedad predominante','Mixto'].map(v=>`<option ${d.estadoAnimo===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Comunicación</label>
+        <select class="sel" id="comunicacionGer">
+          <option value="">—</option>
+          ${['Adecuada','Dificultad auditiva','Dificultad visual','Ambas','Dificultad del lenguaje'].map(v=>`<option ${d.comunicacionGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Usa audífono</label>
+        <select class="sel" id="audiofono">
+          <option value="">—</option>
+          ${['No','Sí — uno','Sí — bilateral'].map(v=>`<option ${d.audiofono===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Usa gafas/lentes</label>
+        <select class="sel" id="gafas">
+          <option value="">—</option>
+          ${['No','Sí'].map(v=>`<option ${d.gafas===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Observaciones cognitivas</label>
+        <textarea class="ta" id="obsCognitivoGer" rows="2"
+          placeholder="Orientación, memoria, atención, comportamiento...">${e2(d.obsCognitivoGer||'')}</textarea></div>
+    </div>
+    <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
+      💡 Aplica el <b>MMSE</b> en la sección de Escalas para registro formal.
+    </div>`);
+}
+
+function secValoracionNutricionalGer(d){
+  return secWrap('nutric_ger','IV. Valoración nutricional','🥗',`
+    <div class="form-grid">
+      <div class="field"><label>Peso actual (kg)</label>
+        <input class="inp" id="pesoGer" type="number" min="0" max="300" step="0.1"
+          value="${d.pesoGer||''}" placeholder="kg"></div>
+      <div class="field"><label>Pérdida de peso reciente</label>
+        <select class="sel" id="perdidaPeso">
+          <option value="">—</option>
+          ${['No','< 1 kg','1-3 kg','> 3 kg','> 5% en 3 meses'].map(v=>`<option ${d.perdidaPeso===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>IMC (kg/m²)</label>
+        <input class="inp" id="imcGer" value="${d.imcGer||''}" placeholder="kg/m²"></div>
+      <div class="field"><label>Apetito</label>
+        <select class="sel" id="apetito">
+          <option value="">—</option>
+          ${['Conservado','Reducido','Muy reducido','Anorexia'].map(v=>`<option ${d.apetito===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Dificultad de deglución</label>
+        <select class="sel" id="deglucion">
+          <option value="">—</option>
+          ${['No','Leve','Moderada','Grave — dieta modificada'].map(v=>`<option ${d.deglucion===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Hidratación estimada</label>
+        <select class="sel" id="hidratacion">
+          <option value="">—</option>
+          ${['Adecuada','Levemente disminuida','Deshidratación leve','Deshidratación moderada'].map(v=>`<option ${d.hidratacion===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Perímetro gemelar (cm)</label>
+        <input class="inp" id="perGemelar" type="number" min="0" max="60" step="0.1"
+          value="${d.perGemelar||''}" placeholder="cm (< 31 cm = sarcopenia)"></div>
+    </div>
+    <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
+      💡 Aplica el <b>MNA Breve</b> en la sección de Escalas para cribado nutricional formal.
+    </div>`);
+}
+
+function secFragilidadGer(d){
+  return secWrap('fragilidad_ger','V. Síndrome de fragilidad','⚠️',`
+    <div class="form-grid">
+      <div class="field"><label>Pérdida de peso involuntaria (> 4.5 kg / > 5% último año)</label>
+        <select class="sel" id="friedPeso">
+          <option value="">—</option>
+          ${['Ausente','Presente'].map(v=>`<option ${d.friedPeso===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Agotamiento / fatiga referida</label>
+        <select class="sel" id="friedAgotamiento">
+          <option value="">—</option>
+          ${['Ausente','Presente'].map(v=>`<option ${d.friedAgotamiento===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Baja actividad física (< umbral por sexo)</label>
+        <select class="sel" id="friedActividad">
+          <option value="">—</option>
+          ${['Ausente','Presente'].map(v=>`<option ${d.friedActividad===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Lentitud de marcha (< 0.8 m/s)</label>
+        <select class="sel" id="friedLentitud">
+          <option value="">—</option>
+          ${['Ausente','Presente'].map(v=>`<option ${d.friedLentitud===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Debilidad muscular (dinamometría < umbral)</label>
+        <select class="sel" id="friedDebilidad">
+          <option value="">—</option>
+          ${['Ausente','Presente'].map(v=>`<option ${d.friedDebilidad===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Clasificación de fragilidad</label>
+        <select class="sel" id="clasifFragilidad">
+          <option value="">—</option>
+          ${['Robusto (0 criterios)','Pre-frágil (1-2 criterios)','Frágil (3-5 criterios)'].map(v=>`<option ${d.clasifFragilidad===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Observaciones de fragilidad</label>
+        <textarea class="ta" id="obsFragilidad" rows="2"
+          placeholder="Contexto clínico, observaciones adicionales...">${e2(d.obsFragilidad||'')}</textarea></div>
+    </div>
+    <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
+      💡 Aplica los <b>Criterios de Fried</b> en la sección de Escalas para registro formal con cálculo automático.
+    </div>`);
+}
+
+function secExamenMusculoEsqueleticoGer(d){
+  const mrc=['0 — Sin contracción','1 — Contracción visible','2 — Movimiento sin gravedad','3 — Vence gravedad','4 — Vence resistencia parcial','5 — Fuerza normal'];
+  return secWrap('musculo_ger','VI. Examen músculo-esquelético','🦴',`
+    <div class="form-grid">
+      <div class="field"><label>EVA dolor (0-10)</label>
+        <div class="eva-wrap" style="margin-top:6px">
+          <div class="eva-track" style="flex:1;position:relative">
+            <input type="range" class="eva-sl" id="evaGer" min="0" max="10" step="1"
+              value="${d.evaGer||0}" oninput="g('evaGerD').textContent=this.value">
+          </div>
+          <div class="eva-val" id="evaGerD">${d.evaGer||0}</div>
+        </div></div>
+      <div class="field"><label>Localización del dolor</label>
+        <input class="inp" id="dolLocGer" value="${e2(d.dolLocGer||'')}"
+          placeholder="Región dolorosa principal"></div>
+      <div class="field"><label>Fuerza MMSS D — MRC</label>
+        <select class="sel" id="fuerzaMmssDGer">
+          <option value="">—</option>
+          ${mrc.map(v=>`<option ${d.fuerzaMmssDGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Fuerza MMSS I — MRC</label>
+        <select class="sel" id="fuerzaMmssIGer">
+          <option value="">—</option>
+          ${mrc.map(v=>`<option ${d.fuerzaMmssIGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Fuerza MMII D — MRC</label>
+        <select class="sel" id="fuerzaMmiiDGer">
+          <option value="">—</option>
+          ${mrc.map(v=>`<option ${d.fuerzaMmiiDGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Fuerza MMII I — MRC</label>
+        <select class="sel" id="fuerzaMmiiIGer">
+          <option value="">—</option>
+          ${mrc.map(v=>`<option ${d.fuerzaMmiiIGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Dinamometría prensión D (kg)</label>
+        <input class="inp" id="dinamoDGer" type="number" min="0" max="100" step="0.1"
+          value="${d.dinamoDGer||''}" placeholder="kg (H:< 27 / M:< 16 = sarcopenia)"></div>
+      <div class="field"><label>Dinamometría prensión I (kg)</label>
+        <input class="inp" id="dinamoIGer" type="number" min="0" max="100" step="0.1"
+          value="${d.dinamoIGer||''}" placeholder="kg"></div>
+      <div class="field"><label>Sospecha de sarcopenia</label>
+        <select class="sel" id="sarcopenia">
+          <option value="">—</option>
+          ${['Ausente','Sospecha (fuerza baja)','Confirmada (fuerza + masa baja)','Grave (fuerza + masa + rendimiento bajos)'].map(v=>`<option ${d.sarcopenia===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>ROM articular relevante</label>
+        <textarea class="ta" id="romGer" rows="2"
+          placeholder="Movilidad de articulaciones principales afectadas...">${e2(d.romGer||'')}</textarea></div>
+    </div>`);
+}
+
+function secEquilibrioRiesgoCaidaGer(d){
+  return secWrap('equil_ger','VII. Equilibrio y riesgo de caída','⚖️',`
+    <div class="form-grid">
+      <div class="field"><label>Apoyo monopodal D (seg)</label>
+        <input class="inp" id="monopodDGer" type="number" min="0" max="60" step="0.5"
+          value="${d.monopodDGer||''}" placeholder="segundos"></div>
+      <div class="field"><label>Apoyo monopodal I (seg)</label>
+        <input class="inp" id="monopodIGer" type="number" min="0" max="60" step="0.5"
+          value="${d.monopodIGer||''}" placeholder="segundos"></div>
+      <div class="field"><label>Test de alcance funcional (cm)</label>
+        <input class="inp" id="alcanceFuncGer" type="number" min="0" max="60" step="0.5"
+          value="${d.alcanceFuncGer||''}" placeholder="cm (< 15 cm = alto riesgo)"></div>
+      <div class="field"><label>Velocidad de marcha 4m (seg)</label>
+        <input class="inp" id="velMarcha4m" type="number" min="0" max="60" step="0.1"
+          value="${d.velMarcha4m||''}" placeholder="seg (> 5 seg = < 0.8 m/s)"></div>
+      <div class="field"><label>Miedo a caer (percepción)</label>
+        <select class="sel" id="miedoCaer">
+          <option value="">—</option>
+          ${['Sin miedo','Miedo leve','Miedo moderado','Miedo grave — limita actividad'].map(v=>`<option ${d.miedoCaer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Entorno domiciliario</label>
+        <textarea class="ta" id="entornoDomiciliario" rows="2"
+          placeholder="Barreras arquitectónicas, iluminación, alfombras, baño adaptado, escaleras...">${e2(d.entornoDomiciliario||'')}</textarea></div>
+    </div>
+    <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
+      💡 Cuantifica con <b>Escala de Berg</b>, <b>TUG</b>, <b>SPPB</b>, <b>Tinetti</b> y/o <b>FES-I</b> en la sección de Escalas.
+    </div>`);
+}
+
+function secMarchaMovilidadGer(d){
+  return secWrap('marcha_ger','VIII. Marcha y movilidad','🚶',`
+    <div class="form-grid">
+      <div class="field"><label>Tipo de marcha</label>
+        <select class="sel" id="tipoMarchaGer">
+          <option value="">—</option>
+          ${['No deambula','Asistida por persona','Con ayuda técnica','Independiente con supervisión','Independiente'].map(v=>`<option ${d.tipoMarchaGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Patrón de marcha</label>
+        <select class="sel" id="patronMarchaGer">
+          <option value="">—</option>
+          ${['Normal','Antálgica','Parkinsoniana','Festinante','Steppage','Trendelenburg','Senil (base amplia, pasos cortos)','Atáxica','Otra'].map(v=>`<option ${d.patronMarchaGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Ayuda técnica</label>
+        <select class="sel" id="ayudaTecGer">
+          <option value="">—</option>
+          ${['Ninguna','Bastón simple','Bastón de cuatro puntos','Andador sin ruedas','Andador con ruedas','Muletas','Silla de ruedas manual','Silla de ruedas eléctrica'].map(v=>`<option ${d.ayudaTecGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Escaleras</label>
+        <select class="sel" id="escalerasGer">
+          <option value="">—</option>
+          ${['Sube y baja independiente','Con apoyo en barandal','Con asistencia de persona','No puede'].map(v=>`<option ${d.escalerasGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Observaciones de marcha</label>
+        <textarea class="ta" id="obsMarchaGer" rows="2"
+          placeholder="Longitud de paso, cadencia, base de sustentación, asimetrías, compensaciones...">${e2(d.obsMarchaGer||'')}</textarea></div>
+    </div>`);
+}
+
+function secAVDDependenciaGer(d){
+  return secWrap('avd_ger','IX. AVD y dependencia funcional','🏠',`
+    <div class="form-grid">
+      <div class="field form-full"><label>AVD básicas afectadas</label>
+        <textarea class="ta" id="avdBasicasGer" rows="2"
+          placeholder="Baño, vestido, aseo, uso WC, alimentación, continencia...">${e2(d.avdBasicasGer||'')}</textarea></div>
+      <div class="field form-full"><label>AVD instrumentales afectadas</label>
+        <textarea class="ta" id="avdInstGer" rows="2"
+          placeholder="Uso teléfono, compras, cocina, limpieza, transporte, medicación, finanzas...">${e2(d.avdInstGer||'')}</textarea></div>
+      <div class="field"><label>Nivel de dependencia general</label>
+        <select class="sel" id="nivelDependencia">
+          <option value="">—</option>
+          ${['Independiente','Dependencia leve','Dependencia moderada','Dependencia grave','Dependencia total'].map(v=>`<option ${d.nivelDependencia===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+    </div>
+    <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
+      💡 Cuantifica con el <b>Índice de Barthel</b> (básicas) y <b>Lawton-Brody</b> (instrumentales) en la sección de Escalas.
+    </div>`);
+}
+
+function secCuidadorGer(d){
+  return secWrap('cuidador_ger','X. Valoración del cuidador (si aplica)','👥',`
+    <div class="form-grid">
+      <div class="field"><label>Cuidador principal</label>
+        <select class="sel" id="tipoCuidador">
+          <option value="">—</option>
+          ${['Ninguno — vive solo','Familiar directo','Cuidador profesional contratado','Institución'].map(v=>`<option ${d.tipoCuidador===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Sobrecarga del cuidador (percepción)</label>
+        <select class="sel" id="sobrecargaCuidador">
+          <option value="">—</option>
+          ${['No aplica','Sin sobrecarga','Sobrecarga leve','Sobrecarga moderada','Sobrecarga grave'].map(v=>`<option ${d.sobrecargaCuidador===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Necesidad de educación al cuidador</label>
+        <select class="sel" id="edCuidador">
+          <option value="">—</option>
+          ${['No','Sí — técnicas de movilización','Sí — ejercicios en casa','Sí — prevención de caídas','Sí — múltiples temas'].map(v=>`<option ${d.edCuidador===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Adaptaciones del hogar recomendadas</label>
+        <textarea class="ta" id="adaptacionesHogar" rows="2"
+          placeholder="Barras de apoyo, silla de ducha, alfombra antideslizante, iluminación...">${e2(d.adaptacionesHogar||'')}</textarea></div>
+    </div>`);
+}
+  
 function secNeuroAdultos(d){
   return secEstadoCognitivoCom(d)
        + secExamenMotorNeuro(d)
@@ -4217,8 +4859,10 @@ async function guardarHC(catId, pacId, modo){
     escalas: leerEscalasForm(),
     ...datosNeuro,
     ...datosPed,
+    ...datosCardio,
+    ...datosGer,
   };
-
+  
   // Guardar paciente
   const bPac={action:'guardarPaciente',nombre,dni,
     sexo:v('pS'),fechaNac:v('pFN'),telefono:v('pT'),ocupacion:v('pO'),
