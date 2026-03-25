@@ -89,10 +89,10 @@ body{background:#f1f5f9;color:var(--tx);font-family:'Plus Jakarta Sans',sans-ser
 .hc-sec{background:var(--surf2);border:1px solid var(--bd);border-radius:14px;margin-bottom:12px;overflow:hidden;}
 .hc-sec-hdr{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;cursor:pointer;user-select:none;}
 .hc-sec-hdr:hover{background:rgba(255,255,255,.03);}
-.hc-sec-title{font-weight:700;font-size:13px;color:#fff;display:flex;align-items:center;gap:8px;}
+.hc-sec-title{font-weight:700;font-size:13px;color:var(--n900);display:flex;align-items:center;gap:8px;}
 .hc-sec-body{padding:16px;border-top:1px solid var(--bd);display:none;}
 .hc-sec-body.open{display:block;}
-.chv{color:var(--tx3);font-size:12px;transition:transform .2s;}
+.chv{color:var(--n900);font-size:12px;transition:transform .2s;}
 .chv.open{transform:rotate(180deg);}
 
 /* EVA */
@@ -1237,7 +1237,6 @@ async function abrirPac(id){
     }
   }
 }
-
 
 function formatFecha(raw){
   if(!raw) return '';
