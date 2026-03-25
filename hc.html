@@ -1894,10 +1894,27 @@ async function reasignarPac(pacId){
 // ══════════════════════════════════════════════════
 function plantillaHTML(catId, pac){
   const d = pac?.datosEspecificos || {};
-  return secFiliacion(pac,d)
-       + secAnamnesis(catId,pac,d)
-       + (catId==='traumatologia' ? secTrauma(d) : secNeuroAdultos(d))
-       + secPlanTratamiento(d);
+  var secciones = secFiliacion(pac, d) + secAnamnesis(catId, pac, d);
+
+  if(catId === 'traumatologia'){
+    secciones += secTrauma(d);
+  } else if(catId === 'neuro_adultos'){
+    secciones += secNeuroAdultos(d);
+  } else if(catId === 'neuro_pediatrica'){
+    secciones += secNeuroPediatrica(d);
+  } else {
+    // Genérica para cardiorespiratorio, geriatria, postural y otras
+    // (se implementará en Entregas 2 y 3; por ahora usa la base)
+    secciones += secWrap('examen_gen','III. Examen objetivo','🔬',`
+      <div class="form-grid">
+        <div class="field form-full"><label>Hallazgos del examen objetivo</label>
+          <textarea class="ta" id="examObjetivo" rows="5" placeholder="Describe los hallazgos del examen físico...">${e2(d.examObjetivo||'')}</textarea></div>
+      </div>`,true);
+  }
+
+  secciones += secPlanTratamiento(d);
+  secciones += secEscalas(catId, d.escalas||null);
+  return secciones;
 }
 
 function secWrap(id, titulo, icono, contenido, abierta){
@@ -2085,9 +2102,1960 @@ function secTrauma(d){
   `,true);
 }
 
+// ══════════════════════════════════════════════════════════════
+// SECCIÓN A: CATÁLOGO DE ESCALAS
+// ══════════════════════════════════════════════════════════════
+
+const ESCALAS_CATALOGO = [
+
+  // ── GENERALES (todas las fichas adulto) ──────────────────
+
+  { id:'eva', nombre:'EVA / NRS — Dolor', desc:'Escala visual analógica de dolor del 0 al 10.',
+    dominio:'Dolor', cats:'all', ped:true,
+    render: renderEscalaEVA, calcular: calcularEVA },
+
+  { id:'borg', nombre:'Escala de Borg', desc:'Percepción subjetiva del esfuerzo durante el ejercicio (0-10).',
+    dominio:'Esfuerzo', cats:'all', ped:false,
+    render: renderEscalaBorg, calcular: calcularBorg },
+
+  { id:'berg', nombre:'Escala de Berg', desc:'Evalúa el equilibrio funcional en 14 ítems (0-56 pts).',
+    dominio:'Equilibrio', cats:'all', ped:true,
+    render: renderEscalaBerg, calcular: calcularBerg },
+
+  { id:'tug', nombre:'Timed Up and Go (TUG)', desc:'Mide movilidad y riesgo de caída. Se cronometra en segundos.',
+    dominio:'Movilidad', cats:'all', ped:true,
+    render: renderEscalaTUG, calcular: calcularTUG },
+
+  { id:'sts30', nombre:'Sit-to-Stand 30s', desc:'Número de veces que se levanta y sienta en 30 segundos. Evalúa fuerza en MMII.',
+    dominio:'Fuerza MMII', cats:'all', ped:false,
+    render: renderEscalaSTS30, calcular: calcularSTS30 },
+
+  { id:'sixmwt', nombre:'6-Minute Walk Test (6MWT)', desc:'Distancia recorrida en 6 minutos. Evalúa capacidad funcional aeróbica.',
+    dominio:'Resistencia', cats:'all', ped:true,
+    render: renderEscala6MWT, calcular: calcular6MWT },
+
+  { id:'barthel', nombre:'Índice de Barthel', desc:'Evalúa independencia en AVD básicas. 10 ítems, máximo 100 pts.',
+    dominio:'AVD', cats:'all', ped:false,
+    render: renderEscalaBarthel, calcular: calcularBarthel },
+
+  { id:'ashworth', nombre:'Escala de Ashworth Modificada', desc:'Evalúa el grado de espasticidad/tono muscular por segmento (0-4).',
+    dominio:'Tono muscular', cats:'all', ped:true,
+    render: renderEscalaAshworth, calcular: calcularAshworth },
+
+  // ── CARDIORRESPIRATORIO ──────────────────────────────────
+
+  { id:'mrc_disnea', nombre:'MRC — Escala de disnea', desc:'Gradúa la disnea en actividades cotidianas en 5 niveles (0-4).',
+    dominio:'Respiratorio', cats:['cardiorespiratorio','geriatria'], ped:false,
+    render: renderEscalaMRC, calcular: calcularMRC },
+
+  { id:'nyha', nombre:'NYHA — Clase funcional cardíaca', desc:'Clasifica la limitación funcional por insuficiencia cardíaca en 4 clases.',
+    dominio:'Cardíaco', cats:['cardiorespiratorio','geriatria'], ped:false,
+    render: renderEscalaNYHA, calcular: calcularNYHA },
+
+  // ── GERIÁTRICA ───────────────────────────────────────────
+
+  { id:'lawton', nombre:'Índice de Lawton-Brody', desc:'Evalúa independencia en AVD instrumentales. 8 ítems, máximo 8 pts.',
+    dominio:'AVD Instrumentales', cats:['geriatria'], ped:false,
+    render: renderEscalaLawton, calcular: calcularLawton },
+
+  { id:'sppb', nombre:'SPPB — Short Physical Performance Battery', desc:'3 subtest: equilibrio, velocidad de marcha y Sit-to-Stand. Máximo 12 pts.',
+    dominio:'Rendimiento físico', cats:['geriatria'], ped:false,
+    render: renderEscalaSPPB, calcular: calcularSPPB },
+
+  { id:'tinetti', nombre:'Tinetti — Marcha y Equilibrio', desc:'Evalúa equilibrio (16 pts) y marcha (12 pts). Total 28 pts.',
+    dominio:'Marcha/Equilibrio', cats:['geriatria','neuro_adultos'], ped:false,
+    render: renderEscalaTinetti, calcular: calcularTinetti },
+
+  { id:'fesi', nombre:'FES-I — Miedo a caer', desc:'Evalúa la preocupación por caídas en 16 actividades (16-64 pts).',
+    dominio:'Psicosocial', cats:['geriatria'], ped:false,
+    render: renderEscalaFESI, calcular: calcularFESI },
+
+  { id:'mmse', nombre:'MMSE — Mini Mental State', desc:'Evalúa estado cognitivo global. 30 preguntas, máximo 30 pts.',
+    dominio:'Cognitivo', cats:['geriatria'], ped:false,
+    render: renderEscalaMMSE, calcular: calcularMMSE },
+
+  { id:'mna', nombre:'MNA Breve — Nutricional', desc:'Cribado nutricional rápido. 6 ítems, máximo 14 pts.',
+    dominio:'Nutricional', cats:['geriatria'], ped:false,
+    render: renderEscalaMNA, calcular: calcularMNA },
+
+  { id:'fried', nombre:'Criterios de Fried — Fragilidad', desc:'5 criterios de fragilidad. Clasifica en robusto, pre-frágil o frágil.',
+    dominio:'Fragilidad', cats:['geriatria'], ped:false,
+    render: renderEscalaFried, calcular: calcularFried },
+
+  // ── NEURO ADULTOS ────────────────────────────────────────
+
+  { id:'tardieu', nombre:'Escala de Tardieu', desc:'Evalúa espasticidad considerando velocidad del estiramiento. Por segmento.',
+    dominio:'Espasticidad', cats:['neuro_adultos'], ped:true,
+    render: renderEscalaTardieu, calcular: calcularTardieu },
+
+  // ── TRAUMATOLOGÍA ────────────────────────────────────────
+
+  { id:'dash', nombre:'DASH — Miembro Superior', desc:'Discapacidad del brazo, hombro y mano. 30 ítems, 0-100 pts (mayor = peor).',
+    dominio:'MMSS', cats:['traumatologia'], ped:false,
+    render: renderEscalaDASH, calcular: calcularDASH },
+
+  { id:'quickdash', nombre:'QuickDASH', desc:'Versión breve del DASH. 11 ítems, 0-100 pts.',
+    dominio:'MMSS', cats:['traumatologia'], ped:false,
+    render: renderEscalaQuickDASH, calcular: calcularQuickDASH },
+
+  { id:'womac', nombre:'WOMAC — Cadera/Rodilla', desc:'Evalúa dolor, rigidez y función en cadera o rodilla. 24 ítems, 3 subescalas.',
+    dominio:'Cadera/Rodilla', cats:['traumatologia'], ped:false,
+    render: renderEscalaWOMAC, calcular: calcularWOMAC },
+
+  { id:'koos', nombre:'KOOS — Rodilla', desc:'5 subescalas para rodilla: síntomas, dolor, AVD, deporte y calidad de vida.',
+    dominio:'Rodilla', cats:['traumatologia'], ped:false,
+    render: renderEscalaKOOS, calcular: calcularKOOS },
+
+  { id:'hoos', nombre:'HOOS — Cadera', desc:'5 subescalas para cadera: síntomas, dolor, AVD, deporte y calidad de vida.',
+    dominio:'Cadera', cats:['traumatologia'], ped:false,
+    render: renderEscalaHOOS, calcular: calcularHOOS },
+
+  { id:'constant', nombre:'Constant-Murley — Hombro', desc:'Evalúa función del hombro: dolor, AVD, movilidad y fuerza. Máximo 100 pts.',
+    dominio:'Hombro', cats:['traumatologia'], ped:false,
+    render: renderEscalaConstant, calcular: calcularConstant },
+
+  { id:'lysholm', nombre:'Lysholm — Rodilla/Ligamentos', desc:'8 ítems para función de rodilla. 0-100 pts (mayor = mejor).',
+    dominio:'Rodilla', cats:['traumatologia'], ped:false,
+    render: renderEscalaLysholm, calcular: calcularLysholm },
+
+  { id:'visap', nombre:'VISA-P — Tendón Patelar', desc:'Evalúa severidad de tendinopatía patelar. 8 ítems, 0-100 pts.',
+    dominio:'Tendón', cats:['traumatologia'], ped:false,
+    render: renderEscalaVISAP, calcular: calcularVISAP },
+
+  { id:'visaa', nombre:'VISA-A — Tendón Aquiles', desc:'Evalúa severidad de tendinopatía aquílea. 8 ítems, 0-100 pts.',
+    dominio:'Tendón', cats:['traumatologia'], ped:false,
+    render: renderEscalaVISAA, calcular: calcularVISAA },
+
+  { id:'faam', nombre:'FAAM — Tobillo/Pie', desc:'Función del tobillo y pie. 2 subescalas: AVD y deporte.',
+    dominio:'Tobillo/Pie', cats:['traumatologia'], ped:false,
+    render: renderEscalaFAAM, calcular: calcularFAAM },
+
+  { id:'ndi', nombre:'NDI — Índice de Discapacidad Cervical', desc:'10 ítems para discapacidad cervical. 0-50 pts (mayor = peor).',
+    dominio:'Columna cervical', cats:['traumatologia'], ped:false,
+    render: renderEscalaNDI, calcular: calcularNDI },
+
+  { id:'oswestry', nombre:'Oswestry — Columna Lumbar', desc:'10 ítems para discapacidad lumbar. Resultado en porcentaje.',
+    dominio:'Columna lumbar', cats:['traumatologia'], ped:false,
+    render: renderEscalaOswestry, calcular: calcularOswestry },
+
+  { id:'tampa', nombre:'Tampa Scale — Kinesiofobia', desc:'17 ítems. Evalúa miedo al movimiento/relesión. 17-68 pts.',
+    dominio:'Psicosocial', cats:['traumatologia'], ped:false,
+    render: renderEscalaTampa, calcular: calcularTampa },
+
+  // ── PEDIÁTRICA ───────────────────────────────────────────
+
+  { id:'gmfcs', nombre:'GMFCS — Clasificación Motor Grueso', desc:'Clasifica función motora gruesa en PC. 5 niveles (I-V).',
+    dominio:'Motor grueso', cats:['neuro_pediatrica'], ped:true, pedOnly:true,
+    render: renderEscalaGMFCS, calcular: calcularGMFCS },
+
+  { id:'macs', nombre:'MACS — Función de Mano', desc:'Clasifica uso de manos en actividades cotidianas. 5 niveles (I-V).',
+    dominio:'Función mano', cats:['neuro_pediatrica'], ped:true, pedOnly:true,
+    render: renderEscalaMACS, calcular: calcularMACS },
+
+  { id:'weefim', nombre:'WeeFIM — Medida de Independencia', desc:'18 ítems funcionales adaptados a niños. Máximo 126 pts.',
+    dominio:'Funcional pediátrico', cats:['neuro_pediatrica'], ped:true, pedOnly:true,
+    render: renderEscalaWeeFIM, calcular: calcularWeeFIM },
+];
+
+
+// ══════════════════════════════════════════════════════════════
+// SECCIÓN B: MOTOR DE ESCALAS (ScalasEngine)
+// ══════════════════════════════════════════════════════════════
+
+// Estado global de escalas activas en el formulario actual
+var _escalasActivas = {}; // { escalaId: { fechaAplicacion, items... } }
+var _catIdActual = '';    // categoría del formulario actual
+
+// ── Helpers ─────────────────────────────────────────────────
+
+function _esPediatrica(catId){ return catId==='neuro_pediatrica'; }
+
+function _escalasDisponibles(catId){
+  const ped = _esPediatrica(catId);
+  return ESCALAS_CATALOGO.filter(function(e){
+    if(ped && !e.ped) return false;         // ocultar no-ped en pediátrica
+    if(!ped && e.pedOnly) return false;     // ocultar exclusivas-ped en adultos
+    if(e.cats==='all') return true;
+    return e.cats.indexOf(catId)!==-1;
+  });
+}
+
+function _escalaYaAgregada(id){ return !!document.getElementById('escala_bloque_'+id); }
+
+function _selEsc(id){ return ESCALAS_CATALOGO.find(function(e){return e.id===id;}); }
+
+// ── Sección wrapper en el formulario ─────────────────────────
+
+function secEscalas(catId, datosEscalas){
+  _catIdActual = catId;
+  _escalasActivas = {};
+  var html = '<div id="secEscalasWrap" style="margin-top:6px">';
+  // Si hay escalas guardadas, renderizarlas precargadas
+  if(datosEscalas && typeof datosEscalas==='object'){
+    Object.keys(datosEscalas).forEach(function(eid){
+      var def = _selEsc(eid);
+      if(def) html += _renderBloqueEscala(def, datosEscalas[eid]);
+    });
+  }
+  html += '</div>';
+  html += '<button type="button" class="btn btn-ghost btn-sm" style="margin-top:10px;width:100%;justify-content:center;border-style:dashed" onclick="abrirModalEscalas()">'
+        + '📊 + Agregar escala</button>';
+  return secWrap('escalas','Escalas aplicadas','📊', html, true);
+}
+
+// ── Modal: abrir / cerrar / filtrar ─────────────────────────
+
+function abrirModalEscalas(){
+  var m = g('modalEscalas');
+  if(!m) return;
+  m.style.display = 'flex';
+  var inp = g('escalaSearch');
+  if(inp){ inp.value=''; inp.focus(); }
+  _renderListaEscalas('');
+}
+
+function cerrarModalEscalas(){
+  var m = g('modalEscalas');
+  if(m) m.style.display='none';
+}
+
+function filtrarModalEscalas(q){
+  _renderListaEscalas((q||'').toLowerCase());
+}
+
+function _renderListaEscalas(q){
+  var lista = g('escalasList'); if(!lista) return;
+  var disponibles = _escalasDisponibles(_catIdActual);
+  var filtradas = q ? disponibles.filter(function(e){
+    return e.nombre.toLowerCase().indexOf(q)!==-1 || e.dominio.toLowerCase().indexOf(q)!==-1 || e.desc.toLowerCase().indexOf(q)!==-1;
+  }) : disponibles;
+
+  if(!filtradas.length){
+    lista.innerHTML='<div style="text-align:center;color:var(--tx4);font-size:13px;padding:20px">Sin resultados</div>';
+    return;
+  }
+
+  lista.innerHTML = filtradas.map(function(e){
+    var yaEsta = _escalaYaAgregada(e.id);
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:var(--surf2);border:1px solid var(--bd);border-radius:10px;'+(yaEsta?'opacity:.55':'cursor:pointer')+'" '
+      +(yaEsta?'':'onclick="seleccionarEscala(\''+e.id+'\')"')+'>'
+      +'<div style="flex:1;min-width:0">'
+      +'<div style="font-weight:700;font-size:13px;color:var(--tx)">'+e2(e.nombre)+'</div>'
+      +'<div style="font-size:11px;color:var(--tx3);margin-top:2px">'+e2(e.desc)+'</div>'
+      +'<div style="margin-top:4px"><span style="font-size:10px;font-weight:700;background:var(--surf3);color:var(--tx3);border:1px solid var(--bd);border-radius:20px;padding:2px 8px">'+e2(e.dominio)+'</span></div>'
+      +'</div>'
+      +'<div style="flex-shrink:0">'
+      +(yaEsta
+        ? '<span style="font-size:11px;color:var(--green);font-weight:700">✓ Agregada</span>'
+        : '<button class="btn btn-primary btn-sm">+ Agregar</button>')
+      +'</div></div>';
+  }).join('');
+}
+
+function seleccionarEscala(id){
+  if(_escalaYaAgregada(id)){ toast('Esta escala ya fue agregada','','warn'); return; }
+  var def = _selEsc(id); if(!def) return;
+  var wrap = g('secEscalasWrap'); if(!wrap) return;
+  wrap.insertAdjacentHTML('beforeend', _renderBloqueEscala(def, null));
+  cerrarModalEscalas();
+  // Scroll al bloque recién agregado
+  var bloque = g('escala_bloque_'+id);
+  if(bloque) bloque.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+// ── Render de bloque individual de escala ────────────────────
+
+function _renderBloqueEscala(def, datosGuardados){
+  var fecha = (datosGuardados && datosGuardados.fechaAplicacion) || new Date().toISOString().slice(0,10);
+  var html = '<div id="escala_bloque_'+def.id+'" style="background:var(--surf2);border:1px solid var(--bd2);border-radius:12px;margin-bottom:10px;overflow:hidden">';
+  // Encabezado del bloque
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surf3);border-bottom:1px solid var(--bd);cursor:pointer" onclick="toggleEscalaBloque(\''+def.id+'\')">';
+  html += '<div style="display:flex;align-items:center;gap:8px">';
+  html += '<span style="font-size:13px" id="ico_escala_'+def.id+'">▼</span>';
+  html += '<span style="font-weight:700;font-size:13px;color:var(--tx)">'+e2(def.nombre)+'</span>';
+  html += '<span style="font-size:10px;background:var(--surf);color:var(--tx3);border:1px solid var(--bd);border-radius:20px;padding:2px 7px">'+e2(def.dominio)+'</span>';
+  html += '</div>';
+  html += '<button type="button" onclick="eliminarEscala(\''+def.id+'\',event)" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px" title="Quitar escala">✕</button>';
+  html += '</div>';
+  // Cuerpo colapsable
+  html += '<div id="escala_body_'+def.id+'" style="padding:14px">';
+  // Fecha de aplicación
+  html += '<div class="field" style="margin-bottom:14px">';
+  html += '<label style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px">Fecha de aplicación</label>';
+  html += '<input class="inp" type="date" id="escala_fecha_'+def.id+'" value="'+fecha+'" style="max-width:180px">';
+  html += '</div>';
+  // Contenido específico de la escala
+  html += def.render(datosGuardados);
+  // Resultado en tiempo real
+  html += '<div id="escala_resultado_'+def.id+'" style="margin-top:14px;padding:12px 14px;background:var(--n050,#eff6ff);border:1px solid var(--bd2);border-radius:10px;display:none">';
+  html += '<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px">Resultado</div>';
+  html += '<div id="escala_puntaje_'+def.id+'" style="font-size:20px;font-weight:800;color:var(--n700)"></div>';
+  html += '<div id="escala_interp_'+def.id+'" style="font-size:12px;color:var(--tx2);margin-top:4px"></div>';
+  html += '</div>';
+  html += '</div></div>';
+  return html;
+}
+
+function toggleEscalaBloque(id){
+  var body = g('escala_body_'+id);
+  var ico  = g('ico_escala_'+id);
+  if(!body) return;
+  var open = body.style.display!=='none';
+  body.style.display = open ? 'none' : 'block';
+  if(ico) ico.textContent = open ? '▶' : '▼';
+}
+
+function eliminarEscala(id, evt){
+  if(evt) evt.stopPropagation();
+  var bloque = g('escala_bloque_'+id);
+  if(bloque) bloque.remove();
+}
+
+// ── Calcular y mostrar resultado ─────────────────────────────
+
+function recalcularEscala(id){
+  var def = _selEsc(id); if(!def) return;
+  var res = def.calcular(id);
+  if(!res) return;
+  var divRes   = g('escala_resultado_'+id);
+  var divPunt  = g('escala_puntaje_'+id);
+  var divInterp= g('escala_interp_'+id);
+  if(divRes) divRes.style.display='block';
+  if(divPunt) divPunt.textContent = res.puntaje||'';
+  if(divInterp){ divInterp.textContent = res.interpretacion||''; divInterp.style.color=res.color||'var(--tx2)'; }
+}
+
+// ── Leer todas las escalas para guardar ─────────────────────
+
+function leerEscalasForm(){
+  var resultado = {};
+  ESCALAS_CATALOGO.forEach(function(def){
+    var bloque = g('escala_bloque_'+def.id);
+    if(!bloque) return;
+    var fechaEl = g('escala_fecha_'+def.id);
+    var items = _leerItemsEscala(def.id);
+    var calc  = def.calcular(def.id);
+    resultado[def.id] = Object.assign({
+      fechaAplicacion: fechaEl ? fechaEl.value : '',
+      puntajeTotal: calc ? calc.puntajeRaw : null,
+      interpretacion: calc ? calc.interpretacion : '',
+    }, items);
+  });
+  return resultado;
+}
+
+function _leerItemsEscala(id){
+  var items = {};
+  var bloque = g('escala_bloque_'+id); if(!bloque) return items;
+  bloque.querySelectorAll('[data-escala-item]').forEach(function(el){
+    var k = el.getAttribute('data-escala-item');
+    items[k] = el.type==='checkbox' ? el.checked : el.value;
+  });
+  return { items: items };
+}
+
+// ── Display de escalas guardadas (evalCard expandible) ────────
+
+function displayEscalasResumen(escalas){
+  if(!escalas || !Object.keys(escalas).length) return '';
+  var html = '<div style="margin-top:12px;border-top:1px solid var(--bd);padding-top:12px">';
+  html += '<div style="font-size:10px;font-weight:700;color:var(--tx4);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">📊 Escalas aplicadas</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:4px">';
+  Object.keys(escalas).forEach(function(eid){
+    var def = _selEsc(eid); if(!def) return;
+    var datos = escalas[eid];
+    var puntaje = datos.puntajeTotal!==null && datos.puntajeTotal!==undefined ? datos.puntajeTotal : '—';
+    var interp  = datos.interpretacion || '';
+    var fecha   = datos.fechaAplicacion ? ' · '+datos.fechaAplicacion : '';
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;background:var(--surf3);border-radius:8px">';
+    html += '<div style="flex:1;min-width:0">';
+    html += '<span style="font-size:12px;font-weight:700;color:var(--tx)">'+e2(def.nombre)+'</span>';
+    html += '<span style="font-size:11px;color:var(--tx4)">'+e2(fecha)+'</span>';
+    if(interp) html += '<div style="font-size:11px;color:var(--tx3);margin-top:1px">'+e2(interp)+'</div>';
+    html += '</div>';
+    html += '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">';
+    html += '<span style="font-size:14px;font-weight:800;color:var(--n700)">'+e2(String(puntaje))+'</span>';
+    html += '<button class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px" onclick="verDetalleEscala(\''+eid+'\','+JSON.stringify(JSON.stringify(datos))+')">📄</button>';
+    html += '</div></div>';
+  });
+  html += '</div></div>';
+  return html;
+}
+
+function verDetalleEscala(eid, datosStr){
+  var datos = JSON.parse(datosStr);
+  var def = _selEsc(eid); if(!def) return;
+  var m = g('modalDetalleEscala'); if(!m) return;
+  g('modalDetalleEscalaTit').textContent = def.nombre;
+  var body = g('modalDetalleEscalaBody');
+  var html = '';
+  // Fecha y resultado
+  html += '<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px;padding:12px;background:var(--surf3);border-radius:10px">';
+  if(datos.fechaAplicacion) html += '<div><div style="font-size:10px;color:var(--tx4);font-weight:700">FECHA</div><div style="font-size:13px">'+e2(datos.fechaAplicacion)+'</div></div>';
+  if(datos.puntajeTotal!==null && datos.puntajeTotal!==undefined) html += '<div><div style="font-size:10px;color:var(--tx4);font-weight:700">PUNTAJE</div><div style="font-size:18px;font-weight:800;color:var(--n700)">'+datos.puntajeTotal+'</div></div>';
+  if(datos.interpretacion) html += '<div><div style="font-size:10px;color:var(--tx4);font-weight:700">INTERPRETACIÓN</div><div style="font-size:13px;font-weight:600">'+e2(datos.interpretacion)+'</div></div>';
+  html += '</div>';
+  // Ítems individuales
+  if(datos.items && Object.keys(datos.items).length){
+    html += '<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:8px">Ítems registrados</div>';
+    html += '<div style="display:flex;flex-direction:column;gap:4px">';
+    Object.keys(datos.items).forEach(function(k){
+      var v = datos.items[k];
+      if(v===''||v===null||v===undefined||v===false) return;
+      html += '<div style="display:flex;justify-content:space-between;padding:5px 8px;background:var(--surf2);border-radius:6px;font-size:12px">';
+      html += '<span style="color:var(--tx3)">'+e2(k.replace(/_/g,' '))+'</span>';
+      html += '<span style="font-weight:700;color:var(--tx)">'+e2(String(v))+'</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+  body.innerHTML = html;
+  m.style.display = 'flex';
+}
+
+function cerrarModalDetalleEscala(){
+  var m = g('modalDetalleEscala'); if(m) m.style.display='none';
+}
+
+// ── Helper: select genérico para ítems ──────────────────────
+
+function _selItem(id, opciones, valGuardado, label){
+  var val = (valGuardado!==undefined && valGuardado!==null) ? valGuardado : '';
+  var html = '<div style="margin-bottom:8px">';
+  if(label) html += '<div style="font-size:11px;color:var(--tx3);margin-bottom:3px">'+label+'</div>';
+  html += '<select class="sel" data-escala-item="'+id+'" onchange="recalcularEscala(\''+id.split('_')[0]+'\')" style="font-size:12px">';
+  html += '<option value="">—</option>';
+  opciones.forEach(function(op){
+    html += '<option value="'+op.v+'" '+(String(val)===String(op.v)?'selected':'')+'>'+e2(op.l)+'</option>';
+  });
+  html += '</select></div>';
+  return html;
+}
+
+function _numItem(escId, itemId, valGuardado, label, min, max, ph){
+  var val = (valGuardado!==undefined && valGuardado!==null) ? valGuardado : '';
+  return '<div style="margin-bottom:8px">'
+    +(label?'<div style="font-size:11px;color:var(--tx3);margin-bottom:3px">'+label+'</div>':'')
+    +'<input type="number" class="inp" data-escala-item="'+itemId+'" value="'+val+'" min="'+(min||0)+'" max="'+(max||999)+'" placeholder="'+(ph||'')+'" style="max-width:120px;font-size:12px" oninput="recalcularEscala(\''+escId+'\')">'
+    +'</div>';
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// SECCIÓN C: RENDER + CÁLCULO DE CADA ESCALA
+// ══════════════════════════════════════════════════════════════
+
+// ── EVA ──────────────────────────────────────────────────────
+function renderEscalaEVA(d){
+  var v = d&&d.items ? (d.items.valor||0) : 0;
+  return '<div style="padding:8px 0">'
+    +'<label style="font-size:12px;color:var(--tx3)">Valor de dolor percibido (0 = sin dolor, 10 = máximo dolor)</label>'
+    +'<div style="display:flex;align-items:center;gap:12px;margin-top:8px">'
+    +'<div class="eva-track" style="flex:1;position:relative"><input type="range" class="eva-sl" data-escala-item="valor" min="0" max="10" step="1" value="'+v+'" oninput="g(\'eva_disp\').textContent=this.value;recalcularEscala(\'eva\')"></div>'
+    +'<div class="eva-val" id="eva_disp">'+v+'</div>'
+    +'</div></div>';
+}
+function calcularEVA(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var el=b.querySelector('[data-escala-item="valor"]'); if(!el) return null;
+  var v=Number(el.value);
+  var interp = v<=2?'Sin dolor o mínimo':v<=4?'Dolor leve':v<=6?'Dolor moderado':v<=8?'Dolor intenso':'Dolor insoportable';
+  var color  = v<=2?'var(--green)':v<=4?'#65a30d':v<=6?'var(--amber)':v<=8?'#ea580c':'var(--red)';
+  return {puntaje: v+'/10', puntajeRaw: v, interpretacion: interp, color: color};
+}
+
+// ── BORG ─────────────────────────────────────────────────────
+function renderEscalaBorg(d){
+  var v = d&&d.items ? (d.items.nivel||'') : '';
+  var ops=[{v:'0',l:'0 — Ninguno'},{v:'0.5',l:'0.5 — Muy, muy leve'},{v:'1',l:'1 — Muy leve'},
+    {v:'2',l:'2 — Leve'},{v:'3',l:'3 — Moderado'},{v:'4',l:'4 — Algo intenso'},
+    {v:'5',l:'5 — Intenso'},{v:'6',l:'6'},{v:'7',l:'7 — Muy intenso'},
+    {v:'8',l:'8'},{v:'9',l:'9 — Muy, muy intenso'},{v:'10',l:'10 — Máximo'}];
+  return _selItem('borg_nivel', ops, v, 'Nivel de esfuerzo percibido');
+}
+function calcularBorg(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var el=b.querySelector('[data-escala-item="borg_nivel"]'); if(!el||!el.value) return null;
+  var v=Number(el.value);
+  var interp = v<=2?'Esfuerzo muy leve':v<=4?'Esfuerzo leve a moderado':v<=6?'Esfuerzo moderado a intenso':v<=8?'Esfuerzo muy intenso':'Esfuerzo máximo';
+  return {puntaje: v+'/10', puntajeRaw: v, interpretacion: interp};
+}
+
+// ── BERG (14 ítems × 0-4) ────────────────────────────────────
+function renderEscalaBerg(d){
+  var items_d = d&&d.items ? d.items : {};
+  var items = [
+    'Sedestación a bipedestación','Bipedestación sin apoyo','Sedestación sin apoyo (2 min)',
+    'Bipedestación a sedestación','Transferencias','Bipedestación ojos cerrados',
+    'Bipedestación pies juntos','Alcance hacia delante con brazo extendido','Recoger objeto del suelo',
+    'Girar a mirar atrás (derecha e izquierda)','Girar 360°','Escalón alternado (8 veces)',
+    'Bipedestación tándem','Apoyo monopodal'
+  ];
+  var ops=[{v:'0',l:'0'},{v:'1',l:'1'},{v:'2',l:'2'},{v:'3',l:'3'},{v:'4',l:'4'}];
+  var html='<div style="display:grid;gap:6px">';
+  items.forEach(function(it,i){
+    var key='item'+i;
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;background:var(--surf);border-radius:8px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;color:var(--tx);flex:1">'+e2((i+1)+'. '+it)+'</span>';
+    html+='<select class="sel" data-escala-item="'+key+'" onchange="recalcularEscala(\'berg\')" style="width:70px;font-size:12px;padding:4px 6px"><option value="">—</option>';
+    ops.forEach(function(op){ html+='<option value="'+op.v+'" '+(String(items_d[key])===op.v?'selected':'')+'>'+op.l+'</option>'; });
+    html+='</select></div>';
+  });
+  return html+'</div>';
+}
+function calcularBerg(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var els=b.querySelectorAll('[data-escala-item]');
+  var suma=0, count=0;
+  els.forEach(function(el){ if(el.value!==''){suma+=Number(el.value);count++;} });
+  if(!count) return null;
+  var interp = suma>=45?'Bajo riesgo de caída':suma>=36?'Riesgo moderado de caída':'Alto riesgo de caída';
+  var color  = suma>=45?'var(--green)':suma>=36?'var(--amber)':'var(--red)';
+  return {puntaje: suma+'/56', puntajeRaw: suma, interpretacion: interp, color: color};
+}
+
+// ── TUG ──────────────────────────────────────────────────────
+function renderEscalaTUG(d){
+  var v = d&&d.items ? (d.items.segundos||'') : '';
+  return _numItem('tug','segundos',v,'Tiempo registrado (segundos)',0,300,'ej: 12.5');
+}
+function calcularTUG(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var el=b.querySelector('[data-escala-item="segundos"]'); if(!el||!el.value) return null;
+  var v=Number(el.value);
+  var interp = v<10?'Independencia completa, bajo riesgo':v<12?'Independencia, riesgo bajo-moderado':v<20?'Dependencia variable, riesgo moderado de caída':v<30?'Dependencia leve, alto riesgo de caída':'Alta dependencia, muy alto riesgo de caída';
+  var color  = v<10?'var(--green)':v<12?'#65a30d':v<20?'var(--amber)':'var(--red)';
+  return {puntaje: v+' seg', puntajeRaw: v, interpretacion: interp, color: color};
+}
+
+// ── SIT-TO-STAND 30s ─────────────────────────────────────────
+function renderEscalaSTS30(d){
+  var v = d&&d.items ? (d.items.repeticiones||'') : '';
+  var edad = d&&d.items ? (d.items.edad||'') : '';
+  var sexo = d&&d.items ? (d.items.sexo||'') : '';
+  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    +_numItem('sts30','repeticiones',v,'Repeticiones completadas',0,60,'N°')
+    +_numItem('sts30','edad',edad,'Edad del paciente (años)',18,120,'años')
+    +'<div>'+_selItem('sts30_sexo',[{v:'M',l:'Masculino'},{v:'F',l:'Femenino'}],sexo,'Sexo')+'</div>'
+    +'</div>';
+}
+function calcularSTS30(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var rEl=b.querySelector('[data-escala-item="repeticiones"]'); if(!rEl||!rEl.value) return null;
+  var rep=Number(rEl.value);
+  // Norma simplificada por edad/sexo (60-64 años como referencia base)
+  return {puntaje: rep+' reps', puntajeRaw: rep, interpretacion: 'Ver tabla normativa por edad y sexo'};
+}
+
+// ── 6MWT ─────────────────────────────────────────────────────
+function renderEscala6MWT(d){
+  var items_d = d&&d.items ? d.items : {};
+  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+    +_numItem('sixmwt','distancia',items_d.distancia||'','Distancia recorrida (metros)',0,1000,'metros')
+    +_numItem('sixmwt','fc_pre',items_d.fc_pre||'','FC pre-test (lpm)',0,250,'lpm')
+    +_numItem('sixmwt','fc_post',items_d.fc_post||'','FC post-test (lpm)',0,250,'lpm')
+    +_numItem('sixmwt','spo2_pre',items_d.spo2_pre||'','SpO₂ pre (%)',0,100,'%')
+    +_numItem('sixmwt','spo2_post',items_d.spo2_post||'','SpO₂ post (%)',0,100,'%')
+    +'<div>'+_selItem('sixmwt_borg_post',[{v:'0',l:'0'},{v:'1',l:'1'},{v:'2',l:'2'},{v:'3',l:'3'},{v:'4',l:'4'},{v:'5',l:'5'},{v:'6',l:'6'},{v:'7',l:'7'},{v:'8',l:'8'},{v:'9',l:'9'},{v:'10',l:'10'}],items_d.borg_post||'','Borg al finalizar')+'</div>'
+    +'</div>';
+}
+function calcular6MWT(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var dEl=b.querySelector('[data-escala-item="distancia"]'); if(!dEl||!dEl.value) return null;
+  var dist=Number(dEl.value);
+  // Referencia simplificada: >450m=bueno, 300-450=moderado, <300=limitado
+  var interp = dist>=450?'Capacidad funcional conservada':dist>=300?'Capacidad funcional moderadamente reducida':'Capacidad funcional severamente reducida';
+  var color  = dist>=450?'var(--green)':dist>=300?'var(--amber)':'var(--red)';
+  return {puntaje: dist+' m', puntajeRaw: dist, interpretacion: interp, color: color};
+}
+
+// ── BARTHEL (10 ítems) ───────────────────────────────────────
+function renderEscalaBarthel(d){
+  var items_d = d&&d.items ? d.items : {};
+  var config = [
+    {k:'comida',     l:'Alimentación',           ops:[{v:0,l:'0 — Dependiente'},{v:5,l:'5 — Necesita ayuda'},{v:10,l:'10 — Independiente'}]},
+    {k:'bano',       l:'Baño/ducha',              ops:[{v:0,l:'0 — Dependiente'},{v:5,l:'5 — Independiente'}]},
+    {k:'aseo',       l:'Aseo personal',           ops:[{v:0,l:'0 — Dependiente'},{v:5,l:'5 — Independiente'}]},
+    {k:'vestido',    l:'Vestido',                 ops:[{v:0,l:'0 — Dependiente'},{v:5,l:'5 — Necesita ayuda'},{v:10,l:'10 — Independiente'}]},
+    {k:'intestino',  l:'Control intestinal',      ops:[{v:0,l:'0 — Incontinente'},{v:5,l:'5 — Accidente ocasional'},{v:10,l:'10 — Continente'}]},
+    {k:'vejiga',     l:'Control vesical',         ops:[{v:0,l:'0 — Incontinente'},{v:5,l:'5 — Accidente ocasional'},{v:10,l:'10 — Continente'}]},
+    {k:'wc',         l:'Uso del WC',              ops:[{v:0,l:'0 — Dependiente'},{v:5,l:'5 — Necesita ayuda'},{v:10,l:'10 — Independiente'}]},
+    {k:'transfer',   l:'Traslado silla-cama',     ops:[{v:0,l:'0 — Dependiente'},{v:5,l:'5 — Gran ayuda'},{v:10,l:'10 — Mínima ayuda'},{v:15,l:'15 — Independiente'}]},
+    {k:'deambulacion',l:'Deambulación',           ops:[{v:0,l:'0 — Dependiente'},{v:5,l:'5 — En silla de ruedas'},{v:10,l:'10 — Necesita ayuda'},{v:15,l:'15 — Independiente'}]},
+    {k:'escaleras',  l:'Subir/bajar escaleras',   ops:[{v:0,l:'0 — Dependiente'},{v:5,l:'5 — Necesita ayuda'},{v:10,l:'10 — Independiente'}]},
+  ];
+  var html='<div style="display:grid;gap:5px">';
+  config.forEach(function(it){
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;background:var(--surf);border-radius:8px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;color:var(--tx);flex:1">'+e2(it.l)+'</span>';
+    html+='<select class="sel" data-escala-item="'+it.k+'" onchange="recalcularEscala(\'barthel\')" style="font-size:12px;padding:4px 6px"><option value="">—</option>';
+    it.ops.forEach(function(op){ html+='<option value="'+op.v+'" '+(String(items_d[it.k])===String(op.v)?'selected':'')+'>'+op.l+'</option>'; });
+    html+='</select></div>';
+  });
+  return html+'</div>';
+}
+function calcularBarthel(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var els=b.querySelectorAll('[data-escala-item]');
+  var suma=0, count=0;
+  els.forEach(function(el){ if(el.value!==''){suma+=Number(el.value);count++;} });
+  if(!count) return null;
+  var interp = suma>=91?'Independencia total':suma>=61?'Dependencia leve':suma>=41?'Dependencia moderada':suma>=21?'Dependencia grave':'Dependencia total';
+  var color  = suma>=91?'var(--green)':suma>=61?'#65a30d':suma>=41?'var(--amber)':'var(--red)';
+  return {puntaje: suma+'/100', puntajeRaw: suma, interpretacion: interp, color: color};
+}
+
+// ── ASHWORTH MODIFICADA ──────────────────────────────────────
+function renderEscalaAshworth(d){
+  var items_d = d&&d.items ? d.items : {};
+  var segmentos=['Flexores codo D','Extensores codo D','Flexores codo I','Extensores codo I',
+    'Flexores muñeca D','Flexores muñeca I','Flexores cadera D','Extensores cadera D',
+    'Flexores cadera I','Extensores cadera I','Cuádriceps D','Isquiotibiales D',
+    'Cuádriceps I','Isquiotibiales I','Tríceps sural D','Tríceps sural I'];
+  var ops=[{v:'0',l:'0 — Sin aumento del tono'},{v:'1',l:'1 — Leve al inicio del mov.'},{v:'1+',l:'1+ — Leve en menos de mitad'},{v:'2',l:'2 — Marcado, mov. pasivo fácil'},{v:'3',l:'3 — Considerable, mov. difícil'},{v:'4',l:'4 — Rígido en flex/ext'}];
+  var html='<div style="display:grid;gap:5px">';
+  segmentos.forEach(function(seg){
+    var key=seg.replace(/\s/g,'_');
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 8px;background:var(--surf);border-radius:8px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;flex:1">'+e2(seg)+'</span>';
+    html+='<select class="sel" data-escala-item="'+key+'" onchange="recalcularEscala(\'ashworth\')" style="font-size:11px;padding:3px 4px;max-width:210px"><option value="">—</option>';
+    ops.forEach(function(op){ html+='<option value="'+op.v+'" '+(String(items_d[key])===op.v?'selected':'')+'>'+op.l+'</option>'; });
+    html+='</select></div>';
+  });
+  return html+'</div>';
+}
+function calcularAshworth(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var count=0, positivos=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){
+    if(el.value&&el.value!=='0'){positivos++;} if(el.value) count++;
+  });
+  if(!count) return null;
+  return {puntaje: positivos+' seg. con tono elevado', puntajeRaw: positivos, interpretacion: 'Ver detalle por segmento'};
+}
+
+// ── MRC DISNEA ───────────────────────────────────────────────
+function renderEscalaMRC(d){
+  var v = d&&d.items ? (d.items.grado||'') : '';
+  var ops=[
+    {v:'0',l:'0 — Sin disnea, salvo ejercicio intenso'},
+    {v:'1',l:'1 — Disnea al subir pendientes o escaleras rápido'},
+    {v:'2',l:'2 — Camina más despacio que personas de su edad'},
+    {v:'3',l:'3 — Se detiene al caminar 100m o tras pocos minutos'},
+    {v:'4',l:'4 — No puede salir de casa, disnea al vestirse'},
+  ];
+  return _selItem('mrc_disnea_grado', ops, v, 'Grado de disnea');
+}
+function calcularMRC(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var el=b.querySelector('[data-escala-item="mrc_disnea_grado"]'); if(!el||!el.value) return null;
+  var v=Number(el.value);
+  var interp=['Sin limitación funcional significativa','Limitación leve','Limitación moderada','Limitación grave','Limitación muy grave'][v];
+  var color = v<=1?'var(--green)':v<=2?'var(--amber)':'var(--red)';
+  return {puntaje: 'Grado '+v+'/4', puntajeRaw: v, interpretacion: interp, color: color};
+}
+
+// ── NYHA ─────────────────────────────────────────────────────
+function renderEscalaNYHA(d){
+  var v = d&&d.items ? (d.items.clase||'') : '';
+  var ops=[
+    {v:'I',  l:'Clase I — Sin limitación de actividad física'},
+    {v:'II', l:'Clase II — Leve limitación, síntomas con esfuerzo moderado'},
+    {v:'III',l:'Clase III — Marcada limitación, síntomas con mínimo esfuerzo'},
+    {v:'IV', l:'Clase IV — Incapacidad de actividad, síntomas en reposo'},
+  ];
+  return _selItem('nyha_clase', ops, v, 'Clase funcional NYHA');
+}
+function calcularNYHA(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var el=b.querySelector('[data-escala-item="nyha_clase"]'); if(!el||!el.value) return null;
+  var m={I:'Limitación mínima',II:'Limitación leve',III:'Limitación marcada',IV:'Limitación severa'};
+  var c={I:'var(--green)',II:'var(--amber)',III:'#ea580c',IV:'var(--red)'};
+  return {puntaje: 'Clase '+el.value, puntajeRaw: el.value, interpretacion: m[el.value]||'', color: c[el.value]||''};
+}
+
+// ── LAWTON-BRODY (8 ítems) ───────────────────────────────────
+function renderEscalaLawton(d){
+  var items_d = d&&d.items ? d.items : {};
+  var config=[
+    {k:'telefono',  l:'Uso del teléfono',      ops:[{v:0,l:'0 — No usa'},{v:1,l:'1 — Con ayuda'},{v:1,l:'1 — Independiente'}]},
+    {k:'compras',   l:'Hacer compras',          ops:[{v:0,l:'0 — Incapaz'},{v:0,l:'0 — Con ayuda'},{v:1,l:'1 — Independiente'}]},
+    {k:'cocina',    l:'Preparación comida',     ops:[{v:0,l:'0 — No prepara'},{v:0,l:'0 — Recalienta'},{v:1,l:'1 — Independiente'}]},
+    {k:'limpieza',  l:'Cuidado del hogar',      ops:[{v:0,l:'0 — No realiza'},{v:1,l:'1 — Con ayuda'},{v:1,l:'1 — Independiente'}]},
+    {k:'lavanderia',l:'Lavado de ropa',         ops:[{v:0,l:'0 — Depende'},{v:1,l:'1 — Con ayuda'},{v:1,l:'1 — Independiente'}]},
+    {k:'transporte',l:'Uso de transporte',      ops:[{v:0,l:'0 — No puede'},{v:1,l:'1 — Con ayuda'},{v:1,l:'1 — Independiente'}]},
+    {k:'medicacion',l:'Manejo medicación',      ops:[{v:0,l:'0 — Incapaz'},{v:0,l:'0 — Necesita ayuda'},{v:1,l:'1 — Independiente'}]},
+    {k:'dinero',    l:'Manejo del dinero',      ops:[{v:0,l:'0 — Incapaz'},{v:1,l:'1 — Operaciones simples'},{v:1,l:'1 — Independiente'}]},
+  ];
+  var html='<div style="display:grid;gap:5px">';
+  config.forEach(function(it){
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;background:var(--surf);border-radius:8px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;flex:1">'+e2(it.l)+'</span>';
+    html+='<select class="sel" data-escala-item="'+it.k+'" onchange="recalcularEscala(\'lawton\')" style="font-size:12px;padding:4px 6px;max-width:200px"><option value="">—</option>';
+    it.ops.forEach(function(op,i){ html+='<option value="'+op.v+'" '+(String(items_d[it.k])===String(op.v)&&i>0?'selected':'')+'>'+op.l+'</option>'; });
+    html+='</select></div>';
+  });
+  return html+'</div>';
+}
+function calcularLawton(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var suma=0, count=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){ if(el.value!==''){suma+=Number(el.value);count++;} });
+  if(!count) return null;
+  var interp = suma>=6?'Independencia conservada':suma>=4?'Dependencia leve':suma>=2?'Dependencia moderada':'Dependencia grave';
+  return {puntaje: suma+'/8', puntajeRaw: suma, interpretacion: interp, color: suma>=6?'var(--green)':suma>=4?'var(--amber)':'var(--red)'};
+}
+
+// ── SPPB ─────────────────────────────────────────────────────
+function renderEscalaSPPB(d){
+  var items_d = d&&d.items ? d.items : {};
+  var ops04=[{v:'0',l:'0'},{v:'1',l:'1'},{v:'2',l:'2'},{v:'3',l:'3'},{v:'4',l:'4'}];
+  return '<div style="display:grid;gap:8px">'
+    +'<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase">Subtest 1 — Equilibrio estático (0-4)</div>'
+    +_selItem('sppb_equil', [{v:'0',l:'0 — No puede mantener posición tándem'},{v:'1',l:'1 — Semitándem < 10seg'},{v:'2',l:'2 — Semitándem ≥ 10seg, tándem < 3seg'},{v:'3',l:'3 — Tándem 3-9.9seg'},{v:'4',l:'4 — Tándem ≥ 10seg'}], items_d.sppb_equil, null)
+    +'<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase">Subtest 2 — Velocidad de marcha 4m (0-4)</div>'
+    +_selItem('sppb_marcha', [{v:'0',l:'0 — No puede'},{v:'1',l:'1 — ≥ 8.70seg'},{v:'2',l:'2 — 6.21–8.70seg'},{v:'3',l:'3 — 4.82–6.20seg'},{v:'4',l:'4 — < 4.82seg'}], items_d.sppb_marcha, null)
+    +'<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase">Subtest 3 — Sit-to-Stand × 5 (0-4)</div>'
+    +_selItem('sppb_sts', [{v:'0',l:'0 — No puede'},{v:'1',l:'1 — ≥ 16.70seg'},{v:'2',l:'2 — 13.70–16.69seg'},{v:'3',l:'3 — 11.20–13.69seg'},{v:'4',l:'4 — < 11.20seg'}], items_d.sppb_sts, null)
+    +'</div>';
+}
+function calcularSPPB(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var keys=['sppb_equil','sppb_marcha','sppb_sts'], suma=0, count=0;
+  keys.forEach(function(k){ var el=b.querySelector('[data-escala-item="'+k+'"]'); if(el&&el.value!==''){suma+=Number(el.value);count++;} });
+  if(!count) return null;
+  var interp = suma>=10?'Rendimiento físico normal':suma>=7?'Limitación leve':suma>=4?'Limitación moderada':'Limitación grave';
+  return {puntaje: suma+'/12', puntajeRaw: suma, interpretacion: interp, color: suma>=10?'var(--green)':suma>=7?'var(--amber)':'var(--red)'};
+}
+
+// ── TINETTI ──────────────────────────────────────────────────
+function renderEscalaTinetti(d){
+  var items_d = d&&d.items ? d.items : {};
+  var eq=[
+    {k:'eq1',l:'1. Equilibrio sentado',ops:[{v:0,l:'0 — Se inclina/resbala'},{v:1,l:'1 — Estable'}]},
+    {k:'eq2',l:'2. Levantarse',ops:[{v:0,l:'0 — Incapaz'},{v:1,l:'1 — Usa los brazos'},{v:2,l:'2 — Sin usar brazos'}]},
+    {k:'eq3',l:'3. Intento de levantarse',ops:[{v:0,l:'0 — Incapaz'},{v:1,l:'1 — Varios intentos'},{v:2,l:'2 — Al primer intento'}]},
+    {k:'eq4',l:'4. Equilibrio inmediato (5seg)',ops:[{v:0,l:'0 — Inestable'},{v:1,l:'1 — Estable con ayuda'},{v:2,l:'2 — Estable sin ayuda'}]},
+    {k:'eq5',l:'5. Equilibrio en bipedestación',ops:[{v:0,l:'0 — Inestable'},{v:1,l:'1 — Pies separados/apoyo'},{v:2,l:'2 — Pies juntos, sin apoyo'}]},
+    {k:'eq6',l:'6. Empujón (esternón ×3)',ops:[{v:0,l:'0 — Cae'},{v:1,l:'1 — Se tambalea, agarra'},{v:2,l:'2 — Estable'}]},
+    {k:'eq7',l:'7. Ojos cerrados',ops:[{v:0,l:'0 — Inestable'},{v:1,l:'1 — Estable'}]},
+    {k:'eq8',l:'8. Giro 360°',ops:[{v:0,l:'0 — Pasos discontinuos'},{v:1,l:'1 — Pasos continuos'},{v:0,l:'0 — Inestable'},{v:1,l:'1 — Estable'}]},
+    {k:'eq9',l:'9. Sentarse',ops:[{v:0,l:'0 — Inseguro'},{v:1,l:'1 — Usa brazos/discontinuo'},{v:2,l:'2 — Seguro, suave'}]},
+  ];
+  var ma=[
+    {k:'ma1',l:'1. Inicio de la marcha',ops:[{v:0,l:'0 — Vacilación'},{v:1,l:'1 — Sin vacilación'}]},
+    {k:'ma2',l:'2. Longitud/altura paso D',ops:[{v:0,l:'0 — No supera pie I'},{v:1,l:'1 — Supera pie I'}]},
+    {k:'ma3',l:'3. Longitud/altura paso I',ops:[{v:0,l:'0 — No supera pie D'},{v:1,l:'1 — Supera pie D'}]},
+    {k:'ma4',l:'4. Simetría del paso',ops:[{v:0,l:'0 — Asimétrica'},{v:1,l:'1 — Simétrica'}]},
+    {k:'ma5',l:'5. Continuidad del paso',ops:[{v:0,l:'0 — Para o discontinuo'},{v:1,l:'1 — Continuo'}]},
+    {k:'ma6',l:'6. Trayectoria (3m)',ops:[{v:0,l:'0 — Marcada desviación'},{v:1,l:'1 — Leve desviación'},{v:2,l:'2 — Sin desviación'}]},
+    {k:'ma7',l:'7. Tronco',ops:[{v:0,l:'0 — Balanceo marcado'},{v:1,l:'1 — Flexión/rodillas/espalda'},{v:2,l:'2 — Sin balanceo'}]},
+    {k:'ma8',l:'8. Posición al caminar',ops:[{v:0,l:'0 — Talones separados'},{v:1,l:'1 — Talones casi juntos'}]},
+  ];
+  var html='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:6px">Parte A — Equilibrio (máx 16)</div><div style="display:grid;gap:4px">';
+  eq.forEach(function(it){
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 8px;background:var(--surf);border-radius:7px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;flex:1">'+e2(it.l)+'</span>';
+    html+='<select class="sel" data-escala-item="'+it.k+'" onchange="recalcularEscala(\'tinetti\')" style="font-size:11px;padding:3px 4px;max-width:200px"><option value="">—</option>';
+    it.ops.forEach(function(op){ html+='<option value="'+op.v+'">'+op.l+'</option>'; });
+    html+='</select></div>';
+  });
+  html+='</div><div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin:10px 0 6px">Parte B — Marcha (máx 12)</div><div style="display:grid;gap:4px">';
+  ma.forEach(function(it){
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 8px;background:var(--surf);border-radius:7px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;flex:1">'+e2(it.l)+'</span>';
+    html+='<select class="sel" data-escala-item="'+it.k+'" onchange="recalcularEscala(\'tinetti\')" style="font-size:11px;padding:3px 4px;max-width:200px"><option value="">—</option>';
+    it.ops.forEach(function(op){ html+='<option value="'+op.v+'">'+op.l+'</option>'; });
+    html+='</select></div>';
+  });
+  return html+'</div>';
+}
+function calcularTinetti(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var suma=0,count=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){if(el.value!==''){suma+=Number(el.value);count++;}});
+  if(!count) return null;
+  var interp=suma>=24?'Bajo riesgo de caída':suma>=19?'Riesgo moderado de caída':'Alto riesgo de caída';
+  return {puntaje:suma+'/28',puntajeRaw:suma,interpretacion:interp,color:suma>=24?'var(--green)':suma>=19?'var(--amber)':'var(--red)'};
+}
+
+// ── FES-I (16 ítems, 1-4 cada uno) ──────────────────────────
+function renderEscalaFESI(d){
+  var items_d = d&&d.items ? d.items : {};
+  var actividades=['Limpiar la casa','Vestirse/desvestirse','Preparar comidas sencillas',
+    'Bañarse o ducharse','Ir a comprar','Levantarse/sentarse en silla','Subir/bajar escaleras',
+    'Caminar por el vecindario','Coger algo por encima de la cabeza','Ir a ver a alguien',
+    'Caminar sobre superficies resbaladizas','Visitar a un amigo o familiar','Caminar en lugares con aglomeración',
+    'Caminar sobre superficies irregulares','Subir/bajar una cuesta','Ir a un acto social'];
+  var ops=[{v:'1',l:'1 — Nada preocupado'},{v:'2',l:'2 — Algo preocupado'},{v:'3',l:'3 — Bastante preocupado'},{v:'4',l:'4 — Muy preocupado'}];
+  var html='<div style="display:grid;gap:4px">';
+  actividades.forEach(function(act,i){
+    var key='item'+(i+1);
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 8px;background:var(--surf);border-radius:7px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;flex:1">'+e2((i+1)+'. '+act)+'</span>';
+    html+='<select class="sel" data-escala-item="'+key+'" onchange="recalcularEscala(\'fesi\')" style="font-size:11px;padding:3px 4px;max-width:180px"><option value="">—</option>';
+    ops.forEach(function(op){ html+='<option value="'+op.v+'" '+(String(items_d[key])===op.v?'selected':'')+'>'+op.l+'</option>'; });
+    html+='</select></div>';
+  });
+  return html+'</div>';
+}
+function calcularFESI(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var suma=0,count=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){if(el.value!==''){suma+=Number(el.value);count++;}});
+  if(!count) return null;
+  var interp=suma<=19?'Bajo miedo a caer':suma<=27?'Moderado miedo a caer':'Severo miedo a caer';
+  return {puntaje:suma+'/64',puntajeRaw:suma,interpretacion:interp,color:suma<=19?'var(--green)':suma<=27?'var(--amber)':'var(--red)'};
+}
+
+// ── MMSE (simplificado, 30 pts) ──────────────────────────────
+function renderEscalaMMSE(d){
+  var items_d = d&&d.items ? d.items : {};
+  var dominios=[
+    {k:'orientacion_t',l:'Orientación temporal (5 pts)',max:5},
+    {k:'orientacion_e',l:'Orientación espacial (5 pts)',max:5},
+    {k:'registro',l:'Registro de 3 palabras (3 pts)',max:3},
+    {k:'atencion',l:'Atención y cálculo (5 pts)',max:5},
+    {k:'memoria',l:'Memoria diferida — 3 palabras (3 pts)',max:3},
+    {k:'denominacion',l:'Denominación (2 pts)',max:2},
+    {k:'repeticion',l:'Repetición (1 pt)',max:1},
+    {k:'comprension',l:'Comprensión verbal (3 pts)',max:3},
+    {k:'lectura',l:'Lectura (1 pt)',max:1},
+    {k:'escritura',l:'Escritura (1 pt)',max:1},
+    {k:'copia',l:'Copia figura (1 pt)',max:1},
+  ];
+  var html='<div style="display:grid;gap:5px">';
+  dominios.forEach(function(it){
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;background:var(--surf);border-radius:8px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;flex:1">'+e2(it.l)+'</span>';
+    html+='<input type="number" class="inp" data-escala-item="'+it.k+'" value="'+(items_d[it.k]!==undefined?items_d[it.k]:'')+'" min="0" max="'+it.max+'" style="width:60px;font-size:12px;text-align:center" oninput="recalcularEscala(\'mmse\')">';
+    html+='</div>';
+  });
+  return html+'</div>';
+}
+function calcularMMSE(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var suma=0,count=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){if(el.value!==''){suma+=Number(el.value);count++;}});
+  if(!count) return null;
+  var interp=suma>=25?'Cognición normal':suma>=20?'Deterioro leve':suma>=10?'Deterioro moderado':'Deterioro grave';
+  return {puntaje:suma+'/30',puntajeRaw:suma,interpretacion:interp,color:suma>=25?'var(--green)':suma>=20?'var(--amber)':'var(--red)'};
+}
+
+// ── MNA BREVE ────────────────────────────────────────────────
+function renderEscalaMNA(d){
+  var items_d = d&&d.items ? d.items : {};
+  var items=[
+    {k:'apetito',l:'A. Pérdida de apetito',ops:[{v:0,l:'0 — Anorexia grave'},{v:1,l:'1 — Moderada'},{v:2,l:'2 — Sin pérdida'}]},
+    {k:'peso',l:'B. Pérdida de peso reciente',ops:[{v:0,l:'0 — >3kg'},{v:1,l:'1 — No sabe'},{v:2,l:'2 — 1-3kg'},{v:3,l:'3 — Sin pérdida'}]},
+    {k:'movilidad',l:'C. Movilidad',ops:[{v:0,l:'0 — Cama/silla'},{v:1,l:'1 — Sale del domicilio'},{v:2,l:'2 — Sale libremente'}]},
+    {k:'estres',l:'D. Estrés/enfermedad aguda',ops:[{v:0,l:'0 — Sí'},{v:2,l:'2 — No'}]},
+    {k:'neuropsico',l:'E. Problema neuropsicológico',ops:[{v:0,l:'0 — Demencia grave'},{v:1,l:'1 — Demencia leve'},{v:2,l:'2 — Sin problema'}]},
+    {k:'imc',l:'F. IMC',ops:[{v:0,l:'0 — <19'},{v:1,l:'1 — 19-21'},{v:2,l:'2 — 21-23'},{v:3,l:'3 — ≥23'}]},
+  ];
+  var html='<div style="display:grid;gap:5px">';
+  items.forEach(function(it){
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 8px;background:var(--surf);border-radius:8px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;flex:1">'+e2(it.l)+'</span>';
+    html+='<select class="sel" data-escala-item="'+it.k+'" onchange="recalcularEscala(\'mna\')" style="font-size:12px;padding:4px 6px;max-width:180px"><option value="">—</option>';
+    it.ops.forEach(function(op){ html+='<option value="'+op.v+'" '+(String(items_d[it.k])===String(op.v)?'selected':'')+'>'+op.l+'</option>'; });
+    html+='</select></div>';
+  });
+  return html+'</div>';
+}
+function calcularMNA(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var suma=0,count=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){if(el.value!==''){suma+=Number(el.value);count++;}});
+  if(!count) return null;
+  var interp=suma>=12?'Estado nutricional normal':suma>=8?'Riesgo de desnutrición':'Desnutrición';
+  return {puntaje:suma+'/14',puntajeRaw:suma,interpretacion:interp,color:suma>=12?'var(--green)':suma>=8?'var(--amber)':'var(--red)'};
+}
+
+// ── FRIED ────────────────────────────────────────────────────
+function renderEscalaFried(d){
+  var items_d = d&&d.items ? d.items : {};
+  var criterios=[
+    {k:'peso',l:'1. Pérdida de peso involuntaria (>4.5 kg o >5% en último año)'},
+    {k:'agotamiento',l:'2. Agotamiento referido por el paciente'},
+    {k:'actividad',l:'3. Baja actividad física (< umbral por sexo)'},
+    {k:'lentitud',l:'4. Lentitud de marcha (velocidad < 0.8 m/s)'},
+    {k:'debilidad',l:'5. Debilidad muscular (dinamometría < umbral)'},
+  ];
+  var html='<div style="display:grid;gap:5px">';
+  criterios.forEach(function(it){
+    var val=items_d[it.k];
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:var(--surf);border-radius:8px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;flex:1">'+e2(it.l)+'</span>';
+    html+='<select class="sel" data-escala-item="'+it.k+'" onchange="recalcularEscala(\'fried\')" style="font-size:12px;padding:4px 6px;width:120px">';
+    html+='<option value="">—</option>';
+    html+='<option value="1" '+(val===1||val==='1'?'selected':'')+'>Presente</option>';
+    html+='<option value="0" '+(val===0||val==='0'?'selected':'')+'>Ausente</option>';
+    html+='</select></div>';
+  });
+  return html+'</div>';
+}
+function calcularFried(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var suma=0,count=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){if(el.value!==''){suma+=Number(el.value);count++;}});
+  if(!count) return null;
+  var interp=suma===0?'Robusto (no frágil)':suma<=2?'Pre-frágil':'Frágil';
+  return {puntaje:suma+'/5 criterios',puntajeRaw:suma,interpretacion:interp,color:suma===0?'var(--green)':suma<=2?'var(--amber)':'var(--red)'};
+}
+
+// ── TARDIEU ──────────────────────────────────────────────────
+function renderEscalaTardieu(d){
+  var items_d = d&&d.items ? d.items : {};
+  var segmentos=['Flexores codo D','Flexores codo I','Flexores muñeca D','Flexores muñeca I',
+    'Flexores cadera D','Flexores cadera I','Cuádriceps D','Cuádriceps I','Tríceps sural D','Tríceps sural I'];
+  var calidad=[{v:'0',l:'0 — Sin resistencia'},{v:'1',l:'1 — Leve resistencia'},{v:'2',l:'2 — Captura clara'},{v:'3',l:'3 — Clonus agotable'},{v:'4',l:'4 — Clonus inagotable'},{v:'5',l:'5 — Articulación inmóvil'}];
+  var html='<div style="display:grid;gap:4px">';
+  segmentos.forEach(function(seg){
+    var key=seg.replace(/\s/g,'_');
+    html+='<div style="padding:6px 8px;background:var(--surf);border-radius:8px;border:1px solid var(--bd)">';
+    html+='<div style="font-size:11px;font-weight:700;margin-bottom:4px">'+e2(seg)+'</div>';
+    html+='<div style="display:flex;gap:8px;flex-wrap:wrap">';
+    html+='<div style="flex:1"><div style="font-size:10px;color:var(--tx4)">Calidad (X)</div>';
+    html+='<select class="sel" data-escala-item="'+key+'_X" onchange="recalcularEscala(\'tardieu\')" style="font-size:11px;padding:3px;width:100%"><option value="">—</option>';
+    calidad.forEach(function(op){ html+='<option value="'+op.v+'" '+(String(items_d[key+'_X'])===op.v?'selected':'')+'>'+op.l+'</option>'; });
+    html+='</select></div>';
+    html+='<div><div style="font-size:10px;color:var(--tx4)">Ángulo R1 (°)</div>';
+    html+='<input type="number" class="inp" data-escala-item="'+key+'_R1" value="'+(items_d[key+'_R1']||'')+'" min="0" max="180" style="width:70px;font-size:12px" oninput="recalcularEscala(\'tardieu\')"></div>';
+    html+='<div><div style="font-size:10px;color:var(--tx4)">Ángulo R2 (°)</div>';
+    html+='<input type="number" class="inp" data-escala-item="'+key+'_R2" value="'+(items_d[key+'_R2']||'')+'" min="0" max="180" style="width:70px;font-size:12px" oninput="recalcularEscala(\'tardieu\')"></div>';
+    html+='</div></div>';
+  });
+  return html+'</div>';
+}
+function calcularTardieu(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var count=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){if(el.value) count++;});
+  if(!count) return null;
+  return {puntaje:'Ver detalle por segmento', puntajeRaw: null, interpretacion:'Diferencia R2-R1 indica grado de espasticidad dinámica'};
+}
+
+// ── ESCALAS TRAUMATOLOGÍA (versiones simplificadas) ──────────
+
+function _escalaSimpleItems(escId, items_d, config){
+  var html='<div style="display:grid;gap:4px">';
+  config.forEach(function(it){
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 8px;background:var(--surf);border-radius:7px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;flex:1">'+e2(it.l)+'</span>';
+    html+='<select class="sel" data-escala-item="'+it.k+'" onchange="recalcularEscala(\''+escId+'\')" style="font-size:11px;padding:3px 4px;max-width:200px"><option value="">—</option>';
+    it.ops.forEach(function(op){ html+='<option value="'+op.v+'" '+(String(items_d[it.k])===String(op.v)?'selected':'')+'>'+op.l+'</option>'; });
+    html+='</select></div>';
+  });
+  return html+'</div>';
+}
+
+function _calcSimple(id, max, rangos){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var suma=0,count=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){if(el.value!==''){suma+=Number(el.value);count++;}});
+  if(!count) return null;
+  var interp=''; var color='var(--tx2)';
+  for(var i=0;i<rangos.length;i++){
+    if(suma>=rangos[i].min&&suma<=rangos[i].max){interp=rangos[i].l;color=rangos[i].c||'var(--tx2)';break;}
+  }
+  return {puntaje:suma+'/'+max, puntajeRaw:suma, interpretacion:interp, color:color};
+}
+
+// DASH (30 ítems, 1-5 por ítem, fórmula especial)
+function renderEscalaDASH(d){
+  var items_d=d&&d.items?d.items:{};
+  var preguntas=['Abrir un frasco nuevo o apretado','Escribir','Girar una llave','Preparar una comida',
+    'Empujar una puerta pesada','Poner algo en un estante sobre la cabeza','Tareas domésticas pesadas',
+    'Trabajar en el jardín o patio','Hacer la cama','Llevar una bolsa o maletín',
+    'Cargar un objeto pesado (más de 5 kg)','Cambiar una bombilla sobre la cabeza',
+    'Lavarse o secarse el cabello','Lavarse la espalda','Ponerse un jersey',
+    'Usar un cuchillo para cortar comida','Actividades de ocio con poco esfuerzo en el brazo',
+    'Actividades de ocio que exigen fuerza o impacto','Actividades de ocio que mueven libremente el brazo',
+    'Transporte (conducir o usar transporte)','Actividad sexual','Afectación del trabajo o actividad diaria',
+    'Dolor en brazo/hombro/mano','Hormigueo en brazo/hombro/mano','Debilidad',
+    'Rigidez','Gravedad del dolor en el último mes','Intensidad del dolor al hacer ciertas actividades',
+    'Hormigueo (sensación de alfileres y agujas)','Dificultad para dormir'];
+  var ops=[{v:'1',l:'1 — Ninguna dificultad'},{v:'2',l:'2 — Leve'},{v:'3',l:'3 — Moderada'},{v:'4',l:'4 — Grave'},{v:'5',l:'5 — Incapaz'}];
+  var html='<div style="display:grid;gap:4px;max-height:400px;overflow-y:auto;padding-right:4px">';
+  preguntas.forEach(function(p,i){
+    var key='item'+(i+1);
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 8px;background:var(--surf);border-radius:7px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;flex:1">'+e2((i+1)+'. '+p)+'</span>';
+    html+='<select class="sel" data-escala-item="'+key+'" onchange="recalcularEscala(\'dash\')" style="font-size:11px;padding:3px 4px;max-width:160px"><option value="">—</option>';
+    ops.forEach(function(op){ html+='<option value="'+op.v+'" '+(String(items_d[key])===op.v?'selected':'')+'>'+op.l+'</option>'; });
+    html+='</select></div>';
+  });
+  return html+'</div>';
+}
+function calcularDASH(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var vals=[],count=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){if(el.value!==''){vals.push(Number(el.value));count++;}});
+  if(count<10) return null;
+  var suma=vals.reduce(function(a,b){return a+b;},0);
+  var score=((suma/count)-1)*(100/4);
+  score=Math.round(score*10)/10;
+  var interp=score<=25?'Discapacidad mínima':score<=50?'Discapacidad moderada':score<=75?'Discapacidad grave':'Discapacidad muy grave';
+  return {puntaje:score+'/100', puntajeRaw:score, interpretacion:interp, color:score<=25?'var(--green)':score<=50?'var(--amber)':'var(--red)'};
+}
+
+// QuickDASH (11 ítems)
+function renderEscalaQuickDASH(d){
+  var items_d=d&&d.items?d.items:{};
+  var preguntas=['Abrir un frasco nuevo o apretado','Tareas domésticas pesadas','Llevar una bolsa o maletín',
+    'Lavarse la espalda','Usar un cuchillo para cortar comida','Actividades de ocio que exigen fuerza o impacto',
+    'Afectación del trabajo o actividades diarias habituales','Dolor en brazo/hombro/mano',
+    'Hormigueo en brazo/hombro/mano','Debilidad en brazo/hombro/mano','Dificultad para dormir'];
+  var ops=[{v:'1',l:'1 — Ninguna dificultad'},{v:'2',l:'2 — Leve'},{v:'3',l:'3 — Moderada'},{v:'4',l:'4 — Grave'},{v:'5',l:'5 — Incapaz'}];
+  var html='<div style="display:grid;gap:4px">';
+  preguntas.forEach(function(p,i){
+    var key='item'+(i+1);
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 8px;background:var(--surf);border-radius:7px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;flex:1">'+e2((i+1)+'. '+p)+'</span>';
+    html+='<select class="sel" data-escala-item="'+key+'" onchange="recalcularEscala(\'quickdash\')" style="font-size:11px;padding:3px 4px;max-width:160px"><option value="">—</option>';
+    ops.forEach(function(op){ html+='<option value="'+op.v+'" '+(String(items_d[key])===op.v?'selected':'')+'>'+op.l+'</option>'; });
+    html+='</select></div>';
+  });
+  return html+'</div>';
+}
+function calcularQuickDASH(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var vals=[],count=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){if(el.value!==''){vals.push(Number(el.value));count++;}});
+  if(count<10) return null;
+  var suma=vals.reduce(function(a,b){return a+b;},0);
+  var score=((suma/count)-1)*(100/4);
+  score=Math.round(score*10)/10;
+  var interp=score<=25?'Discapacidad mínima':score<=50?'Discapacidad moderada':score<=75?'Discapacidad grave':'Discapacidad muy grave';
+  return {puntaje:score+'/100',puntajeRaw:score,interpretacion:interp,color:score<=25?'var(--green)':score<=50?'var(--amber)':'var(--red)'};
+}
+
+// NDI (10 ítems × 0-5)
+function renderEscalaNDI(d){
+  var items_d=d&&d.items?d.items:{};
+  var secciones=['Intensidad del dolor','Cuidado personal','Levantar objetos','Leer','Dolor de cabeza',
+    'Concentración','Trabajo','Conducir','Dormir','Actividades de ocio'];
+  var ops5=[{v:'0',l:'0 — Sin problema'},{v:'1',l:'1'},{v:'2',l:'2'},{v:'3',l:'3'},{v:'4',l:'4'},{v:'5',l:'5 — Máxima discapacidad'}];
+  var html='<div style="display:grid;gap:4px">';
+  secciones.forEach(function(s,i){
+    var key='item'+(i+1);
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 8px;background:var(--surf);border-radius:7px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;flex:1">'+e2((i+1)+'. '+s)+'</span>';
+    html+='<select class="sel" data-escala-item="'+key+'" onchange="recalcularEscala(\'ndi\')" style="font-size:11px;padding:3px 4px;max-width:180px"><option value="">—</option>';
+    ops5.forEach(function(op){ html+='<option value="'+op.v+'" '+(String(items_d[key])===String(op.v)?'selected':'')+'>'+op.l+'</option>'; });
+    html+='</select></div>';
+  });
+  return html+'</div>';
+}
+function calcularNDI(id){
+  return _calcSimple(id,50,[
+    {min:0,max:4,l:'Sin discapacidad',c:'var(--green)'},{min:5,max:14,l:'Discapacidad leve',c:'#65a30d'},
+    {min:15,max:24,l:'Discapacidad moderada',c:'var(--amber)'},{min:25,max:34,l:'Discapacidad grave',c:'#ea580c'},
+    {min:35,max:50,l:'Discapacidad completa',c:'var(--red)'}]);
+}
+
+// Oswestry (10 ítems × 0-5, resultado en %)
+function renderEscalaOswestry(d){
+  var items_d=d&&d.items?d.items:{};
+  var secciones=['Intensidad del dolor','Cuidado personal','Levantar objetos','Caminar',
+    'Estar sentado','Estar de pie','Dormir','Vida sexual','Vida social','Viajar'];
+  var ops5=[{v:'0',l:'0'},{v:'1',l:'1'},{v:'2',l:'2'},{v:'3',l:'3'},{v:'4',l:'4'},{v:'5',l:'5'}];
+  var html='<div style="display:grid;gap:4px">';
+  secciones.forEach(function(s,i){
+    var key='item'+(i+1);
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 8px;background:var(--surf);border-radius:7px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;flex:1">'+e2((i+1)+'. '+s)+'</span>';
+    html+='<select class="sel" data-escala-item="'+key+'" onchange="recalcularEscala(\'oswestry\')" style="font-size:11px;padding:3px 4px;max-width:180px"><option value="">—</option>';
+    ops5.forEach(function(op){ html+='<option value="'+op.v+'" '+(String(items_d[key])===String(op.v)?'selected':'')+'>'+op.l+'</option>'; });
+    html+='</select></div>';
+  });
+  return html+'</div>';
+}
+function calcularOswestry(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var suma=0,count=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){if(el.value!==''){suma+=Number(el.value);count++;}});
+  if(!count) return null;
+  var pct=Math.round((suma/(count*5))*100);
+  var interp=pct<=20?'Discapacidad mínima':pct<=40?'Discapacidad moderada':pct<=60?'Discapacidad grave':pct<=80?'Discapacidad muy grave':'Máxima discapacidad o simulación';
+  return {puntaje:pct+'%',puntajeRaw:pct,interpretacion:interp,color:pct<=20?'var(--green)':pct<=40?'var(--amber)':'var(--red)'};
+}
+
+// Tampa (TSK) — 17 ítems, 1-4
+function renderEscalaTampa(d){
+  var items_d=d&&d.items?d.items:{};
+  var afirmaciones=[
+    'Me duele y creo que algo grave está pasando','Tengo miedo de lesionarme si hago ejercicio',
+    'Mi cuerpo me está diciendo que algo está seriamente mal','Cuando me duele quiero que los demás no me vean',
+    'El miedo a lesionarme es el mayor problema para recuperarme','Si me arriesgara a lesionarme el dolor empeoraría',
+    'El dolor siempre significa que me he lesionado','No es necesariamente más peligroso si me duele al hacer actividad',
+    'Tengo miedo de lastimarme accidentalmente','Lo más seguro es simplemente estar en cama cuando tengo dolor',
+    'Si aceptara que tengo que vivir con dolor podría más','Si no hubiera lesionado no tendría tanto dolor',
+    'El dolor me indica cuando terminar el ejercicio','No es seguro para mí estar físicamente activo',
+    'No puedo hacer las cosas como antes por el riesgo de lesión','Incluso si el dolor es intenso puedo seguir activo de forma segura',
+    'Nada puede aliviar el dolor que siento'];
+  var ops=[{v:'1',l:'1 — Totalmente en desacuerdo'},{v:'2',l:'2 — En desacuerdo'},{v:'3',l:'3 — De acuerdo'},{v:'4',l:'4 — Totalmente de acuerdo'}];
+  var html='<div style="display:grid;gap:4px;max-height:380px;overflow-y:auto;padding-right:4px">';
+  afirmaciones.forEach(function(a,i){
+    var key='item'+(i+1);
+    // Ítems invertidos: 4, 8, 12, 16
+    var inv=[4,8,12,16].indexOf(i+1)!==-1;
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 8px;background:var(--surf);border-radius:7px;border:1px solid var(--bd)'+(inv?';border-left:3px solid var(--n400)':'')+'">';
+    html+='<span style="font-size:11px;flex:1">'+e2((i+1)+'. '+a)+(inv?' <span style="font-size:9px;color:var(--n400)">[inv]</span>':'')+'</span>';
+    html+='<select class="sel" data-escala-item="'+key+'" onchange="recalcularEscala(\'tampa\')" style="font-size:11px;padding:3px 4px;max-width:180px"><option value="">—</option>';
+    ops.forEach(function(op){ html+='<option value="'+op.v+'" '+(String(items_d[key])===op.v?'selected':'')+'>'+op.l+'</option>'; });
+    html+='</select></div>';
+  });
+  return html+'</div><div style="font-size:10px;color:var(--tx4);margin-top:6px">[inv] = ítems de puntuación invertida (4, 8, 12, 16)</div>';
+}
+function calcularTampa(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var invertidos=[4,8,12,16];
+  var suma=0,count=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el,idx){
+    if(el.value!==''){
+      var v=Number(el.value); var n=idx+1;
+      if(invertidos.indexOf(n)!==-1) v=5-v; // invertir
+      suma+=v; count++;
+    }
+  });
+  if(!count) return null;
+  var interp=suma<=32?'Baja kinesiofobia':suma<=40?'Kinesiofobia moderada':'Alta kinesiofobia';
+  return {puntaje:suma+'/68',puntajeRaw:suma,interpretacion:interp,color:suma<=32?'var(--green)':suma<=40?'var(--amber)':'var(--red)'};
+}
+
+// WOMAC, KOOS, HOOS, Constant-Murley, Lysholm, VISA-P, VISA-A, FAAM
+// (versiones funcionales con ítems representativos)
+function renderEscalaWOMAC(d){
+  var items_d=d&&d.items?d.items:{};
+  var dolor=['Dolor al caminar en superficie plana','Dolor al subir o bajar escaleras','Dolor nocturno en cama','Dolor en reposo','Dolor al soportar el peso'];
+  var rigidez=['Rigidez matutina','Rigidez después de estar sentado, acostado o descansando'];
+  var funcion=['Bajar escaleras','Subir escaleras','Levantarse de la silla','Estar de pie','Agacharse','Caminar en superficie plana','Entrar/salir del coche','Ir de compras','Ponerse/quitarse los calcetines','Levantarse de la cama','Acostarse en la cama','Entrar/salir de la bañera','Estar sentado','Sentarse/levantarse del WC','Tareas domésticas pesadas','Tareas domésticas ligeras'];
+  var ops=[{v:'0',l:'0 — Ninguno'},{v:'1',l:'1 — Poco'},{v:'2',l:'2 — Bastante'},{v:'3',l:'3 — Mucho'},{v:'4',l:'4 — Muchísimo'}];
+  function mkSection(tit, arr, prefix){
+    var h='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin:8px 0 4px">'+tit+'</div>';
+    arr.forEach(function(p,i){
+      var key=prefix+(i+1);
+      h+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 8px;background:var(--surf);border-radius:6px;border:1px solid var(--bd);margin-bottom:3px">';
+      h+='<span style="font-size:11px;flex:1">'+e2(p)+'</span>';
+      h+='<select class="sel" data-escala-item="'+key+'" onchange="recalcularEscala(\'womac\')" style="font-size:11px;padding:3px 4px;max-width:150px"><option value="">—</option>';
+      ops.forEach(function(op){ h+='<option value="'+op.v+'" '+(String(items_d[key])===String(op.v)?'selected':'')+'>'+op.l+'</option>'; });
+      h+='</select></div>';
+    });
+    return h;
+  }
+  return mkSection('A — Dolor (5 ítems)',dolor,'d')+mkSection('B — Rigidez (2 ítems)',rigidez,'r')+mkSection('C — Función (17 ítems)',funcion,'f');
+}
+function calcularWOMAC(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var suma=0,count=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){if(el.value!==''){suma+=Number(el.value);count++;}});
+  if(!count) return null;
+  var max=count*4; var pct=Math.round((suma/max)*100);
+  var interp=pct<=25?'Función preservada':pct<=50?'Afectación leve-moderada':pct<=75?'Afectación moderada-grave':'Afectación grave';
+  return {puntaje:pct+'% ('+suma+'/'+max+')',puntajeRaw:pct,interpretacion:interp,color:pct<=25?'var(--green)':pct<=50?'var(--amber)':'var(--red)'};
+}
+
+function renderEscalaKOOS(d){
+  var items_d=d&&d.items?d.items:{};
+  // Versión resumida con las 5 subescalas (1 ítem representativo c/u para prototipo)
+  var subs=[
+    {prefix:'s',tit:'S — Síntomas',items:['Inflamación de rodilla','Rigidez matutina','Dificultad al doblar','Dificultad al estirar']},
+    {prefix:'d',tit:'D — Dolor',items:['Frecuencia del dolor','Dolor al girar','Dolor al extender','Dolor al bajar escaleras','Dolor al estar de pie']},
+    {prefix:'a',tit:'A — AVD',items:['Levantarse de la silla','Bajar escaleras','Ponerse calcetines','Estar de pie']},
+    {prefix:'sp',tit:'SP — Deporte/Ocio',items:['Ponerse de cuclillas','Correr','Saltar','Girar en la rodilla afectada']},
+    {prefix:'q',tit:'Q — Calidad de vida',items:['¿Con qué frecuencia nota la rodilla?','¿Ha modificado el estilo de vida?','¿Cuánta dificultad confía?','¿Cuánto problema en general?']},
+  ];
+  var ops=[{v:'0',l:'0 — Ninguno/Nunca'},{v:'1',l:'1 — Poco/Raro'},{v:'2',l:'2 — Moderado'},{v:'3',l:'3 — Mucho/A veces'},{v:'4',l:'4 — Extremo/Siempre'}];
+  var html='';
+  subs.forEach(function(sub){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin:8px 0 4px">'+sub.tit+'</div>';
+    sub.items.forEach(function(it,i){
+      var key=sub.prefix+(i+1);
+      html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 8px;background:var(--surf);border-radius:6px;border:1px solid var(--bd);margin-bottom:3px">';
+      html+='<span style="font-size:11px;flex:1">'+e2(it)+'</span>';
+      html+='<select class="sel" data-escala-item="'+key+'" onchange="recalcularEscala(\'koos\')" style="font-size:11px;padding:3px 4px;max-width:160px"><option value="">—</option>';
+      ops.forEach(function(op){ html+='<option value="'+op.v+'" '+(String(items_d[key])===String(op.v)?'selected':'')+'>'+op.l+'</option>'; });
+      html+='</select></div>';
+    });
+  });
+  return html;
+}
+function calcularKOOS(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var suma=0,count=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){if(el.value!==''){suma+=Number(el.value);count++;}});
+  if(!count) return null;
+  var score=100-Math.round((suma/(count*4))*100);
+  var interp=score>=75?'Función preservada':score>=50?'Afectación moderada':'Afectación grave';
+  return {puntaje:score+'/100',puntajeRaw:score,interpretacion:interp,color:score>=75?'var(--green)':score>=50?'var(--amber)':'var(--red)'};
+}
+
+function renderEscalaHOOS(d){
+  var items_d=d&&d.items?d.items:{};
+  var subs=[
+    {prefix:'s',tit:'S — Síntomas',items:['Rigidez matutina','Dificultad al doblar la cadera','Dificultad al estirar','¿Crepitaciones?']},
+    {prefix:'d',tit:'D — Dolor',items:['Frecuencia del dolor','Dolor agudo','Dolor al extender','Dolor al bajar escaleras','Dolor de noche']},
+    {prefix:'a',tit:'A — AVD',items:['Bajar escaleras','Levantarse de la silla','Ponerse calcetines','Estar acostado']},
+    {prefix:'sp',tit:'SP — Deporte/Ocio',items:['Ponerse de cuclillas','Caminar rápido','Dar la vuelta a la cadera']},
+    {prefix:'q',tit:'Q — Calidad de vida',items:['¿Con qué frecuencia nota la cadera?','¿Ha modificado el estilo de vida?','¿Cuánto problema en general?']},
+  ];
+  var ops=[{v:'0',l:'0 — Ninguno/Nunca'},{v:'1',l:'1 — Poco'},{v:'2',l:'2 — Moderado'},{v:'3',l:'3 — Mucho'},{v:'4',l:'4 — Extremo'}];
+  var html='';
+  subs.forEach(function(sub){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin:8px 0 4px">'+sub.tit+'</div>';
+    sub.items.forEach(function(it,i){
+      var key=sub.prefix+(i+1);
+      html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 8px;background:var(--surf);border-radius:6px;border:1px solid var(--bd);margin-bottom:3px">';
+      html+='<span style="font-size:11px;flex:1">'+e2(it)+'</span>';
+      html+='<select class="sel" data-escala-item="'+key+'" onchange="recalcularEscala(\'hoos\')" style="font-size:11px;padding:3px 4px;max-width:160px"><option value="">—</option>';
+      ops.forEach(function(op){ html+='<option value="'+op.v+'" '+(String(items_d[key])===String(op.v)?'selected':'')+'>'+op.l+'</option>'; });
+      html+='</select></div>';
+    });
+  });
+  return html;
+}
+function calcularHOOS(id){ return calcularKOOS(id); } // misma fórmula
+
+function renderEscalaConstant(d){
+  var items_d=d&&d.items?d.items:{};
+  return '<div style="display:grid;gap:8px">'
+    +'<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase">A — Dolor (máx 15 pts)</div>'
+    +_numItem('constant','dolor',items_d.dolor||'','Puntuación de dolor (0=máximo, 15=sin dolor)',0,15,'0-15')
+    +'<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase">B — AVD (máx 20 pts)</div>'
+    +_numItem('constant','avd',items_d.avd||'','Actividades diarias (0-20)',0,20,'0-20')
+    +'<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase">C — Movilidad (máx 40 pts)</div>'
+    +_numItem('constant','movilidad',items_d.movilidad||'','Rango de movimiento (0-40)',0,40,'0-40')
+    +'<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase">D — Fuerza (máx 25 pts)</div>'
+    +_numItem('constant','fuerza',items_d.fuerza||'','Fuerza en abducción (0-25)',0,25,'0-25')
+    +'</div>';
+}
+function calcularConstant(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var suma=0,count=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){if(el.value!==''){suma+=Number(el.value);count++;}});
+  if(!count) return null;
+  var interp=suma>=86?'Excelente':suma>=71?'Bueno':suma>=56?'Moderado':'Malo';
+  return {puntaje:suma+'/100',puntajeRaw:suma,interpretacion:interp,color:suma>=71?'var(--green)':suma>=56?'var(--amber)':'var(--red)'};
+}
+
+function renderEscalaLysholm(d){
+  var items_d=d&&d.items?d.items:{};
+  var config=[
+    {k:'cojera',l:'Cojera',ops:[{v:5,l:'5 — Sin cojera'},{v:3,l:'3 — Leve o periódica'},{v:0,l:'0 — Grave y constante'}]},
+    {k:'apoyo',l:'Apoyo',ops:[{v:5,l:'5 — Sin apoyo'},{v:3,l:'3 — Bastón o muleta'},{v:0,l:'0 — Imposible soportar peso'}]},
+    {k:'bloqueo',l:'Bloqueo articular',ops:[{v:15,l:'15 — Sin bloqueo'},{v:10,l:'10 — Bloqueo pero no durante examen'},{v:6,l:'6 — Bloqueo en examen'},{v:2,l:'2 — Bloqueo frecuente'},{v:0,l:'0 — Articulación bloqueada'}]},
+    {k:'inestabilidad',l:'Inestabilidad',ops:[{v:25,l:'25 — Sin fallos'},{v:20,l:'20 — Raro al actividades intensas'},{v:15,l:'15 — Frecuente al deporte'},{v:10,l:'10 — Ocasional AVD'},{v:5,l:'5 — En cada AVD'},{v:0,l:'0 — En cada paso'}]},
+    {k:'dolor',l:'Dolor',ops:[{v:25,l:'25 — Sin dolor'},{v:20,l:'20 — Ocasional con esfuerzo'},{v:15,l:'15 — Marcado con esfuerzo'},{v:10,l:'10 — Intenso con esfuerzo'},{v:5,l:'5 — Intenso en reposo'},{v:0,l:'0 — Constante'}]},
+    {k:'inflamacion',l:'Inflamación',ops:[{v:10,l:'10 — Sin inflamación'},{v:6,l:'6 — Con esfuerzo intenso'},{v:2,l:'2 — Con esfuerzo ordinario'},{v:0,l:'0 — Constante'}]},
+    {k:'escaleras',l:'Escaleras',ops:[{v:10,l:'10 — Sin problemas'},{v:6,l:'6 — Con problemas leves'},{v:2,l:'2 — Un escalón a la vez'},{v:0,l:'0 — Imposible'}]},
+    {k:'cuclillas',l:'Ponerse en cuclillas',ops:[{v:5,l:'5 — Sin problemas'},{v:4,l:'4 — Con leve problema'},{v:2,l:'2 — Menos de 90°'},{v:0,l:'0 — Imposible'}]},
+  ];
+  var html='<div style="display:grid;gap:4px">';
+  config.forEach(function(it){
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 8px;background:var(--surf);border-radius:7px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;flex:1">'+e2(it.l)+'</span>';
+    html+='<select class="sel" data-escala-item="'+it.k+'" onchange="recalcularEscala(\'lysholm\')" style="font-size:11px;padding:3px 4px;max-width:210px"><option value="">—</option>';
+    it.ops.forEach(function(op){ html+='<option value="'+op.v+'" '+(String(items_d[it.k])===String(op.v)?'selected':'')+'>'+op.l+'</option>'; });
+    html+='</select></div>';
+  });
+  return html+'</div>';
+}
+function calcularLysholm(id){
+  return _calcSimple(id,100,[
+    {min:95,max:100,l:'Excelente',c:'var(--green)'},{min:84,max:94,l:'Bueno',c:'#65a30d'},
+    {min:65,max:83,l:'Regular',c:'var(--amber)'},{min:0,max:64,l:'Malo',c:'var(--red)'}]);
+}
+
+// VISA-P y VISA-A (8 ítems cada uno)
+function _renderVISA(escId, preguntas, items_d){
+  var html='<div style="display:grid;gap:6px">';
+  preguntas.forEach(function(p,i){
+    var key='item'+(i+1);
+    html+='<div style="padding:7px 10px;background:var(--surf);border-radius:8px;border:1px solid var(--bd)">';
+    html+='<div style="font-size:11px;margin-bottom:4px">'+e2((i+1)+'. '+p.l)+'</div>';
+    html+='<input type="number" class="inp" data-escala-item="'+key+'" value="'+(items_d[key]||'')+'" min="0" max="'+p.max+'" style="max-width:100px;font-size:12px" oninput="recalcularEscala(\''+escId+'\')">';
+    html+='<span style="font-size:11px;color:var(--tx4);margin-left:6px">/ '+p.max+'</span>';
+    html+='</div>';
+  });
+  return html+'</div>';
+}
+function renderEscalaVISAP(d){
+  var items_d=d&&d.items?d.items:{};
+  return _renderVISA('visap',[
+    {l:'¿Por cuánto tiempo puedes estar sentado sin dolor? (0=no puedo, 10=sin límite)',max:10},
+    {l:'¿Tienes dolor al bajar escaleras? (0=dolor severo, 10=sin dolor)',max:10},
+    {l:'¿Tienes dolor en la rodilla con carga completa en extensión? (0=dolor severo, 10=sin dolor)',max:10},
+    {l:'¿Cuándo caminas en llano tienes dolor? (0=dolor severo, 10=sin dolor)',max:10},
+    {l:'¿Tienes dolor en actividades que impliquen tendon patelar? (0=siempre, 10=nunca)',max:10},
+    {l:'¿Puedes hacer squats sin dolor? (0=imposible, 10=sin dolor)',max:10},
+    {l:'¿Puedes saltar sin dolor? (0=imposible, 10=sin límite)',max:10},
+    {l:'¿Estás participando en deporte o actividad física? (0=no, 4=competencia)',max:4},
+  ],items_d);
+}
+function calcularVISAP(id){
+  return _calcSimple(id,100,[{min:0,max:50,l:'Sintomático, limitado'},{min:51,max:80,l:'Sintomático, funcional'},{min:81,max:100,l:'Asintomático o mínimamente sintomático'}]);
+}
+function renderEscalaVISAA(d){
+  var items_d=d&&d.items?d.items:{};
+  return _renderVISA('visaa',[
+    {l:'¿Tienes dolor matutino en el tendón de Aquiles al despertar? (0=severo, 10=sin dolor)',max:10},
+    {l:'¿Tienes dolor al estiramiento del tendón? (0=severo, 10=sin dolor)',max:10},
+    {l:'¿Tienes dolor al caminar en llano? (0=severo, 10=sin dolor)',max:10},
+    {l:'¿Cuántos talones elevados puedes hacer? (0=ninguno, 10=≥25)',max:10},
+    {l:'¿Cuánto puedes correr antes de dolor? (0=nada, 10=sin dolor)',max:10},
+    {l:'¿Puedes entrenar plenamente? (0=no, 10=sin limitación)',max:10},
+    {l:'¿Realizas entrenamiento de fuerza? (0=nada, 10=pleno)',max:10},
+    {l:'Actividad deportiva actual (0=ninguna, 4=competencia)',max:4},
+  ],items_d);
+}
+function calcularVISAA(id){ return calcularVISAP(id); }
+
+// FAAM
+function renderEscalaFAAM(d){
+  var items_d=d&&d.items?d.items:{};
+  var avd=['Estar de pie','Caminar en superficie plana','Caminar descalzo','Subir colinas','Bajar colinas',
+    'Subir escaleras','Bajar escaleras','Caminar sobre superficie irregular','Entrar/salir del coche',
+    'Estar de pie 15 min','Estar de pie > 1 hora','Caminar 5 minutos','Caminar 10 minutos','Caminar 15 minutos o más',
+    'Tareas domésticas','Actividades de cuidado personal','Trabajo ligero a moderado','Trabajo pesado'];
+  var dep=['Correr','Saltar','Aterrizar','Inicio y parada rápidos','Cortes y giros laterales','Actividades de bajo impacto','Actividad a nivel de rendimiento normal'];
+  var ops=[{v:'4',l:'4 — Sin dificultad'},{v:'3',l:'3 — Leve dificultad'},{v:'2',l:'2 — Moderada dificultad'},{v:'1',l:'1 — Dificultad extrema'},{v:'0',l:'0 — Incapaz'}];
+  var html='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin-bottom:4px">Subescala AVD</div><div style="display:grid;gap:3px">';
+  avd.forEach(function(p,i){
+    var key='avd'+(i+1);
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 8px;background:var(--surf);border-radius:6px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;flex:1">'+e2(p)+'</span>';
+    html+='<select class="sel" data-escala-item="'+key+'" onchange="recalcularEscala(\'faam\')" style="font-size:11px;padding:3px 4px;max-width:160px"><option value="">—</option>';
+    ops.forEach(function(op){ html+='<option value="'+op.v+'" '+(String(items_d[key])===String(op.v)?'selected':'')+'>'+op.l+'</option>'; });
+    html+='</select></div>';
+  });
+  html+='</div><div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;margin:8px 0 4px">Subescala Deporte</div><div style="display:grid;gap:3px">';
+  dep.forEach(function(p,i){
+    var key='dep'+(i+1);
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 8px;background:var(--surf);border-radius:6px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;flex:1">'+e2(p)+'</span>';
+    html+='<select class="sel" data-escala-item="'+key+'" onchange="recalcularEscala(\'faam\')" style="font-size:11px;padding:3px 4px;max-width:160px"><option value="">—</option>';
+    ops.forEach(function(op){ html+='<option value="'+op.v+'" '+(String(items_d[key])===String(op.v)?'selected':'')+'>'+op.l+'</option>'; });
+    html+='</select></div>';
+  });
+  return html+'</div>';
+}
+function calcularFAAM(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var avdS=0,avdC=0,depS=0,depC=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){
+    if(el.value==='') return;
+    var v=Number(el.value);
+    if(el.getAttribute('data-escala-item').startsWith('avd')){avdS+=v;avdC++;}
+    else{depS+=v;depC++;}
+  });
+  if(!avdC) return null;
+  var avdPct=Math.round((avdS/(avdC*4))*100);
+  var depPct=depC?Math.round((depS/(depC*4))*100):null;
+  return {puntaje:'AVD: '+avdPct+'%'+(depPct!==null?' | Dep: '+depPct+'%':''),puntajeRaw:avdPct,interpretacion:avdPct>=75?'Función preservada':'Función afectada',color:avdPct>=75?'var(--green)':'var(--amber)'};
+}
+
+// ── PEDIÁTRICAS ──────────────────────────────────────────────
+
+function renderEscalaGMFCS(d){
+  var v=d&&d.items?d.items.nivel||'':'';
+  var niveles=[
+    {v:'I',  l:'Nivel I — Camina sin restricciones; limitaciones en habilidades motrices avanzadas'},
+    {v:'II', l:'Nivel II — Camina con limitaciones; dificultad en superficies irregulares e inclinadas'},
+    {v:'III',l:'Nivel III — Camina con dispositivo de ayuda; limitaciones en exteriores y comunidad'},
+    {v:'IV', l:'Nivel IV — Movilidad independiente limitada; transporte en silla de ruedas'},
+    {v:'V',  l:'Nivel V — Transportado en silla de ruedas manual; control de cabeza y tronco limitado'},
+  ];
+  var html='<div style="display:grid;gap:6px">';
+  niveles.forEach(function(n){
+    var sel=v===n.v;
+    html+='<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;border:2px solid '+(sel?'var(--n500)':'var(--bd)')+';background:'+(sel?'var(--surf3)':'var(--surf)')+';cursor:pointer" onclick="selGMFCS(\''+n.v+'\')" id="gmfcs_'+n.v+'">';
+    html+='<div style="width:22px;height:22px;border-radius:50%;border:2px solid '+(sel?'var(--n500)':'var(--bd)')+';background:'+(sel?'var(--n500)':'transparent')+';flex-shrink:0;display:flex;align-items:center;justify-content:center">'+(sel?'<div style="width:8px;height:8px;border-radius:50%;background:#fff"></div>':'')+'</div>';
+    html+='<div><div style="font-weight:700;font-size:13px;color:var(--n700)">'+n.v+'</div><div style="font-size:11px;color:var(--tx3);margin-top:2px">'+e2(n.l.split('—')[1])+'</div></div>';
+    html+='<input type="hidden" data-escala-item="nivel" value="'+n.v+'" id="gmfcs_val_'+n.v+'" '+(sel?'':'disabled')+'>';
+    html+='</div>';
+  });
+  return html+'</div>';
+}
+function selGMFCS(nivel){
+  ['I','II','III','IV','V'].forEach(function(n){
+    var div=document.getElementById('gmfcs_'+n);
+    var inp=document.getElementById('gmfcs_val_'+n);
+    var sel=n===nivel;
+    if(div){div.style.borderColor=sel?'var(--n500)':'var(--bd)';div.style.background=sel?'var(--surf3)':'var(--surf)';}
+    if(inp){inp.disabled=!sel;inp.removeAttribute('data-escala-item');if(sel)inp.setAttribute('data-escala-item','nivel');}
+  });
+  recalcularEscala('gmfcs');
+}
+function calcularGMFCS(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var el=b.querySelector('[data-escala-item="nivel"]:not([disabled])'); if(!el||!el.value) return null;
+  var desc={I:'Marcha independiente sin restricciones',II:'Marcha con limitaciones',III:'Marcha con dispositivo de ayuda',IV:'Movilidad muy limitada',V:'Dependencia total de transporte'};
+  return {puntaje:'Nivel '+el.value,puntajeRaw:el.value,interpretacion:desc[el.value]||''};
+}
+
+function renderEscalaMACS(d){
+  var v=d&&d.items?d.items.nivel||'':'';
+  var niveles=[
+    {v:'I',  l:'Nivel I — Maneja objetos fácil y satisfactoriamente'},
+    {v:'II', l:'Nivel II — Maneja la mayoría con menor calidad o velocidad'},
+    {v:'III',l:'Nivel III — Maneja con dificultad; necesita ayuda para preparar o adaptar'},
+    {v:'IV', l:'Nivel IV — Manejo limitado; éxito parcial con ayuda'},
+    {v:'V',  l:'Nivel V — No maneja objetos; habilidad muy limitada incluso en acciones simples'},
+  ];
+  var html='<div style="display:grid;gap:6px">';
+  niveles.forEach(function(n){
+    var sel=v===n.v;
+    html+='<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:10px;border:2px solid '+(sel?'var(--n500)':'var(--bd)')+';background:'+(sel?'var(--surf3)':'var(--surf)')+';cursor:pointer" onclick="selMACS(\''+n.v+'\')" id="macs_'+n.v+'">';
+    html+='<div style="width:22px;height:22px;border-radius:50%;border:2px solid '+(sel?'var(--n500)':'var(--bd)')+';background:'+(sel?'var(--n500)':'transparent')+';flex-shrink:0;display:flex;align-items:center;justify-content:center">'+(sel?'<div style="width:8px;height:8px;border-radius:50%;background:#fff"></div>':'')+'</div>';
+    html+='<div><div style="font-weight:700;font-size:13px;color:var(--n700)">'+n.v+'</div><div style="font-size:11px;color:var(--tx3);margin-top:2px">'+e2(n.l.split('—')[1])+'</div></div>';
+    html+='<input type="hidden" data-escala-item="nivel" value="'+n.v+'" id="macs_val_'+n.v+'" '+(sel?'':'disabled')+'>';
+    html+='</div>';
+  });
+  return html+'</div>';
+}
+function selMACS(nivel){
+  ['I','II','III','IV','V'].forEach(function(n){
+    var div=document.getElementById('macs_'+n);
+    var inp=document.getElementById('macs_val_'+n);
+    var sel=n===nivel;
+    if(div){div.style.borderColor=sel?'var(--n500)':'var(--bd)';div.style.background=sel?'var(--surf3)':'var(--surf)';}
+    if(inp){inp.disabled=!sel;inp.removeAttribute('data-escala-item');if(sel)inp.setAttribute('data-escala-item','nivel');}
+  });
+  recalcularEscala('macs');
+}
+function calcularMACS(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var el=b.querySelector('[data-escala-item="nivel"]:not([disabled])'); if(!el||!el.value) return null;
+  var desc={I:'Manejo independiente eficaz',II:'Manejo con leve limitación',III:'Requiere adaptaciones y ayuda',IV:'Éxito parcial con apoyo',V:'No maneja objetos funcionalmente'};
+  return {puntaje:'Nivel '+el.value,puntajeRaw:el.value,interpretacion:desc[el.value]||''};
+}
+
+function renderEscalaWeeFIM(d){
+  var items_d=d&&d.items?d.items:{};
+  var dominios=[
+    {k:'alimentacion',l:'Alimentación',max:7},{k:'aseo',l:'Aseo personal',max:7},{k:'bano',l:'Baño',max:7},
+    {k:'vestido_sup',l:'Vestido parte superior',max:7},{k:'vestido_inf',l:'Vestido parte inferior',max:7},
+    {k:'wc',l:'Uso del WC',max:7},{k:'vejiga',l:'Control de vejiga',max:7},{k:'intestino',l:'Control intestinal',max:7},
+    {k:'transfer_cama',l:'Traslado cama/silla/silla de ruedas',max:7},{k:'transfer_wc',l:'Traslado al WC',max:7},
+    {k:'transfer_bano',l:'Traslado al baño',max:7},{k:'marcha',l:'Locomoción: marcha/silla de ruedas',max:7},
+    {k:'escaleras',l:'Locomoción: escaleras',max:7},{k:'comprension',l:'Comprensión',max:7},
+    {k:'expresion',l:'Expresión',max:7},{k:'interaccion',l:'Interacción social',max:7},
+    {k:'resolucion',l:'Resolución de problemas',max:7},{k:'memoria',l:'Memoria',max:7},
+  ];
+  var ops=[{v:'1',l:'1 — Dependencia total'},{v:'2',l:'2 — Asistencia máxima'},{v:'3',l:'3 — Asistencia moderada'},
+    {v:'4',l:'4 — Asistencia mínima'},{v:'5',l:'5 — Supervisión'},{v:'6',l:'6 — Independencia modificada'},{v:'7',l:'7 — Independencia completa'}];
+  var html='<div style="display:grid;gap:4px">';
+  dominios.forEach(function(it){
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 8px;background:var(--surf);border-radius:7px;border:1px solid var(--bd)">';
+    html+='<span style="font-size:11px;flex:1">'+e2(it.l)+'</span>';
+    html+='<select class="sel" data-escala-item="'+it.k+'" onchange="recalcularEscala(\'weefim\')" style="font-size:11px;padding:3px 4px;max-width:190px"><option value="">—</option>';
+    ops.forEach(function(op){ html+='<option value="'+op.v+'" '+(String(items_d[it.k])===String(op.v)?'selected':'')+'>'+op.l+'</option>'; });
+    html+='</select></div>';
+  });
+  return html+'</div>';
+}
+function calcularWeeFIM(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var suma=0,count=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){if(el.value!==''){suma+=Number(el.value);count++;}});
+  if(!count) return null;
+  var interp=suma>=108?'Independencia funcional':suma>=72?'Dependencia modificada':suma>=36?'Asistencia parcial':'Dependencia completa';
+  return {puntaje:suma+'/126',puntajeRaw:suma,interpretacion:interp,color:suma>=108?'var(--green)':suma>=72?'var(--amber)':'var(--red)'};
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// SECCIÓN D: FICHA NEURO ADULTOS
+// ══════════════════════════════════════════════════════════════
+
 function secNeuroAdultos(d){
-  return secWrap('neuro','III. Examen objetivo — Neurorehabilitación Adultos','🧠',
-    '<div class="empty" style="padding:20px">Plantilla en construcción — próximamente</div>',true);
+  return secEstadoCognitivoCom(d)
+       + secExamenMotorNeuro(d)
+       + secSensibilidadNeuro(d)
+       + secControlPosturalNeuro(d)
+       + secMarchaTransferencias(d)
+       + secAVDNeuro(d)
+       + secCIFNeuro(d);
+}
+
+function secEstadoCognitivoCom(d){
+  return secWrap('cognitivo','III. Estado cognitivo y comunicación','🧠',`
+    <div class="form-grid">
+      <div class="field"><label>Nivel de conciencia</label>
+        <select class="sel" id="nConciencia">
+          <option value="">—</option>
+          ${['Alerta','Somnoliento','Estuporoso','Coma'].map(v=>`<option ${d.nConciencia===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Lateralidad dominante</label>
+        <select class="sel" id="lateralidad">
+          <option value="">—</option>
+          ${['Diestro','Zurdo','Ambidiestro'].map(v=>`<option ${d.lateralidad===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Orientación</label>
+        <select class="sel" id="orientacion">
+          <option value="">—</option>
+          ${['Conservada (T/E/P)','Desorientado en tiempo','Desorientado en espacio','Desorientado en persona','Desorientado T+E','Desorientado global'].map(v=>`<option ${d.orientacion===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Comunicación</label>
+        <select class="sel" id="comunicacion">
+          <option value="">—</option>
+          ${['Verbal fluida','Afasia expresiva','Afasia receptiva','Afasia mixta','Disartria','No verbal','Comunicación aumentativa'].map(v=>`<option ${d.comunicacion===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Memoria</label>
+        <select class="sel" id="memoria">
+          <option value="">—</option>
+          ${['Conservada','Alterada a corto plazo','Alterada a largo plazo','Alterada ambas','Sin evaluación'].map(v=>`<option ${d.memoria===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Atención y concentración</label>
+        <select class="sel" id="atencion">
+          <option value="">—</option>
+          ${['Conservada','Levemente disminuida','Moderadamente disminuida','Gravemente disminuida'].map(v=>`<option ${d.atencion===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Observaciones cognitivas</label>
+        <textarea class="ta" id="obsCognitivo" rows="2" placeholder="Observaciones adicionales sobre estado cognitivo...">${e2(d.obsCognitivo||'')}</textarea></div>
+    </div>`);
+}
+
+function secExamenMotorNeuro(d){
+  const segmentos=['MMSS D','MMSS I','MMII D','MMII I'];
+  const tono=['Normal','Hipotonía leve','Hipotonía moderada','Hipotonía grave','Hipertonía leve','Espasticidad leve','Espasticidad moderada','Espasticidad grave','Rigidez'];
+  const mrc=['0 — Sin contracción','1 — Contracción visible sin movimiento','2 — Movimiento sin gravedad','3 — Vence gravedad','4 — Vence resistencia parcial','5 — Fuerza normal'];
+  const reflejos=['Normal (++)','Aumentado (+++)','Vivo (++++  )','Disminuido (+)','Abolido (0)'];
+  return secWrap('motor_neuro','IV. Examen motor','💪',`
+    <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Tono muscular — Ashworth Modificada por segmento</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:14px">
+      ${segmentos.map(seg=>`<div class="field"><label>${seg}</label>
+        <select class="sel" id="tono_${seg.replace(/\s/g,'_')}">
+          <option value="">—</option>
+          ${tono.map(v=>`<option ${d['tono_'+seg.replace(/\s/g,'_')]===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>`).join('')}
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Fuerza muscular — Escala MRC (0-5)</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:14px">
+      ${segmentos.map(seg=>`<div class="field"><label>${seg}</label>
+        <select class="sel" id="fuerza_${seg.replace(/\s/g,'_')}">
+          <option value="">—</option>
+          ${mrc.map(v=>`<option ${d['fuerza_'+seg.replace(/\s/g,'_')]===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>`).join('')}
+    </div>
+    <div class="form-grid">
+      <div class="field"><label>Reflejos osteotendinosos</label>
+        <select class="sel" id="reflejos">
+          <option value="">—</option>
+          ${reflejos.map(v=>`<option ${d.reflejos===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Babinski</label>
+        <select class="sel" id="babinski">
+          <option value="">—</option>
+          ${['Negativo','Positivo D','Positivo I','Positivo bilateral'].map(v=>`<option ${d.babinski===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Clonus</label>
+        <select class="sel" id="clonus">
+          <option value="">—</option>
+          ${['Ausente','Presente D','Presente I','Presente bilateral'].map(v=>`<option ${d.clonus===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Coordinación</label>
+        <select class="sel" id="coordinacion">
+          <option value="">—</option>
+          ${['Conservada','Dismetría leve','Dismetría moderada','Disdiadococinesia','Ataxia'].map(v=>`<option ${d.coordinacion===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Movimientos involuntarios</label>
+        <select class="sel" id="movInvoluntarios">
+          <option value="">—</option>
+          ${['Ninguno','Temblor reposo','Temblor acción','Distonía','Corea','Atetosis','Mioclonías'].map(v=>`<option ${d.movInvoluntarios===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Observaciones motor</label>
+        <textarea class="ta" id="obsMotor" rows="2" placeholder="Observaciones adicionales...">${e2(d.obsMotor||'')}</textarea></div>
+    </div>`);
+}
+
+function secSensibilidadNeuro(d){
+  return secWrap('sensibilidad','V. Sensibilidad','🔍',`
+    <div class="form-grid">
+      <div class="field"><label>Sensibilidad táctil</label>
+        <select class="sel" id="sensTactil">
+          <option value="">—</option>
+          ${['Normal','Hipoestesia leve','Hipoestesia moderada','Hipoestesia grave','Hiperestesia','Anestesia'].map(v=>`<option ${d.sensTactil===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Sensibilidad dolorosa</label>
+        <select class="sel" id="sensDolor">
+          <option value="">—</option>
+          ${['Normal','Hipoalgesia','Hiperalgesia','Analgesia','Alodinia'].map(v=>`<option ${d.sensDolor===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Sensibilidad térmica</label>
+        <select class="sel" id="sensTermica">
+          <option value="">—</option>
+          ${['Normal','Disminuida','Ausente'].map(v=>`<option ${d.sensTermica===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Propiocepción</label>
+        <select class="sel" id="propiocepccion">
+          <option value="">—</option>
+          ${['Conservada','Levemente alterada','Moderadamente alterada','Gravemente alterada'].map(v=>`<option ${d.propiocepccion===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Zona afectada</label>
+        <select class="sel" id="zonaAfectada">
+          <option value="">—</option>
+          ${['Sin afectación','Hemicuerpo derecho','Hemicuerpo izquierdo','Cuadriplejía','Paraplejía','Monoplejía','Segmentaria'].map(v=>`<option ${d.zonaAfectada===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Observaciones sensibilidad</label>
+        <textarea class="ta" id="obsSensibilidad" rows="2" placeholder="Distribución, patrones, observaciones...">${e2(d.obsSensibilidad||'')}</textarea></div>
+    </div>`);
+}
+
+function secControlPosturalNeuro(d){
+  return secWrap('postural_neuro','VI. Control postural y equilibrio','⚖️',`
+    <div class="form-grid">
+      <div class="field"><label>Control cefálico</label>
+        <select class="sel" id="controlCefal">
+          <option value="">—</option>
+          ${['Completo','Parcial','Ausente'].map(v=>`<option ${d.controlCefal===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Control de tronco en sedente</label>
+        <select class="sel" id="controlTronco">
+          <option value="">—</option>
+          ${['Independiente','Con apoyo parcial','Con apoyo total','No mantiene sedestación'].map(v=>`<option ${d.controlTronco===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Equilibrio estático bipedestación</label>
+        <select class="sel" id="eqEstatico">
+          <option value="">—</option>
+          ${['Independiente','Con apoyo unilateral','Con apoyo bilateral','No logra bipedestación'].map(v=>`<option ${d.eqEstatico===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Equilibrio dinámico bipedestación</label>
+        <select class="sel" id="eqDinamico">
+          <option value="">—</option>
+          ${['Independiente','Con supervisión','Con ayuda técnica','No logra'].map(v=>`<option ${d.eqDinamico===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Observaciones posturales</label>
+        <textarea class="ta" id="obsPostural" rows="2" placeholder="Reacciones de equilibrio, estrategias compensatorias...">${e2(d.obsPostural||'')}</textarea></div>
+    </div>
+    <div style="font-size:11px;color:var(--tx4);margin-top:6px;padding:8px;background:var(--surf3);border-radius:8px">
+      💡 Para cuantificar el equilibrio usa la <b>Escala de Berg</b> y el <b>TUG</b> en la sección de Escalas aplicadas.
+    </div>`);
+}
+
+function secMarchaTransferencias(d){
+  return secWrap('marcha_neuro','VII. Marcha y transferencias','🚶',`
+    <div class="form-grid">
+      <div class="field"><label>Tipo de marcha</label>
+        <select class="sel" id="tipoMarcha">
+          <option value="">—</option>
+          ${['No deambula','Asistida por persona','Con ayuda técnica','Independiente'].map(v=>`<option ${d.tipoMarcha===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Patrón de marcha</label>
+        <select class="sel" id="patronMarcha">
+          <option value="">—</option>
+          ${['Normal','Hemipléjica (guadañante)','Atáxica','Espástica en tijera','Festinante (Parkinson)','Steppage','Trendelenburg','Otra'].map(v=>`<option ${d.patronMarcha===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Ayuda técnica</label>
+        <select class="sel" id="ayudaTecnica">
+          <option value="">—</option>
+          ${['Ninguna','Bastón simple','Bastón de cuatro puntos','Andador sin ruedas','Andador con ruedas','Muletas','Silla de ruedas manual','Silla de ruedas eléctrica'].map(v=>`<option ${d.ayudaTecnica===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Transferencia cama ↔ silla</label>
+        <select class="sel" id="transferenciaCS">
+          <option value="">—</option>
+          ${['Independiente','Supervisión','Asistencia parcial','Asistencia total'].map(v=>`<option ${d.transferenciaCS===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Transferencia sentado ↔ pie</label>
+        <select class="sel" id="transferenciaSP">
+          <option value="">—</option>
+          ${['Independiente','Supervisión','Asistencia parcial','Asistencia total'].map(v=>`<option ${d.transferenciaSP===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Observaciones de marcha</label>
+        <textarea class="ta" id="obsMarcha" rows="2" placeholder="Longitud de paso, cadencia, base de sustentación, asimetrías...">${e2(d.obsMarcha||'')}</textarea></div>
+    </div>`);
+}
+
+function secAVDNeuro(d){
+  return secWrap('avd_neuro','VIII. Actividades de la vida diaria','🏠',`
+    <div class="form-grid">
+      <div class="field form-full"><label>AVD básicas afectadas</label>
+        <textarea class="ta" id="avdBasicasAfect" rows="2" placeholder="Alimentación, higiene, vestido, continencia...">${e2(d.avdBasicasAfect||'')}</textarea></div>
+      <div class="field form-full"><label>AVD instrumentales afectadas</label>
+        <textarea class="ta" id="avdInstAfect" rows="2" placeholder="Uso de teléfono, transporte, manejo de medicación...">${e2(d.avdInstAfect||'')}</textarea></div>
+    </div>
+    <div style="font-size:11px;color:var(--tx4);margin-top:6px;padding:8px;background:var(--surf3);border-radius:8px">
+      💡 Cuantifica con el <b>Índice de Barthel</b> y/o <b>Lawton-Brody</b> en la sección de Escalas.
+    </div>`);
+}
+
+function secCIFNeuro(d){
+  return secWrap('cif_neuro','IX. Diagnóstico según CIF','📋',`
+    <div class="form-grid">
+      <div class="field form-full"><label>Deterioro de funciones/estructuras (códigos b/s)</label>
+        <textarea class="ta" id="cifDeterioro" rows="2" placeholder="Ej: b710 Movilidad articular, b730 Fuerza muscular...">${e2(d.cifDeterioro||'')}</textarea></div>
+      <div class="field form-full"><label>Limitación de actividad (códigos d)</label>
+        <textarea class="ta" id="cifActividad" rows="2" placeholder="Ej: d450 Andar, d410 Cambiar postura corporal...">${e2(d.cifActividad||'')}</textarea></div>
+      <div class="field form-full"><label>Restricción de participación</label>
+        <textarea class="ta" id="cifParticipacion" rows="2" placeholder="Ej: d850 Trabajo remunerado, d920 Recreación...">${e2(d.cifParticipacion||'')}</textarea></div>
+      <div class="field form-full"><label>Factores contextuales (facilitadores / barreras)</label>
+        <textarea class="ta" id="cifContextual" rows="2" placeholder="Entorno físico, apoyo familiar, acceso a servicios...">${e2(d.cifContextual||'')}</textarea></div>
+    </div>`);
+}
+
+
+// ══════════════════════════════════════════════════════════════
+// SECCIÓN E: FICHA NEURO PEDIÁTRICA
+// ══════════════════════════════════════════════════════════════
+
+function secNeuroPediatrica(d){
+  return secAnamnesisPed(d)
+       + secDesarrolloPed(d)
+       + secCognitivoPed(d)
+       + secMotorPed(d)
+       + secControlPosturalPed(d)
+       + secMarchaPed(d)
+       + secMMSSPed(d)
+       + secAVDPed(d)
+       + secCIFNeuro(d); // reutilizar CIF
+}
+
+function secAnamnesisPed(d){
+  const p = d||{};
+  return secWrap('anam_ped','II. Antecedentes pediátricos','📋',`
+    <div class="form-grid">
+      <div class="field"><label>Diagnóstico médico (CIE-10)</label>
+        <input class="inp" id="aDxMed" value="${e2(p.dxMedico||'')}" placeholder="Ej: G80.1 — Parálisis cerebral espástica"></div>
+      <div class="field"><label>Tiempo de evolución</label>
+        <input class="inp" id="tiempoEvol" value="${e2(p.tiempoEvol||'')}" placeholder="Ej: Desde el nacimiento, 2 años..."></div>
+      <div class="field"><label>Tipo de parto</label>
+        <select class="sel" id="tipoParto">
+          <option value="">—</option>
+          ${['Eutócico (vaginal)','Cesárea programada','Cesárea de urgencia','Instrumentado (fórceps/ventosa)'].map(v=>`<option ${p.tipoParto===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Semanas de gestación</label>
+        <input class="inp" id="semanasGest" type="number" min="20" max="44" value="${p.semanasGest||''}" placeholder="sem"></div>
+      <div class="field"><label>Peso al nacer (gramos)</label>
+        <input class="inp" id="pesoNacer" type="number" value="${p.pesoNacer||''}" placeholder="gramos"></div>
+      <div class="field"><label>APGAR (1'/5')</label>
+        <input class="inp" id="apgar" value="${e2(p.apgar||'')}" placeholder="Ej: 7/9"></div>
+      <div class="field form-full"><label>Antecedentes prenatales</label>
+        <textarea class="ta" id="antePrenatal" rows="2" placeholder="Infecciones TORCH, medicación, controles prenatales...">${e2(p.antePrenatal||'')}</textarea></div>
+      <div class="field form-full"><label>Antecedentes posnatales</label>
+        <textarea class="ta" id="antePosnatal" rows="2" placeholder="Convulsiones, TEC, meningitis, hospitalizaciones...">${e2(p.antePosnatal||'')}</textarea></div>
+      <div class="field form-full"><label>Medicación actual</label>
+        <textarea class="ta" id="medicacion" rows="2" placeholder="Medicamentos actuales y dosis...">${e2(p.medicacion||'')}</textarea></div>
+    </div>`,true);
+}
+
+function secDesarrolloPed(d){
+  const p=d||{};
+  const hitos=[
+    {id:'hitosSostenCef',l:'Sostén cefálico (esperado 3-4 meses)'},
+    {id:'hitosSedest',l:'Sedestación (esperado 6-7 meses)'},
+    {id:'hitosGateo',l:'Gateo (esperado 8-10 meses)'},
+    {id:'hitosBiped',l:'Bipedestación (esperado 10-12 meses)'},
+    {id:'hitosMarcha',l:'Marcha (esperado 12-15 meses)'},
+    {id:'hitosBalbuceo',l:'Balbuceo (esperado 4-6 meses)'},
+    {id:'hitosPriPalab',l:'Primeras palabras (esperado 12 meses)'},
+    {id:'hitosFrases',l:'Frases (esperado 24 meses)'},
+  ];
+  return secWrap('desarrollo_ped','III. Historia del desarrollo','📅',`
+    <div style="display:grid;gap:6px;margin-bottom:12px">
+      ${hitos.map(h=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surf);border-radius:8px;border:1px solid var(--bd)">
+        <span style="font-size:12px;flex:1">${h.l}</span>
+        <input class="inp" id="${h.id}" value="${e2(p[h.id]||'')}" placeholder="Edad o 'No logrado'" style="max-width:150px;font-size:12px">
+      </div>`).join('')}
+    </div>
+    <div class="form-grid">
+      <div class="field"><label>Escolarización</label>
+        <select class="sel" id="escolarizacion">
+          <option value="">—</option>
+          ${['No escolarizado','Educación especial','Regular con apoyo','Regular sin apoyo'].map(v=>`<option ${p.escolarizacion===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Observaciones del desarrollo</label>
+        <textarea class="ta" id="obsDesarrollo" rows="2" placeholder="Regresiones, variaciones, contexto familiar...">${e2(p.obsDesarrollo||'')}</textarea></div>
+    </div>`);
+}
+
+function secCognitivoPed(d){
+  const p=d||{};
+  return secWrap('cognitivo_ped','IV. Estado cognitivo y conductual','🧠',`
+    <div class="form-grid">
+      <div class="field"><label>Nivel de alerta y atención</label>
+        <select class="sel" id="alertaPed">
+          <option value="">—</option>
+          ${['Alerta y atento','Hipoalerta','Hiperalerta','Fluctuante'].map(v=>`<option ${p.alertaPed===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Comprensión de órdenes</label>
+        <select class="sel" id="comprensionPed">
+          <option value="">—</option>
+          ${['Órdenes simples y complejas','Solo órdenes simples','Comprensión gestual','Sin comprensión aparente'].map(v=>`<option ${p.comprensionPed===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Conducta</label>
+        <select class="sel" id="conductaPed">
+          <option value="">—</option>
+          ${['Colaborador','Oposicionista','Fluctuante','Inhibido','Desinhibido'].map(v=>`<option ${p.conductaPed===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Comunicación</label>
+        <select class="sel" id="comunicacionPed">
+          <option value="">—</option>
+          ${['Verbal fluida','Verbal limitada','No verbal — gestos','PECS','Pictogramas','Comunicador de voz'].map(v=>`<option ${p.comunicacionPed===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Observaciones cognitivo-conductuales</label>
+        <textarea class="ta" id="obsCognitivoPed" rows="2" placeholder="Estrategias de comunicación, motivadores, contexto...">${e2(p.obsCognitivoPed||'')}</textarea></div>
+    </div>`);
+}
+
+function secMotorPed(d){
+  const p=d||{};
+  const segmentos=['MMSS D','MMSS I','MMII D','MMII I'];
+  const tono=['Normal','Hipotónico leve','Hipotónico moderado','Hipotónico grave','Hipertónico leve','Espasticidad leve','Espasticidad moderada','Espasticidad grave','Fluctuante'];
+  const mrc=['0 — Sin contracción','1 — Contracción visible','2 — Movimiento sin gravedad','3 — Vence gravedad','4 — Vence resistencia parcial','5 — Fuerza normal'];
+  const reflexPrim=['Ausente','Presente e integrado','Persistente (anormal)'];
+  return secWrap('motor_ped','V. Examen motor pediátrico','💪',`
+    <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Tono muscular por segmento</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:14px">
+      ${segmentos.map(seg=>`<div class="field"><label>${seg}</label>
+        <select class="sel" id="tonoPed_${seg.replace(/\s/g,'_')}">
+          <option value="">—</option>
+          ${tono.map(v=>`<option ${p['tonoPed_'+seg.replace(/\s/g,'_')]===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>`).join('')}
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Fuerza muscular — MRC adaptada</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:14px">
+      ${segmentos.map(seg=>`<div class="field"><label>${seg}</label>
+        <select class="sel" id="fuerzaPed_${seg.replace(/\s/g,'_')}">
+          <option value="">—</option>
+          ${mrc.map(v=>`<option ${p['fuerzaPed_'+seg.replace(/\s/g,'_')]===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>`).join('')}
+    </div>
+    <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Reflejos primitivos</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:14px">
+      ${[{id:'refMoro',l:'Moro'},{id:'refTANC',l:'Tónico asimétrico del cuello'},{id:'refTL',l:'Tónico laberíntico'},{id:'refPrension',l:'Prensión palmar'}].map(r=>`<div class="field"><label>${r.l}</label>
+        <select class="sel" id="${r.id}">
+          <option value="">—</option>
+          ${reflexPrim.map(v=>`<option ${p[r.id]===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>`).join('')}
+    </div>
+    <div class="form-grid">
+      <div class="field"><label>Reacciones de enderezamiento</label>
+        <select class="sel" id="reaccEnderez">
+          <option value="">—</option>
+          ${['Presentes y adecuadas','En desarrollo','Ausentes'].map(v=>`<option ${p.reaccEnderez===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Reacciones de equilibrio</label>
+        <select class="sel" id="reaccEquilib">
+          <option value="">—</option>
+          ${['Presentes y adecuadas','En desarrollo','Ausentes'].map(v=>`<option ${p.reaccEquilib===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Patrones de movimiento</label>
+        <select class="sel" id="patronesMovPed">
+          <option value="">—</option>
+          ${['Normal y variado','Levemente estereotipado','Estereotipado','Asimétrico','Muy limitado'].map(v=>`<option ${p.patronesMovPed===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Observaciones motor</label>
+        <textarea class="ta" id="obsMotorPed" rows="2" placeholder="Patrones dominantes, asimetrías, compensaciones...">${e2(p.obsMotorPed||'')}</textarea></div>
+    </div>
+    <div style="font-size:11px;color:var(--tx4);margin-top:6px;padding:8px;background:var(--surf3);border-radius:8px">
+      💡 Clasifica el nivel funcional con <b>GMFCS</b> y <b>MACS</b> en la sección de Escalas.
+    </div>`);
+}
+
+function secControlPosturalPed(d){
+  const p=d||{};
+  return secWrap('postural_ped','VI. Control postural','⚖️',`
+    <div class="form-grid">
+      <div class="field"><label>Control cefálico</label>
+        <select class="sel" id="controlCefalPed">
+          <option value="">—</option>
+          ${['Logrado','En proceso','No logrado'].map(v=>`<option ${p.controlCefalPed===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Sedestación</label>
+        <select class="sel" id="sedestacionPed">
+          <option value="">—</option>
+          ${['Independiente','Con apoyo parcial','Con apoyo total','No lograda'].map(v=>`<option ${p.sedestacionPed===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Bipedestación</label>
+        <select class="sel" id="bipedPed">
+          <option value="">—</option>
+          ${['Lograda e independiente','Con apoyo','Con bipedestador','No lograda'].map(v=>`<option ${p.bipedPed===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Ortesis / Adaptaciones</label>
+        <select class="sel" id="ortesisPed">
+          <option value="">—</option>
+          ${['Ninguna','DAFO','AFO','Corsé','Bipedestador','Silla postural adaptada'].map(v=>`<option ${p.ortesisPed===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Observaciones posturales</label>
+        <textarea class="ta" id="obsPosturalPed" rows="2" placeholder="Estrategias de control, asimetrías, apoyos utilizados...">${e2(p.obsPosturalPed||'')}</textarea></div>
+    </div>`);
+}
+
+function secMarchaPed(d){
+  const p=d||{};
+  return secWrap('marcha_ped','VII. Marcha y movilidad','🚶',`
+    <div class="form-grid">
+      <div class="field"><label>Tipo de marcha</label>
+        <select class="sel" id="tipoMarchaPed">
+          <option value="">—</option>
+          ${['No deambula','Asistida por persona','Con ayuda técnica','Independiente'].map(v=>`<option ${p.tipoMarchaPed===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Patrón patológico</label>
+        <select class="sel" id="patronMarchaPed">
+          <option value="">—</option>
+          ${['Normal','En tijera','Equino','Agazapado','Trendelenburg','Atáxico','Hemipléjico','Otro'].map(v=>`<option ${p.patronMarchaPed===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Ayuda técnica</label>
+        <select class="sel" id="ayudaTecPed">
+          <option value="">—</option>
+          ${['Ninguna','Andador posterior','Andador anterior','Muletas','Bastón','Silla de ruedas manual','Silla de ruedas eléctrica'].map(v=>`<option ${p.ayudaTecPed===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Observaciones de marcha</label>
+        <textarea class="ta" id="obsMarchaPed" rows="2" placeholder="Longitud de paso, cadencia, compensaciones observadas...">${e2(p.obsMarchaPed||'')}</textarea></div>
+    </div>`);
+}
+
+function secMMSSPed(d){
+  const p=d||{};
+  return secWrap('mmss_ped','VIII. Función de miembro superior','✋',`
+    <div class="form-grid">
+      <div class="field"><label>Prensión dominante</label>
+        <select class="sel" id="prensionPed">
+          <option value="">—</option>
+          ${['Pinza fina','Pinza lateral','Prensión cilíndrica','Prensión palmar','Prensión esférica','No funcional'].map(v=>`<option ${p.prensionPed===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Lateralidad</label>
+        <select class="sel" id="lateralidadPed">
+          <option value="">—</option>
+          ${['Definida derecha','Definida izquierda','En proceso de definición','No definida'].map(v=>`<option ${p.lateralidadPed===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Alcance y manipulación</label>
+        <select class="sel" id="alcancePed">
+          <option value="">—</option>
+          ${['Normal','Levemente limitado','Moderadamente limitado','Gravemente limitado','Ausente'].map(v=>`<option ${p.alcancePed===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Observaciones MMSS</label>
+        <textarea class="ta" id="obsMMSSPed" rows="2" placeholder="Uso bimanual, compensaciones, habilidades finas...">${e2(p.obsMMSSPed||'')}</textarea></div>
+    </div>
+    <div style="font-size:11px;color:var(--tx4);margin-top:6px;padding:8px;background:var(--surf3);border-radius:8px">
+      💡 Cuantifica la función de mano con <b>MACS</b> en la sección de Escalas.
+    </div>`);
+}
+
+function secAVDPed(d){
+  const p=d||{};
+  return secWrap('avd_ped','IX. AVD y participación','🏠',`
+    <div class="form-grid">
+      <div class="field"><label>Alimentación</label>
+        <select class="sel" id="alimentPed">
+          <option value="">—</option>
+          ${['Independiente oral','Asistida oral','SNG','Gastrostomía'].map(v=>`<option ${p.alimentPed===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Higiene y vestido</label>
+        <select class="sel" id="higienePed">
+          <option value="">—</option>
+          ${['Independiente','Con supervisión','Con asistencia parcial','Dependiente'].map(v=>`<option ${p.higienePed===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Juego y socialización</label>
+        <textarea class="ta" id="juegoSoc" rows="2" placeholder="Tipo de juego, interacción con pares, actividades preferidas...">${e2(p.juegoSoc||'')}</textarea></div>
+      <div class="field form-full"><label>Programa domiciliario / familia</label>
+        <textarea class="ta" id="progDomiciliario" rows="2" placeholder="Rutinas, ejercicios en casa, indicaciones para cuidadores...">${e2(p.progDomiciliario||'')}</textarea></div>
+    </div>
+    <div style="font-size:11px;color:var(--tx4);margin-top:6px;padding:8px;background:var(--surf3);border-radius:8px">
+      💡 Cuantifica la independencia funcional con <b>WeeFIM</b> en la sección de Escalas.
+    </div>`);
 }
 
 function secPlanTratamiento(d){
@@ -2194,46 +4162,73 @@ function actualizarTablas(){
 }
 
 // ── Guardar historia clínica unificada ────────────
+/ que incluye la lectura de escalas:
 async function guardarHC(catId, pacId, modo){
   const nombre=g('pN')?.value?.trim()||'';
   const dni=g('pD')?.value?.trim()||'';
   if(!nombre||!dni){toast('Nombre y DNI son requeridos','','warn');return;}
-  const regiones=Array.from(document.querySelectorAll('#regionesWrap input:checked')||[]).map(c=>c.value);
+
+  // Leer campos comunes
+  const regiones=Array.from(document.querySelectorAll('#regionesWrap span[data-r]')||[]).map(s=>s.getAttribute('data-r'));
   const rom={};document.querySelectorAll('[data-rom]').forEach(el=>{if(el.value.trim())rom[el.dataset.rom]=el.value.trim();});
   const fuerza={};document.querySelectorAll('[data-fuerza]').forEach(el=>{if(el.value.trim())fuerza[el.dataset.fuerza]=Number(el.value.trim());});
+
+  // Leer campos específicos de neuro adultos
+  function v(id){return g(id)?.value||'';}
+  const datosNeuro = catId==='neuro_adultos' ? {
+    nConciencia:v('nConciencia'),lateralidad:v('lateralidad'),orientacion:v('orientacion'),
+    comunicacion:v('comunicacion'),memoria:v('memoria'),atencion:v('atencion'),obsCognitivo:v('obsCognitivo'),
+    tono_MMSS_D:v('tono_MMSS_D'),tono_MMSS_I:v('tono_MMSS_I'),tono_MMII_D:v('tono_MMII_D'),tono_MMII_I:v('tono_MMII_I'),
+    fuerza_MMSS_D:v('fuerza_MMSS_D'),fuerza_MMSS_I:v('fuerza_MMSS_I'),fuerza_MMII_D:v('fuerza_MMII_D'),fuerza_MMII_I:v('fuerza_MMII_I'),
+    reflejos:v('reflejos'),babinski:v('babinski'),clonus:v('clonus'),coordinacion:v('coordinacion'),movInvoluntarios:v('movInvoluntarios'),obsMotor:v('obsMotor'),
+    sensTactil:v('sensTactil'),sensDolor:v('sensDolor'),sensTermica:v('sensTermica'),propiocepccion:v('propiocepccion'),zonaAfectada:v('zonaAfectada'),obsSensibilidad:v('obsSensibilidad'),
+    controlCefal:v('controlCefal'),controlTronco:v('controlTronco'),eqEstatico:v('eqEstatico'),eqDinamico:v('eqDinamico'),obsPostural:v('obsPostural'),
+    tipoMarcha:v('tipoMarcha'),patronMarcha:v('patronMarcha'),ayudaTecnica:v('ayudaTecnica'),transferenciaCS:v('transferenciaCS'),transferenciaSP:v('transferenciaSP'),obsMarcha:v('obsMarcha'),
+    avdBasicasAfect:v('avdBasicasAfect'),avdInstAfect:v('avdInstAfect'),
+    cifDeterioro:v('cifDeterioro'),cifActividad:v('cifActividad'),cifParticipacion:v('cifParticipacion'),cifContextual:v('cifContextual'),
+  } : {};
+
+  // Leer campos específicos de neuro pediátrica
+  const datosPed = catId==='neuro_pediatrica' ? {
+    dxMedico:v('aDxMed'),tiempoEvol:v('tiempoEvol'),tipoParto:v('tipoParto'),semanasGest:v('semanasGest'),pesoNacer:v('pesoNacer'),apgar:v('apgar'),antePrenatal:v('antePrenatal'),antePosnatal:v('antePosnatal'),medicacion:v('medicacion'),
+    hitosSostenCef:v('hitosSostenCef'),hitosSedest:v('hitosSedest'),hitosGateo:v('hitosGateo'),hitosBiped:v('hitosBiped'),hitosMarcha:v('hitosMarcha'),hitosBalbuceo:v('hitosBalbuceo'),hitosPriPalab:v('hitosPriPalab'),hitosFrases:v('hitosFrases'),
+    escolarizacion:v('escolarizacion'),obsDesarrollo:v('obsDesarrollo'),
+    alertaPed:v('alertaPed'),comprensionPed:v('comprensionPed'),conductaPed:v('conductaPed'),comunicacionPed:v('comunicacionPed'),obsCognitivoPed:v('obsCognitivoPed'),
+    tonoPed_MMSS_D:v('tonoPed_MMSS_D'),tonoPed_MMSS_I:v('tonoPed_MMSS_I'),tonoPed_MMII_D:v('tonoPed_MMII_D'),tonoPed_MMII_I:v('tonoPed_MMII_I'),
+    fuerzaPed_MMSS_D:v('fuerzaPed_MMSS_D'),fuerzaPed_MMSS_I:v('fuerzaPed_MMSS_I'),fuerzaPed_MMII_D:v('fuerzaPed_MMII_D'),fuerzaPed_MMII_I:v('fuerzaPed_MMII_I'),
+    refMoro:v('refMoro'),refTANC:v('refTANC'),refTL:v('refTL'),refPrension:v('refPrension'),reaccEnderez:v('reaccEnderez'),reaccEquilib:v('reaccEquilib'),patronesMovPed:v('patronesMovPed'),obsMotorPed:v('obsMotorPed'),
+    controlCefalPed:v('controlCefalPed'),sedestacionPed:v('sedestacionPed'),bipedPed:v('bipedPed'),ortesisPed:v('ortesisPed'),obsPosturalPed:v('obsPosturalPed'),
+    tipoMarchaPed:v('tipoMarchaPed'),patronMarchaPed:v('patronMarchaPed'),ayudaTecPed:v('ayudaTecPed'),obsMarchaPed:v('obsMarchaPed'),
+    prensionPed:v('prensionPed'),lateralidadPed:v('lateralidadPed'),alcancePed:v('alcancePed'),obsMMSSPed:v('obsMMSSPed'),
+    alimentPed:v('alimentPed'),higienePed:v('higienePed'),juegoSoc:v('juegoSoc'),progDomiciliario:v('progDomiciliario'),
+    cifDeterioro:v('cifDeterioro'),cifActividad:v('cifActividad'),cifParticipacion:v('cifParticipacion'),cifContextual:v('cifContextual'),
+  } : {};
+
   const datos={
-    edad:g('pEdad')?.value||'',
-    dxMedico:g('aDxMed')?.value||'',
-    dxFisio:g('aDxFisio')?.value||'',
-    motivo:g('aMotivo')?.value||'',
-    antecedentes:g('aAntecedentes')?.value||'',
-    regiones,rom,fuerza,
-    palpacion:g('tPalpacion')?.value||'',
-    trofismo:g('tTrofismo')?.value||'',
-    eva:Number(g('tEva')?.value||0),
-    dolLoc:g('tDolLoc')?.value||'',
-    dolTipo:g('tDolTipo')?.value||'',
-    neuro:g('tNeuro')?.value||'',
-    tegu:g('tTegu')?.value||'',
-    pruebas:g('tPruebas')?.value||'',
-    aux:g('tAux')?.value||'',
-    meta:g('planMeta')?.value||'',
-    objGeneral:g('planObjG')?.value||'',
-    objEspecificos:g('planObjE')?.value||'',
-    planGeneral:g('planGeneral')?.value||'',
+    edad:v('pEdad'),dxMedico:v('aDxMed'),dxFisio:v('aDxFisio'),
+    motivo:v('aMotivo'),antecedentes:v('aAntecedentes'),
+    regiones, rom, fuerza,
+    palpacion:v('tPalpacion'),trofismo:v('tTrofismo'),
+    eva:Number(v('tEva')||0),dolLoc:v('tDolLoc'),dolTipo:v('tDolTipo'),
+    neuro:v('tNeuro'),tegu:v('tTegu'),pruebas:v('tPruebas'),aux:v('tAux'),
+    examObjetivo:v('examObjetivo'),
+    meta:v('planMeta'),objGeneral:v('planObjG'),objEspecificos:v('planObjE'),planGeneral:v('planGeneral'),
+    // Escalas estandarizadas
+    escalas: leerEscalasForm(),
+    ...datosNeuro,
+    ...datosPed,
   };
-  // 1. Guardar paciente
+
+  // Guardar paciente
   const bPac={action:'guardarPaciente',nombre,dni,
-    sexo:g('pS')?.value||'',fechaNac:g('pFN')?.value||'',
-    telefono:g('pT')?.value||'',ocupacion:g('pO')?.value||'',
-    categoriaId:catId,fechaInicio:g('pFI')?.value||'',
-    responsable:g('pR')?.value||'',telResponsable:g('pTR')?.value||'',
-    estado:'activo'};
-  if(pacId)bPac.id=pacId;
+    sexo:v('pS'),fechaNac:v('pFN'),telefono:v('pT'),ocupacion:v('pO'),
+    categoriaId:catId,fechaInicio:v('pFI'),responsable:v('pR'),telResponsable:v('pTR'),estado:'activo'};
+  if(pacId) bPac.id=pacId;
   const rPac=await apiPost(bPac);
   if(!rPac.ok){toast('Error al guardar paciente',rPac.error,'err');return;}
   const idPac=pacId||rPac.id;
-  // 2. Guardar evaluación
+
+  // Guardar evaluación
   const estado=modo==='borrador'?'borrador':(session.rol==='estudiante'?'pendiente':'aprobada');
   const rEval=await apiPost({action:'guardarEvaluacion',pacienteId:idPac,categoriaId:catId,
     tipo:'inicial',estado,dxFisio:datos.dxFisio,aptaPatron:'',datosEspecificos:datos});
@@ -2293,7 +4288,35 @@ function iniciarPollingPendientes(){
   },30000);
 }
 </script>
+  
+<!-- Modal Selector de Escalas -->
+<div id="modalEscalas" style="display:none;position:fixed;inset:0;background:rgba(10,22,40,.75);z-index:700;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+  <div style="background:var(--surf);border:1px solid var(--bd);border-radius:18px;padding:24px;width:100%;max-width:560px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--tx)">📊 Agregar escala</div>
+        <div style="font-size:11px;color:var(--tx4);margin-top:2px">Selecciona las escalas a aplicar en esta evaluación</div>
+      </div>
+      <button onclick="cerrarModalEscalas()" style="background:rgba(255,255,255,.1);border:none;color:var(--tx3);width:30px;height:30px;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <!-- Búsqueda -->
+    <input class="inp" id="escalaSearch" placeholder="🔍 Buscar escala..." oninput="filtrarModalEscalas(this.value)" style="margin-bottom:12px;flex-shrink:0">
+    <!-- Lista de escalas -->
+    <div id="escalasList" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:6px;padding-right:4px"></div>
+  </div>
+</div>
 
+<!-- Modal Detalle de Ítem de Escala (para ver ítems individuales desde evalCard) -->
+<div id="modalDetalleEscala" style="display:none;position:fixed;inset:0;background:rgba(10,22,40,.75);z-index:800;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+  <div style="background:var(--surf);border:1px solid var(--bd);border-radius:18px;padding:24px;width:100%;max-width:520px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0">
+      <div id="modalDetalleEscalaTit" style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--tx)"></div>
+      <button onclick="cerrarModalDetalleEscala()" style="background:rgba(255,255,255,.1);border:none;color:var(--tx3);width:30px;height:30px;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <div id="modalDetalleEscalaBody" style="overflow-y:auto;flex:1"></div>
+  </div>
+</div>
+ 
 <!-- Modal Firma Exportación -->
 <div id="modalFirmaExport" style="display:none;position:fixed;inset:0;background:rgba(10,22,40,.65);z-index:900;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
   <div style="background:var(--surf);border:1px solid var(--bd);border-radius:18px;padding:24px;width:100%;max-width:420px;box-shadow:0 24px 60px rgba(0,0,0,.3)">
