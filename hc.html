@@ -658,7 +658,7 @@ function _buildExamenObjetivoPorCategoria(d, ev, catId){
 
   if(catId === 'traumatologia'){
     h += '<div class="sec-body">'
-      + '<div><div class="field-lbl">EVA</div><div class="field-val">' + e2(String(ev.evaValor??'—')) + '/10</div></div>'
+      + '<div><div class="field-lbl">EVA</div><div class="field-val">' + e2(String(d.eva!==undefined?d.eva:(ev.evaValor!==undefined?ev.evaValor:'—'))) + '/10</div></div>'
       + (d.trofismo ? '<div><div class="field-lbl">Trofismo</div><div class="field-val">' + e2(d.trofismo) + '</div></div>' : '')
       + (d.palpacion ? '<div style="grid-column:1/-1"><div class="field-lbl">Palpaci&oacute;n</div><div class="field-val">' + e2(d.palpacion) + '</div></div>' : '')
       + (d.pruebas ? '<div style="grid-column:1/-1"><div class="field-lbl">Pruebas funcionales</div><div class="field-val">' + e2(d.pruebas) + '</div></div>' : '')
@@ -1230,17 +1230,18 @@ function filtrarPacs(){
       <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
         <div class="pac-avatar" style="background:${c.color}33;color:${c.color};border:1.5px solid ${c.color}55">${ini}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:14px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e2(p.nombre)}</div>
+          <div style="font-weight:700;font-size:14px;color:var(--n900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e2(p.nombre)}</div>
           <div style="font-size:11px;color:var(--tx3);font-family:'DM Mono',monospace;margin-top:1px">${e2(p.dni)} ${p.fechaNac?'· '+edad(p.fechaNac)+' a':''}</div>
           <div style="margin-top:6px">${catPill(p.categoriaId)}</div>
         </div>
         ${bdg(p.estado||'activo')}
       </div>
-      <div style="display:flex;gap:10px;font-size:11px;color:var(--tx3)">
+      <div style="display:flex;gap:10px;font-size:11px;color:var(--tx3);margin-bottom:8px">
         <span>📋 ${p.evalTotal||0} eval</span>
         ${p.evalPendiente>0?`<span style="color:var(--amber)">⏳ ${p.evalPendiente} pend</span>`:''}
         ${p.evalAprobada>0?`<span style="color:var(--green)">✓ ${p.evalAprobada}</span>`:''}
       </div>
+      <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center" onclick="event.stopPropagation();abrirPac('${esc(p.id)}')">👁️ Ver historia clínica</button>
     </div>`;
   }).join('')}</div>`;
 }
@@ -1501,7 +1502,6 @@ function evalCard(ev, pac){
       ${ev.estado==='borrador'||ev.estado==='rechazada'?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmEval('${esc(pac.id)}','${esc(ev.id)}','${esc(pac.categoriaId)}')">✏️ Editar</button>`:''}
       ${puedeSend?`<button class="btn btn-primary btn-sm" onclick="enviarEval('${esc(ev.id)}','${esc(pac.id)}')">📤 Enviar al docente</button>`:''}
       ${pr&&ev.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('eval','${esc(ev.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
-      <button class="btn btn-ghost btn-sm" onclick="exportarEvalModal('${esc(ev.id)}','${esc(pac.id)}')">&#128196; Exportar</button>
     </div>
   </div>`;
 }
@@ -1576,7 +1576,6 @@ function sesCard(s, pac, evalAp){
         ${s.estado==='borrador'||s.estado==='rechazada'?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmSes('${esc(pac.id)}','${esc(s.evaluacionId)}',${s.numero},'${esc(s.id)}')">✏️ Editar</button>`:''}
         ${puedeSend&&(s.estado==='borrador'||s.estado==='rechazada')?`<button class="btn btn-primary btn-sm" onclick="enviarSes('${esc(s.id)}','${esc(pac.id)}')">📤 Enviar</button>`:''}
         ${pr&&s.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('ses','${esc(s.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
-        <button class="btn btn-ghost btn-sm" onclick="exportarSesModal('${esc(s.id)}','${esc(pac.id)}')">&#128196; Exportar</button>
       </div>
     </div>
   </div>`;
@@ -3741,9 +3740,6 @@ function secAnamnesisCardio(d){
       <div class="field form-full"><label>Diagnóstico(s) secundario(s) / comorbilidades</label>
         <input class="inp" id="dxSecundario" value="${e2(d.dxSecundario||'')}"
           placeholder="HTA, DM, obesidad..."></div>
-      <div class="field form-full"><label>Diagnóstico fisioterapéutico</label>
-        <input class="inp" id="aDxFisio" value="${e2(d.dxFisio||'')}"
-          placeholder="Diagnóstico fisioterapéutico"></div>
       <div class="field form-full"><label>Motivo de derivación a fisioterapia</label>
         <textarea class="ta" id="aMotivo" rows="2"
           placeholder="Motivo de la derivación, sintomatología principal...">${e2(d.motivo||'')}</textarea></div>
