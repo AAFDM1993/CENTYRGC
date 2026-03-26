@@ -2134,9 +2134,9 @@ function secFiliacion(pac, d){
       <div class="field"><label>DNI *</label>
         <input class="inp" id="pD" value="${e2(p.dni||'')}" placeholder="12345678"></div>
       <div class="field"><label>Fecha de nacimiento</label>
-        <input class="inp" id="pFN" type="date" value="${p.fechaNac||''}"></div>
-      <div class="field"><label>Edad</label>
-        <input class="inp" id="pEdad" value="${e2(d.edad||'')}" placeholder="años" style="width:100px"></div>
+        <input class="inp" id="pFN" type="date" value="${p.fechaNac||''}" oninput="calcularEdadAuto()"></div>
+      <div class="field"><label>Edad (calculada automáticamente)</label>
+        <input class="inp" id="pEdad" value="${e2(d.edad||'')}" placeholder="Se calcula al ingresar fecha" readonly style="background:var(--surf2);cursor:default"></div>
       <div class="field"><label>Sexo</label>
         <select class="sel" id="pS">
           <option value="">—</option>
@@ -4862,6 +4862,17 @@ function secMarchaTransferencias(d){
         </select></div>
       <div class="field form-full"><label>Observaciones de marcha</label>
         <textarea class="ta" id="obsMarcha" rows="2" placeholder="Longitud de paso, cadencia, base de sustentación, asimetrías...">${e2(d.obsMarcha||'')}</textarea></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--tx2);margin:12px 0 8px;padding:8px 12px;background:var(--surf3);border-radius:8px">📝 Evaluación cualitativa de la marcha</div>
+    <div class="form-grid">
+      <div class="field form-full"><label>Fase de apoyo</label>
+        <textarea class="ta" id="marchaFaseApoyo" rows="2" placeholder="Contacto inicial, apoyo plantar completo, despegue del talón, propulsión...">${e2(d.marchaFaseApoyo||'')}</textarea></div>
+      <div class="field form-full"><label>Fase de balanceo</label>
+        <textarea class="ta" id="marchaFaseBalanceo" rows="2" placeholder="Aceleración, balanceo medio, desaceleración, compensaciones...">${e2(d.marchaFaseBalanceo||'')}</textarea></div>
+      <div class="field form-full"><label>Cadencia y velocidad</label>
+        <textarea class="ta" id="marchaCadencia" rows="2" placeholder="Cadencia observada, velocidad estimada, irregularidades en el ritmo...">${e2(d.marchaCadencia||'')}</textarea></div>
+      <div class="field form-full"><label>Análisis de tronco y MMSS</label>
+        <textarea class="ta" id="marchaTroncoMmss" rows="2" placeholder="Rotación de tronco, braceo, compensaciones de cabeza y miembros superiores...">${e2(d.marchaTroncoMmss||'')}</textarea></div>
     </div>`);
 }
 
@@ -4949,11 +4960,14 @@ function secDesarrolloPed(d){
     {id:'hitosPriPalab',l:'Primeras palabras (esperado 12 meses)'},
     {id:'hitosFrases',l:'Frases (esperado 24 meses)'},
   ];
-  return secWrap('desarrollo_ped','III. Historia del desarrollo','📅',`
-    <div style="display:grid;gap:6px;margin-bottom:12px">
-      ${hitos.map(h=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surf);border-radius:8px;border:1px solid var(--bd)">
-        <span style="font-size:12px;flex:1">${h.l}</span>
-        <input class="inp" id="${h.id}" value="${e2(p[h.id]||'')}" placeholder="Edad o 'No logrado'" style="max-width:150px;font-size:12px">
+  return secWrap('desarrollo_ped','III. Historia del desarrollo motor','📅',`
+    <div style="display:grid;gap:8px;margin-bottom:12px">
+      ${hitos.map(h=>`<div style="padding:10px 12px;background:var(--surf);border-radius:10px;border:1px solid var(--bd)">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:600;flex:1">${h.l}</span>
+          <input class="inp" id="${h.id}" value="${e2(p[h.id]||'')}" placeholder="Edad o 'No logrado'" style="max-width:150px;font-size:12px">
+        </div>
+        <textarea class="ta" id="${h.id}_obs" rows="2" placeholder="Descripción: calidad del movimiento, compensaciones, observaciones..." style="font-size:12px;min-height:54px">${e2(p[h.id+'_obs']||'')}</textarea>
       </div>`).join('')}
     </div>
     <div class="form-grid">
@@ -4962,9 +4976,10 @@ function secDesarrolloPed(d){
           <option value="">—</option>
           ${['No escolarizado','Educación especial','Regular con apoyo','Regular sin apoyo'].map(v=>`<option ${p.escolarizacion===v?'selected':''}>${v}</option>`).join('')}
         </select></div>
-      <div class="field form-full"><label>Observaciones del desarrollo</label>
+      <div class="field form-full"><label>Observaciones generales del desarrollo</label>
         <textarea class="ta" id="obsDesarrollo" rows="2" placeholder="Regresiones, variaciones, contexto familiar...">${e2(p.obsDesarrollo||'')}</textarea></div>
     </div>`);
+}
 }
 
 function secCognitivoPed(d){
@@ -5101,6 +5116,15 @@ function secMarchaPed(d){
         </select></div>
       <div class="field form-full"><label>Observaciones de marcha</label>
         <textarea class="ta" id="obsMarchaPed" rows="2" placeholder="Longitud de paso, cadencia, compensaciones observadas...">${e2(p.obsMarchaPed||'')}</textarea></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--tx2);margin:12px 0 8px;padding:8px 12px;background:var(--surf3);border-radius:8px">📝 Evaluación cualitativa de la marcha</div>
+    <div class="form-grid">
+      <div class="field form-full"><label>Descripción del patrón de marcha</label>
+        <textarea class="ta" id="marchaPedDescripcion" rows="2" placeholder="Descripción detallada del patrón observado, compensaciones, asimetrías...">${e2(p.marchaPedDescripcion||'')}</textarea></div>
+      <div class="field form-full"><label>Análisis de miembros inferiores</label>
+        <textarea class="ta" id="marchaPedMmii" rows="2" placeholder="Posición de cadera, rodilla, tobillo en las fases de apoyo y balanceo...">${e2(p.marchaPedMmii||'')}</textarea></div>
+      <div class="field form-full"><label>Control de tronco durante la marcha</label>
+        <textarea class="ta" id="marchaPedTronco" rows="2" placeholder="Estabilidad de tronco, inclinaciones, rotaciones compensatorias...">${e2(p.marchaPedTronco||'')}</textarea></div>
     </div>`);
 }
 
@@ -5402,6 +5426,24 @@ function seleccionarCategoria(catId, catNombre){
 
 
 document.addEventListener('click',function(e){var dd=g('regionDropdown');if(dd&&!dd.contains(e.target)&&e.target.id!=='regionSearch')dd.style.display='none';});
+
+function calcularEdadAuto(){
+  var fn=g('pFN'); var edadEl=g('pEdad');
+  if(!fn||!edadEl||!fn.value) return;
+  var hoy=new Date(); var nac=new Date(fn.value);
+  if(isNaN(nac.getTime())) return;
+  var a=hoy.getFullYear()-nac.getFullYear();
+  var m=hoy.getMonth()-nac.getMonth();
+  var dia=hoy.getDate()-nac.getDate();
+  if(m<0||(m===0&&dia<0)) a--;
+  var meses=((hoy.getFullYear()-nac.getFullYear())*12+(hoy.getMonth()-nac.getMonth()))+(hoy.getDate()>=nac.getDate()?0:-1);
+  if(a<2){
+    var mesResto=meses%12;
+    edadEl.value=(meses<1?'< 1 mes':(a>0?(a+' año'+(a>1?'s':'')+(mesResto>0?' '+mesResto+' mes'+(mesResto>1?'es':''):'')):(meses+' mes'+(meses>1?'es':''))));
+  } else {
+    edadEl.value=a+' año'+(a>1?'s':'');
+  }
+}
 
 var _pendCount=0;
 function iniciarPollingPendientes(){
