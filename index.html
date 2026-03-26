@@ -3155,11 +3155,8 @@ function renderCalendario(){
   const ahora=new Date();
   const todosLosDias=[];
   for(let i=0;i<5;i++){const d=new Date(calFechaBase);d.setDate(d.getDate()+i);todosLosDias.push(d);}
-  // Ocultar días pasados SOLO si la semana mostrada es la semana actual
-  const ultimaFranjaG = agendaCfg.franjas&&agendaCfg.franjas.length
-    ? agendaCfg.franjas[agendaCfg.franjas.length-1].fin : '19:00';
-// Siempre mostrar los 5 días de la semana (lun–vie)
-// Los días pasados se marcan visualmente con fondo gris (ya manejado por `pasado`)
+// Mostrar siempre lunes a viernes de la semana base
+// Los slots pasados se muestran en gris (manejado por la variable `pasado` más abajo)
 const dias = todosLosDias;
   const esAdmin=session&&session.rol==='admin';
   const esDocente=session&&session.rol==='docente';
