@@ -600,65 +600,192 @@ function exportarDocumento(titulo, bodyHTML){
 }
 
 // ─── BUILD HTML EVALUACIÓN ────────────────────────────
-function buildEvalHTML(ev,pac,firmaHTML){
-  var d=ev.datosEspecificos||ev||{};
-  var rows='';
-  var fld=function(lbl,val,full){return val?'<div'+(full?' class="field-lbl" style="grid-column:1/-1"':' class="field-lbl"')+'>'+(full?'<div class="field-lbl">'+lbl+'</div><div class="field-val">'+val+'</div>':'<div class="field-lbl">'+lbl+'</div><div class="field-val">'+(val||'—')+'</div>')+'</div>':'';};
-  // Filiacion
-  rows+='<div class="sec"><div class="sec-hdr">I. Filiaci&oacute;n</div><div class="sec-body">'
-    +'<div><div class="field-lbl">Nombres y Apellidos</div><div class="field-val">'+e2(pac.nombre||'')+'</div></div>'
-    +'<div><div class="field-lbl">DNI</div><div class="field-val">'+e2(pac.dni||'')+'</div></div>'
-    +'<div><div class="field-lbl">Fecha de nacimiento</div><div class="field-val">'+e2(pac.fechaNac||'')+'</div></div>'
-    +'<div><div class="field-lbl">Ocupaci&oacute;n</div><div class="field-val">'+e2(pac.ocupacion||d.ocupacion||'—')+'</div></div>'
-    +'</div></div>';
-  // Anamnesis
-  rows+='<div class="sec"><div class="sec-hdr">II. Anamnesis</div><div class="sec-body full">'
-    +(d.dxMedico?'<div><div class="field-lbl">Diagn&oacute;stico M&eacute;dico</div><div class="field-val">'+e2(d.dxMedico)+'</div></div>':'')
-    +'<div><div class="field-lbl">Diagn&oacute;stico Fisioterapéutico</div><div class="field-val">'+e2(d.dxFisio||ev.dxFisio||'—')+'</div></div>'
-    +'<div><div class="field-lbl">Antecedentes</div><div class="field-val">'+e2(d.antecedentes||'—')+'</div></div>'
-    +'<div><div class="field-lbl">Motivo de consulta</div><div class="field-val">'+e2(d.motivo||'—')+'</div></div>'
-    +'</div></div>';
-  // Examen objetivo
-  rows+='<div class="sec"><div class="sec-hdr">III. Examen Objetivo</div><div class="sec-body">'
-    +'<div><div class="field-lbl">EVA</div><div class="field-val">'+e2(String(ev.evaValor??'—'))+'/10</div></div>'
-    +'<div><div class="field-lbl">Trofismo</div><div class="field-val">'+e2(d.trofismo||'—')+'</div></div>'
-    +(d.palpacion?'<div style="grid-column:1/-1"><div class="field-lbl">Palpaci&oacute;n</div><div class="field-val">'+e2(d.palpacion)+'</div></div>':'')
-    +'</div>'
-    // ROM table si existe
-    +(d.rom&&Object.keys(d.rom).length?buildRomTable(d.rom):'')
-    +'</div>';
-  // Plan
-  rows+='<div class="sec"><div class="sec-hdr">IV. Plan de Tratamiento</div><div class="sec-body full">'
-    +(d.meta?'<div><div class="field-lbl">Meta</div><div class="field-val">'+e2(d.meta)+'</div></div>':'')
-    +(d.objGeneral?'<div><div class="field-lbl">Objetivo General</div><div class="field-val">'+e2(d.objGeneral)+'</div></div>':'')
-    +(d.objEspecificos?'<div><div class="field-lbl">Objetivos Espec&iacute;ficos</div><div class="field-val">'+e2(d.objEspecificos)+'</div></div>':'')
-    +(d.planGeneral?'<div><div class="field-lbl">Plan General</div><div class="field-val">'+e2(d.planGeneral)+'</div></div>':'')
-    +'</div></div>';
-  // Estado
-  if(ev.estado==='aprobada'){
-    rows+='<div class="sec" style="border-color:#16a34a;position:relative">'
-      +'<div class="sec-hdr" style="background:#16a34a">&#10003; Evaluaci&oacute;n Aprobada</div>'
-      +'<div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:12px 14px">'
-      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;flex:1">'
-      +'<div><div class="field-lbl">Revisado por</div><div class="field-val">'+e2(ev.revisadoPor||'—')+'</div></div>'
-      +'<div><div class="field-lbl">Comentario</div><div class="field-val">'+e2(ev.comentarioDocente||'—')+'</div></div>'
-      +'</div>'
-      +firmaHTML
-      +'</div></div>';
+function buildEvalHTML(ev, pac, firmaHTML){
+  var d = ev.datosEspecificos || ev || {};
+  var catId = ev.categoriaId || pac.categoriaId || '';
+  var rows = '';
+
+  // ── I. Filiación ──
+  rows += '<div class="sec"><div class="sec-hdr">I. Filiaci&oacute;n</div><div class="sec-body">'
+    + '<div><div class="field-lbl">Nombres y Apellidos</div><div class="field-val">' + e2(pac.nombre||'') + '</div></div>'
+    + '<div><div class="field-lbl">DNI</div><div class="field-val">' + e2(pac.dni||'') + '</div></div>'
+    + '<div><div class="field-lbl">Fecha de nacimiento</div><div class="field-val">' + e2(pac.fechaNac||'') + '</div></div>'
+    + '<div><div class="field-lbl">Ocupaci&oacute;n</div><div class="field-val">' + e2(pac.ocupacion||d.ocupacion||'—') + '</div></div>'
+    + '</div></div>';
+
+  // ── II. Anamnesis ──
+  rows += '<div class="sec"><div class="sec-hdr">II. Anamnesis</div><div class="sec-body full">'
+    + (d.dxMedico ? '<div><div class="field-lbl">Diagn&oacute;stico M&eacute;dico</div><div class="field-val">' + e2(d.dxMedico) + '</div></div>' : '')
+    + '<div><div class="field-lbl">Diagn&oacute;stico Fisioterapéutico</div><div class="field-val">' + e2(d.dxFisio||ev.dxFisio||'—') + '</div></div>'
+    + (d.antecedentes ? '<div><div class="field-lbl">Antecedentes</div><div class="field-val">' + e2(d.antecedentes) + '</div></div>' : '')
+    + (d.motivo ? '<div><div class="field-lbl">Motivo de consulta</div><div class="field-val">' + e2(d.motivo) + '</div></div>' : '')
+    + '</div></div>';
+
+  // ── III. Examen objetivo — según categoría ──
+  rows += _buildExamenObjetivoPorCategoria(d, ev, catId);
+
+  // ── IV. Plan de Tratamiento ──
+  rows += '<div class="sec"><div class="sec-hdr">IV. Plan de Tratamiento</div><div class="sec-body full">'
+    + (d.meta ? '<div><div class="field-lbl">Meta</div><div class="field-val">' + e2(d.meta) + '</div></div>' : '')
+    + (d.objGeneral ? '<div><div class="field-lbl">Objetivo General</div><div class="field-val">' + e2(d.objGeneral) + '</div></div>' : '')
+    + (d.objEspecificos ? '<div><div class="field-lbl">Objetivos Espec&iacute;ficos</div><div class="field-val">' + e2(d.objEspecificos) + '</div></div>' : '')
+    + (d.planGeneral ? '<div><div class="field-lbl">Plan General</div><div class="field-val">' + e2(d.planGeneral) + '</div></div>' : '')
+    + '</div></div>';
+
+  // ── V. Escalas aplicadas ──
+  if(d.escalas && Object.keys(d.escalas).length){
+    rows += _buildEscalasExport(d.escalas);
+  }
+
+  // ── VI. Estado de aprobación + firma ──
+  if(ev.estado === 'aprobada'){
+    rows += '<div class="sec" style="border-color:#16a34a;position:relative">'
+      + '<div class="sec-hdr" style="background:#16a34a">&#10003; Evaluaci&oacute;n Aprobada</div>'
+      + '<div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:12px 14px">'
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;flex:1">'
+      + '<div><div class="field-lbl">Revisado por</div><div class="field-val">' + e2(ev.revisadoPor||'—') + '</div></div>'
+      + '<div><div class="field-lbl">Comentario</div><div class="field-val">' + e2(ev.comentarioDocente||'—') + '</div></div>'
+      + '</div>'
+      + firmaHTML
+      + '</div></div>';
   }
   return rows;
 }
 
-function buildRomTable(rom){
-  var keys=Object.keys(rom);
-  if(!keys.length) return '';
-  var html='<div style="overflow-x:auto;margin-top:8px;padding:0 14px 12px"><table class="tbl-rom"><thead><tr><th>Regi&oacute;n / Movimiento</th><th>Valor</th></tr></thead><tbody>';
-  keys.forEach(function(k){
-    var parts=k.split('_');
-    html+='<tr><td style="text-align:left">'+e2(k.replace(/_/g,' / '))+'</td><td>'+e2(String(rom[k]))+'&deg;</td></tr>';
-  });
-  return html+'</tbody></table></div>';
+// Helper: sección de examen objetivo específica por categoría
+function _buildExamenObjetivoPorCategoria(d, ev, catId){
+  var h = '<div class="sec"><div class="sec-hdr">III. Examen Objetivo</div>';
+
+  if(catId === 'traumatologia'){
+    h += '<div class="sec-body">'
+      + '<div><div class="field-lbl">EVA</div><div class="field-val">' + e2(String(ev.evaValor??'—')) + '/10</div></div>'
+      + (d.trofismo ? '<div><div class="field-lbl">Trofismo</div><div class="field-val">' + e2(d.trofismo) + '</div></div>' : '')
+      + (d.palpacion ? '<div style="grid-column:1/-1"><div class="field-lbl">Palpaci&oacute;n</div><div class="field-val">' + e2(d.palpacion) + '</div></div>' : '')
+      + (d.pruebas ? '<div style="grid-column:1/-1"><div class="field-lbl">Pruebas funcionales</div><div class="field-val">' + e2(d.pruebas) + '</div></div>' : '')
+      + '</div>'
+      + (d.rom && Object.keys(d.rom).length ? buildRomTable(d.rom) : '');
+
+  } else if(catId === 'neuro_adultos'){
+    h += '<div class="sec-body">'
+      + _fld2('Nivel de conciencia', d.nConciencia) + _fld2('Lateralidad', d.lateralidad)
+      + _fld2('Orientación', d.orientacion) + _fld2('Comunicación', d.comunicacion)
+      + _fld2('Tono MMSS D', d.tono_MMSS_D) + _fld2('Tono MMSS I', d.tono_MMSS_I)
+      + _fld2('Tono MMII D', d.tono_MMII_D) + _fld2('Tono MMII I', d.tono_MMII_I)
+      + _fld2('Fuerza MMSS D', d.fuerza_MMSS_D) + _fld2('Fuerza MMII D', d.fuerza_MMII_D)
+      + _fld2('Babinski', d.babinski) + _fld2('Coordinación', d.coordinacion)
+      + _fld2('Tipo de marcha', d.tipoMarcha) + _fld2('Patrón marcha', d.patronMarcha)
+      + _fld2('Transferencia cama↔silla', d.transferenciaCS)
+      + (d.cifDeterioro ? '<div style="grid-column:1/-1">' + _fld2('CIF — Deterioro', d.cifDeterioro) + '</div>' : '')
+      + '</div>';
+
+  } else if(catId === 'neuro_pediatrica'){
+    h += '<div class="sec-body">'
+      + _fld2('Tipo parto', d.tipoParto) + _fld2('Semanas gestación', d.semanasGest)
+      + _fld2('APGAR', d.apgar) + _fld2('Escolarización', d.escolarizacion)
+      + _fld2('Tono MMSS D', d.tonoPed_MMSS_D) + _fld2('Tono MMII D', d.tonoPed_MMII_D)
+      + _fld2('GMFCS', d.gmfcs) + _fld2('MACS', d.macs)
+      + _fld2('Control cefálico', d.controlCefalPed) + _fld2('Sedestación', d.sedestacionPed)
+      + _fld2('Tipo marcha', d.tipoMarchaPed) + _fld2('Patrón marcha', d.patronMarchaPed)
+      + '</div>';
+
+  } else if(catId === 'cardiorespiratorio'){
+    h += '<div class="sec-body">'
+      + _fld2('FC reposo', d.fcReposo ? d.fcReposo + ' lpm' : '') + _fld2('FR reposo', d.frReposo ? d.frReposo + ' rpm' : '')
+      + _fld2('TA', (d.taSistolica && d.taDiastolica) ? d.taSistolica + '/' + d.taDiastolica + ' mmHg' : '')
+      + _fld2('SpO₂ reposo', d.spo2Reposo ? d.spo2Reposo + '%' : '')
+      + _fld2('IMC', d.imc ? d.imc + ' kg/m²' : '') + _fld2('O₂ suplementario', d.o2Suplem)
+      + _fld2('Patrón respiratorio', d.patronResp) + _fld2('Tiraje', d.tiraje)
+      + _fld2('Tos', d.tos) + _fld2('Disnea en reposo', d.disneaReposo)
+      + _fld2('NYHA', d.nyha) + _fld2('Edema MMII', d.edemaMmii)
+      + _fld2('FVC', d.fvc ? d.fvc + ' L' : '') + _fld2('FEV1/FVC', d.fev1fvc ? d.fev1fvc + '%' : '')
+      + (d.auscultacion ? '<div style="grid-column:1/-1"><div class="field-lbl">Auscultaci&oacute;n</div><div class="field-val">' + e2(d.auscultacion) + '</div></div>' : '')
+      + '</div>';
+
+  } else if(catId === 'geriatria'){
+    h += '<div class="sec-body">'
+      + _fld2('Convivencia', d.convivencia) + _fld2('Caídas último año', d.caidasAnio)
+      + _fld2('MMSE', d.mmseScore) + _fld2('Estado cognitivo', d.cognitivo)
+      + _fld2('Estado de ánimo', d.estadoAnimo) + _fld2('Fragilidad', d.clasifFragilidad)
+      + _fld2('Sarcopenia', d.sarcopenia) + _fld2('EVA dolor', d.evaGer !== undefined ? d.evaGer + '/10' : '')
+      + _fld2('Tipo marcha', d.tipoMarchaGer) + _fld2('Patrón marcha', d.patronMarchaGer)
+      + _fld2('Ayuda técnica', d.ayudaTecGer) + _fld2('Dependencia', d.nivelDependencia)
+      + _fld2('TUG', d.tug) + _fld2('Velocidad marcha 4m', d.velMarcha4m ? d.velMarcha4m + ' seg' : '')
+      + '</div>';
+
+  } else if(catId === 'postural'){
+    h += '<div class="sec-body">'
+      + _fld2('Cabeza (frontal)', d.cabezaAnt) + _fld2('Hombros (frontal)', d.hombrosAnt)
+      + _fld2('Columna', d.columnaPost) + _fld2('Pelvis (lateral)', d.pelvisLat)
+      + _fld2('Curva cervical', d.curvaCervical) + _fld2('Curva dorsal', d.curvaDorsal)
+      + _fld2('Curva lumbar', d.curvaLumbar) + _fld2('Test Adams', d.testAdams)
+      + _fld2('Gibosidad', d.gibosidad) + _fld2('Discrepancia MMII real', d.discrepanciaReal ? d.discrepanciaReal + ' cm' : '')
+      + _fld2('Flecha cervical', d.flechaCervical ? d.flechaCervical + ' cm' : '') + _fld2('Flecha lumbar', d.flechaLumbar ? d.flechaLumbar + ' cm' : '')
+      + _fld2('Apoyo plantar D', d.apoyoD) + _fld2('Apoyo plantar I', d.apoyoI)
+      + _fld2('Test dedos-suelo', d.testDedusSuelo !== '' && d.testDedusSuelo !== undefined ? d.testDedusSuelo + ' cm' : '')
+      + (d.cifDeterioro ? '<div style="grid-column:1/-1"><div class="field-lbl">Alteraciones posturales</div><div class="field-val">' + e2(d.cifDeterioro) + '</div></div>' : '')
+      + '</div>';
+
+  } else {
+    // Genérica
+    h += '<div class="sec-body full">'
+      + (d.examObjetivo ? '<div><div class="field-lbl">Hallazgos</div><div class="field-val">' + e2(d.examObjetivo) + '</div></div>' : '')
+      + '</div>';
+  }
+
+  return h + '</div>';
 }
+
+// Helper campo para export
+function _fld2(lbl, val){
+  if(!val && val !== 0) return '';
+  return '<div><div class="field-lbl">' + lbl + '</div><div class="field-val">' + e2(String(val)) + '</div></div>';
+}
+
+// Helper: sección de escalas para exportación
+function _buildEscalasExport(escalas){
+  if(!escalas || !Object.keys(escalas).length) return '';
+  var html = '<div class="sec"><div class="sec-hdr">Escalas aplicadas</div><div class="sec-body full">';
+  html += '<table style="width:100%;border-collapse:collapse;font-size:11px">';
+  html += '<thead><tr>'
+    + '<th style="background:#eff6ff;color:#1e3a5f;padding:5px 10px;text-align:left;border:1px solid #e2e8f0">Escala</th>'
+    + '<th style="background:#eff6ff;color:#1e3a5f;padding:5px 10px;text-align:center;border:1px solid #e2e8f0">Puntaje</th>'
+    + '<th style="background:#eff6ff;color:#1e3a5f;padding:5px 10px;text-align:left;border:1px solid #e2e8f0">Interpretaci&oacute;n</th>'
+    + '<th style="background:#eff6ff;color:#1e3a5f;padding:5px 10px;text-align:center;border:1px solid #e2e8f0">Fecha</th>'
+    + '</tr></thead><tbody>';
+
+  Object.keys(escalas).forEach(function(eid){
+    var datos = escalas[eid];
+    var def = _selEsc(eid);
+    if(!def) return;
+    var puntaje = datos.puntajeTotal !== null && datos.puntajeTotal !== undefined ? datos.puntajeTotal : '—';
+    var interp  = datos.interpretacion || '—';
+    var fecha   = datos.fechaAplicacion || '—';
+    html += '<tr>'
+      + '<td style="border:1px solid #e2e8f0;padding:5px 10px;font-weight:700">' + e2(def.nombre) + '</td>'
+      + '<td style="border:1px solid #e2e8f0;padding:5px 10px;text-align:center;font-weight:800;color:#1d4ed8">' + e2(String(puntaje)) + '</td>'
+      + '<td style="border:1px solid #e2e8f0;padding:5px 10px">' + e2(interp) + '</td>'
+      + '<td style="border:1px solid #e2e8f0;padding:5px 10px;text-align:center">' + e2(fecha) + '</td>'
+      + '</tr>';
+
+    // Ítems individuales en fila expandida
+    if(datos.items && Object.keys(datos.items).length){
+      var itemsHtml = Object.keys(datos.items).filter(function(k){
+        var v = datos.items[k];
+        return v !== '' && v !== null && v !== undefined && v !== false;
+      }).map(function(k){
+        return '<span style="display:inline-block;background:#f8fafc;border:1px solid #e2e8f0;border-radius:4px;padding:2px 6px;margin:2px;font-size:10px">'
+          + e2(k.replace(/_/g,' ')) + ': <b>' + e2(String(datos.items[k])) + '</b></span>';
+      }).join('');
+      if(itemsHtml){
+        html += '<tr><td colspan="4" style="border:1px solid #e2e8f0;padding:5px 10px;background:#fafafa">' + itemsHtml + '</td></tr>';
+      }
+    }
+  });
+
+  html += '</tbody></table></div></div>';
+  return html;
+}
+
 
 // ─── BUILD HTML SESIÓN ────────────────────────────────
 function buildSesHTML(s,pac,firmaHTML){
@@ -818,98 +945,103 @@ async function buscarPacExport(){
 
 // ─── BUILD HC COMPLETA ─────────────────────────────────────
 function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
-  var html='';
+  var html = '';
+  var cat = getCat(pac.categoriaId);
 
   // ── PORTADA ──
-  var cat=getCat(pac.categoriaId);
-  html+='<div style="border:2px solid #1e3a5f;border-radius:12px;padding:20px 24px;margin-bottom:20px;background:#eff6ff">'
-    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">'
-    +'<div>'
-    +'<div style="font-family:sans-serif;font-weight:800;font-size:20px;color:#1e3a5f;margin-bottom:4px">'+e2(pac.nombre||'—')+'</div>'
-    +'<div style="font-size:12px;color:#475569">DNI: '+e2(pac.dni||'—')
-      +(pac.fechaNac?' &nbsp;&bull;&nbsp; Nacimiento: '+e2(pac.fechaNac):'')
-      +(pac.sexo?' &nbsp;&bull;&nbsp; '+(pac.sexo==='M'?'Masculino':'Femenino'):'')+' </div>'
-    +(pac.telefono?'<div style="font-size:12px;color:#475569">Tel: '+e2(pac.telefono)+'</div>':'')
-    +(pac.ocupacion?'<div style="font-size:12px;color:#475569">Ocupaci&oacute;n: '+e2(pac.ocupacion)+'</div>':'')
-    +'</div>'
-    +'<div style="text-align:right">'
-    +'<div style="font-size:11px;font-weight:700;background:'+cat.color+'22;color:'+cat.color+';border:1px solid '+cat.color+'44;border-radius:20px;padding:4px 12px;margin-bottom:6px">'+e2(cat.nombre||'—')+'</div>'
-    +(pac.dxMedico?'<div style="font-size:11px;color:#475569">Dx m&eacute;dico: '+e2(pac.dxMedico)+'</div>':'')
-    +(pac.asignadoA?'<div style="font-size:11px;color:#475569">Estudiante: '+e2(pac.asignadoA)+'</div>':'')
-    +'</div></div></div>';
+  html += '<div style="border:2px solid #1e3a5f;border-radius:12px;padding:20px 24px;margin-bottom:20px;background:#eff6ff">'
+    + '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">'
+    + '<div>'
+    + '<div style="font-family:sans-serif;font-weight:800;font-size:20px;color:#1e3a5f;margin-bottom:4px">' + e2(pac.nombre||'—') + '</div>'
+    + '<div style="font-size:12px;color:#475569">DNI: ' + e2(pac.dni||'—')
+      + (pac.fechaNac ? ' &nbsp;&bull;&nbsp; Nacimiento: ' + e2(pac.fechaNac) : '')
+      + (pac.sexo ? ' &nbsp;&bull;&nbsp; ' + (pac.sexo==='M'?'Masculino':'Femenino') : '') + '</div>'
+    + (pac.telefono ? '<div style="font-size:12px;color:#475569">Tel: ' + e2(pac.telefono) + '</div>' : '')
+    + (pac.ocupacion ? '<div style="font-size:12px;color:#475569">Ocupaci&oacute;n: ' + e2(pac.ocupacion) + '</div>' : '')
+    + '</div>'
+    + '<div style="text-align:right">'
+    + '<div style="font-size:11px;font-weight:700;background:' + cat.color + '22;color:' + cat.color + ';border:1px solid ' + cat.color + '44;border-radius:20px;padding:4px 12px;margin-bottom:6px">' + e2(cat.nombre||'—') + '</div>'
+    + (pac.dxMedico ? '<div style="font-size:11px;color:#475569">Dx m&eacute;dico: ' + e2(pac.dxMedico) + '</div>' : '')
+    + (pac.asignadoA ? '<div style="font-size:11px;color:#475569">Estudiante: ' + e2(pac.asignadoA) + '</div>' : '')
+    + '</div></div></div>';
 
-  // ── EVALUACIONES APROBADAS ──
+  // ── EVALUACIONES ──
   if(evals.length){
-    evals.forEach(function(ev,ei){
-      var d=ev.datosEspecificos||ev||{};
-      html+='<div style="margin-bottom:20px">';
-      html+='<div style="background:#1e3a5f;color:#fff;font-weight:700;font-size:12px;padding:8px 16px;border-radius:8px 8px 0 0;text-transform:uppercase;letter-spacing:.5px">';
-      html+=(ei===0?'Evaluaci&oacute;n Inicial':'Reevaluaci&oacute;n #'+ei)+' &mdash; '+e2(formatFecha(ev.fecha||''))+'</div>';
+    evals.forEach(function(ev, ei){
+      var d = ev.datosEspecificos || ev || {};
+      html += '<div style="margin-bottom:20px">';
+      html += '<div style="background:#1e3a5f;color:#fff;font-weight:700;font-size:12px;padding:8px 16px;border-radius:8px 8px 0 0;text-transform:uppercase;letter-spacing:.5px">';
+      html += (ei===0 ? 'Evaluaci&oacute;n Inicial' : 'Reevaluaci&oacute;n #' + ei) + ' &mdash; ' + e2(formatFecha(ev.fecha||'')) + '</div>';
+
       // Anamnesis
-      html+='<div class="sec"><div class="sec-hdr">Anamnesis</div><div class="sec-body full">'
-        +(d.dxMedico?'<div><div class="field-lbl">Dx m&eacute;dico</div><div class="field-val">'+e2(d.dxMedico)+'</div></div>':'')
-        +'<div><div class="field-lbl">Dx fisioterapéutico</div><div class="field-val">'+e2(d.dxFisio||ev.dxFisio||'—')+'</div></div>'
-        +'<div><div class="field-lbl">Antecedentes</div><div class="field-val">'+e2(d.antecedentes||'—')+'</div></div>'
-        +'<div><div class="field-lbl">Motivo de consulta</div><div class="field-val">'+e2(d.motivo||'—')+'</div></div>'
-        +'</div></div>';
-      // Examen objetivo
-      html+='<div class="sec"><div class="sec-hdr">Examen Objetivo</div><div class="sec-body">'
-        +'<div><div class="field-lbl">EVA</div><div class="field-val">'+e2(String(ev.evaValor??'—'))+'/10</div></div>'
-        +(d.trofismo?'<div><div class="field-lbl">Trofismo</div><div class="field-val">'+e2(d.trofismo)+'</div></div>':'')
-        +(d.palpacion?'<div style="grid-column:1/-1"><div class="field-lbl">Palpaci&oacute;n</div><div class="field-val">'+e2(d.palpacion)+'</div></div>':'')
-        +(d.neuro?'<div style="grid-column:1/-1"><div class="field-lbl">Neurol&oacute;gico</div><div class="field-val">'+e2(d.neuro)+'</div></div>':'')
-        +(d.pruebas?'<div style="grid-column:1/-1"><div class="field-lbl">Pruebas funcionales</div><div class="field-val">'+e2(d.pruebas)+'</div></div>':'')
-        +'</div>'
-        +(d.rom&&Object.keys(d.rom).length?buildRomTable(d.rom):'')
-        +'</div>';
-      // Plan tratamiento
-      html+='<div class="sec"><div class="sec-hdr">Plan de Tratamiento</div><div class="sec-body full">'
-        +(d.meta?'<div><div class="field-lbl">Meta</div><div class="field-val">'+e2(d.meta)+'</div></div>':'')
-        +(d.objGeneral?'<div><div class="field-lbl">Objetivo general</div><div class="field-val">'+e2(d.objGeneral)+'</div></div>':'')
-        +(d.objEspecificos?'<div><div class="field-lbl">Objetivos espec&iacute;ficos</div><div class="field-val">'+e2(d.objEspecificos)+'</div></div>':'')
-        +(d.planGeneral?'<div><div class="field-lbl">Plan general</div><div class="field-val">'+e2(d.planGeneral)+'</div></div>':'')
-        +'</div></div>';
-      // Sello docente dentro del bloque de evaluación aprobada
-      if(ev.revisadoPor&&firmasMap[ev.revisadoPor]){
-        html+='<div style="border-top:1px solid #d1fae5;margin-top:12px;padding-top:10px;display:flex;justify-content:flex-end">'
-          +mkSelloDocente(firmasMap[ev.revisadoPor])
-          +'</div>';
+      html += '<div class="sec"><div class="sec-hdr">Anamnesis</div><div class="sec-body full">'
+        + (d.dxMedico ? '<div><div class="field-lbl">Dx m&eacute;dico</div><div class="field-val">' + e2(d.dxMedico) + '</div></div>' : '')
+        + '<div><div class="field-lbl">Dx fisioterapéutico</div><div class="field-val">' + e2(d.dxFisio||ev.dxFisio||'—') + '</div></div>'
+        + (d.antecedentes ? '<div><div class="field-lbl">Antecedentes</div><div class="field-val">' + e2(d.antecedentes) + '</div></div>' : '')
+        + (d.motivo ? '<div><div class="field-lbl">Motivo</div><div class="field-val">' + e2(d.motivo) + '</div></div>' : '')
+        + '</div></div>';
+
+      // Examen objetivo por categoría
+      html += _buildExamenObjetivoPorCategoria(d, ev, ev.categoriaId || pac.categoriaId || '');
+
+      // Plan
+      html += '<div class="sec"><div class="sec-hdr">Plan de Tratamiento</div><div class="sec-body full">'
+        + (d.meta ? '<div><div class="field-lbl">Meta</div><div class="field-val">' + e2(d.meta) + '</div></div>' : '')
+        + (d.objGeneral ? '<div><div class="field-lbl">Objetivo general</div><div class="field-val">' + e2(d.objGeneral) + '</div></div>' : '')
+        + (d.objEspecificos ? '<div><div class="field-lbl">Objetivos espec&iacute;ficos</div><div class="field-val">' + e2(d.objEspecificos) + '</div></div>' : '')
+        + (d.planGeneral ? '<div><div class="field-lbl">Plan general</div><div class="field-val">' + e2(d.planGeneral) + '</div></div>' : '')
+        + '</div></div>';
+
+      // Escalas
+      if(d.escalas && Object.keys(d.escalas).length){
+        html += _buildEscalasExport(d.escalas);
       }
-      html+='</div>';
+
+      // Sello docente
+      if(ev.revisadoPor && firmasMap[ev.revisadoPor]){
+        html += '<div style="border-top:1px solid #d1fae5;margin-top:12px;padding-top:10px;display:flex;justify-content:flex-end">'
+          + mkSelloDocente(firmasMap[ev.revisadoPor])
+          + '</div>';
+      }
+      html += '</div>';
     });
   } else {
-    html+='<div class="sec"><div class="sec-hdr">Evaluaciones</div><div class="sec-body full"><div class="field-val" style="color:var(--tx4)">Sin evaluaciones aprobadas.</div></div></div>';
+    html += '<div class="sec"><div class="sec-hdr">Evaluaciones</div><div class="sec-body full"><div class="field-val" style="color:#94a3b8">Sin evaluaciones aprobadas.</div></div></div>';
   }
 
   // ── SESIONES ──
   if(ses.length){
-    html+='<div style="margin-bottom:20px">'
-      +'<div style="background:#1e3a5f;color:#fff;font-weight:700;font-size:12px;padding:8px 16px;border-radius:8px 8px 0 0;text-transform:uppercase;letter-spacing:.5px">Sesiones de Tratamiento ('+ses.length+')</div>';
+    html += '<div style="margin-bottom:20px">'
+      + '<div style="background:#1e3a5f;color:#fff;font-weight:700;font-size:12px;padding:8px 16px;border-radius:8px 8px 0 0;text-transform:uppercase;letter-spacing:.5px">Sesiones de Tratamiento (' + ses.length + ')</div>';
     ses.forEach(function(s){
-      var estadoColor=s.estado==='aprobada'?'#16a34a':s.estado==='pendiente'?'#d97706':'#94a3b8';
-      html+='<div class="sec" style="border-radius:0;margin-bottom:0;border-top:none">'
-        +'<div class="sec-hdr" style="background:'+estadoColor+';display:flex;align-items:center;justify-content:space-between">'
-        +'<span>Sesi&oacute;n #'+e2(String(s.numero))+' &mdash; '+e2(formatFecha(s.fecha||''))+'</span>'
-        +'<span style="font-size:10px;opacity:.85">'+e2(s.estado).toUpperCase()+'</span>'
-        +'</div>'
-        +'<div class="sec-body">'
-        +'<div><div class="field-lbl">Estudiante</div><div class="field-val">'+e2(s.estudiante||s.terapeuta||'—')+'</div></div>'
-        +(s.docente?'<div><div class="field-lbl">Docente supervisor</div><div class="field-val">'+e2(s.docente)+'</div></div>':'')
-        +'<div><div class="field-lbl">EVA</div><div class="field-val">'+e2(String(s.evaValor??'—'))+'/10</div></div>'
-        +(s.respuesta?'<div><div class="field-lbl">Respuesta paciente</div><div class="field-val">'+e2(s.respuesta)+'</div></div>':'')
-        +(s.descripcion?'<div style="grid-column:1/-1"><div class="field-lbl">Descripci&oacute;n</div><div class="field-val">'+e2(s.descripcion)+'</div></div>':'')
-        +'</div></div>';
-      // Sello del docente dentro del bloque de sesión aprobada
-      if(s.estado==='aprobada'&&s.revisadoPor&&firmasMap[s.revisadoPor]){
-        html+='<div style="border-top:1px solid #d1fae5;margin-top:4px;padding:8px 14px;display:flex;justify-content:flex-end">'
-          +mkSelloDocente(firmasMap[s.revisadoPor])
-          +'</div>';
+      var estadoColor = s.estado==='aprobada' ? '#16a34a' : s.estado==='pendiente' ? '#d97706' : '#94a3b8';
+      html += '<div class="sec" style="border-radius:0;margin-bottom:0;border-top:none">'
+        + '<div class="sec-hdr" style="background:' + estadoColor + ';display:flex;align-items:center;justify-content:space-between">'
+        + '<span>Sesi&oacute;n #' + e2(String(s.numero)) + ' &mdash; ' + e2(formatFecha(s.fecha||'')) + '</span>'
+        + '<span style="font-size:10px;opacity:.85">' + e2(s.estado).toUpperCase() + '</span>'
+        + '</div>'
+        + '<div class="sec-body">'
+        + '<div><div class="field-lbl">Estudiante</div><div class="field-val">' + e2(s.estudiante||s.terapeuta||'—') + '</div></div>'
+        + (s.docente ? '<div><div class="field-lbl">Docente supervisor</div><div class="field-val">' + e2(s.docente) + '</div></div>' : '')
+        + '<div><div class="field-lbl">EVA</div><div class="field-val">' + e2(String(s.evaValor??'—')) + '/10</div></div>'
+        + (s.respuesta ? '<div><div class="field-lbl">Respuesta paciente</div><div class="field-val">' + e2(s.respuesta) + '</div></div>' : '')
+        + (s.descripcion ? '<div style="grid-column:1/-1"><div class="field-lbl">Descripci&oacute;n</div><div class="field-val">' + e2(s.descripcion) + '</div></div>' : '')
+        + '</div></div>';
+      if(s.estado === 'aprobada' && s.revisadoPor && firmasMap[s.revisadoPor]){
+        html += '<div style="border-top:1px solid #d1fae5;margin-top:4px;padding:8px 14px;display:flex;justify-content:flex-end">'
+          + mkSelloDocente(firmasMap[s.revisadoPor])
+          + '</div>';
       }
     });
-    html+='</div>';
+    html += '</div>';
   }
 
-    return html;
+  // ── Sello del firmante ──
+  if(selloFirmante){
+    html += '<div style="margin-top:24px;display:flex;justify-content:flex-end">' + selloFirmante + '</div>';
+  }
+
+  return html;
 }
 
 async function renderFirmas(){
@@ -1904,8 +2036,6 @@ function plantillaHTML(catId, pac){
    } else if(catId === 'cardiorespiratorio'){
     secciones += secCardiorespiratorio(d);
   } else if(catId === 'geriatria'){
-    secciones += secGeriatria(d);
-  } else {
     secciones += secWrap('examen_gen','III. Examen objetivo','🔬',`
       <div class="form-grid">
         <div class="field form-full"><label>Hallazgos del examen objetivo</label>
@@ -3568,56 +3698,6 @@ function calcularWeeFIM(id){
   return {puntaje:suma+'/126',puntajeRaw:suma,interpretacion:interp,color:suma>=108?'var(--green)':suma>=72?'var(--amber)':'var(--red)'};
 }
 
-
-// ══════════════════════════════════════════════════════════════
-// SECCIÓN D: FICHA NEURO ADULTOS
-// ══════════════════════════════════════════════════════════════
-
-// ENTREGA 2 — Fichas Cardiorrespiratoria y Geriátrica
-//
-// INSTRUCCIONES DE INSERCIÓN:
-//
-// PASO 1: Ubica esta función en el archivo (línea ~1905):
-//
-//   } else {
-//     // Genérica para cardiorespiratorio, geriatria, postural y otras
-//     // (se implementará en Entregas 2 y 3; por ahora usa la base)
-//     secciones += secWrap('examen_gen','III. Examen objetivo','🔬',`
-//       <div class="form-grid">
-//         <div class="field form-full"><label>Hallazgos del examen objetivo</label>
-//           <textarea class="ta" id="examObjetivo" rows="5" ...></textarea></div>
-//       </div>`,true);
-//   }
-//
-// REEMPLAZA ese bloque } else { ... } completo con:
-//
-//   } else if(catId === 'cardiorespiratorio'){
-//     secciones += secCardiorespiratorio(d);
-//   } else if(catId === 'geriatria'){
-//     secciones += secGeriatria(d);
-//   } else {
-//     secciones += secWrap('examen_gen','III. Examen objetivo','🔬',`
-//       <div class="form-grid">
-//         <div class="field form-full"><label>Hallazgos del examen objetivo</label>
-//           <textarea class="ta" id="examObjetivo" rows="5"
-//             placeholder="Describe los hallazgos del examen físico..."
-//             >${e2(d.examObjetivo||'')}</textarea></div>
-//       </div>`,true);
-//   }
-//
-// PASO 2: Ubica la línea (aprox. 3573):
-//   function secNeuroAdultos(d){
-//
-// INSERTA TODO EL CÓDIGO DE ESTE ARCHIVO justo ANTES de esa línea.
-//
-// PASO 3: Ubica la función guardarHC (aprox. línea 4166).
-// REEMPLAZA las líneas del bloque "datosNeuro" y "datosPed"
-// (desde "const datosNeuro = catId==='neuro_adultos' ?"
-//  hasta el "} : {};" del datosPed inclusive)
-// con la versión ampliada que está al final de este archivo.
-// ══════════════════════════════════════════════════════════════
-
-
 // ══════════════════════════════════════════════════════════════
 // FICHA CARDIORRESPIRATORIA
 // ══════════════════════════════════════════════════════════════
@@ -4210,7 +4290,324 @@ function secCuidadorGer(d){
           placeholder="Barras de apoyo, silla de ducha, alfombra antideslizante, iluminación...">${e2(d.adaptacionesHogar||'')}</textarea></div>
     </div>`);
 }
-  
+
+// ══════════════════════════════════════════════════════════════
+// FICHA EVALUACIÓN POSTURAL
+// ══════════════════════════════════════════════════════════════
+
+function secPostural(d){
+  return secAnamnesisPostural(d)
+       + secInspeccionAnterior(d)
+       + secInspeccionPosterior(d)
+       + secInspeccionLateral(d)
+       + secMedicionesPosturales(d)
+       + secCalzadoApoyoPlantar(d)
+       + secFlexibilidadAcortamientos(d)
+       + secDiagnosticoPostural(d);
+}
+
+function secAnamnesisPostural(d){
+  return secWrap('anam_post','II. Motivo y antecedentes posturales','📋',`
+    <div class="form-grid">
+      <div class="field form-full"><label>Diagnóstico fisioterapéutico</label>
+        <input class="inp" id="aDxFisio" value="${e2(d.dxFisio||'')}"
+          placeholder="Diagnóstico fisioterapéutico postural"></div>
+      <div class="field form-full"><label>Motivo de evaluación postural</label>
+        <textarea class="ta" id="aMotivo" rows="2"
+          placeholder="Motivo de derivación, sintomatología...">${e2(d.motivo||'')}</textarea></div>
+      <div class="field"><label>Tiempo de evolución</label>
+        <input class="inp" id="tiempoEvolPost" value="${e2(d.tiempoEvolPost||'')}"
+          placeholder="Ej: 6 meses, desde infancia..."></div>
+      <div class="field"><label>Dolor asociado</label>
+        <select class="sel" id="dolorPostural">
+          <option value="">—</option>
+          ${['No','Sí — cervical','Sí — dorsal','Sí — lumbar','Sí — múltiple'].map(v=>`<option ${d.dolorPostural===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Antecedentes relevantes</label>
+        <textarea class="ta" id="aAntecedentes" rows="2"
+          placeholder="Escoliosis conocida, cirugías de columna, discrepancia de MMII, fracturas...">${e2(d.antecedentes||'')}</textarea></div>
+      <div class="field form-full"><label>Actividad física / deporte habitual</label>
+        <input class="inp" id="actFisicaPost" value="${e2(d.actFisicaPost||'')}"
+          placeholder="Tipo, frecuencia, carga horaria..."></div>
+    </div>`,true);
+}
+
+function secInspeccionAnterior(d){
+  const opts = (campo, opciones) => opciones.map(v =>
+    `<option ${d[campo]===v?'selected':''}>${v}</option>`).join('');
+  return secWrap('insp_ant','III. Inspección visual — Vista anterior','👁️',`
+    <div class="form-grid">
+      <div class="field"><label>Posición cabeza</label>
+        <select class="sel" id="cabezaAnt">
+          <option value="">—</option>
+          ${opts('cabezaAnt',['Centrada','Inclinada derecha','Inclinada izquierda','Rotada derecha','Rotada izquierda'])}
+        </select></div>
+      <div class="field"><label>Hombros</label>
+        <select class="sel" id="hombrosAnt">
+          <option value="">—</option>
+          ${opts('hombrosAnt',['Simétricos','Elevado derecho','Elevado izquierdo','Descendido derecho','Descendido izquierdo'])}
+        </select></div>
+      <div class="field"><label>Línea clavicular</label>
+        <select class="sel" id="clavicular">
+          <option value="">—</option>
+          ${opts('clavicular',['Simétrica','Asimétrica — más alta D','Asimétrica — más alta I'])}
+        </select></div>
+      <div class="field"><label>Triángulo del talle</label>
+        <select class="sel" id="triangulTalle">
+          <option value="">—</option>
+          ${opts('triangulTalle',['Simétrico','Asimétrico — mayor D','Asimétrico — mayor I'])}
+        </select></div>
+      <div class="field"><label>Pelvis / EIAS</label>
+        <select class="sel" id="pelvisAnt">
+          <option value="">—</option>
+          ${opts('pelvisAnt',['Simétrica','Elevada derecha','Elevada izquierda'])}
+        </select></div>
+      <div class="field"><label>Rodillas</label>
+        <select class="sel" id="rodillasAnt">
+          <option value="">—</option>
+          ${opts('rodillasAnt',['Centradas','Valgo bilateral','Varo bilateral','Valgo D / Varo I','Varo D / Valgo I','Asimétrico'])}
+        </select></div>
+      <div class="field"><label>Pie derecho</label>
+        <select class="sel" id="pieDerAnt">
+          <option value="">—</option>
+          ${opts('pieDerAnt',['Normal','Plano','Cavo','Valgo','Varo'])}
+        </select></div>
+      <div class="field"><label>Pie izquierdo</label>
+        <select class="sel" id="pieIzqAnt">
+          <option value="">—</option>
+          ${opts('pieIzqAnt',['Normal','Plano','Cavo','Valgo','Varo'])}
+        </select></div>
+      <div class="field form-full"><label>Observaciones vista anterior</label>
+        <textarea class="ta" id="obsAnt" rows="2"
+          placeholder="Hallazgos adicionales vista anterior...">${e2(d.obsAnt||'')}</textarea></div>
+    </div>`);
+}
+
+function secInspeccionPosterior(d){
+  const opts = (campo, opciones) => opciones.map(v =>
+    `<option ${d[campo]===v?'selected':''}>${v}</option>`).join('');
+  return secWrap('insp_post','IV. Inspección visual — Vista posterior','👁️',`
+    <div class="form-grid">
+      <div class="field"><label>Occipucio</label>
+        <select class="sel" id="occipucio">
+          <option value="">—</option>
+          ${opts('occipucio',['Centrado','Desviado derecha','Desviado izquierda'])}
+        </select></div>
+      <div class="field"><label>Hombros / Escápulas</label>
+        <select class="sel" id="escapulas">
+          <option value="">—</option>
+          ${opts('escapulas',['Simétricas','Escápula alada derecha','Escápula alada izquierda','Asimétrica — más alta D','Asimétrica — más alta I'])}
+        </select></div>
+      <div class="field"><label>Columna</label>
+        <select class="sel" id="columnaPost">
+          <option value="">—</option>
+          ${opts('columnaPost',['Recta','Escoliosis funcional — curva D','Escoliosis funcional — curva I','Escoliosis estructural — curva D','Escoliosis estructural — curva I','Escoliosis en S'])}
+        </select></div>
+      <div class="field"><label>Pliegues glúteos</label>
+        <select class="sel" id="plieguesGluteos">
+          <option value="">—</option>
+          ${opts('plieguesGluteos',['Simétricos','Asimétrico — más alto D','Asimétrico — más alto I'])}
+        </select></div>
+      <div class="field"><label>Pliegues poplíteos</label>
+        <select class="sel" id="plieguesPopliteos">
+          <option value="">—</option>
+          ${opts('plieguesPopliteos',['Simétricos','Asimétrico — más alto D','Asimétrico — más alto I'])}
+        </select></div>
+      <div class="field"><label>Talones</label>
+        <select class="sel" id="talones">
+          <option value="">—</option>
+          ${opts('talones',['Alineados','Valgo bilateral','Varo bilateral','Valgo D / Varo I','Asimétrico'])}
+        </select></div>
+      <div class="field form-full"><label>Observaciones vista posterior</label>
+        <textarea class="ta" id="obsPost" rows="2"
+          placeholder="Hallazgos adicionales vista posterior...">${e2(d.obsPost||'')}</textarea></div>
+    </div>`);
+}
+
+function secInspeccionLateral(d){
+  const opts = (campo, opciones) => opciones.map(v =>
+    `<option ${d[campo]===v?'selected':''}>${v}</option>`).join('');
+  return secWrap('insp_lat','V. Inspección visual — Vista lateral','👁️',`
+    <div class="form-grid">
+      <div class="field"><label>Posición cabeza</label>
+        <select class="sel" id="cabezaLat">
+          <option value="">—</option>
+          ${opts('cabezaLat',['Centrada','Proyectada hacia delante (anteropulsión)','Retropulsión'])}
+        </select></div>
+      <div class="field"><label>Curva cervical</label>
+        <select class="sel" id="curvaCervical">
+          <option value="">—</option>
+          ${opts('curvaCervical',['Lordosis normal','Rectificada','Hiperlordosis','Invertida'])}
+        </select></div>
+      <div class="field"><label>Curva dorsal</label>
+        <select class="sel" id="curvaDorsal">
+          <option value="">—</option>
+          ${opts('curvaDorsal',['Cifosis normal','Rectificada','Hipercifosis','Dorso plano'])}
+        </select></div>
+      <div class="field"><label>Curva lumbar</label>
+        <select class="sel" id="curvaLumbar">
+          <option value="">—</option>
+          ${opts('curvaLumbar',['Lordosis normal','Rectificada','Hiperlordosis','Invertida'])}
+        </select></div>
+      <div class="field"><label>Pelvis</label>
+        <select class="sel" id="pelvisLat">
+          <option value="">—</option>
+          ${opts('pelvisLat',['Neutra','Anteversión leve','Anteversión marcada','Retroversión leve','Retroversión marcada'])}
+        </select></div>
+      <div class="field"><label>Rodillas</label>
+        <select class="sel" id="rodillasLat">
+          <option value="">—</option>
+          ${opts('rodillasLat',['Normales','Hiperextensión bilateral','Hiperextensión D','Hiperextensión I','Flexo bilateral','Flexo D','Flexo I'])}
+        </select></div>
+      <div class="field form-full"><label>Observaciones vista lateral</label>
+        <textarea class="ta" id="obsLat" rows="2"
+          placeholder="Hallazgos adicionales vista lateral, alineación del lóbulo de la oreja / acromion / trocánter / maléolo...">${e2(d.obsLat||'')}</textarea></div>
+    </div>`);
+}
+
+function secMedicionesPosturales(d){
+  return secWrap('mediciones_post','VI. Mediciones posturales','📏',`
+    <div class="form-grid">
+      <div class="field"><label>Discrepancia MMII real (cm)</label>
+        <input class="inp" id="discrepanciaReal" type="number" min="0" max="20" step="0.1"
+          value="${d.discrepanciaReal||''}" placeholder="cm"></div>
+      <div class="field"><label>Discrepancia MMII aparente (cm)</label>
+        <input class="inp" id="discrepanciaAparente" type="number" min="0" max="20" step="0.1"
+          value="${d.discrepanciaAparente||''}" placeholder="cm"></div>
+      <div class="field"><label>Flecha cervical (cm)</label>
+        <input class="inp" id="flechaCervical" type="number" min="0" max="15" step="0.1"
+          value="${d.flechaCervical||''}" placeholder="cm (normal: 4-6 cm)"></div>
+      <div class="field"><label>Flecha lumbar (cm)</label>
+        <input class="inp" id="flechaLumbar" type="number" min="0" max="15" step="0.1"
+          value="${d.flechaLumbar||''}" placeholder="cm (normal: 4-6 cm)"></div>
+      <div class="field"><label>Test de Adams</label>
+        <select class="sel" id="testAdams">
+          <option value="">—</option>
+          ${['Negativo','Positivo — gibosidad dorsal D','Positivo — gibosidad dorsal I','Positivo — gibosidad lumbar D','Positivo — gibosidad lumbar I'].map(v=>`<option ${d.testAdams===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Ángulo de rotación del tronco (°)</label>
+        <input class="inp" id="anguloRotTronco" type="number" min="0" max="40" step="0.5"
+          value="${d.anguloRotTronco||''}" placeholder="° (≥ 5° = significativo)"></div>
+      <div class="field"><label>Gibosidad</label>
+        <select class="sel" id="gibosidad">
+          <option value="">—</option>
+          ${['Ausente','Presente — dorsal D','Presente — dorsal I','Presente — lumbar D','Presente — lumbar I'].map(v=>`<option ${d.gibosidad===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Plomada</label>
+        <select class="sel" id="plomada">
+          <option value="">—</option>
+          ${['Alineada','Desviada derecha','Desviada izquierda'].map(v=>`<option ${d.plomada===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Desviación plomada (cm)</label>
+        <input class="inp" id="desviacionPlomada" type="number" min="0" max="15" step="0.5"
+          value="${d.desviacionPlomada||''}" placeholder="cm"></div>
+      <div class="field form-full"><label>Observaciones de mediciones</label>
+        <textarea class="ta" id="obsMediciones" rows="2"
+          placeholder="Notas sobre mediciones, instrumentos usados...">${e2(d.obsMediciones||'')}</textarea></div>
+    </div>`);
+}
+
+function secCalzadoApoyoPlantar(d){
+  return secWrap('calzado_post','VII. Calzado y apoyo plantar','👟',`
+    <div class="form-grid">
+      <div class="field"><label>Desgaste del calzado</label>
+        <select class="sel" id="desgasteCalzado">
+          <option value="">—</option>
+          ${['Simétrico normal','Asimétrico — mayor D','Asimétrico — mayor I','Lateral bilateral','Medial bilateral','Anterior bilateral'].map(v=>`<option ${d.desgasteCalzado===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Apoyo plantar pie D</label>
+        <select class="sel" id="apoyoD">
+          <option value="">—</option>
+          ${['Normal','Pronado','Supinado'].map(v=>`<option ${d.apoyoD===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Apoyo plantar pie I</label>
+        <select class="sel" id="apoyoI">
+          <option value="">—</option>
+          ${['Normal','Pronado','Supinado'].map(v=>`<option ${d.apoyoI===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Plantillas actuales</label>
+        <select class="sel" id="plantillas">
+          <option value="">—</option>
+          ${['No usa','Plantillas simples','Plantillas personalizadas','Calzado ortopédico'].map(v=>`<option ${d.plantillas===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field form-full"><label>Observaciones huella plantar / calzado</label>
+        <textarea class="ta" id="obsCalzado" rows="2"
+          placeholder="Huella plantar, zona de desgaste específica, estado del calzado...">${e2(d.obsCalzado||'')}</textarea></div>
+    </div>`);
+}
+
+function secFlexibilidadAcortamientos(d){
+  return secWrap('flex_post','VIII. Flexibilidad y acortamientos musculares','🧘',`
+    <div class="form-grid">
+      <div class="field"><label>Test dedos-suelo (cm)</label>
+        <input class="inp" id="testDedusSuelo" type="number" min="-30" max="50" step="0.5"
+          value="${d.testDedusSuelo||''}" placeholder="cm (– = toca suelo)"></div>
+      <div class="field"><label>Test Schober (cm)</label>
+        <input class="inp" id="testSchober" type="number" min="0" max="10" step="0.1"
+          value="${d.testSchober||''}" placeholder="cm (normal: ≥ 5 cm)"></div>
+      <div class="field"><label>Test Thomas D</label>
+        <select class="sel" id="thomasD">
+          <option value="">—</option>
+          ${['Negativo','Positivo — acortamiento iliopsoas','Positivo — acortamiento recto femoral'].map(v=>`<option ${d.thomasD===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Test Thomas I</label>
+        <select class="sel" id="thomasI">
+          <option value="">—</option>
+          ${['Negativo','Positivo — acortamiento iliopsoas','Positivo — acortamiento recto femoral'].map(v=>`<option ${d.thomasI===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Test Ely D (recto femoral)</label>
+        <select class="sel" id="elyD">
+          <option value="">—</option>
+          ${['Negativo','Positivo'].map(v=>`<option ${d.elyD===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Test Ely I (recto femoral)</label>
+        <select class="sel" id="elyI">
+          <option value="">—</option>
+          ${['Negativo','Positivo'].map(v=>`<option ${d.elyI===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Ángulo poplíteo D (°)</label>
+        <input class="inp" id="popliD" type="number" min="0" max="180"
+          value="${d.popliD||''}" placeholder="° (normal: < 20°)"></div>
+      <div class="field"><label>Ángulo poplíteo I (°)</label>
+        <input class="inp" id="popliI" type="number" min="0" max="180"
+          value="${d.popliI||''}" placeholder="°"></div>
+      <div class="field"><label>Test Ober D (TFL)</label>
+        <select class="sel" id="oberD">
+          <option value="">—</option>
+          ${['Negativo','Positivo'].map(v=>`<option ${d.oberD===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Test Ober I (TFL)</label>
+        <select class="sel" id="oberI">
+          <option value="">—</option>
+          ${['Negativo','Positivo'].map(v=>`<option ${d.oberI===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Dorsiflexión tobillo D (°)</label>
+        <input class="inp" id="dorsiflexD" type="number" min="0" max="30"
+          value="${d.dorsiflexD||''}" placeholder="° (normal: ≥ 10°)"></div>
+      <div class="field"><label>Dorsiflexión tobillo I (°)</label>
+        <input class="inp" id="dorsiflexI" type="number" min="0" max="30"
+          value="${d.dorsiflexI||''}" placeholder="°"></div>
+      <div class="field form-full"><label>Observaciones de flexibilidad</label>
+        <textarea class="ta" id="obsFlexPost" rows="2"
+          placeholder="Acortamientos predominantes, cadenas musculares afectadas...">${e2(d.obsFlexPost||'')}</textarea></div>
+    </div>`);
+}
+
+function secDiagnosticoPostural(d){
+  return secWrap('dx_post','IX. Diagnóstico e impresión clínica postural','📋',`
+    <div class="form-grid">
+      <div class="field form-full"><label>Alteraciones posturales principales identificadas</label>
+        <textarea class="ta" id="cifDeterioro" rows="3"
+          placeholder="Describe las alteraciones posturales más relevantes encontradas en la evaluación...">${e2(d.cifDeterioro||'')}</textarea></div>
+      <div class="field form-full"><label>Relación con sintomatología</label>
+        <textarea class="ta" id="relacionSintomas" rows="2"
+          placeholder="Cómo las alteraciones posturales se relacionan con los síntomas referidos...">${e2(d.relacionSintomas||'')}</textarea></div>
+      <div class="field form-full"><label>Factores contextuales (facilitadores / barreras)</label>
+        <textarea class="ta" id="cifContextual" rows="2"
+          placeholder="Ergonomía laboral, actividad deportiva, hábitos posturales, calzado habitual...">${e2(d.cifContextual||'')}</textarea></div>
+    </div>`);
+}
+
 function secNeuroAdultos(d){
   return secEstadoCognitivoCom(d)
        + secExamenMotorNeuro(d)
@@ -4860,6 +5257,39 @@ async function guardarHC(catId, pacId, modo){
     ...datosPed,
     ...datosCardio,
     ...datosGer,
+    ...datosPostural,
+
+     const datosPostural = catId==='postural' ? {
+    tiempoEvolPost:v('tiempoEvolPost'),dolorPostural:v('dolorPostural'),actFisicaPost:v('actFisicaPost'),
+    // Vista anterior
+    cabezaAnt:v('cabezaAnt'),hombrosAnt:v('hombrosAnt'),clavicular:v('clavicular'),
+    triangulTalle:v('triangulTalle'),pelvisAnt:v('pelvisAnt'),rodillasAnt:v('rodillasAnt'),
+    pieDerAnt:v('pieDerAnt'),pieIzqAnt:v('pieIzqAnt'),obsAnt:v('obsAnt'),
+    // Vista posterior
+    occipucio:v('occipucio'),escapulas:v('escapulas'),columnaPost:v('columnaPost'),
+    plieguesGluteos:v('plieguesGluteos'),plieguesPopliteos:v('plieguesPopliteos'),
+    talones:v('talones'),obsPost:v('obsPost'),
+    // Vista lateral
+    cabezaLat:v('cabezaLat'),curvaCervical:v('curvaCervical'),curvaDorsal:v('curvaDorsal'),
+    curvaLumbar:v('curvaLumbar'),pelvisLat:v('pelvisLat'),rodillasLat:v('rodillasLat'),obsLat:v('obsLat'),
+    // Mediciones
+    discrepanciaReal:v('discrepanciaReal'),discrepanciaAparente:v('discrepanciaAparente'),
+    flechaCervical:v('flechaCervical'),flechaLumbar:v('flechaLumbar'),
+    testAdams:v('testAdams'),anguloRotTronco:v('anguloRotTronco'),
+    gibosidad:v('gibosidad'),plomada:v('plomada'),desviacionPlomada:v('desviacionPlomada'),obsMediciones:v('obsMediciones'),
+    // Calzado
+    desgasteCalzado:v('desgasteCalzado'),apoyoD:v('apoyoD'),apoyoI:v('apoyoI'),
+    plantillas:v('plantillas'),obsCalzado:v('obsCalzado'),
+    // Flexibilidad
+    testDedusSuelo:v('testDedusSuelo'),testSchober:v('testSchober'),
+    thomasD:v('thomasD'),thomasI:v('thomasI'),elyD:v('elyD'),elyI:v('elyI'),
+    popliD:v('popliD'),popliI:v('popliI'),oberD:v('oberD'),oberI:v('oberI'),
+    dorsiflexD:v('dorsiflexD'),dorsiflexI:v('dorsiflexI'),obsFlexPost:v('obsFlexPost'),
+    // Diagnóstico
+    relacionSintomas:v('relacionSintomas'),
+    cifDeterioro:v('cifDeterioro'),cifContextual:v('cifContextual'),
+  } : {};
+
   };
   
   // Guardar paciente
