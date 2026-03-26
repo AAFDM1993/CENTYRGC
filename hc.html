@@ -5242,24 +5242,7 @@ async function guardarHC(catId, pacId, modo){
     cifDeterioro:v('cifDeterioro'),cifActividad:v('cifActividad'),cifParticipacion:v('cifParticipacion'),cifContextual:v('cifContextual'),
   } : {};
 
-  const datos={
-    edad:v('pEdad'),dxMedico:v('aDxMed'),dxFisio:v('aDxFisio'),
-    motivo:v('aMotivo'),antecedentes:v('aAntecedentes'),
-    regiones, rom, fuerza,
-    palpacion:v('tPalpacion'),trofismo:v('tTrofismo'),
-    eva:Number(v('tEva')||0),dolLoc:v('tDolLoc'),dolTipo:v('tDolTipo'),
-    neuro:v('tNeuro'),tegu:v('tTegu'),pruebas:v('tPruebas'),aux:v('tAux'),
-    examObjetivo:v('examObjetivo'),
-    meta:v('planMeta'),objGeneral:v('planObjG'),objEspecificos:v('planObjE'),planGeneral:v('planGeneral'),
-    // Escalas estandarizadas
-    escalas: leerEscalasForm(),
-    ...datosNeuro,
-    ...datosPed,
-    ...datosCardio,
-    ...datosGer,
-    ...datosPostural,
-
-    const datosPostural = catId === 'postural' ? {
+  const datosPostural = catId === 'postural' ? {
     tiempoEvolPost: v('tiempoEvolPost'),
     dolorPostural: v('dolorPostural'),
     actFisicaPost: v('actFisicaPost'),
@@ -5292,6 +5275,23 @@ async function guardarHC(catId, pacId, modo){
     cifDeterioro: v('cifDeterioro'),
     cifContextual: v('cifContextual')
   } : {};
+
+  const datos={
+    edad:v('pEdad'),dxMedico:v('aDxMed'),dxFisio:v('aDxFisio'),
+    motivo:v('aMotivo'),antecedentes:v('aAntecedentes'),
+    regiones, rom, fuerza,
+    palpacion:v('tPalpacion'),trofismo:v('tTrofismo'),
+    eva:Number(v('tEva')||0),dolLoc:v('tDolLoc'),dolTipo:v('tDolTipo'),
+    neuro:v('tNeuro'),tegu:v('tTegu'),pruebas:v('tPruebas'),aux:v('tAux'),
+    examObjetivo:v('examObjetivo'),
+    meta:v('planMeta'),objGeneral:v('planObjG'),objEspecificos:v('planObjE'),planGeneral:v('planGeneral'),
+    // Escalas estandarizadas
+    escalas: leerEscalasForm(),
+    ...datosNeuro,
+    ...datosPed,
+    ...datosCardio,
+    ...datosGer,
+    ...datosPostural,
   
   // Guardar paciente
   const bPac={action:'guardarPaciente',nombre,dni,
