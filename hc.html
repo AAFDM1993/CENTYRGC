@@ -1393,7 +1393,8 @@ function evalCard(ev, pac){
   const pr=session.rol==='admin'||session.rol==='docente';
   const puedeSend=(ev.estado==='borrador'||ev.estado==='rechazada')&&session.rol==='estudiante'&&(pac.asignadoA===session.codigo||pac.creadoPor===session.codigo||ev.autor===session.codigo||ev.autorCodigo===session.codigo);
   const uid='eval_'+ev.id.replace(/[^a-z0-9]/gi,'_');
-  const d=ev.datosEspecificos||ev||{};
+  // Compatibilidad: datos pueden estar en datosEspecificos o al nivel raíz
+  const d=Object.assign({},ev,ev.datosEspecificos||{});
   // Normalizar nombres de campo: el form principal usa nombres distintos al form de reevaluación
   var evaVal = d.evaValor !== undefined ? d.evaValor : (d.eva !== undefined ? d.eva : undefined);
   var cifDeterioro = d.icfDeterioro || d.cifDeterioro || '';
@@ -1492,7 +1493,7 @@ function evalCard(ev, pac){
       </div>
       <div style="font-size:11px;color:var(--tx4)">${e2(ev.autor)} · ${formatFecha(ev.fecha)}</div>
     </div>
-    ${ev.dxFisio?`<div style="font-size:12px;color:var(--tx2);margin-bottom:6px;cursor:pointer" onclick="toggleEvalInline('${uid}',null)">Dx: ${e2(ev.dxFisio)}</div>`:''}
+
     ${ev.comentarioDocente&&ev.estado!=='borrador'?`<div class="rev-bar ${ev.estado}" style="margin-bottom:8px">
       <div style="font-size:18px">${ev.estado==='aprobada'?'✅':ev.estado==='rechazada'?'❌':'⏳'}</div>
       <div><div style="font-size:12px;font-weight:700;color:${ev.estado==='aprobada'?'var(--green)':ev.estado==='rechazada'?'var(--red)':'var(--amber)'}">${ev.estado==='aprobada'?'Aprobada':'Rechazada'} — ${e2(ev.revisadoPor)}</div>
@@ -1783,7 +1784,7 @@ function leerF2(){const f={};document.querySelectorAll('[data-f]').forEach(el=>{
 
 async function guardarEval(pacId, evalId, catId, modo){
   const estado=modo==='borrador'?'borrador':(session.rol==='estudiante'?'pendiente':'aprobada');
-  const b={action:'guardarEvaluacion',pacienteId:pacId,categoriaId:catId,tipo:'inicial',estado,
+  const datosEval={
     evaValor:Number(g('evaS')?.value||0),dolLoc:g('dolL')?.value||'',dolTipo:g('dolT')?.value||'',
     postura:g('post')?.value||'',marcha:g('marc')?.value||'',
     rom:leerROM2(),fuerza:leerF2(),obsExamen:g('obsEx')?.value||'',
@@ -1793,7 +1794,10 @@ async function guardarEval(pacId, evalId, catId, modo){
     objCorto:g('objC')?.value||'',objLargo:g('objL')?.value||'',
     planSesiones:g('nSes')?.value||'',planFrecuencia:g('freq')?.value||'',
     planDuracion:g('dur')?.value||'',planPrecauciones:g('prec')?.value||'',
-    planEducacion:g('educ')?.value||''};
+    planEducacion:g('educ')?.value||''
+  };
+  const b={action:'guardarEvaluacion',pacienteId:pacId,categoriaId:catId,tipo:'inicial',estado,
+    dxFisio:datosEval.dxFisio,datosEspecificos:datosEval};
   if(evalId) b.id=evalId;
   const r=await apiPost(b);
   if(!r.ok){toast('Error',r.error,'err');return;}
