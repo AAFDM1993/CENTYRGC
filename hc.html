@@ -2236,7 +2236,7 @@ function secTrauma(d){
 }
 
 // ══════════════════════════════════════════════════════════════
-// SECCIÓN A: CATÁLOGO DE ESCALAS
+// CATÁLOGO DE ESCALAS
 // ══════════════════════════════════════════════════════════════
 
 const ESCALAS_CATALOGO = [
@@ -2392,7 +2392,7 @@ const ESCALAS_CATALOGO = [
 
 
 // ══════════════════════════════════════════════════════════════
-// SECCIÓN B: MOTOR DE ESCALAS (ScalasEngine)
+// MOTOR DE ESCALAS
 // ══════════════════════════════════════════════════════════════
 
 // Estado global de escalas activas en el formulario actual
@@ -2675,7 +2675,7 @@ function _numItem(escId, itemId, valGuardado, label, min, max, ph){
 
 
 // ══════════════════════════════════════════════════════════════
-// SECCIÓN C: RENDER + CÁLCULO DE CADA ESCALA
+// RENDER + CÁLCULO DE CADA ESCALA
 // ══════════════════════════════════════════════════════════════
 
 // ── EVA ──────────────────────────────────────────────────────
@@ -4835,7 +4835,7 @@ function secCIFNeuro(d){
 
 
 // ══════════════════════════════════════════════════════════════
-// SECCIÓN E: FICHA NEURO PEDIÁTRICA
+// FICHA NEURO PEDIÁTRICA
 // ══════════════════════════════════════════════════════════════
 
 function secNeuroPediatrica(d){
@@ -5292,6 +5292,7 @@ async function guardarHC(catId, pacId, modo){
     ...datosCardio,
     ...datosGer,
     ...datosPostural,
+  };
   
   // Guardar paciente
   const bPac={action:'guardarPaciente',nombre,dni,
