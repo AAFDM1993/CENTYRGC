@@ -3158,25 +3158,9 @@ function renderCalendario(){
   // Ocultar días pasados SOLO si la semana mostrada es la semana actual
   const ultimaFranjaG = agendaCfg.franjas&&agendaCfg.franjas.length
     ? agendaCfg.franjas[agendaCfg.franjas.length-1].fin : '19:00';
-  const semanaActual = fmt(getLunes(new Date()))===fmt(calFechaBase);
-  let dias;
-  if(semanaActual){
-    // Ventana deslizante: próximos 7 días hábiles (lun-vie) aún no terminados
-    const diasHabiles=[];
-    let cursor=new Date(); cursor.setHours(0,0,0,0);
-    while(diasHabiles.length<7){
-      const dow=cursor.getDay();
-      if(dow>=1&&dow<=5){
-        const fd=fmt(cursor);
-        const finDia=new Date(fd+'T'+ultimaFranjaG+':00');
-        if(finDia>ahora) diasHabiles.push(new Date(cursor));
-      }
-      cursor.setDate(cursor.getDate()+1);
-    }
-    dias=diasHabiles;
-  } else {
-    dias=todosLosDias;
-  }
+// Siempre mostrar los 5 días de la semana (lun–vie)
+// Los días pasados se marcan visualmente con fondo gris (ya manejado por `pasado`)
+const dias = todosLosDias;
   const esAdmin=session&&session.rol==='admin';
   const esDocente=session&&session.rol==='docente';
   const puedeElim=esAdmin||esDocente;
