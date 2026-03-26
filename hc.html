@@ -1393,18 +1393,37 @@ function evalCard(ev, pac){
   const puedeSend=(ev.estado==='borrador'||ev.estado==='rechazada')&&session.rol==='estudiante'&&(pac.asignadoA===session.codigo||pac.creadoPor===session.codigo||ev.autor===session.codigo||ev.autorCodigo===session.codigo);
   const uid='eval_'+ev.id.replace(/[^a-z0-9]/gi,'_');
   const d=ev.datosEspecificos||ev||{};
+  // Normalizar nombres de campo: el form principal usa nombres distintos al form de reevaluación
+  var evaVal = d.evaValor !== undefined ? d.evaValor : (d.eva !== undefined ? d.eva : undefined);
+  var cifDeterioro = d.icfDeterioro || d.cifDeterioro || '';
+  var cifActividad = d.icfActividad || d.cifActividad || '';
+  var objCorto = d.objCorto || d.meta || '';
+  var objLargo = d.objLargo || d.objGeneral || '';
+  var objEsp = d.objEspecificos || d.planGeneral || '';
   // Construir contenido expandible
   var detalle='<div id="'+uid+'" style="display:none;margin-top:14px;border-top:1px solid var(--bd);padding-top:14px">';
+  // Anamnesis
+  if(d.motivo||d.antecedentes){
+    detalle+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Anamnesis</div>';
+    if(d.motivo) detalle+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">MOTIVO DE CONSULTA</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.motivo)+'</div></div>';
+    if(d.antecedentes) detalle+='<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">ANTECEDENTES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.antecedentes)+'</div></div>';
+  }
   // Examen físico
-  if(ev.evaValor!==undefined||d.dolLoc||d.postura||d.marcha){
+  if(evaVal!==undefined||d.dolLoc||d.postura||d.marcha||d.palpacion||d.trofismo||d.neuro||d.tegu||d.pruebas||d.examObjetivo){
     detalle+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Examen físico</div>';
     detalle+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:12px">';
-    if(ev.evaValor!==undefined) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">EVA DOLOR</div><div style="font-size:13px;font-weight:700;color:var(--red)">'+e2(String(ev.evaValor))+'/10</div></div>';
+    if(evaVal!==undefined) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">EVA DOLOR</div><div style="font-size:13px;font-weight:700;color:var(--red)">'+e2(String(evaVal))+'/10</div></div>';
     if(d.dolLoc) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">LOCALIZACIÓN</div><div style="font-size:12px">'+e2(d.dolLoc)+'</div></div>';
     if(d.dolTipo) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">TIPO DOLOR</div><div style="font-size:12px">'+e2(d.dolTipo)+'</div></div>';
     if(d.postura) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">POSTURA</div><div style="font-size:12px">'+e2(d.postura)+'</div></div>';
     if(d.marcha) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">MARCHA</div><div style="font-size:12px">'+e2(d.marcha)+'</div></div>';
+    if(d.trofismo) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">TROFISMO</div><div style="font-size:12px">'+e2(d.trofismo)+'</div></div>';
+    if(d.neuro) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">NEUROLÓGICO</div><div style="font-size:12px">'+e2(d.neuro)+'</div></div>';
+    if(d.tegu) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">TEGUMENTARIO</div><div style="font-size:12px">'+e2(d.tegu)+'</div></div>';
     detalle+='</div>';
+    if(d.palpacion) detalle+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">PALPACIÓN</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.palpacion)+'</div></div>';
+    if(d.pruebas) detalle+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">PRUEBAS ESPECIALES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.pruebas)+'</div></div>';
+    if(d.examObjetivo) detalle+='<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">EXAMEN OBJETIVO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.examObjetivo)+'</div></div>';
   }
   // ROM
   if(d.rom&&Object.keys(d.rom).length){
@@ -1437,29 +1456,30 @@ function evalCard(ev, pac){
     detalle+='</table></div>';
   }
   // Diagnóstico
-  if(ev.dxFisio||d.aptaPatron||d.icfDeterioro){
+  if(ev.dxFisio||d.dxFisio||d.aptaPatron||cifDeterioro||cifActividad){
     detalle+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Diagnóstico</div>';
     detalle+='<div style="display:grid;gap:6px;margin-bottom:12px">';
     if(ev.aptaPatron||d.aptaPatron) detalle+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">PATRÓN APTA: </span><span style="font-size:12px">'+e2(ev.aptaPatron||d.aptaPatron)+'</span></div>';
     if(ev.dxFisio||d.dxFisio) detalle+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">DX FISIO: </span><span style="font-size:12px">'+e2(ev.dxFisio||d.dxFisio)+'</span></div>';
-    if(d.icfDeterioro) detalle+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF DETERIORO: </span><span style="font-size:12px">'+e2(d.icfDeterioro)+'</span></div>';
-    if(d.icfActividad) detalle+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF ACTIVIDAD: </span><span style="font-size:12px">'+e2(d.icfActividad)+'</span></div>';
+    if(cifDeterioro) detalle+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF DETERIORO: </span><span style="font-size:12px">'+e2(cifDeterioro)+'</span></div>';
+    if(cifActividad) detalle+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF ACTIVIDAD: </span><span style="font-size:12px">'+e2(cifActividad)+'</span></div>';
     if(d.pronostico) detalle+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">PRONÓSTICO: </span><span style="font-size:12px">'+e2(d.pronostico)+'</span></div>';
     detalle+='</div>';
   }
   // Plan
-  if(d.objCorto||d.objLargo||d.planSesiones){
+  if(objCorto||objLargo||objEsp||d.planSesiones||d.planGeneral){
     detalle+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Plan de tratamiento</div>';
     detalle+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:12px">';
     if(d.planSesiones) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">N° SESIONES</div><div style="font-size:13px;font-weight:700">'+e2(d.planSesiones)+'</div></div>';
     if(d.planFrecuencia) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">FRECUENCIA</div><div style="font-size:12px">'+e2(d.planFrecuencia)+'</div></div>';
     if(d.planDuracion) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">DURACIÓN</div><div style="font-size:12px">'+e2(d.planDuracion)+'</div></div>';
     detalle+='</div>';
-    if(d.objCorto) detalle+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBJ. CORTO PLAZO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.objCorto)+'</div></div>';
-    if(d.objLargo) detalle+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBJ. LARGO PLAZO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.objLargo)+'</div></div>';
+    if(objCorto) detalle+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">META / OBJ. CORTO PLAZO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(objCorto)+'</div></div>';
+    if(objLargo) detalle+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBJ. GENERAL / LARGO PLAZO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(objLargo)+'</div></div>';
+    if(objEsp) detalle+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBJ. ESPECÍFICOS / PLAN GENERAL</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(objEsp)+'</div></div>';
   }
   // Observaciones
-  if(d.obsExamen) detalle+='<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px;text-transform:uppercase">Observaciones</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.obsExamen)+'</div></div>';
+  if(d.obsExamen||d.aux) detalle+='<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px;text-transform:uppercase">Observaciones / Auxiliares</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.obsExamen||d.aux||'')+'</div></div>';
   detalle+='</div>';
 
   return `<div style="background:var(--surf3);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:8px">
@@ -2236,7 +2256,7 @@ function secTrauma(d){
 }
 
 // ══════════════════════════════════════════════════════════════
-// CATÁLOGO DE ESCALAS
+// SECCIÓN A: CATÁLOGO DE ESCALAS
 // ══════════════════════════════════════════════════════════════
 
 const ESCALAS_CATALOGO = [
@@ -2392,7 +2412,7 @@ const ESCALAS_CATALOGO = [
 
 
 // ══════════════════════════════════════════════════════════════
-// MOTOR DE ESCALAS
+// SECCIÓN B: MOTOR DE ESCALAS (ScalasEngine)
 // ══════════════════════════════════════════════════════════════
 
 // Estado global de escalas activas en el formulario actual
@@ -2675,7 +2695,7 @@ function _numItem(escId, itemId, valGuardado, label, min, max, ph){
 
 
 // ══════════════════════════════════════════════════════════════
-// RENDER + CÁLCULO DE CADA ESCALA
+// SECCIÓN C: RENDER + CÁLCULO DE CADA ESCALA
 // ══════════════════════════════════════════════════════════════
 
 // ── EVA ──────────────────────────────────────────────────────
@@ -4835,7 +4855,7 @@ function secCIFNeuro(d){
 
 
 // ══════════════════════════════════════════════════════════════
-// FICHA NEURO PEDIÁTRICA
+// SECCIÓN E: FICHA NEURO PEDIÁTRICA
 // ══════════════════════════════════════════════════════════════
 
 function secNeuroPediatrica(d){
