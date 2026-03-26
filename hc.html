@@ -1395,94 +1395,9 @@ function evalCard(ev, pac){
   const uid='eval_'+ev.id.replace(/[^a-z0-9]/gi,'_');
   // Compatibilidad: datos pueden estar en datosEspecificos o al nivel raíz
   const d=Object.assign({},ev,ev.datosEspecificos||{});
-  // Normalizar nombres de campo: el form principal usa nombres distintos al form de reevaluación
-  var evaVal = d.evaValor !== undefined ? d.evaValor : (d.eva !== undefined ? d.eva : undefined);
-  var cifDeterioro = d.icfDeterioro || d.cifDeterioro || '';
-  var cifActividad = d.icfActividad || d.cifActividad || '';
-  var objCorto = d.objCorto || d.meta || '';
-  var objLargo = d.objLargo || d.objGeneral || '';
-  var objEsp = d.objEspecificos || d.planGeneral || '';
-  // Construir contenido expandible
-  var detalle='<div id="'+uid+'" style="display:none;margin-top:14px;border-top:1px solid var(--bd);padding-top:14px">';
-  // Anamnesis
-  if(d.motivo||d.antecedentes){
-    detalle+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Anamnesis</div>';
-    if(d.motivo) detalle+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">MOTIVO DE CONSULTA</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.motivo)+'</div></div>';
-    if(d.antecedentes) detalle+='<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">ANTECEDENTES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.antecedentes)+'</div></div>';
-  }
-  // Examen físico
-  if(evaVal!==undefined||d.dolLoc||d.postura||d.marcha||d.palpacion||d.trofismo||d.neuro||d.tegu||d.pruebas||d.examObjetivo){
-    detalle+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Examen físico</div>';
-    detalle+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:12px">';
-    if(evaVal!==undefined) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">EVA DOLOR</div><div style="font-size:13px;font-weight:700;color:var(--red)">'+e2(String(evaVal))+'/10</div></div>';
-    if(d.dolLoc) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">LOCALIZACIÓN</div><div style="font-size:12px">'+e2(d.dolLoc)+'</div></div>';
-    if(d.dolTipo) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">TIPO DOLOR</div><div style="font-size:12px">'+e2(d.dolTipo)+'</div></div>';
-    if(d.postura) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">POSTURA</div><div style="font-size:12px">'+e2(d.postura)+'</div></div>';
-    if(d.marcha) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">MARCHA</div><div style="font-size:12px">'+e2(d.marcha)+'</div></div>';
-    if(d.trofismo) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">TROFISMO</div><div style="font-size:12px">'+e2(d.trofismo)+'</div></div>';
-    if(d.neuro) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">NEUROLÓGICO</div><div style="font-size:12px">'+e2(d.neuro)+'</div></div>';
-    if(d.tegu) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">TEGUMENTARIO</div><div style="font-size:12px">'+e2(d.tegu)+'</div></div>';
-    detalle+='</div>';
-    if(d.palpacion) detalle+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">PALPACIÓN</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.palpacion)+'</div></div>';
-    if(d.pruebas) detalle+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">PRUEBAS ESPECIALES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.pruebas)+'</div></div>';
-    if(d.examObjetivo) detalle+='<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">EXAMEN OBJETIVO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.examObjetivo)+'</div></div>';
-  }
-  // ROM
-  if(d.rom&&Object.keys(d.rom).length){
-    detalle+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">ROM</div>';
-    detalle+='<div style="overflow-x:auto;margin-bottom:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">';
-    detalle+='<tr><th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--bd);color:var(--tx4)">Región/Movimiento</th><th style="padding:4px 8px;border-bottom:1px solid var(--bd);color:var(--tx4)">D</th><th style="padding:4px 8px;border-bottom:1px solid var(--bd);color:var(--tx4)">I</th></tr>';
-    var romKeys=Object.keys(d.rom);
-    // Agrupar por región
-    var grupos={};
-    romKeys.forEach(function(k){
-      var parts=k.split('_');
-      var reg=parts[0];
-      if(!grupos[reg])grupos[reg]=[];
-      grupos[reg].push(k);
-    });
-    Object.keys(grupos).forEach(function(reg){
-      grupos[reg].forEach(function(k,i){
-        var mov=k.replace(reg+'_','').replace(/_[DI]$/,'');
-        var vD=d.rom[k.replace(/_[DI]$/,'_D')]||'';
-        var vI=d.rom[k.replace(/_[DI]$/,'_I')]||'';
-        if(k.endsWith('_D')||(!k.endsWith('_I')&&!k.endsWith('_D'))){
-          detalle+='<tr style="border-bottom:1px solid var(--bd2)">';
-          if(i===0) detalle+='<td style="font-weight:700;font-size:10px;padding:3px 8px;color:var(--tx2)" rowspan="'+grupos[reg].filter(function(x){return x.endsWith('_D');}).length+'">'+reg+'</td>';
-          detalle+='<td style="padding:3px 8px;font-size:11px">'+mov+'</td>';
-          detalle+='<td style="text-align:center;padding:3px 8px">'+e2(vD||'—')+'</td>';
-          detalle+='<td style="text-align:center;padding:3px 8px">'+e2(vI||'—')+'</td></tr>';
-        }
-      });
-    });
-    detalle+='</table></div>';
-  }
-  // Diagnóstico
-  if(ev.dxFisio||d.dxFisio||d.aptaPatron||cifDeterioro||cifActividad){
-    detalle+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Diagnóstico</div>';
-    detalle+='<div style="display:grid;gap:6px;margin-bottom:12px">';
-    if(ev.aptaPatron||d.aptaPatron) detalle+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">PATRÓN APTA: </span><span style="font-size:12px">'+e2(ev.aptaPatron||d.aptaPatron)+'</span></div>';
-    if(ev.dxFisio||d.dxFisio) detalle+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">DX FISIO: </span><span style="font-size:12px">'+e2(ev.dxFisio||d.dxFisio)+'</span></div>';
-    if(cifDeterioro) detalle+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF DETERIORO: </span><span style="font-size:12px">'+e2(cifDeterioro)+'</span></div>';
-    if(cifActividad) detalle+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF ACTIVIDAD: </span><span style="font-size:12px">'+e2(cifActividad)+'</span></div>';
-    if(d.pronostico) detalle+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">PRONÓSTICO: </span><span style="font-size:12px">'+e2(d.pronostico)+'</span></div>';
-    detalle+='</div>';
-  }
-  // Plan
-  if(objCorto||objLargo||objEsp||d.planSesiones||d.planGeneral){
-    detalle+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Plan de tratamiento</div>';
-    detalle+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:12px">';
-    if(d.planSesiones) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">N° SESIONES</div><div style="font-size:13px;font-weight:700">'+e2(d.planSesiones)+'</div></div>';
-    if(d.planFrecuencia) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">FRECUENCIA</div><div style="font-size:12px">'+e2(d.planFrecuencia)+'</div></div>';
-    if(d.planDuracion) detalle+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">DURACIÓN</div><div style="font-size:12px">'+e2(d.planDuracion)+'</div></div>';
-    detalle+='</div>';
-    if(objCorto) detalle+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">META / OBJ. CORTO PLAZO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(objCorto)+'</div></div>';
-    if(objLargo) detalle+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBJ. GENERAL / LARGO PLAZO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(objLargo)+'</div></div>';
-    if(objEsp) detalle+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBJ. ESPECÍFICOS / PLAN GENERAL</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(objEsp)+'</div></div>';
-  }
-  // Observaciones
-  if(d.obsExamen||d.aux) detalle+='<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px;text-transform:uppercase">Observaciones / Auxiliares</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.obsExamen||d.aux||'')+'</div></div>';
-  detalle+='</div>';
+  // El acordeón carga los datos completos al abrirse (lazy load via toggleEvalInline)
+  var detalle='<div id="'+uid+'" data-eval-id="'+ev.id+'" data-pac-id="'+pac.id+'" style="display:none;margin-top:14px;border-top:1px solid var(--bd);padding-top:14px"></div>';
+
 
   return `<div style="background:var(--surf3);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:8px">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px">
@@ -1507,13 +1422,137 @@ function evalCard(ev, pac){
   </div>`;
 }
 
-function toggleEvalInline(uid, headerEl){
+function buildDetalleEval(ev, pac){
+  var d=Object.assign({},ev,ev.datosEspecificos||{});
+  var evaVal = d.evaValor !== undefined ? d.evaValor : (d.eva !== undefined ? d.eva : undefined);
+  var cifDeterioro = d.icfDeterioro || d.cifDeterioro || '';
+  var cifActividad = d.icfActividad || d.cifActividad || '';
+  var objCorto = d.objCorto || d.meta || '';
+  var objLargo = d.objLargo || d.objGeneral || '';
+  var objEsp = d.objEspecificos || d.planGeneral || '';
+  var html = '';
+
+  // Filiación
+  html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">I. Filiación</div>';
+  html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:14px">';
+  html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">NOMBRE</div><div style="font-size:12px">'+e2(pac.nombre||'—')+'</div></div>';
+  html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">DNI</div><div style="font-size:12px">'+e2(pac.dni||'—')+'</div></div>';
+  if(pac.fechaNac) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">F. NACIMIENTO</div><div style="font-size:12px">'+e2(pac.fechaNac)+'</div></div>';
+  if(pac.sexo) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">SEXO</div><div style="font-size:12px">'+(pac.sexo==='M'?'Masculino':'Femenino')+'</div></div>';
+  if(pac.ocupacion||d.ocupacion) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">OCUPACIÓN</div><div style="font-size:12px">'+e2(pac.ocupacion||d.ocupacion)+'</div></div>';
+  if(pac.telefono) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">TELÉFONO</div><div style="font-size:12px">'+e2(pac.telefono)+'</div></div>';
+  if(pac.fechaInicio) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">INICIO TRATAMIENTO</div><div style="font-size:12px">'+e2(pac.fechaInicio)+'</div></div>';
+  html+='</div>';
+
+  // Anamnesis
+  if(d.dxMedico||pac.dxMedico||d.motivo||pac.motivo||d.antecedentes||pac.antecedentes){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">II. Anamnesis</div>';
+    var dxMed=d.dxMedico||pac.dxMedico||'';
+    var motivo=d.motivo||pac.motivo||'';
+    var antec=d.antecedentes||pac.antecedentes||'';
+    if(dxMed) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">DX MÉDICO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(dxMed)+'</div></div>';
+    if(motivo) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">MOTIVO DE CONSULTA</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(motivo)+'</div></div>';
+    if(antec) html+='<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">ANTECEDENTES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(antec)+'</div></div>';
+  }
+
+  // Examen físico
+  var tieneExamen = evaVal!==undefined||d.dolLoc||d.palpacion||d.trofismo||d.neuro||d.tegu||d.pruebas||d.examObjetivo||d.postura||d.marcha;
+  if(tieneExamen){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">III. Examen Físico</div>';
+    html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:10px">';
+    if(evaVal!==undefined) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">EVA DOLOR</div><div style="font-size:13px;font-weight:700;color:var(--red)">'+e2(String(evaVal))+'/10</div></div>';
+    if(d.dolLoc) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">LOCALIZACIÓN</div><div style="font-size:12px">'+e2(d.dolLoc)+'</div></div>';
+    if(d.dolTipo) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">TIPO DOLOR</div><div style="font-size:12px">'+e2(d.dolTipo)+'</div></div>';
+    if(d.postura) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">POSTURA</div><div style="font-size:12px">'+e2(d.postura)+'</div></div>';
+    if(d.marcha) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">MARCHA</div><div style="font-size:12px">'+e2(d.marcha)+'</div></div>';
+    if(d.trofismo) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">TROFISMO</div><div style="font-size:12px">'+e2(d.trofismo)+'</div></div>';
+    if(d.neuro) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">NEUROLÓGICO</div><div style="font-size:12px">'+e2(d.neuro)+'</div></div>';
+    if(d.tegu) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">TEGUMENTARIO</div><div style="font-size:12px">'+e2(d.tegu)+'</div></div>';
+    html+='</div>';
+    if(d.palpacion) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">PALPACIÓN</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.palpacion)+'</div></div>';
+    if(d.pruebas) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">PRUEBAS ESPECIALES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.pruebas)+'</div></div>';
+    if(d.examObjetivo) html+='<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">EXAMEN OBJETIVO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.examObjetivo)+'</div></div>';
+  }
+
+  // ROM
+  if(d.rom&&Object.keys(d.rom).length){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">ROM</div>';
+    html+='<div style="overflow-x:auto;margin-bottom:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">';
+    html+='<tr><th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--bd);color:var(--tx4)">Región/Movimiento</th><th style="padding:4px 8px;border-bottom:1px solid var(--bd);color:var(--tx4)">D</th><th style="padding:4px 8px;border-bottom:1px solid var(--bd);color:var(--tx4)">I</th></tr>';
+    var romKeys=Object.keys(d.rom);
+    var grupos={};
+    romKeys.forEach(function(k){var reg=k.split('_')[0];if(!grupos[reg])grupos[reg]=[];grupos[reg].push(k);});
+    Object.keys(grupos).forEach(function(reg){
+      grupos[reg].forEach(function(k,i){
+        var mov=k.replace(reg+'_','').replace(/_[DI]$/,'');
+        var vD=d.rom[k.replace(/_[DI]$/,'_D')]||'';
+        var vI=d.rom[k.replace(/_[DI]$/,'_I')]||'';
+        if(k.endsWith('_D')||(!k.endsWith('_I')&&!k.endsWith('_D'))){
+          html+='<tr style="border-bottom:1px solid var(--bd2)">';
+          if(i===0) html+='<td style="font-weight:700;font-size:10px;padding:3px 8px;color:var(--tx2)" rowspan="'+grupos[reg].filter(function(x){return x.endsWith('_D');}).length+'">'+reg+'</td>';
+          html+='<td style="padding:3px 8px;font-size:11px">'+mov+'</td>';
+          html+='<td style="text-align:center;padding:3px 8px">'+e2(vD||'—')+'</td>';
+          html+='<td style="text-align:center;padding:3px 8px">'+e2(vI||'—')+'</td></tr>';
+        }
+      });
+    });
+    html+='</table></div>';
+  }
+
+  // Diagnóstico
+  if(ev.dxFisio||d.dxFisio||d.aptaPatron||cifDeterioro||cifActividad){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">IV. Diagnóstico</div>';
+    html+='<div style="display:grid;gap:6px;margin-bottom:12px">';
+    if(d.aptaPatron||ev.aptaPatron) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">PATRÓN APTA: </span><span style="font-size:12px">'+e2(d.aptaPatron||ev.aptaPatron)+'</span></div>';
+    if(ev.dxFisio||d.dxFisio) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">DX FISIO: </span><span style="font-size:12px">'+e2(ev.dxFisio||d.dxFisio)+'</span></div>';
+    if(cifDeterioro) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF DETERIORO: </span><span style="font-size:12px">'+e2(cifDeterioro)+'</span></div>';
+    if(cifActividad) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF ACTIVIDAD: </span><span style="font-size:12px">'+e2(cifActividad)+'</span></div>';
+    if(d.pronostico) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">PRONÓSTICO: </span><span style="font-size:12px">'+e2(d.pronostico)+'</span></div>';
+    html+='</div>';
+  }
+
+  // Plan de tratamiento
+  if(objCorto||objLargo||objEsp||d.planSesiones){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">V. Plan de Tratamiento</div>';
+    html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:10px">';
+    if(d.planSesiones) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">N° SESIONES</div><div style="font-size:13px;font-weight:700">'+e2(d.planSesiones)+'</div></div>';
+    if(d.planFrecuencia) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">FRECUENCIA</div><div style="font-size:12px">'+e2(d.planFrecuencia)+'</div></div>';
+    if(d.planDuracion) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">DURACIÓN</div><div style="font-size:12px">'+e2(d.planDuracion)+'</div></div>';
+    html+='</div>';
+    if(objCorto) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">META / OBJ. CORTO PLAZO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(objCorto)+'</div></div>';
+    if(objLargo) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBJ. GENERAL / LARGO PLAZO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(objLargo)+'</div></div>';
+    if(objEsp) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBJ. ESPECÍFICOS / PLAN GENERAL</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(objEsp)+'</div></div>';
+  }
+
+  // Observaciones
+  if(d.obsExamen||d.aux) html+='<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px;text-transform:uppercase">Observaciones / Auxiliares</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.obsExamen||d.aux||'')+'</div></div>';
+
+  return html;
+}
+
+async function toggleEvalInline(uid, headerEl){
   var el=document.getElementById(uid);
   if(!el) return;
   var ico=document.getElementById('ico_'+uid);
   var open=el.style.display==='none'||el.style.display==='';
   el.style.display=open?'block':'none';
   if(ico) ico.style.transform=open?'rotate(90deg)':'';
+  // Si aún no se cargaron los datos completos, los buscamos ahora
+  if(open && el.dataset.loaded!=='1'){
+    var evalId=el.dataset.evalId;
+    var pacId=el.dataset.pacId;
+    if(!evalId) return;
+    el.innerHTML='<div style="color:var(--tx4);font-size:12px;padding:8px">⏳ Cargando evaluación...</div>';
+    try{
+      var r=await apiGet('obtenerEvaluacion',{id:evalId});
+      if(!r.ok){el.innerHTML='<div style="color:var(--red);font-size:12px;padding:8px">Error al cargar datos.</div>';return;}
+      var ev=r.evaluacion;
+      var rP=await apiGet('obtenerPaciente',{id:pacId});
+      var pac=rP.ok?rP.paciente:{};
+      el.innerHTML=buildDetalleEval(ev,pac);
+      el.dataset.loaded='1';
+    }catch(err){el.innerHTML='<div style="color:var(--red);font-size:12px;padding:8px">Error: '+err.message+'</div>';}
+  }
 }
 
 function exportarEvalModal(evalId, pacId){
