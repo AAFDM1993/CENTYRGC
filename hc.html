@@ -5259,7 +5259,10 @@ async function guardarHC(catId, pacId, modo){
     ...datosGer,
     ...datosPostural,
 
-    const datosPostural = catId==='postural' ? {tiempoEvolPost:v('tiempoEvolPost'),dolorPostural:v('dolorPostural'),actFisicaPost:v('actFisicaPost'),
+    const datosPostural = catId === 'postural' ? {
+    tiempoEvolPost: v('tiempoEvolPost'),
+    dolorPostural: v('dolorPostural'),
+    actFisicaPost: v('actFisicaPost'),
     // Vista anterior
     cabezaAnt:v('cabezaAnt'),hombrosAnt:v('hombrosAnt'),clavicular:v('clavicular'),
     triangulTalle:v('triangulTalle'),pelvisAnt:v('pelvisAnt'),rodillasAnt:v('rodillasAnt'),
@@ -5285,10 +5288,10 @@ async function guardarHC(catId, pacId, modo){
     popliD:v('popliD'),popliI:v('popliI'),oberD:v('oberD'),oberI:v('oberI'),
     dorsiflexD:v('dorsiflexD'),dorsiflexI:v('dorsiflexI'),obsFlexPost:v('obsFlexPost'),
     // Diagnóstico
-    relacionSintomas:v('relacionSintomas'),
-    cifDeterioro:v('cifDeterioro'),cifContextual:v('cifContextual'),} : {};
-  };
-  }
+    relacionSintomas: v('relacionSintomas'),
+    cifDeterioro: v('cifDeterioro'),
+    cifContextual: v('cifContextual')
+  } : {};
   
   // Guardar paciente
   const bPac={action:'guardarPaciente',nombre,dni,
