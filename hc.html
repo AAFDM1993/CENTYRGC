@@ -1489,7 +1489,22 @@ function buildDetalleEval(ev, pac){
     if(d.tegu) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">TEGUMENTARIO</div><div style="font-size:12px">'+e2(d.tegu)+'</div></div>';
     html+='</div>';
     if(d.palpacion) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">PALPACIÓN</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.palpacion)+'</div></div>';
-    if(d.pruebas) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">PRUEBAS ESPECIALES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.pruebas)+'</div></div>';
+    if(d.pruebasFuncionales&&Object.keys(d.pruebasFuncionales).length){
+      html+='<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:4px;text-transform:uppercase">PRUEBAS FUNCIONALES</div>';
+      Object.keys(d.pruebasFuncionales).forEach(function(reg){
+        var regPruebas=d.pruebasFuncionales[reg];
+        var filled=Object.keys(regPruebas).filter(function(k){return regPruebas[k]&&regPruebas[k]!=='—';});
+        if(!filled.length) return;
+        html+='<div style="font-size:11px;font-weight:700;color:var(--tx2);margin:6px 0 3px">'+e2(reg)+'</div>';
+        filled.forEach(function(nom){
+          var res=regPruebas[nom];
+          var color=res&&res.startsWith('+')?'var(--red)':res&&res.startsWith('-')?'var(--green)':' var(--amber)';
+          html+='<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 8px;background:var(--surf2);border-radius:5px;margin-bottom:2px"><span>'+e2(nom)+'</span><b style="color:'+color+'">'+e2(res)+'</b></div>';
+        });
+      });
+      html+='</div>';
+    }
+    if(d.pruebas) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBSERVACIONES PRUEBAS</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.pruebas)+'</div></div>';
     if(d.examObjetivo) html+='<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">EXAMEN OBJETIVO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.examObjetivo)+'</div></div>';
   }
 
@@ -2289,6 +2304,265 @@ const FUERZA_GRP = {
   'Tobillo D': ['Dorsiflexores','Flex. plantares','Inversores','Eversores'],
   'Tobillo I': ['Dorsiflexores','Flex. plantares','Inversores','Eversores'],
 };
+
+// ══════════════════════════════════════════════════════════════
+// PRUEBAS FUNCIONALES POR SEGMENTO (Traumatología + Reumatología)
+// ══════════════════════════════════════════════════════════════
+const PRUEBAS_POR_REGION = {
+  // ── HOMBRO ─────────────────────────────────────────────────
+  'Hombro D': [
+    {nombre:'Test de Jobe (manguito rotador — supraespinoso)',resultado:''},
+    {nombre:'Test de Hawkins-Kennedy (impingement subacromial)',resultado:''},
+    {nombre:'Test de Neer (impingement)',resultado:''},
+    {nombre:'Test de Gerber (subescapular — lift-off)',resultado:''},
+    {nombre:'Test de Patte (infraespinoso)',resultado:''},
+    {nombre:'Test de Yocum (impingement)',resultado:''},
+    {nombre:'Test de O\'Brien (SLAP / AC)',resultado:''},
+    {nombre:'Test de Speed (bíceps)',resultado:''},
+    {nombre:'Test de Yergason (bíceps)',resultado:''},
+    {nombre:'Test de aprensión anterior (inestabilidad)',resultado:''},
+    {nombre:'Test de reubicación (inestabilidad)',resultado:''},
+    {nombre:'Test de surco (inestabilidad inferior)',resultado:''},
+    {nombre:'Test de Cross-body (articulación AC)',resultado:''},
+    {nombre:'Test de Cozen / lateral epicóndilo (codo)',resultado:''},
+  ],
+  'Hombro I': [
+    {nombre:'Test de Jobe (manguito rotador — supraespinoso)',resultado:''},
+    {nombre:'Test de Hawkins-Kennedy (impingement subacromial)',resultado:''},
+    {nombre:'Test de Neer (impingement)',resultado:''},
+    {nombre:'Test de Gerber (subescapular — lift-off)',resultado:''},
+    {nombre:'Test de Patte (infraespinoso)',resultado:''},
+    {nombre:'Test de Yocum (impingement)',resultado:''},
+    {nombre:'Test de O\'Brien (SLAP / AC)',resultado:''},
+    {nombre:'Test de Speed (bíceps)',resultado:''},
+    {nombre:'Test de Yergason (bíceps)',resultado:''},
+    {nombre:'Test de aprensión anterior (inestabilidad)',resultado:''},
+    {nombre:'Test de reubicación (inestabilidad)',resultado:''},
+    {nombre:'Test de surco (inestabilidad inferior)',resultado:''},
+    {nombre:'Test de Cross-body (articulación AC)',resultado:''},
+  ],
+  // ── CODO ───────────────────────────────────────────────────
+  'Codo D': [
+    {nombre:'Test de Cozen (epicondilitis lateral)',resultado:''},
+    {nombre:'Test de Mill (epicondilitis lateral)',resultado:''},
+    {nombre:'Test de Maudsley (dedo medio)',resultado:''},
+    {nombre:'Test de Golfer\'s elbow (epitrocleitis)',resultado:''},
+    {nombre:'Test de compresión del nervio cubital (Tinel)',resultado:''},
+    {nombre:'Test de valgo stress (LCM)',resultado:''},
+    {nombre:'Test de varo stress (LCL)',resultado:''},
+    {nombre:'Test de estabilidad de la articulación radiocubital',resultado:''},
+  ],
+  'Codo I': [
+    {nombre:'Test de Cozen (epicondilitis lateral)',resultado:''},
+    {nombre:'Test de Mill (epicondilitis lateral)',resultado:''},
+    {nombre:'Test de Maudsley (dedo medio)',resultado:''},
+    {nombre:'Test de Golfer\'s elbow (epitrocleitis)',resultado:''},
+    {nombre:'Test de compresión del nervio cubital (Tinel)',resultado:''},
+    {nombre:'Test de valgo stress (LCM)',resultado:''},
+    {nombre:'Test de varo stress (LCL)',resultado:''},
+    {nombre:'Test de estabilidad de la articulación radiocubital',resultado:''},
+  ],
+  // ── MUÑECA ─────────────────────────────────────────────────
+  'Muñeca D': [
+    {nombre:'Test de Phalen (síndrome del túnel carpiano)',resultado:''},
+    {nombre:'Test de Tinel (túnel carpiano)',resultado:''},
+    {nombre:'Maniobra de Durkan (compresión carpal)',resultado:''},
+    {nombre:'Test de Finkelstein (De Quervain)',resultado:''},
+    {nombre:'Test de Watson (inestabilidad escafoides)',resultado:''},
+    {nombre:'Test de estrés del complejo triangular fibrocartilaginoso (TFCC)',resultado:''},
+    {nombre:'Test de Froment (nervio cubital)',resultado:''},
+    {nombre:'Test de Grip strength (dinamometría)',resultado:''},
+  ],
+  'Muñeca I': [
+    {nombre:'Test de Phalen (síndrome del túnel carpiano)',resultado:''},
+    {nombre:'Test de Tinel (túnel carpiano)',resultado:''},
+    {nombre:'Maniobra de Durkan (compresión carpal)',resultado:''},
+    {nombre:'Test de Finkelstein (De Quervain)',resultado:''},
+    {nombre:'Test de Watson (inestabilidad escafoides)',resultado:''},
+    {nombre:'Test de estrés del TFCC',resultado:''},
+    {nombre:'Test de Froment (nervio cubital)',resultado:''},
+    {nombre:'Test de Grip strength (dinamometría)',resultado:''},
+  ],
+  // ── COLUMNA CERVICAL ────────────────────────────────────────
+  'Col. Cervical': [
+    {nombre:'Test de compresión de Spurling (radiculopatía cervical)',resultado:''},
+    {nombre:'Test de distracción cervical (radiculopatía)',resultado:''},
+    {nombre:'Test de Valsalva (presión intratecal)',resultado:''},
+    {nombre:'Test de Lhermitte (mielopatía cervical)',resultado:''},
+    {nombre:'Test de Adams (flexión cervical)',resultado:''},
+    {nombre:'Maniobra de Adson (síndrome del desfiladero torácico)',resultado:''},
+    {nombre:'Test de compresión del plexo braquial (Roos)',resultado:''},
+    {nombre:'Test de rotación cervical (arteria vertebral — Hautant)',resultado:''},
+    {nombre:'Test de Sharp-Purser (inestabilidad atlantoaxial)',resultado:''},
+  ],
+  // ── COLUMNA LUMBAR ──────────────────────────────────────────
+  'Col. Lumbar': [
+    {nombre:'Test de Lasègue (SLR — ciática)',resultado:''},
+    {nombre:'Test de Lasègue cruzado (ciática contralateral)',resultado:''},
+    {nombre:'Test de Bragard (irritación radicular)',resultado:''},
+    {nombre:'Test de Valsalva (presión intradiscal)',resultado:''},
+    {nombre:'Test de Hoover (simulación de dolor)',resultado:''},
+    {nombre:'Test de Slump (sensibilización del sistema nervioso)',resultado:''},
+    {nombre:'Test de extensión pasiva en prono (McKenzie)',resultado:''},
+    {nombre:'Maniobra de Naffziger (compresión yugular)',resultado:''},
+    {nombre:'Test de FABER (Patrick) — referido a cadera/SI',resultado:''},
+    {nombre:'Test de FADIR — referido a SI',resultado:''},
+    {nombre:'Test de Gaenslen (articulación sacroilíaca)',resultado:''},
+    {nombre:'Test de compresión sacroilíaca',resultado:''},
+    {nombre:'Test de distracción sacroilíaca',resultado:''},
+  ],
+  // ── CADERA ─────────────────────────────────────────────────
+  'Cadera D': [
+    {nombre:'Test de FABER (Patrick) — cadera/sacroilíaco',resultado:''},
+    {nombre:'Test de FADIR (impingement femoroacetabular)',resultado:''},
+    {nombre:'Test de Thomas (contractura de flexores)',resultado:''},
+    {nombre:'Test de Ober (contractura de TFL/IT)',resultado:''},
+    {nombre:'Test de Trendelenburg (glúteo medio)',resultado:''},
+    {nombre:'Test de Ely (recto femoral)',resultado:''},
+    {nombre:'Test de la log roll (inestabilidad de cadera)',resultado:''},
+    {nombre:'Test de compresión de cadera (labrum)',resultado:''},
+    {nombre:'Test de impingement anterior (CAM/Pincer)',resultado:''},
+    {nombre:'Test de Craig (anteversión femoral)',resultado:''},
+    {nombre:'Test de Stinchfield (flexor de cadera)',resultado:''},
+  ],
+  'Cadera I': [
+    {nombre:'Test de FABER (Patrick) — cadera/sacroilíaco',resultado:''},
+    {nombre:'Test de FADIR (impingement femoroacetabular)',resultado:''},
+    {nombre:'Test de Thomas (contractura de flexores)',resultado:''},
+    {nombre:'Test de Ober (contractura de TFL/IT)',resultado:''},
+    {nombre:'Test de Trendelenburg (glúteo medio)',resultado:''},
+    {nombre:'Test de Ely (recto femoral)',resultado:''},
+    {nombre:'Test de la log roll (inestabilidad de cadera)',resultado:''},
+    {nombre:'Test de compresión de cadera (labrum)',resultado:''},
+    {nombre:'Test de impingement anterior (CAM/Pincer)',resultado:''},
+    {nombre:'Test de Craig (anteversión femoral)',resultado:''},
+    {nombre:'Test de Stinchfield (flexor de cadera)',resultado:''},
+  ],
+  // ── RODILLA ────────────────────────────────────────────────
+  'Rodilla D': [
+    {nombre:'Test de Lachman (LCA)',resultado:''},
+    {nombre:'Test de cajón anterior (LCA)',resultado:''},
+    {nombre:'Test de cajón posterior (LCP)',resultado:''},
+    {nombre:'Test de pivot shift (LCA — inestabilidad rotatoria)',resultado:''},
+    {nombre:'Test de valgo stress 0° (LCM — completo)',resultado:''},
+    {nombre:'Test de valgo stress 30° (LCM — aislado)',resultado:''},
+    {nombre:'Test de varo stress 0° (LCL)',resultado:''},
+    {nombre:'Test de varo stress 30° (LCL — aislado)',resultado:''},
+    {nombre:'Test de McMurray (menisco)',resultado:''},
+    {nombre:'Test de Apley (menisco)',resultado:''},
+    {nombre:'Test de Thessaly (menisco)',resultado:''},
+    {nombre:'Test de compresión lateral de rótula',resultado:''},
+    {nombre:'Test de aprensión rotuliana',resultado:''},
+    {nombre:'Clarke (condromalacia rotuliana)',resultado:''},
+    {nombre:'Test de dial (LCP / esquina posterolateral)',resultado:''},
+  ],
+  'Rodilla I': [
+    {nombre:'Test de Lachman (LCA)',resultado:''},
+    {nombre:'Test de cajón anterior (LCA)',resultado:''},
+    {nombre:'Test de cajón posterior (LCP)',resultado:''},
+    {nombre:'Test de pivot shift (LCA — inestabilidad rotatoria)',resultado:''},
+    {nombre:'Test de valgo stress 0° (LCM — completo)',resultado:''},
+    {nombre:'Test de valgo stress 30° (LCM — aislado)',resultado:''},
+    {nombre:'Test de varo stress 0° (LCL)',resultado:''},
+    {nombre:'Test de varo stress 30° (LCL — aislado)',resultado:''},
+    {nombre:'Test de McMurray (menisco)',resultado:''},
+    {nombre:'Test de Apley (menisco)',resultado:''},
+    {nombre:'Test de Thessaly (menisco)',resultado:''},
+    {nombre:'Test de compresión lateral de rótula',resultado:''},
+    {nombre:'Test de aprensión rotuliana',resultado:''},
+    {nombre:'Clarke (condromalacia rotuliana)',resultado:''},
+    {nombre:'Test de dial (LCP / esquina posterolateral)',resultado:''},
+  ],
+  // ── TOBILLO ────────────────────────────────────────────────
+  'Tobillo D': [
+    {nombre:'Test del cajón anterior (LPA — inestabilidad)',resultado:''},
+    {nombre:'Test de stress en inversión (LCL — LPAA)',resultado:''},
+    {nombre:'Test de Thompson (tendón de Aquiles)',resultado:''},
+    {nombre:'Test de compresión de peroné (fractura)',resultado:''},
+    {nombre:'Test de Ottawa Ankle Rules (fractura)',resultado:''},
+    {nombre:'Test de Mulder (neuroma de Morton)',resultado:''},
+    {nombre:'Test de Windlass (fascitis plantar)',resultado:''},
+    {nombre:'Test de Tinel tobillo (atrapamiento nervio tibial)',resultado:''},
+    {nombre:'Test de Kleiger (lesión sindesmosis)',resultado:''},
+    {nombre:'Test de dorsiflexión con rodilla extendida (Silfverskiöld)',resultado:''},
+  ],
+  'Tobillo I': [
+    {nombre:'Test del cajón anterior (LPA — inestabilidad)',resultado:''},
+    {nombre:'Test de stress en inversión (LCL — LPAA)',resultado:''},
+    {nombre:'Test de Thompson (tendón de Aquiles)',resultado:''},
+    {nombre:'Test de compresión de peroné (fractura)',resultado:''},
+    {nombre:'Test de Ottawa Ankle Rules (fractura)',resultado:''},
+    {nombre:'Test de Mulder (neuroma de Morton)',resultado:''},
+    {nombre:'Test de Windlass (fascitis plantar)',resultado:''},
+    {nombre:'Test de Tinel tobillo (atrapamiento nervio tibial)',resultado:''},
+    {nombre:'Test de Kleiger (lesión sindesmosis)',resultado:''},
+    {nombre:'Test de dorsiflexión con rodilla extendida (Silfverskiöld)',resultado:''},
+  ],
+};
+
+// Normaliza región a la clave del catálogo (quita D/I si no existe clave específica)
+function _keyPrueba(region){
+  if(PRUEBAS_POR_REGION[region]) return region;
+  // Columna lumbar/cervical
+  var base=region.replace(/ [DI]$/,'').replace(/^Col\./,'Col.');
+  if(PRUEBAS_POR_REGION[base]) return base;
+  return null;
+}
+
+// Construye el HTML de pruebas para las regiones seleccionadas
+function mkPruebasFuncionales(sel, pruebasGuardadas){
+  pruebasGuardadas = pruebasGuardadas || {};
+  var regConPruebas = (sel||[]).filter(function(r){ return _keyPrueba(r); });
+  if(!regConPruebas.length) return '<p style="color:var(--tx4);font-size:12px;padding:10px">Selecciona un segmento con pruebas disponibles (hombro, codo, muñeca, columna, cadera, rodilla, tobillo).</p>';
+
+  var html = '';
+  regConPruebas.forEach(function(region){
+    var key = _keyPrueba(region);
+    var pruebas = PRUEBAS_POR_REGION[key] || [];
+    var savedRegion = pruebasGuardadas[region] || {};
+    html += '<div style="margin-bottom:16px">';
+    html += '<div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:7px 12px;background:var(--surf3);border-radius:8px;display:flex;align-items:center;gap:6px">🔬 ' + e2(region) + '</div>';
+    html += '<div style="display:grid;gap:5px">';
+    pruebas.forEach(function(p){
+      var savedVal = savedRegion[p.nombre] || '';
+      var kid = 'pf_' + region.replace(/\s/g,'_') + '_' + p.nombre.replace(/[^a-z0-9]/gi,'_');
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 10px;background:var(--surf);border-radius:8px;border:1px solid var(--bd)">';
+      html += '<span style="font-size:11px;flex:1;color:var(--tx)">' + e2(p.nombre) + '</span>';
+      html += '<select class="sel" data-prueba-region="' + e2(region) + '" data-prueba-nombre="' + e2(p.nombre) + '" style="font-size:11px;padding:4px 6px;max-width:160px;width:160px">';
+      html += '<option value="">—</option>';
+      ['+  Positivo','-  Negativo','Dudoso','No realizado'].forEach(function(op){
+        html += '<option value="' + e2(op) + '" ' + (savedVal===op?'selected':'') + '>' + e2(op) + '</option>';
+      });
+      html += '</select>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  });
+  return html;
+}
+
+// Lee las pruebas del DOM y retorna objeto { region: { nombrePrueba: resultado } }
+function leerPruebasFuncionales(){
+  var resultado = {};
+  document.querySelectorAll('[data-prueba-region]').forEach(function(el){
+    if(!el.value) return;
+    var reg = el.getAttribute('data-prueba-region');
+    var nom = el.getAttribute('data-prueba-nombre');
+    if(!resultado[reg]) resultado[reg] = {};
+    resultado[reg][nom] = el.value;
+  });
+  return resultado;
+}
+
+// Actualiza el bloque de pruebas al cambiar regiones
+function actualizarPruebas(){
+  var sel = Array.from(document.querySelectorAll('#regionesWrap span[data-r]')).map(function(s){return s.getAttribute('data-r');});
+  var saved = leerPruebasFuncionales();
+  var pw = g('tablaPruebasWrap');
+  if(pw) pw.innerHTML = mkPruebasFuncionales(sel, saved);
+}
+
+
 const TODAS_REGIONES = Object.keys(ROM_MOV);
 
 function mkRomRows(sel, romData){
@@ -2372,9 +2646,11 @@ function secTrauma(d){
     <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px">Tegumentario</div>
     <div class="field" style="margin-bottom:14px"><label>Inspección</label>
       <textarea class="ta" id="tTegu" rows="3" placeholder="Coloración, edema, cicatrices, heridas, cambios cutáneos...">${e2(d.tegu||'')}</textarea></div>
-    <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px">Pruebas funcionales</div>
-    <div class="field" style="margin-bottom:14px"><label>Pruebas funcionales específicas</label>
-      <textarea class="ta" id="tPruebas" rows="3" placeholder="Nombre y resultado: Ej. Test de Jobe (+), Lachman (+)...">${e2(d.pruebas||'')}</textarea></div>
+    <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px;display:flex;align-items:center;gap:6px">🔬 Pruebas funcionales específicas por segmento</div>
+    <div style="font-size:11px;color:var(--tx4);margin-bottom:8px;padding:6px 10px;background:var(--surf3);border-radius:7px">Las pruebas aparecen automáticamente según los segmentos seleccionados.</div>
+    <div id="tablaPruebasWrap" style="margin-bottom:14px">${mkPruebasFuncionales(sel, d.pruebasFuncionales||{})}</div>
+    <div class="field" style="margin-bottom:14px"><label>Observaciones adicionales de pruebas</label>
+      <textarea class="ta" id="tPruebas" rows="2" placeholder="Pruebas no listadas, hallazgos adicionales, contexto clínico...">${e2(d.pruebas||'')}</textarea></div>
     <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px">Exámenes auxiliares</div>
     <div class="field"><label>Exámenes auxiliares</label>
       <textarea class="ta" id="tAux" rows="3" placeholder="Radiografías, RMN, ecografías, laboratorio: hallazgos relevantes...">${e2(d.aux||'')}</textarea></div>
@@ -5366,6 +5642,7 @@ function actualizarTablas(){
   document.querySelectorAll('[data-fuerza]').forEach(function(el){if(el.value)vF[el.dataset.fuerza]=el.value;});
   var rw=g('tablaROMWrap'); if(rw) rw.innerHTML=mkRomParalelo(sel,vROM,'rom');
   var fw=g('tablaFuerzaWrap'); if(fw) fw.innerHTML=mkRomParalelo(sel,vF,'fuerza');
+  actualizarPruebas();
 }
 
 // ── Guardar historia clínica unificada ────────────
@@ -5449,6 +5726,7 @@ async function guardarHC(catId, pacId, modo){
     edad:v('pEdad'),dxMedico:v('aDxMed'),dxFisio:v('aDxFisio'),
     motivo:v('aMotivo'),antecedentes:v('aAntecedentes'),
     regiones, rom, fuerza,
+    pruebasFuncionales: leerPruebasFuncionales(),
     palpacion:v('tPalpacion'),trofismo:v('tTrofismo'),
     eva:Number(v('tEva')||0),dolLoc:v('tDolLoc'),dolTipo:v('tDolTipo'),
     neuro:v('tNeuro'),tegu:v('tTegu'),pruebas:v('tPruebas'),aux:v('tAux'),
