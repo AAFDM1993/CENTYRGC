@@ -413,6 +413,7 @@ async function iniciarApp(){
   const rc=await apiGet('listarCategorias');
   if(rc.ok) cats=rc.categorias||[];
   if(session.rol!=='estudiante') cargarBadge();
+  if(session.rol!=='estudiante') iniciarPollingPendientes();
   navTo('pac');
 }
 
@@ -1292,6 +1293,7 @@ async function abrirFrmPac(pac=null, preCatId=null, preCatNombre=null){
     </div>
     ${docSelectorHTML}
     <input type="hidden" id="pC" value="${catId}">
+    <input type="hidden" id="hcEvalId" value="${pac?._evalId||''}">
     ${plantillaHTML(catId, pac)}
     <div class="btn-group" style="margin-top:20px;padding-bottom:40px;position:sticky;bottom:0;background:var(--surf2);padding:14px 0 14px;border-top:1px solid var(--bd);z-index:10">
       <button class="btn btn-ghost" onclick="navTo('pac')">✕ Cancelar</button>
@@ -1473,10 +1475,12 @@ function evalCard(ev, pac){
         <div class="rev-comment">${e2(ev.comentarioDocente)}</div></div></div>`:''}
     ${detalle}
     <div class="btn-group" style="margin-top:8px">
-      ${(ev.estado==='borrador'||ev.estado==='rechazada')&&(pr||(session.rol==='estudiante'&&(pac.asignadoA===session.codigo||pac.creadoPor===session.codigo||ev.autor===session.codigo||ev.autorCodigo===session.codigo)))?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmEval('${esc(pac.id)}','${esc(ev.id)}','${esc(pac.categoriaId)}')">✏️ Editar</button>`:''}
+      ${(ev.estado==='borrador'||ev.estado==='rechazada')&&(pr||(session.rol==='estudiante'&&(pac.asignadoA===session.codigo||pac.creadoPor===session.codigo||ev.autor===session.codigo||ev.autorCodigo===session.codigo)))?`<button class="btn btn-ghost btn-sm" onclick="editarEvalRechazada('${esc(pac.id)}','${esc(ev.id)}','${esc(pac.categoriaId)}')">✏️ Editar</button>`:''}
       ${ev.estado==='pendiente'&&session.rol==='estudiante'?`<span style="font-size:11px;color:var(--amber);padding:4px 8px">⏳ En revisión — no editable</span>`:''}
       ${puedeSend?`<button class="btn btn-primary btn-sm" onclick="enviarEval('${esc(ev.id)}','${esc(pac.id)}')">📤 Enviar al docente</button>`:''}
+      ${pr&&ev.estado==='pendiente'?`<button class="btn btn-ghost btn-sm" onclick="toggleEvalInline('${uid}',null)">👁️ Ver contenido</button>`:''}
       ${pr&&ev.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('eval','${esc(ev.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
+      ${pr&&(ev.estado==='aprobada'||ev.estado==='rechazada')?`<button class="btn btn-ghost btn-sm" onclick="toggleEvalInline('${uid}',null)">👁️ Ver</button>`:''}
     </div>
   </div>`;
 }
@@ -1825,6 +1829,44 @@ async function verSesConFirma(sesId, pacId, docFirmante){
     }
     exportarDocumento('Sesion_'+s.numero+'_'+e2(pac.nombre||sesId),buildSesHTML(s,pac,firmaHTML));
   }catch(err){toast('Error al generar documento',err.message||'','err');}
+}
+
+// ─── Editar evaluación rechazada/borrador con plantilla correcta por categoría ─
+async function editarEvalRechazada(pacId, evalId, catId){
+  // Cargar tanto el paciente como la evaluación
+  const [rP, rE] = await Promise.all([
+    apiGet('obtenerPaciente', {id: pacId}),
+    apiGet('obtenerEvaluacion', {id: evalId})
+  ]);
+  if(!rP.ok){ toast('Error al cargar paciente', rP.error, 'err'); return; }
+  if(!rE.ok){ toast('Error al cargar evaluación', rE.error, 'err'); return; }
+
+  const pac = rP.paciente;
+  const ev  = rE.evaluacion;
+
+  // Fusionar los datosEspecificos de la eval en el objeto pac
+  // para que plantillaHTML(catId, pac) precargue todos los campos
+  const datosEsp = ev.datosEspecificos || {};
+  const pacConDatos = Object.assign({}, pac, datosEsp, {
+    // Campos del paciente tienen prioridad sobre datosEspecificos genéricos
+    id:          pac.id,
+    nombre:      pac.nombre,
+    dni:         pac.dni,
+    categoriaId: catId || pac.categoriaId,
+    // Guardar el id de la evaluación para que guardarHC actualice en lugar de crear
+    _evalId:     evalId,
+    _docenteEval: ev.docente || '',
+    datosEspecificos: datosEsp
+  });
+
+  // Abrir el formulario con plantilla específica de la categoría
+  await abrirFrmPac(pacConDatos);
+
+  // Pre-seleccionar el docente guardado en la eval
+  if(ev.docente){
+    var inp = g('hcDocInput'); if(inp) inp.value = ev.docente;
+    var hid = g('hcDoc');      if(hid) hid.value = ev.docente;
+  }
 }
 
 // ─── Formulario Evaluación ────────────────────────────
@@ -6002,10 +6044,13 @@ async function guardarHC(catId, pacId, modo){
   if(!rPac.ok){toast('Error al guardar paciente',rPac.error,'err');return;}
   const idPac=pacId||rPac.id;
 
-  // Guardar evaluación
+  // Guardar evaluación (actualizar si viene de una eval rechazada/borrador existente)
   const estado=modo==='borrador'?'borrador':(session.rol==='estudiante'?'pendiente':'aprobada');
-  const rEval=await apiPost({action:'guardarEvaluacion',pacienteId:idPac,categoriaId:catId,
-    tipo:'inicial',estado,docente:docenteHC,dxFisio:datos.dxFisio,aptaPatron:'',datosEspecificos:datos});
+  const evalIdExistente=g('hcEvalId')?.value||'';
+  const payloadEval={action:'guardarEvaluacion',pacienteId:idPac,categoriaId:catId,
+    tipo:'inicial',estado,docente:docenteHC,dxFisio:datos.dxFisio,aptaPatron:'',datosEspecificos:datos};
+  if(evalIdExistente) payloadEval.id=evalIdExistente;
+  const rEval=await apiPost(payloadEval);
   if(!rEval.ok){toast('Error al guardar evaluación',rEval.error,'err');return;}
   const msgs={borrador:'💾 Borrador guardado',pendiente:'📤 Enviada al docente',aprobada:'✅ Historia guardada'};
   toast(msgs[estado]||'Guardado','','ok');
