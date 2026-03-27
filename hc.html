@@ -5799,6 +5799,25 @@ async function guardarHC(catId, pacId, modo){
     cifContextual: v('cifContextual')
   } : {};
 
+    const datosCardio = catId === 'cardiorespiratorio' ? {
+    fcReposo:v('fcReposo'), frReposo:v('frReposo'),
+    taSistolica:v('taSistolica'), taDiastolica:v('taDiastolica'),
+    spo2Reposo:v('spo2Reposo'), imc:v('imc'), o2Suplem:v('o2Suplem'),
+    patronResp:v('patronResp'), tiraje:v('tiraje'), tos:v('tos'),
+    disneaReposo:v('disneaReposo'), nyha:v('nyha'), edemaMmii:v('edemaMmii'),
+    fvc:v('fvc'), fev1fvc:v('fev1fvc'), auscultacion:v('auscultacion'),
+  } : {};
+
+  const datosGer = catId === 'geriatria' ? {
+    convivencia:v('convivencia'), caidasAnio:v('caidasAnio'),
+    mmseScore:v('mmseScore'), cognitivo:v('cognitivo'),
+    estadoAnimo:v('estadoAnimo'), clasifFragilidad:v('clasifFragilidad'),
+    sarcopenia:v('sarcopenia'), evaGer:Number(v('evaGer')||0),
+    tipoMarchaGer:v('tipoMarchaGer'), patronMarchaGer:v('patronMarchaGer'),
+    ayudaTecGer:v('ayudaTecGer'), nivelDependencia:v('nivelDependencia'),
+    tug:v('tug'), velMarcha4m:v('velMarcha4m'),
+  } : {};
+  
   const datos={
     edad:v('pEdad'),dxMedico:v('aDxMed'),dxFisio:v('aDxFisio'),
     motivo:v('aMotivo'),antecedentes:v('aAntecedentes'),
