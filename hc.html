@@ -3211,7 +3211,7 @@ function renderEscalaAIMS(d){
   posiciones.forEach(function(pos){
     html += '<div style="padding:12px;background:var(--surf);border-radius:10px;border:1px solid var(--bd)">';
     html += '<div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:6px">📋 ' + pos.label + '</div>';
-    html += '<textarea class="ta" data-escala-item="' + pos.key + '" rows="3" placeholder="' + pos.placeholder + '" style="font-size:12px;min-height:70px" oninput="recalcularEscala('aims')">' + e2(items_d[pos.key]||'') + '</textarea>';
+    html += '<textarea class="ta" data-escala-item="' + pos.key + '" rows="3" placeholder="' + pos.placeholder + '" style="font-size:12px;min-height:70px" oninput="recalcularEscala(\'aims\')">' + e2(items_d[pos.key]||'') + '</textarea>';
     html += '</div>';
   });
   return html + '</div>';
