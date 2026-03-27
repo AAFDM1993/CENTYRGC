@@ -3048,8 +3048,22 @@ function quitarPrueba(region, nombre, regionId){
   }
 }
 
+// Lee las pruebas seleccionadas del DOM → { region: { nombrePrueba: resultado } }
+function leerPruebasFuncionales(){
+  var resultado = {};
+  document.querySelectorAll('[data-prueba-region]').forEach(function(el){
+    var reg = el.getAttribute('data-prueba-region');
+    var nom = el.getAttribute('data-prueba-nombre');
+    if(!reg || !nom) return;
+    if(!resultado[reg]) resultado[reg] = {};
+    resultado[reg][nom] = el.value || '';
+  });
+  return resultado;
+}
+
 function actualizarPruebas(){
   var sel = Array.from(document.querySelectorAll('#regionesWrap span[data-r]')).map(function(s){return s.getAttribute('data-r');});
+  // Preservar resultados ya ingresados antes de re-renderizar
   var saved = leerPruebasFuncionales();
   var pw = g('tablaPruebasWrap');
   if(pw) pw.innerHTML = mkPruebasFuncionales(sel, saved);
