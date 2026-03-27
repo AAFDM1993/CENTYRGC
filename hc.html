@@ -328,8 +328,8 @@ async function apiPost(body){
   // Invalida caché relevante según la acción
   const a=body.action||'';
   if(a.includes('Paciente')) invalidarCache(['listarPacientes','obtenerPaciente']);
-  if(a.includes('Evaluacion')||a.includes('evaluacion')) invalidarCache(['listarEvaluaciones','obtenerEvaluacion','listarPacientes']);
-  if(a.includes('Sesion')||a.includes('sesion')) invalidarCache(['listarSesiones','listarPacientes']);
+  if(a.includes('Evaluacion')||a.includes('evaluacion')) invalidarCache(['listarEvaluaciones','obtenerEvaluacion','listarPacientes','pendientesRevision']);
+  if(a.includes('Sesion')||a.includes('sesion')) invalidarCache(['listarSesiones','listarPacientes','pendientesRevision']);
   if(a.includes('revisar')) invalidarCache(['listarEvaluaciones','listarSesiones','pendientesRevision','listarPacientes']);
   if(a.includes('Firma')||a.includes('Ctmp')) invalidarCache(['listarUsuarios']);
   return data;
@@ -1473,7 +1473,8 @@ function evalCard(ev, pac){
         <div class="rev-comment">${e2(ev.comentarioDocente)}</div></div></div>`:''}
     ${detalle}
     <div class="btn-group" style="margin-top:8px">
-      ${ev.estado==='borrador'||ev.estado==='rechazada'?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmEval('${esc(pac.id)}','${esc(ev.id)}','${esc(pac.categoriaId)}')">✏️ Editar</button>`:''}
+      ${(ev.estado==='borrador'||ev.estado==='rechazada')&&(pr||(session.rol==='estudiante'&&(pac.asignadoA===session.codigo||pac.creadoPor===session.codigo||ev.autor===session.codigo||ev.autorCodigo===session.codigo)))?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmEval('${esc(pac.id)}','${esc(ev.id)}','${esc(pac.categoriaId)}')">✏️ Editar</button>`:''}
+      ${ev.estado==='pendiente'&&session.rol==='estudiante'?`<span style="font-size:11px;color:var(--amber);padding:4px 8px">⏳ En revisión — no editable</span>`:''}
       ${puedeSend?`<button class="btn btn-primary btn-sm" onclick="enviarEval('${esc(ev.id)}','${esc(pac.id)}')">📤 Enviar al docente</button>`:''}
       ${pr&&ev.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('eval','${esc(ev.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
     </div>
@@ -1482,6 +1483,7 @@ function evalCard(ev, pac){
 
 function buildDetalleEval(ev, pac){
   var d=Object.assign({},ev,ev.datosEspecificos||{});
+  var catId = ev.categoriaId || pac.categoriaId || '';
   var evaVal = d.evaValor !== undefined ? d.evaValor : (d.eva !== undefined ? d.eva : undefined);
   var cifDeterioro = d.icfDeterioro || d.cifDeterioro || '';
   var cifActividad = d.icfActividad || d.cifActividad || '';
@@ -1492,6 +1494,107 @@ function buildDetalleEval(ev, pac){
 
   // Filiación
   html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">I. Filiación</div>';
+  html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:14px">';
+  html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">NOMBRE</div><div style="font-size:12px">'+e2(pac.nombre||'—')+'</div></div>';
+  html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">DNI</div><div style="font-size:12px">'+e2(pac.dni||'—')+'</div></div>';
+  if(pac.fechaNac) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">F. NACIMIENTO</div><div style="font-size:12px">'+e2(formatFechaCorta(pac.fechaNac))+'</div></div>';
+  if(pac.sexo) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">SEXO</div><div style="font-size:12px">'+(pac.sexo==='M'?'Masculino':'Femenino')+'</div></div>';
+  if(pac.ocupacion||d.ocupacion) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">OCUPACIÓN</div><div style="font-size:12px">'+e2(pac.ocupacion||d.ocupacion)+'</div></div>';
+  if(pac.telefono) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">TELÉFONO</div><div style="font-size:12px">'+e2(pac.telefono)+'</div></div>';
+  if(pac.fechaInicio) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">INICIO TRATAMIENTO</div><div style="font-size:12px">'+e2(formatFechaCorta(pac.fechaInicio))+'</div></div>';
+  html+='</div>';
+
+  // Anamnesis
+  if(d.dxMedico||pac.dxMedico||d.motivo||pac.motivo||d.antecedentes||pac.antecedentes){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">II. Anamnesis</div>';
+    var dxMed=d.dxMedico||pac.dxMedico||'';
+    var motivo=d.motivo||pac.motivo||'';
+    var antec=d.antecedentes||pac.antecedentes||'';
+    if(dxMed) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">DX MÉDICO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(dxMed)+'</div></div>';
+    if(motivo) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">MOTIVO DE CONSULTA</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(motivo)+'</div></div>';
+    if(antec) html+='<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">ANTECEDENTES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(antec)+'</div></div>';
+  }
+
+  // III. Examen objetivo — renderizado por categoría (igual que en exportación)
+  html += _buildExamenObjetivoPorCategoria(d, ev, catId).replace(/<div class="sec"><div class="sec-hdr">[^<]*<\/div>/,'<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">III. Examen Objetivo</div><div>').replace(/<\/div>$/,'</div>');
+
+  // Si es traumatología también mostrar ROM, fuerza y pruebas funcionales
+  if(catId==='traumatologia'){
+    if(d.palpacion) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">PALPACIÓN</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.palpacion)+'</div></div>';
+    if(d.pruebasFuncionales&&Object.keys(d.pruebasFuncionales).length){
+      html+='<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:4px;text-transform:uppercase">PRUEBAS FUNCIONALES</div>';
+      Object.keys(d.pruebasFuncionales).forEach(function(reg){
+        var regPruebas=d.pruebasFuncionales[reg];
+        var filled=Object.keys(regPruebas).filter(function(k){return regPruebas[k]&&regPruebas[k]!=='—';});
+        if(!filled.length) return;
+        html+='<div style="font-size:11px;font-weight:700;color:var(--tx2);margin:6px 0 3px">'+e2(reg)+'</div>';
+        filled.forEach(function(nom){
+          var res=regPruebas[nom];
+          var color=res&&res.startsWith('+')?'var(--red)':res&&res.startsWith('-')?'var(--green)':'var(--amber)';
+          html+='<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 8px;background:var(--surf2);border-radius:5px;margin-bottom:2px"><span>'+e2(nom)+'</span><b style="color:'+color+'">'+e2(res)+'</b></div>';
+        });
+      });
+      html+='</div>';
+    }
+    if(d.pruebas) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBSERVACIONES PRUEBAS</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.pruebas)+'</div></div>';
+    if(d.examObjetivo) html+='<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">EXAMEN OBJETIVO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.examObjetivo)+'</div></div>';
+  }
+
+  // ROM (traumatología)
+  if(d.rom&&Object.keys(d.rom).length){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">ROM</div>';
+    html+='<div style="overflow-x:auto;margin-bottom:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">';
+    html+='<tr><th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--bd);color:var(--tx4)">Región/Movimiento</th><th style="padding:4px 8px;border-bottom:1px solid var(--bd);color:var(--tx4)">D</th><th style="padding:4px 8px;border-bottom:1px solid var(--bd);color:var(--tx4)">I</th></tr>';
+    var romKeys=Object.keys(d.rom);
+    var grupos={};
+    romKeys.forEach(function(k){var reg=k.split('_')[0];if(!grupos[reg])grupos[reg]=[];grupos[reg].push(k);});
+    Object.keys(grupos).forEach(function(reg){
+      grupos[reg].forEach(function(k,i){
+        var mov=k.replace(reg+'_','').replace(/_[DI]$/,'');
+        var vD=d.rom[k.replace(/_[DI]$/,'_D')]||'';
+        var vI=d.rom[k.replace(/_[DI]$/,'_I')]||'';
+        if(k.endsWith('_D')||(!k.endsWith('_I')&&!k.endsWith('_D'))){
+          html+='<tr style="border-bottom:1px solid var(--bd2)">';
+          if(i===0) html+='<td style="font-weight:700;font-size:10px;padding:3px 8px;color:var(--tx2)" rowspan="'+grupos[reg].filter(function(x){return x.endsWith('_D');}).length+'">'+reg+'</td>';
+          html+='<td style="padding:3px 8px;font-size:11px">'+mov+'</td>';
+          html+='<td style="text-align:center;padding:3px 8px">'+e2(vD||'—')+'</td>';
+          html+='<td style="text-align:center;padding:3px 8px">'+e2(vI||'—')+'</td></tr>';
+        }
+      });
+    });
+    html+='</table></div>';
+  }
+
+  // Diagnóstico
+  if(ev.dxFisio||d.dxFisio||d.aptaPatron||cifDeterioro||cifActividad){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">IV. Diagnóstico</div>';
+    html+='<div style="display:grid;gap:6px;margin-bottom:12px">';
+    if(d.aptaPatron||ev.aptaPatron) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">PATRÓN APTA: </span><span style="font-size:12px">'+e2(d.aptaPatron||ev.aptaPatron)+'</span></div>';
+    if(ev.dxFisio||d.dxFisio) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">DX FISIO: </span><span style="font-size:12px">'+e2(ev.dxFisio||d.dxFisio)+'</span></div>';
+    if(cifDeterioro) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF DETERIORO: </span><span style="font-size:12px">'+e2(cifDeterioro)+'</span></div>';
+    if(cifActividad) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF ACTIVIDAD: </span><span style="font-size:12px">'+e2(cifActividad)+'</span></div>';
+    if(d.pronostico) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">PRONÓSTICO: </span><span style="font-size:12px">'+e2(d.pronostico)+'</span></div>';
+    html+='</div>';
+  }
+
+  // Plan de tratamiento
+  if(objCorto||objLargo||objEsp||d.planSesiones){
+    html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">V. Plan de Tratamiento</div>';
+    html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:10px">';
+    if(d.planSesiones) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">N° SESIONES</div><div style="font-size:13px;font-weight:700">'+e2(d.planSesiones)+'</div></div>';
+    if(d.planFrecuencia) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">FRECUENCIA</div><div style="font-size:12px">'+e2(d.planFrecuencia)+'</div></div>';
+    if(d.planDuracion) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">DURACIÓN</div><div style="font-size:12px">'+e2(d.planDuracion)+'</div></div>';
+    html+='</div>';
+    if(objCorto) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">META / OBJ. CORTO PLAZO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(objCorto)+'</div></div>';
+    if(objLargo) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBJ. GENERAL / LARGO PLAZO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(objLargo)+'</div></div>';
+    if(objEsp) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBJ. ESPECÍFICOS / PLAN GENERAL</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(objEsp)+'</div></div>';
+  }
+
+  // Observaciones
+  if(d.obsExamen||d.aux) html+='<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px;text-transform:uppercase">Observaciones / Auxiliares</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.obsExamen||d.aux||'')+'</div></div>';
+
+  return html;
+}
   html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:14px">';
   html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">NOMBRE</div><div style="font-size:12px">'+e2(pac.nombre||'—')+'</div></div>';
   html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">DNI</div><div style="font-size:12px">'+e2(pac.dni||'—')+'</div></div>';
@@ -1940,6 +2043,7 @@ async function guardarEval(pacId, evalId, catId, modo){
   if(!r.ok){toast('Error',r.error,'err');return;}
   const msgs={pendiente:'📤 Enviada al docente',aprobada:'✅ Evaluación guardada',borrador:'💾 Borrador guardado'};
   toast(msgs[estado]||'Guardado','','ok');
+  if(estado==='pendiente') cargarBadge();
   abrirPac(pacId);
 }
 
@@ -2105,7 +2209,9 @@ async function guardarSes(pacId, evalId, num, sesId, modo){
   const r=await apiPost(b);
   if(!r.ok){toast('Error',r.error,'err');return;}
   const msgs={pendiente:'📤 Enviada al docente',aprobada:'✅ Sesión guardada',borrador:'💾 Borrador guardado'};
-  toast(msgs[estado],'','ok');abrirPac(pacId);
+  toast(msgs[estado],'','ok');
+  if(estado==='pendiente') cargarBadge();
+  abrirPac(pacId);
 }
 
 async function enviarSes(sesId, pacId){
@@ -5752,9 +5858,16 @@ async function guardarHC(catId, pacId, modo){
   // Leer campos específicos de neuro pediátrica
   const datosPed = catId==='neuro_pediatrica' ? {
     dxMedico:v('aDxMed'),tiempoEvol:v('tiempoEvol'),tipoParto:v('tipoParto'),semanasGest:v('semanasGest'),pesoNacer:v('pesoNacer'),apgar:v('apgar'),antePrenatal:v('antePrenatal'),antePosnatal:v('antePosnatal'),medicacion:v('medicacion'),
-    hitosSostenCef:v('hitosSostenCef'),hitosSedest:v('hitosSedest'),hitosGateo:v('hitosGateo'),hitosBiped:v('hitosBiped'),hitosMarcha:v('hitosMarcha'),hitosLenguaje:v('hitosLenguaje'),
+    // Hitos del desarrollo con observaciones
+    hitosSostenCef:v('hitosSostenCef'),hitosSostenCef_obs:v('hitosSostenCef_obs'),
+    hitosSedest:v('hitosSedest'),hitosSedest_obs:v('hitosSedest_obs'),
+    hitosGateo:v('hitosGateo'),hitosGateo_obs:v('hitosGateo_obs'),
+    hitosBiped:v('hitosBiped'),hitosBiped_obs:v('hitosBiped_obs'),
+    hitosMarcha:v('hitosMarcha'),hitosMarcha_obs:v('hitosMarcha_obs'),
+    hitosLenguaje:v('hitosLenguaje'),hitosLenguaje_obs:v('hitosLenguaje_obs'),
     escolarizacion:v('escolarizacion'),obsDesarrollo:v('obsDesarrollo'),
     alertaPed:v('alertaPed'),comprensionPed:v('comprensionPed'),conductaPed:v('conductaPed'),comunicacionPed:v('comunicacionPed'),obsCognitivoPed:v('obsCognitivoPed'),
+    // Tono y fuerza pediátrica (IDs generados por secMotorPed con prefijo tonoPed_/fuerzaPed_)
     tonoPed_MMSS_D:v('tonoPed_MMSS_D'),tonoPed_MMSS_I:v('tonoPed_MMSS_I'),tonoPed_MMII_D:v('tonoPed_MMII_D'),tonoPed_MMII_I:v('tonoPed_MMII_I'),
     fuerzaPed_MMSS_D:v('fuerzaPed_MMSS_D'),fuerzaPed_MMSS_I:v('fuerzaPed_MMSS_I'),fuerzaPed_MMII_D:v('fuerzaPed_MMII_D'),fuerzaPed_MMII_I:v('fuerzaPed_MMII_I'),
     refMoro:v('refMoro'),refTANC:v('refTANC'),refTL:v('refTL'),refPrension:v('refPrension'),reaccEnderez:v('reaccEnderez'),reaccEquilib:v('reaccEquilib'),patronesMovPed:v('patronesMovPed'),obsMotorPed:v('obsMotorPed'),
@@ -5799,25 +5912,63 @@ async function guardarHC(catId, pacId, modo){
     cifContextual: v('cifContextual')
   } : {};
 
-    const datosCardio = catId === 'cardiorespiratorio' ? {
-    fcReposo:v('fcReposo'), frReposo:v('frReposo'),
-    taSistolica:v('taSistolica'), taDiastolica:v('taDiastolica'),
-    spo2Reposo:v('spo2Reposo'), imc:v('imc'), o2Suplem:v('o2Suplem'),
-    patronResp:v('patronResp'), tiraje:v('tiraje'), tos:v('tos'),
-    disneaReposo:v('disneaReposo'), nyha:v('nyha'), edemaMmii:v('edemaMmii'),
-    fvc:v('fvc'), fev1fvc:v('fev1fvc'), auscultacion:v('auscultacion'),
+  // Leer campos específicos de cardiorespiratorio
+  const datosCardio = catId==='cardiorespiratorio' ? {
+    dxMedico:v('aDxMed'),dxSecundario:v('dxSecundario'),motivo:v('aMotivo'),
+    tiempoEvol:v('tiempoEvol'),hospitRecientes:v('hospitRecientes'),cirugiasPrev:v('cirugiasPrev'),
+    antecedentes:v('aAntecedentes'),medicacionActual:v('medicacionActual'),
+    // Signos vitales
+    fcReposo:v('fcReposo'),frReposo:v('frReposo'),taSistolica:v('taSistolica'),taDiastolica:v('taDiastolica'),
+    spo2Reposo:v('spo2Reposo'),temperatura:v('temperatura'),peso:v('peso'),talla:v('talla'),
+    imc:v('imc'),o2Suplem:v('o2Suplem'),flujoO2:v('flujoO2'),
+    // Evaluación respiratoria
+    patronResp:v('patronResp'),muscAccesoria:v('muscAccesoria'),tiraje:v('tiraje'),tos:v('tos'),
+    expectoracion:v('expectoracion'),tipoTorax:v('tipoTorax'),expansionToracica:v('expansionToracica'),
+    auscultacion:v('auscultacion'),pef:v('pef'),fvc:v('fvc'),fev1fvc:v('fev1fvc'),
+    // Evaluación cardíaca
+    disneaReposo:v('disneaReposo'),ortopnea:v('ortopnea'),dolorToracico:v('dolorToracico'),
+    palpitaciones:v('palpitaciones'),tosNocturna:v('tosNocturna'),nyha:v('nyha'),edemaMmii:v('edemaMmii'),
+    activDesencan:v('activDesencan'),psicosocial:v('psicosocial'),
+    // Fuerza y resistencia
+    fuerzaMmssDCard:v('fuerzaMmssDCard'),fuerzaMmssICard:v('fuerzaMmssICard'),
+    fuerzaMmiiDCard:v('fuerzaMmiiDCard'),fuerzaMmiiICard:v('fuerzaMmiiICard'),
+    dinamoD:v('dinamoD'),obsFuerzaCard:v('obsFuerzaCard'),
+    // Capacidad funcional
+    limitAVD:v('limitAVD'),suenio:v('suenio'),obsFuncCard:v('obsFuncCard'),
   } : {};
 
-  const datosGer = catId === 'geriatria' ? {
-    convivencia:v('convivencia'), caidasAnio:v('caidasAnio'),
-    mmseScore:v('mmseScore'), cognitivo:v('cognitivo'),
-    estadoAnimo:v('estadoAnimo'), clasifFragilidad:v('clasifFragilidad'),
-    sarcopenia:v('sarcopenia'), evaGer:Number(v('evaGer')||0),
-    tipoMarchaGer:v('tipoMarchaGer'), patronMarchaGer:v('patronMarchaGer'),
-    ayudaTecGer:v('ayudaTecGer'), nivelDependencia:v('nivelDependencia'),
-    tug:v('tug'), velMarcha4m:v('velMarcha4m'),
+  // Leer campos específicos de geriatría
+  const datosGer = catId==='geriatria' ? {
+    dxMedico:v('aDxMed'),dxFisio:v('aDxFisio'),motivo:v('aMotivo'),
+    convivencia:v('convivencia'),estadoCivil:v('estadoCivil'),antecedentes:v('aAntecedentes'),
+    polifarmacia:v('polifarmacia'),medRiesgoCaida:v('medRiesgoCaida'),
+    caidasAnio:v('caidasAnio'),circunstanciaCaidas:v('circunstanciaCaidas'),
+    // Valoración cognitiva
+    mmseScore:v('mmseScore'),cognitivo:v('cognitivo'),estadoAnimo:v('estadoAnimo'),
+    comunicacionGer:v('comunicacionGer'),audiofono:v('audiofono'),gafas:v('gafas'),obsCognitivoGer:v('obsCognitivoGer'),
+    // Nutricional
+    pesoGer:v('pesoGer'),perdidaPeso:v('perdidaPeso'),imcGer:v('imcGer'),apetito:v('apetito'),
+    hidratacion:v('hidratacion'),
+    // Fragilidad
+    sarcopenia:v('sarcopenia'),clasifFragilidad:v('clasifFragilidad'),obsFragilidad:v('obsFragilidad'),
+    // Examen músculo-esquelético
+    evaGer:Number(v('evaGer')||0),dolLocGer:v('dolLocGer'),
+    fuerzaMmssDGer:v('fuerzaMmssDGer'),fuerzaMmssIGer:v('fuerzaMmssIGer'),
+    fuerzaMmiiDGer:v('fuerzaMmiiDGer'),fuerzaMmiiIGer:v('fuerzaMmiiIGer'),
+    dinamoDGer:v('dinamoDGer'),dinamoIGer:v('dinamoIGer'),
+    romGer:v('romGer'),
+    // Equilibrio y marcha
+    monopodDGer:v('monopodDGer'),monopodIGer:v('monopodIGer'),alcanceFuncGer:v('alcanceFuncGer'),
+    miedoCaer:v('miedoCaer'),
+    tipoMarchaGer:v('tipoMarchaGer'),patronMarchaGer:v('patronMarchaGer'),
+    ayudaTecGer:v('ayudaTecGer'),tug:v('tug'),velMarcha4m:v('velMarcha4m'),obsMarchaGer:v('obsMarchaGer'),
+    // AVD y dependencia
+    avdBasicasGer:v('avdBasicasGer'),avdInstGer:v('avdInstGer'),nivelDependencia:v('nivelDependencia'),
+    // Cuidador
+    tipoCuidador:v('tipoCuidador'),edCuidador:v('edCuidador'),sobrecargaCuidador:v('sobrecargaCuidador'),
+    entornoDomiciliario:v('entornoDomiciliario'),adaptacionesHogar:v('adaptacionesHogar'),
   } : {};
-  
+
   const datos={
     edad:v('pEdad'),dxMedico:v('aDxMed'),dxFisio:v('aDxFisio'),
     motivo:v('aMotivo'),antecedentes:v('aAntecedentes'),
@@ -5853,6 +6004,7 @@ async function guardarHC(catId, pacId, modo){
   if(!rEval.ok){toast('Error al guardar evaluación',rEval.error,'err');return;}
   const msgs={borrador:'💾 Borrador guardado',pendiente:'📤 Enviada al docente',aprobada:'✅ Historia guardada'};
   toast(msgs[estado]||'Guardado','','ok');
+  if(estado==='pendiente') cargarBadge();
   abrirPac(idPac);
 }
 
