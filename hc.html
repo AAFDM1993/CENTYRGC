@@ -273,7 +273,7 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
 
 <script>
 // ─── Config ───────────────────────────────────────────
-const HC_URL = 'https://script.google.com/macros/s/AKfycbydUyPNT8hBFWMzf0IhDQEkj2fhuT88KcDb5V4eacm6DZtb9eDgqP5YvFw9sowILV4J/exec';
+const HC_URL = 'https://script.google.com/macros/s/AKfycbxAUtF7cGZmHCDP1m5NBbl1ui0S-EoD4lx1jicL_XGtgw3TnCJexJj_7vi-93bvMNDL/exec';
 const SK = 'centyr_hc_s';
 const TTL = 6*60*60*1000;
 
@@ -1273,6 +1273,7 @@ async function abrirFrmPac(pac=null, preCatId=null, preCatNombre=null){
             <div id="hcDocenteDD" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surf);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:50;max-height:180px;overflow-y:auto;margin-top:4px"></div>
           </div>
           <input type="hidden" id="hcDoc" value="${e2(docenteHCActual)}">
+          <input type="hidden" id="hcDocCodigo" value="">
         </div>
       </div>
     </div>`;
@@ -1598,6 +1599,25 @@ function buildDetalleEval(ev, pac){
   // Observaciones
   if(d.obsExamen||d.aux) html+='<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px;text-transform:uppercase">Observaciones / Auxiliares</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.obsExamen||d.aux||'')+'</div></div>';
 
+  // Escalas aplicadas
+  var escalasData = d.escalas;
+  if(escalasData && typeof escalasData === 'string'){
+    try{ escalasData = JSON.parse(escalasData); } catch(ex){ escalasData = null; }
+  }
+  if(escalasData && Object.keys(escalasData).length){
+    html += displayEscalasResumen(escalasData);
+  }
+
+  // Estado de revisión del docente
+  if(ev.estado==='aprobada'||ev.estado==='rechazada'){
+    var revColor=ev.estado==='aprobada'?'var(--green)':'var(--red)';
+    var revIcon=ev.estado==='aprobada'?'✅':'❌';
+    html+='<div style="margin-top:12px;padding:10px 14px;border-radius:10px;background:'+(ev.estado==='aprobada'?'var(--green2)':'var(--red2)')+';border:1px solid '+(ev.estado==='aprobada'?'rgba(34,197,94,.3)':'rgba(239,68,68,.25)')+';">';
+    html+='<div style="font-size:12px;font-weight:700;color:'+revColor+'">'+revIcon+' '+(ev.estado==='aprobada'?'Aprobada':'Rechazada')+' — '+e2(ev.revisadoPor||'')+'</div>';
+    if(ev.comentarioDocente) html+='<div style="font-size:12px;color:var(--tx2);margin-top:4px;padding:6px 8px;background:rgba(0,0,0,.06);border-radius:6px">'+e2(ev.comentarioDocente)+'</div>';
+    html+='</div>';
+  }
+
   return html;
 }
 
@@ -1897,6 +1917,7 @@ async function abrirFrmEval(pacId, evalId, catId){
             <div id="evalDocenteDD" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surf);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:50;max-height:180px;overflow-y:auto;margin-top:4px"></div>
           </div>
           <input type="hidden" id="evalDoc" value="${e2(docenteEvalActual)}">
+          <input type="hidden" id="evalDocCodigo" value="">
         </div>
       </div>
     </div>
@@ -2069,6 +2090,7 @@ function leerF2(){const f={};document.querySelectorAll('[data-f]').forEach(el=>{
 
 async function guardarEval(pacId, evalId, catId, modo){
   const docEval=g('evalDoc')?.value||g('evalDocInput')?.value||'';
+  const docEvalCodigo=g('evalDocCodigo')?.value||'';
   if(!docEval){toast('⚠️ Debes seleccionar un docente supervisor','Es obligatorio para guardar la evaluación','warn');return;}
   const estado=modo==='borrador'?'borrador':(session.rol==='estudiante'?'pendiente':'aprobada');
   const datosEval={
@@ -2084,7 +2106,7 @@ async function guardarEval(pacId, evalId, catId, modo){
     planEducacion:g('educ')?.value||''
   };
   const b={action:'guardarEvaluacion',pacienteId:pacId,categoriaId:catId,tipo:'inicial',estado,
-    docente:docEval,dxFisio:datosEval.dxFisio,datosEspecificos:datosEval};
+    docente:docEval,docenteCodigo:docEvalCodigo,dxFisio:datosEval.dxFisio,datosEspecificos:datosEval};
   if(evalId) b.id=evalId;
   const r=await apiPost(b);
   if(!r.ok){toast('Error',r.error,'err');return;}
@@ -2114,18 +2136,22 @@ function filtrarDocentesHC(val){
   });
   if(!matches.length){dd.style.display='none';return;}
   dd.innerHTML=matches.map(function(d){
-    return '<div data-hnm="'+encodeURIComponent(d.nombre||d.codigo)+'" style="padding:9px 14px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px">'
-      +'<span style="font-size:10px;background:var(--n100);color:var(--n900);border-radius:4px;padding:1px 5px;font-weight:700">'+e2(d.rol)+'</span>'+e2(d.nombre||d.codigo)+'</div>';
+    return '<div data-hnm="'+encodeURIComponent(d.nombre||d.codigo)+'" data-hcd="'+encodeURIComponent(d.codigo||'')+'" style="padding:9px 14px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px">'
+      +'<span style="font-size:10px;background:var(--n100);color:var(--n900);border-radius:4px;padding:1px 5px;font-weight:700">'+e2(d.rol)+'</span>'+e2(d.nombre||d.codigo)
+      +'<span style="font-size:10px;color:var(--tx4);margin-left:auto">'+e2(d.codigo)+'</span></div>';
   }).join('');
   dd.style.display='block';
   dd.querySelectorAll('[data-hnm]').forEach(function(el){
-    el.addEventListener('click',function(){ selDocHC(el.getAttribute('data-hnm')); });
+    el.addEventListener('click',function(){ selDocHC(el.getAttribute('data-hnm'), el.getAttribute('data-hcd')); });
   });
 }
-function selDocHC(enc){
+function selDocHC(enc, codEnc){
   var nombre=decodeURIComponent(enc);
+  var codigo=codEnc?decodeURIComponent(codEnc):'';
   var inp=g('hcDocInput'); if(inp) inp.value=nombre;
   var hid=g('hcDoc'); if(hid) hid.value=nombre;
+  // Guardar también el código para filtrado exacto en pendientes
+  var hidCod=g('hcDocCodigo'); if(hidCod) hidCod.value=codigo;
   var dd=g('hcDocenteDD'); if(dd) dd.style.display='none';
 }
 function filtrarDocentesEval(val){
@@ -2139,18 +2165,21 @@ function filtrarDocentesEval(val){
   });
   if(!matches.length){dd.style.display='none';return;}
   dd.innerHTML=matches.map(function(d){
-    return '<div data-enm="'+encodeURIComponent(d.nombre||d.codigo)+'" style="padding:9px 14px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px">'
-      +'<span style="font-size:10px;background:var(--n100);color:var(--n900);border-radius:4px;padding:1px 5px;font-weight:700">'+e2(d.rol)+'</span>'+e2(d.nombre||d.codigo)+'</div>';
+    return '<div data-enm="'+encodeURIComponent(d.nombre||d.codigo)+'" data-ecd="'+encodeURIComponent(d.codigo||'')+'" style="padding:9px 14px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px">'
+      +'<span style="font-size:10px;background:var(--n100);color:var(--n900);border-radius:4px;padding:1px 5px;font-weight:700">'+e2(d.rol)+'</span>'+e2(d.nombre||d.codigo)
+      +'<span style="font-size:10px;color:var(--tx4);margin-left:auto">'+e2(d.codigo)+'</span></div>';
   }).join('');
   dd.style.display='block';
   dd.querySelectorAll('[data-enm]').forEach(function(el){
-    el.addEventListener('click',function(){ selDocEval(el.getAttribute('data-enm')); });
+    el.addEventListener('click',function(){ selDocEval(el.getAttribute('data-enm'), el.getAttribute('data-ecd')); });
   });
 }
-function selDocEval(enc){
+function selDocEval(enc, codEnc){
   var nombre=decodeURIComponent(enc);
+  var codigo=codEnc?decodeURIComponent(codEnc):'';
   var inp=g('evalDocInput'); if(inp) inp.value=nombre;
   var hid=g('evalDoc'); if(hid) hid.value=nombre;
+  var hidCod=g('evalDocCodigo'); if(hidCod) hidCod.value=codigo;
   var dd=g('evalDocenteDD'); if(dd) dd.style.display='none';
 }
 function filtrarDocentes(val, docentesParam){
@@ -2163,18 +2192,21 @@ function filtrarDocentes(val, docentesParam){
   });
   if(!matches.length){dd.style.display='none';return;}
   dd.innerHTML=matches.map(function(d){
-    return '<div data-dnm="'+encodeURIComponent(d.nombre||d.codigo)+'" style="padding:9px 14px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px">'
-      +'<span style="font-size:10px;background:var(--n100);color:var(--n900);border-radius:4px;padding:1px 5px;font-weight:700">'+e2(d.rol)+'</span>'+e2(d.nombre||d.codigo)+'</div>';
+    return '<div data-dnm="'+encodeURIComponent(d.nombre||d.codigo)+'" data-dcd="'+encodeURIComponent(d.codigo||'')+'" style="padding:9px 14px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px">'
+      +'<span style="font-size:10px;background:var(--n100);color:var(--n900);border-radius:4px;padding:1px 5px;font-weight:700">'+e2(d.rol)+'</span>'+e2(d.nombre||d.codigo)
+      +'<span style="font-size:10px;color:var(--tx4);margin-left:auto">'+e2(d.codigo)+'</span></div>';
   }).join('');
   dd.style.display='block';
   dd.querySelectorAll('[data-dnm]').forEach(function(el){
-    el.addEventListener('click',function(){ selDoc(el.getAttribute('data-dnm')); });
+    el.addEventListener('click',function(){ selDoc(el.getAttribute('data-dnm'), el.getAttribute('data-dcd')); });
   });
 }
-function selDoc(enc){
+function selDoc(enc, codEnc){
   var nombre=decodeURIComponent(enc);
+  var codigo=codEnc?decodeURIComponent(codEnc):'';
   var inp=g('sDocInput'); if(inp) inp.value=nombre;
   var hid=g('sDoc'); if(hid) hid.value=nombre;
+  var hidCod=g('sDocCodigo'); if(hidCod) hidCod.value=codigo;
   var dd=g('docenteDD'); if(dd) dd.style.display='none';
 }
 async function abrirFrmSes(pacId, evalId, num, sesId=null){
@@ -2208,6 +2240,7 @@ async function abrirFrmSes(pacId, evalId, num, sesId=null){
             <div id="docenteDD" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surf);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:50;max-height:180px;overflow-y:auto;margin-top:4px"></div>
           </div>
           <input type="hidden" id="sDoc" value="${e2(docenteActual)}">
+          <input type="hidden" id="sDocCodigo" value="">
         </div>
         <div class="field"><label>EVA inicial (0-10)</label>
           <div class="eva-wrap" style="margin-top:6px">
@@ -2243,13 +2276,15 @@ async function abrirFrmSes(pacId, evalId, num, sesId=null){
 async function guardarSes(pacId, evalId, num, sesId, modo){
   const des=g('sDes')?.value?.trim()||'';
   const doc=g('sDoc')?.value||g('sDocInput')?.value||'';
+  const docCodigo=g('sDocCodigo')?.value||'';
   if(!doc){toast('⚠️ Debes seleccionar un docente supervisor','Es obligatorio para guardar la sesión','warn');return;}
   if(modo==='enviar'&&!des){toast('Completa la descripción de la sesión','','warn');return;}
   const estado=modo==='borrador'?'borrador':(session.rol==='estudiante'?'pendiente':'aprobada');
   const b={action:'guardarSesion',pacienteId:pacId,evaluacionId:evalId,numero:num,
     fecha:g('sF')?.value||'',
     estudiante:g('sEst')?.value||session.nombre||session.codigo,
-    docente:g('sDoc')?.value||g('sDocInput')?.value||'',
+    docente:doc,
+    docenteCodigo:docCodigo,
     evaValor:Number(g('sesEva')?.value||0),
     descripcion:des,respuesta:g('sRes')?.value||'',estado};
   if(sesId) b.id=sesId;
@@ -2315,12 +2350,14 @@ async function renderPend(){
     var myName=(session.nombre||'').toLowerCase();
     var myCode=(session.codigo||'').toLowerCase();
     ev=evAll.filter(function(e){
-      var d=(e.docente||'').toLowerCase();
-      return d===myName||d===myCode;
+      var dn=(e.docente||'').toLowerCase();
+      var dc=(e.docenteCodigo||'').toLowerCase();
+      return dn===myName||dn===myCode||dc===myCode||dc===myName;
     });
     ses=sesAll.filter(function(s){
-      var d=(s.docente||'').toLowerCase();
-      return d===myName||d===myCode;
+      var dn=(s.docente||'').toLowerCase();
+      var dc=(s.docenteCodigo||'').toLowerCase();
+      return dn===myName||dn===myCode||dc===myCode||dc===myName;
     });
   }
   const tot=ev.length+ses.length;
@@ -2358,8 +2395,16 @@ async function cargarBadge(){
   var evB=r.evaluaciones||[],sesB=r.sesiones||[];
   if(session.rol==='docente'){
     var bn=(session.nombre||'').toLowerCase(),bc=(session.codigo||'').toLowerCase();
-    evB=evB.filter(function(e){var d=(e.docente||'').toLowerCase();return d===bn||d===bc;});
-    sesB=sesB.filter(function(s){var d=(s.docente||'').toLowerCase();return d===bn||d===bc;});
+    evB=evB.filter(function(e){
+      var dn=(e.docente||'').toLowerCase();
+      var dc=(e.docenteCodigo||'').toLowerCase();
+      return dn===bn||dn===bc||dc===bc||dc===bn;
+    });
+    sesB=sesB.filter(function(s){
+      var dn=(s.docente||'').toLowerCase();
+      var dc=(s.docenteCodigo||'').toLowerCase();
+      return dn===bn||dn===bc||dc===bc||dc===bn;
+    });
   }
   const t=evB.length+sesB.length;
   const b=g('sbBadge');if(b){b.textContent=t;b.style.display=t?'':'none';}
@@ -5880,6 +5925,7 @@ async function guardarHC(catId, pacId, modo){
   if(!nombre||!dni){toast('Nombre y DNI son requeridos','','warn');return;}
   // Validar docente si es estudiante
   const docenteHC=g('hcDoc')?.value||g('hcDocInput')?.value||'';
+  const docenteHCCodigo=g('hcDocCodigo')?.value||'';
   if(session.rol==='estudiante'&&!docenteHC){toast('⚠️ Debes seleccionar un docente supervisor','Es obligatorio para guardar la evaluación','warn');return;}
 
   // Leer campos comunes
@@ -6048,7 +6094,7 @@ async function guardarHC(catId, pacId, modo){
   const estado=modo==='borrador'?'borrador':(session.rol==='estudiante'?'pendiente':'aprobada');
   const evalIdExistente=g('hcEvalId')?.value||'';
   const payloadEval={action:'guardarEvaluacion',pacienteId:idPac,categoriaId:catId,
-    tipo:'inicial',estado,docente:docenteHC,dxFisio:datos.dxFisio,aptaPatron:'',datosEspecificos:datos};
+    tipo:'inicial',estado,docente:docenteHC,docenteCodigo:docenteHCCodigo,dxFisio:datos.dxFisio,aptaPatron:'',datosEspecificos:datos};
   if(evalIdExistente) payloadEval.id=evalIdExistente;
   const rEval=await apiPost(payloadEval);
   if(!rEval.ok){toast('Error al guardar evaluación',rEval.error,'err');return;}
@@ -6117,8 +6163,14 @@ function iniciarPollingPendientes(){
       var evP=r.evaluaciones||[],sesP=r.sesiones||[];
       if(session.rol==='docente'){
         var myn=(session.nombre||'').toLowerCase(),myc=(session.codigo||'').toLowerCase();
-        evP=evP.filter(function(e){var d=(e.docente||'').toLowerCase();return d===myn||d===myc;});
-        sesP=sesP.filter(function(s){var d=(s.docente||'').toLowerCase();return d===myn||d===myc;});
+        evP=evP.filter(function(e){
+          var dn=(e.docente||'').toLowerCase(),dc=(e.docenteCodigo||'').toLowerCase();
+          return dn===myn||dn===myc||dc===myc||dc===myn;
+        });
+        sesP=sesP.filter(function(s){
+          var dn=(s.docente||'').toLowerCase(),dc=(s.docenteCodigo||'').toLowerCase();
+          return dn===myn||dn===myc||dc===myc||dc===myn;
+        });
       }
       var tot=evP.length+sesP.length;
       var b=g('sbBadge');
