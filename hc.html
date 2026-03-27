@@ -731,15 +731,34 @@ function _buildExamenObjetivoPorCategoria(d, ev, catId){
 
   } else if(catId === 'neuro_adultos'){
     h += '<div class="sec-body">'
+      + _fld2('Diagnóstico médico', d.dxNeuroMedico||d.dxMedico)
+      + _fld2('Tipo de condición', d.tipoCondicionNeuro)
+      + _fld2('Tiempo de evolución', d.tiempoEvolucionNeuro)
+      + _fld2('Lado afectado', d.ladoAfectadoNeuro)
+      + _fld2('Clasificación funcional', d.clasificacionFuncional)
+      + _fld2('Dolor neurológico', d.dolorNeuro)
+      + _fld2('EVA dolor neurológico', d.evaNeuroDolor!==undefined&&d.evaNeuroDolor!==''?d.evaNeuroDolor+'/10':'')
+      + (d.historiaCondicion?'<div style="grid-column:1/-1"><div class="field-lbl">Historia de la condición</div><div class="field-val">'+e2(d.historiaCondicion)+'</div></div>':'')
       + _fld2('Nivel de conciencia', d.nConciencia) + _fld2('Lateralidad', d.lateralidad)
       + _fld2('Orientación', d.orientacion) + _fld2('Comunicación', d.comunicacion)
+      + _fld2('Memoria', d.memoria) + _fld2('Atención', d.atencion)
       + _fld2('Tono MMSS D', d.tono_MMSS_D) + _fld2('Tono MMSS I', d.tono_MMSS_I)
       + _fld2('Tono MMII D', d.tono_MMII_D) + _fld2('Tono MMII I', d.tono_MMII_I)
-      + _fld2('Fuerza MMSS D', d.fuerza_MMSS_D) + _fld2('Fuerza MMII D', d.fuerza_MMII_D)
-      + _fld2('Babinski', d.babinski) + _fld2('Coordinación', d.coordinacion)
-      + _fld2('Tipo de marcha', d.tipoMarcha) + _fld2('Patrón marcha', d.patronMarcha)
-      + _fld2('Transferencia cama↔silla', d.transferenciaCS)
-            + '</div>';
+      + _fld2('Fuerza MMSS D', d.fuerza_MMSS_D) + _fld2('Fuerza MMSS I', d.fuerza_MMSS_I)
+      + _fld2('Fuerza MMII D', d.fuerza_MMII_D) + _fld2('Fuerza MMII I', d.fuerza_MMII_I)
+      + _fld2('Reflejos OT', d.reflejos) + _fld2('Babinski', d.babinski) + _fld2('Clonus', d.clonus)
+      + _fld2('Coordinación', d.coordinacion) + _fld2('Movimientos involuntarios', d.movInvoluntarios)
+      + _fld2('Sensibilidad táctil', d.sensTactil) + _fld2('Propiocepción', d.propiocepccion)
+      + _fld2('Zona afectada', d.zonaAfectada)
+      + _fld2('Control cefálico', d.controlCefal) + _fld2('Control de tronco', d.controlTronco)
+      + _fld2('Equilibrio estático', d.eqEstatico) + _fld2('Equilibrio dinámico', d.eqDinamico)
+      + _fld2('Tipo de marcha', d.tipoMarcha) + _fld2('Patrón de marcha', d.patronMarcha)
+      + _fld2('Ayuda técnica', d.ayudaTecnica)
+      + _fld2('Transferencia cama↔silla', d.transferenciaCS) + _fld2('Transferencia sentado↔pie', d.transferenciaSP)
+      + (d.marchaDescripcion?'<div style="grid-column:1/-1"><div class="field-lbl">Descripción marcha</div><div class="field-val">'+e2(d.marchaDescripcion)+'</div></div>':'')
+      + (d.avdBasicasAfect?'<div style="grid-column:1/-1"><div class="field-lbl">AVD básicas afectadas</div><div class="field-val">'+e2(d.avdBasicasAfect)+'</div></div>':'')
+      + (d.avdInstAfect?'<div style="grid-column:1/-1"><div class="field-lbl">AVD instrumentales afectadas</div><div class="field-val">'+e2(d.avdInstAfect)+'</div></div>':'')
+      + '</div>';
 
   } else if(catId === 'neuro_pediatrica'){
     h += '<div class="sec-body">'
@@ -1702,10 +1721,26 @@ function _buildDetalleExamenPorCategoria(d, ev, catId) {
     if (d.pruebas) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">PRUEBAS</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">' + e2(d.pruebas) + '</div></div>';
 
   } else if (catId === 'neuro_adultos') {
+    // Historia neurológica
+    h += fld('Diagnóstico médico', d.dxNeuroMedico||d.dxMedico);
+    h += fld('Tipo de condición', d.tipoCondicionNeuro);
+    h += fld('Tiempo de evolución', d.tiempoEvolucionNeuro);
+    h += fld('Lado afectado', d.ladoAfectadoNeuro);
+    h += fld('Clasificación funcional', d.clasificacionFuncional);
+    h += fld('Dolor neurológico', d.dolorNeuro);
+    if(d.evaNeuroDolor!==undefined && d.evaNeuroDolor!==null && d.evaNeuroDolor!=='')
+      h += fld('EVA dolor neurológico', d.evaNeuroDolor+'/10');
+    if(d.historiaCondicion) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">HISTORIA DE LA CONDICIÓN</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.historiaCondicion)+'</div></div>';
+    if(d.antecedentesNeuro) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">ANTECEDENTES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.antecedentesNeuro)+'</div></div>';
+    // Estado cognitivo
     h += fld('Nivel de conciencia', d.nConciencia);
     h += fld('Lateralidad', d.lateralidad);
     h += fld('Orientación', d.orientacion);
     h += fld('Comunicación', d.comunicacion);
+    h += fld('Memoria', d.memoria);
+    h += fld('Atención', d.atencion);
+    if(d.obsCognitivo) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBS. COGNITIVO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.obsCognitivo)+'</div></div>';
+    // Motor
     h += fld('Tono MMSS D', d.tono_MMSS_D);
     h += fld('Tono MMSS I', d.tono_MMSS_I);
     h += fld('Tono MMII D', d.tono_MMII_D);
@@ -1714,12 +1749,32 @@ function _buildDetalleExamenPorCategoria(d, ev, catId) {
     h += fld('Fuerza MMSS I', d.fuerza_MMSS_I);
     h += fld('Fuerza MMII D', d.fuerza_MMII_D);
     h += fld('Fuerza MMII I', d.fuerza_MMII_I);
+    h += fld('Reflejos OT', d.reflejos);
     h += fld('Babinski', d.babinski);
+    h += fld('Clonus', d.clonus);
     h += fld('Coordinación', d.coordinacion);
-    h += fld('Tipo marcha', d.tipoMarcha);
-    h += fld('Patrón marcha', d.patronMarcha);
+    h += fld('Movimientos involuntarios', d.movInvoluntarios);
+    if(d.obsMotor) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBS. MOTOR</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.obsMotor)+'</div></div>';
+    // Sensibilidad
+    h += fld('Sensibilidad táctil', d.sensTactil);
+    h += fld('Sensibilidad dolorosa', d.sensDolor);
+    h += fld('Sensibilidad térmica', d.sensTermica);
+    h += fld('Propiocepción', d.propiocepccion);
+    h += fld('Zona afectada', d.zonaAfectada);
+    // Control postural y marcha
+    h += fld('Control cefálico', d.controlCefal);
+    h += fld('Control de tronco', d.controlTronco);
+    h += fld('Equilibrio estático', d.eqEstatico);
+    h += fld('Equilibrio dinámico', d.eqDinamico);
+    h += fld('Tipo de marcha', d.tipoMarcha);
+    h += fld('Patrón de marcha', d.patronMarcha);
+    h += fld('Ayuda técnica', d.ayudaTecnica);
     h += fld('Transferencia cama↔silla', d.transferenciaCS);
-    if (d.obsMotor) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBS. MOTOR</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">' + e2(d.obsMotor) + '</div></div>';
+    h += fld('Transferencia sentado↔pie', d.transferenciaSP);
+    if(d.marchaDescripcion) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">DESCRIPCIÓN MARCHA</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.marchaDescripcion)+'</div></div>';
+    // AVD
+    if(d.avdBasicasAfect) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">AVD BÁSICAS AFECTADAS</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.avdBasicasAfect)+'</div></div>';
+    if(d.avdInstAfect) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">AVD INSTRUMENTALES AFECTADAS</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.avdInstAfect)+'</div></div>';
 
   } else if (catId === 'neuro_pediatrica') {
     h += fld('Tipo parto', d.tipoParto);
@@ -2561,16 +2616,10 @@ function plantillaHTML(catId, pac){
     secciones += secNeuroAdultos(d);
   } else if(catId === 'neuro_pediatrica'){
     secciones += secNeuroPediatrica(d);
-   } else if(catId === 'cardiorespiratorio'){
+  } else if(catId === 'cardiorespiratorio'){
     secciones += secCardiorespiratorio(d);
-  } else if(catId === 'geriatria'){
-    secciones += secWrap('examen_gen','III. Examen objetivo','🔬',`
-      <div class="form-grid">
-        <div class="field form-full"><label>Hallazgos del examen objetivo</label>
-          <textarea class="ta" id="examObjetivo" rows="5"
-            placeholder="Describe los hallazgos del examen físico..."
-            >${e2(d.examObjetivo||'')}</textarea></div>
-      </div>`,true);
+  } else if(catId === 'postural'){
+    secciones += secPostural(d);
   }
 
   secciones += secPlanTratamiento(d);
@@ -2673,7 +2722,7 @@ const FUERZA_GRP = {
 };
 
 // ══════════════════════════════════════════════════════════════
-// PRUEBAS FUNCIONALES POR SEGMENTO (Traumatología + Reumatología)
+// PRUEBAS FUNCIONALES POR SEGMENTO (Neuromusculoesquelética + Reumatología)
 // ══════════════════════════════════════════════════════════════
 const PRUEBAS_POR_REGION = {
   // ── HOMBRO ─────────────────────────────────────────────────
@@ -3103,7 +3152,7 @@ function mkFuerzaRows(sel, fData){
 
 function secTrauma(d){
   const sel=d.regiones||[];
-  return secWrap('trauma','III. Examen objetivo — Fisioterapia Traumatológica','🦴',`
+  return secWrap('trauma','III. Examen objetivo — Fisioterapia Neuromusculoesquelética','🦴',`
     <div style="margin-bottom:16px">
       <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px">Regiones afectadas</label>
       <div style="position:relative;margin-bottom:8px">
@@ -3205,101 +3254,101 @@ const ESCALAS_CATALOGO = [
   // ── CARDIORRESPIRATORIO ──────────────────────────────────
 
   { id:'mrc_disnea', nombre:'MRC — Escala de disnea', desc:'Gradúa la disnea en actividades cotidianas en 5 niveles (0-4).',
-    dominio:'Respiratorio', cats:['cardiorespiratorio','geriatria'], ped:false,
+    dominio:'Respiratorio', cats:['cardiorespiratorio','geriatria','postural'], ped:false,
     render: renderEscalaMRC, calcular: calcularMRC },
 
   { id:'nyha', nombre:'NYHA — Clase funcional cardíaca', desc:'Clasifica la limitación funcional por insuficiencia cardíaca en 4 clases.',
-    dominio:'Cardíaco', cats:['cardiorespiratorio','geriatria'], ped:false,
+    dominio:'Cardíaco', cats:['cardiorespiratorio','geriatria','postural'], ped:false,
     render: renderEscalaNYHA, calcular: calcularNYHA },
 
   // ── GERIÁTRICA ───────────────────────────────────────────
 
   { id:'lawton', nombre:'Índice de Lawton-Brody', desc:'Evalúa independencia en AVD instrumentales. 8 ítems, máximo 8 pts.',
-    dominio:'AVD Instrumentales', cats:['geriatria'], ped:false,
+    dominio:'AVD Instrumentales', cats:['traumatologia','postural','geriatria'], ped:false,
     render: renderEscalaLawton, calcular: calcularLawton },
 
   { id:'sppb', nombre:'SPPB — Short Physical Performance Battery', desc:'3 subtest: equilibrio, velocidad de marcha y Sit-to-Stand. Máximo 12 pts.',
-    dominio:'Rendimiento físico', cats:['geriatria'], ped:false,
+    dominio:'Rendimiento físico', cats:['traumatologia','postural','geriatria'], ped:false,
     render: renderEscalaSPPB, calcular: calcularSPPB },
 
   { id:'tinetti', nombre:'Tinetti — Marcha y Equilibrio', desc:'Evalúa equilibrio (16 pts) y marcha (12 pts). Total 28 pts.',
-    dominio:'Marcha/Equilibrio', cats:['geriatria','neuro_adultos'], ped:false,
+    dominio:'Marcha/Equilibrio', cats:['traumatologia','postural','geriatria','neuro_adultos'], ped:false,
     render: renderEscalaTinetti, calcular: calcularTinetti },
 
   { id:'fesi', nombre:'FES-I — Miedo a caer', desc:'Evalúa la preocupación por caídas en 16 actividades (16-64 pts).',
-    dominio:'Psicosocial', cats:['geriatria'], ped:false,
+    dominio:'Psicosocial', cats:['traumatologia','postural','geriatria'], ped:false,
     render: renderEscalaFESI, calcular: calcularFESI },
 
   { id:'mmse', nombre:'MMSE — Mini Mental State', desc:'Evalúa estado cognitivo global. 30 preguntas, máximo 30 pts.',
-    dominio:'Cognitivo', cats:['geriatria'], ped:false,
+    dominio:'Cognitivo', cats:['traumatologia','postural','geriatria'], ped:false,
     render: renderEscalaMMSE, calcular: calcularMMSE },
 
   { id:'mna', nombre:'MNA Breve — Nutricional', desc:'Cribado nutricional rápido. 6 ítems, máximo 14 pts.',
-    dominio:'Nutricional', cats:['geriatria'], ped:false,
+    dominio:'Nutricional', cats:['traumatologia','postural','geriatria'], ped:false,
     render: renderEscalaMNA, calcular: calcularMNA },
 
   { id:'fried', nombre:'Criterios de Fried — Fragilidad', desc:'5 criterios de fragilidad. Clasifica en robusto, pre-frágil o frágil.',
-    dominio:'Fragilidad', cats:['geriatria'], ped:false,
+    dominio:'Fragilidad', cats:['traumatologia','postural','geriatria'], ped:false,
     render: renderEscalaFried, calcular: calcularFried },
 
   // ── NEURO ADULTOS ────────────────────────────────────────
 
   { id:'tardieu', nombre:'Escala de Tardieu', desc:'Evalúa espasticidad considerando velocidad del estiramiento. Por segmento.',
-    dominio:'Espasticidad', cats:['neuro_adultos'], ped:true,
+    dominio:'Espasticidad', cats:['neuro_adultos','postural'], ped:true,
     render: renderEscalaTardieu, calcular: calcularTardieu },
 
   // ── TRAUMATOLOGÍA ────────────────────────────────────────
 
   { id:'dash', nombre:'DASH — Miembro Superior', desc:'Discapacidad del brazo, hombro y mano. 30 ítems, 0-100 pts (mayor = peor).',
-    dominio:'MMSS', cats:['traumatologia'], ped:false,
+    dominio:'MMSS', cats:['traumatologia','postural'], ped:false,
     render: renderEscalaDASH, calcular: calcularDASH },
 
   { id:'quickdash', nombre:'QuickDASH', desc:'Versión breve del DASH. 11 ítems, 0-100 pts.',
-    dominio:'MMSS', cats:['traumatologia'], ped:false,
+    dominio:'MMSS', cats:['traumatologia','postural'], ped:false,
     render: renderEscalaQuickDASH, calcular: calcularQuickDASH },
 
   { id:'womac', nombre:'WOMAC — Cadera/Rodilla', desc:'Evalúa dolor, rigidez y función en cadera o rodilla. 24 ítems, 3 subescalas.',
-    dominio:'Cadera/Rodilla', cats:['traumatologia'], ped:false,
+    dominio:'Cadera/Rodilla', cats:['traumatologia','postural'], ped:false,
     render: renderEscalaWOMAC, calcular: calcularWOMAC },
 
   { id:'koos', nombre:'KOOS — Rodilla', desc:'5 subescalas para rodilla: síntomas, dolor, AVD, deporte y calidad de vida.',
-    dominio:'Rodilla', cats:['traumatologia'], ped:false,
+    dominio:'Rodilla', cats:['traumatologia','postural'], ped:false,
     render: renderEscalaKOOS, calcular: calcularKOOS },
 
   { id:'hoos', nombre:'HOOS — Cadera', desc:'5 subescalas para cadera: síntomas, dolor, AVD, deporte y calidad de vida.',
-    dominio:'Cadera', cats:['traumatologia'], ped:false,
+    dominio:'Cadera', cats:['traumatologia','postural'], ped:false,
     render: renderEscalaHOOS, calcular: calcularHOOS },
 
   { id:'constant', nombre:'Constant-Murley — Hombro', desc:'Evalúa función del hombro: dolor, AVD, movilidad y fuerza. Máximo 100 pts.',
-    dominio:'Hombro', cats:['traumatologia'], ped:false,
+    dominio:'Hombro', cats:['traumatologia','postural'], ped:false,
     render: renderEscalaConstant, calcular: calcularConstant },
 
   { id:'lysholm', nombre:'Lysholm — Rodilla/Ligamentos', desc:'8 ítems para función de rodilla. 0-100 pts (mayor = mejor).',
-    dominio:'Rodilla', cats:['traumatologia'], ped:false,
+    dominio:'Rodilla', cats:['traumatologia','postural'], ped:false,
     render: renderEscalaLysholm, calcular: calcularLysholm },
 
   { id:'visap', nombre:'VISA-P — Tendón Patelar', desc:'Evalúa severidad de tendinopatía patelar. 8 ítems, 0-100 pts.',
-    dominio:'Tendón', cats:['traumatologia'], ped:false,
+    dominio:'Tendón', cats:['traumatologia','postural'], ped:false,
     render: renderEscalaVISAP, calcular: calcularVISAP },
 
   { id:'visaa', nombre:'VISA-A — Tendón Aquiles', desc:'Evalúa severidad de tendinopatía aquílea. 8 ítems, 0-100 pts.',
-    dominio:'Tendón', cats:['traumatologia'], ped:false,
+    dominio:'Tendón', cats:['traumatologia','postural'], ped:false,
     render: renderEscalaVISAA, calcular: calcularVISAA },
 
   { id:'faam', nombre:'FAAM — Tobillo/Pie', desc:'Función del tobillo y pie. 2 subescalas: AVD y deporte.',
-    dominio:'Tobillo/Pie', cats:['traumatologia'], ped:false,
+    dominio:'Tobillo/Pie', cats:['traumatologia','postural'], ped:false,
     render: renderEscalaFAAM, calcular: calcularFAAM },
 
   { id:'ndi', nombre:'NDI — Índice de Discapacidad Cervical', desc:'10 ítems para discapacidad cervical. 0-50 pts (mayor = peor).',
-    dominio:'Columna cervical', cats:['traumatologia'], ped:false,
+    dominio:'Columna cervical', cats:['traumatologia','postural'], ped:false,
     render: renderEscalaNDI, calcular: calcularNDI },
 
   { id:'oswestry', nombre:'Oswestry — Columna Lumbar', desc:'10 ítems para discapacidad lumbar. Resultado en porcentaje.',
-    dominio:'Columna lumbar', cats:['traumatologia'], ped:false,
+    dominio:'Columna lumbar', cats:['traumatologia','postural'], ped:false,
     render: renderEscalaOswestry, calcular: calcularOswestry },
 
   { id:'tampa', nombre:'Tampa Scale — Kinesiofobia', desc:'17 ítems. Evalúa miedo al movimiento/relesión. 17-68 pts.',
-    dominio:'Psicosocial', cats:['traumatologia'], ped:false,
+    dominio:'Psicosocial', cats:['traumatologia','postural'], ped:false,
     render: renderEscalaTampa, calcular: calcularTampa },
 
   // ── PEDIÁTRICA ───────────────────────────────────────────
@@ -5573,7 +5622,8 @@ function secDiagnosticoPostural(d){
 }
 
 function secNeuroAdultos(d){
-  return secEstadoCognitivoCom(d)
+  return secHistoriaNeuro(d)
+       + secEstadoCognitivoCom(d)
        + secExamenMotorNeuro(d)
        + secSensibilidadNeuro(d)
        + secControlPosturalNeuro(d)
@@ -5581,8 +5631,60 @@ function secNeuroAdultos(d){
        + secAVDNeuro(d)
 }
 
+function secHistoriaNeuro(d){
+  return secWrap('historia_neuro','III. Historia clínica neurológica','📋',`
+    <div class="form-grid">
+      <div class="field form-full"><label>Diagnóstico médico (CIE-10)</label>
+        <input class="inp" id="dxNeuroMedico" value="${e2(d.dxNeuroMedico||d.dxMedico||'')}"
+          placeholder="Ej. ACV isquémico, Parkinson, TEC, EM, SGB..."></div>
+      <div class="field"><label>Tipo de condición</label>
+        <select class="sel" id="tipoCondicionNeuro">
+          <option value="">—</option>
+          ${['ACV isquémico','ACV hemorrágico','Traumatismo craneoencefálico','Lesión medular completa','Lesión medular incompleta',
+             'Parkinson','Esclerosis múltiple','Esclerosis lateral amiotrófica','Síndrome de Guillain-Barré',
+             'Parálisis cerebral','Polineuropatía','Otra'].map(v=>`<option ${d.tipoCondicionNeuro===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Tiempo de evolución</label>
+        <select class="sel" id="tiempoEvolucionNeuro">
+          <option value="">—</option>
+          ${['Agudo (< 1 mes)','Subagudo (1-3 meses)','Crónico (> 3 meses)'].map(v=>`<option ${d.tiempoEvolucionNeuro===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Lado afectado</label>
+        <select class="sel" id="ladoAfectadoNeuro">
+          <option value="">—</option>
+          ${['Derecho','Izquierdo','Bilateral','No aplica'].map(v=>`<option ${d.ladoAfectadoNeuro===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Clasificación funcional</label>
+        <select class="sel" id="clasificacionFuncional">
+          <option value="">—</option>
+          ${['NIHSS 0-4 (leve)','NIHSS 5-15 (moderado)','NIHSS 16-20 (moderado-grave)','NIHSS > 20 (grave)',
+             'ASIA A','ASIA B','ASIA C','ASIA D','ASIA E','Hoehn & Yahr I','Hoehn & Yahr II','Hoehn & Yahr III','Hoehn & Yahr IV','Hoehn & Yahr V',
+             'EDSS < 4','EDSS 4-6','EDSS > 6','Otra escala'].map(v=>`<option ${d.clasificacionFuncional===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Dolor neurológico</label>
+        <select class="sel" id="dolorNeuro">
+          <option value="">—</option>
+          ${['Ausente','Espasticidad dolorosa','Dolor central post-ACV','Dolor neuropático','Alodinia','Disestesias','Cefalea'].map(v=>`<option ${d.dolorNeuro===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>EVA — Dolor neurológico (0-10)</label>
+        <div class="eva-wrap" style="margin-top:6px">
+          <div class="eva-track" style="position:relative">
+            <input type="range" class="eva-sl" id="evaNeuroDolor" min="0" max="10" step="1"
+              value="${d.evaNeuroDolor??0}" oninput="g('evaNeuDolorD').textContent=this.value">
+          </div>
+          <div class="eva-val" id="evaNeuDolorD">${d.evaNeuroDolor??0}</div>
+        </div></div>
+      <div class="field form-full"><label>Historia de la condición actual</label>
+        <textarea class="ta" id="historiaCondicion" rows="3"
+          placeholder="Descripción del evento, mecanismo de lesión, evolución, tratamientos previos...">${e2(d.historiaCondicion||d.antecedentes||'')}</textarea></div>
+      <div class="field form-full"><label>Antecedentes relevantes</label>
+        <textarea class="ta" id="antecedentesNeuro" rows="2"
+          placeholder="Antecedentes médicos, quirúrgicos, farmacológicos...">${e2(d.antecedentesNeuro||'')}</textarea></div>
+    </div>`,true);
+}
+
 function secEstadoCognitivoCom(d){
-  return secWrap('cognitivo','III. Estado cognitivo y comunicación','🧠',`
+  return secWrap('cognitivo','IV. Estado cognitivo y comunicación','🧠',`
     <div class="form-grid">
       <div class="field"><label>Nivel de conciencia</label>
         <select class="sel" id="nConciencia">
@@ -5624,7 +5726,7 @@ function secExamenMotorNeuro(d){
   const tono=['Normal','Hipotonía leve','Hipotonía moderada','Hipotonía grave','Hipertonía leve','Espasticidad leve','Espasticidad moderada','Espasticidad grave','Rigidez'];
   const mrc=['0 — Sin contracción','1 — Contracción visible sin movimiento','2 — Movimiento sin gravedad','3 — Vence gravedad','4 — Vence resistencia parcial','5 — Fuerza normal'];
   const reflejos=['Normal (++)','Aumentado (+++)','Vivo (++++  )','Disminuido (+)','Abolido (0)'];
-  return secWrap('motor_neuro','IV. Examen motor','💪',`
+  return secWrap('motor_neuro','V. Examen motor','💪',`
     <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Tono muscular — Ashworth Modificada por segmento</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:14px">
       ${segmentos.map(seg=>`<div class="field"><label>${seg}</label>
@@ -5673,7 +5775,7 @@ function secExamenMotorNeuro(d){
 }
 
 function secSensibilidadNeuro(d){
-  return secWrap('sensibilidad','V. Sensibilidad','🔍',`
+  return secWrap('sensibilidad','VI. Sensibilidad','🔍',`
     <div class="form-grid">
       <div class="field"><label>Sensibilidad táctil</label>
         <select class="sel" id="sensTactil">
@@ -5706,7 +5808,7 @@ function secSensibilidadNeuro(d){
 }
 
 function secControlPosturalNeuro(d){
-  return secWrap('postural_neuro','VI. Control postural y equilibrio','⚖️',`
+  return secWrap('postural_neuro','VII. Control postural y equilibrio','⚖️',`
     <div class="form-grid">
       <div class="field"><label>Control cefálico</label>
         <select class="sel" id="controlCefal">
@@ -5737,7 +5839,7 @@ function secControlPosturalNeuro(d){
 }
 
 function secMarchaTransferencias(d){
-  return secWrap('marcha_neuro','VII. Marcha y transferencias','🚶',`
+  return secWrap('marcha_neuro','VIII. Marcha y transferencias','🚶',`
     <div class="form-grid">
       <div class="field"><label>Tipo de marcha</label>
         <select class="sel" id="tipoMarcha">
@@ -5775,7 +5877,7 @@ function secMarchaTransferencias(d){
 }
 
 function secAVDNeuro(d){
-  return secWrap('avd_neuro','VIII. Actividades de la vida diaria','🏠',`
+  return secWrap('avd_neuro','IX. Actividades de la vida diaria','🏠',`
     <div class="form-grid">
       <div class="field form-full"><label>AVD básicas afectadas</label>
         <textarea class="ta" id="avdBasicasAfect" rows="2" placeholder="Alimentación, higiene, vestido, continencia...">${e2(d.avdBasicasAfect||'')}</textarea></div>
@@ -6182,14 +6284,25 @@ async function guardarHC(catId, pacId, modo){
 
   // Leer campos comunes
   const datosNeuro = catId==='neuro_adultos' ? {
+    // Historia neurológica
+    dxNeuroMedico:v('dxNeuroMedico'),tipoCondicionNeuro:v('tipoCondicionNeuro'),tiempoEvolucionNeuro:v('tiempoEvolucionNeuro'),
+    ladoAfectadoNeuro:v('ladoAfectadoNeuro'),clasificacionFuncional:v('clasificacionFuncional'),
+    dolorNeuro:v('dolorNeuro'),evaNeuroDolor:g('evaNeuroDolor')?Number(g('evaNeuroDolor').value):0,
+    historiaCondicion:v('historiaCondicion'),antecedentesNeuro:v('antecedentesNeuro'),
+    // Estado cognitivo
     nConciencia:v('nConciencia'),lateralidad:v('lateralidad'),orientacion:v('orientacion'),
     comunicacion:v('comunicacion'),memoria:v('memoria'),atencion:v('atencion'),obsCognitivo:v('obsCognitivo'),
+    // Motor
     tono_MMSS_D:v('tono_MMSS_D'),tono_MMSS_I:v('tono_MMSS_I'),tono_MMII_D:v('tono_MMII_D'),tono_MMII_I:v('tono_MMII_I'),
     fuerza_MMSS_D:v('fuerza_MMSS_D'),fuerza_MMSS_I:v('fuerza_MMSS_I'),fuerza_MMII_D:v('fuerza_MMII_D'),fuerza_MMII_I:v('fuerza_MMII_I'),
     reflejos:v('reflejos'),babinski:v('babinski'),clonus:v('clonus'),coordinacion:v('coordinacion'),movInvoluntarios:v('movInvoluntarios'),obsMotor:v('obsMotor'),
+    // Sensibilidad
     sensTactil:v('sensTactil'),sensDolor:v('sensDolor'),sensTermica:v('sensTermica'),propiocepccion:v('propiocepccion'),zonaAfectada:v('zonaAfectada'),obsSensibilidad:v('obsSensibilidad'),
+    // Control postural
     controlCefal:v('controlCefal'),controlTronco:v('controlTronco'),eqEstatico:v('eqEstatico'),eqDinamico:v('eqDinamico'),obsPostural:v('obsPostural'),
-    tipoMarcha:v('tipoMarcha'),patronMarcha:v('patronMarcha'),ayudaTecnica:v('ayudaTecnica'),transferenciaCS:v('transferenciaCS'),transferenciaSP:v('transferenciaSP'),obsMarcha:v('obsMarcha'),
+    // Marcha
+    tipoMarcha:v('tipoMarcha'),patronMarcha:v('patronMarcha'),ayudaTecnica:v('ayudaTecnica'),transferenciaCS:v('transferenciaCS'),transferenciaSP:v('transferenciaSP'),obsMarcha:v('obsMarcha'),marchaDescripcion:v('marchaDescripcion'),
+    // AVD
     avdBasicasAfect:v('avdBasicasAfect'),avdInstAfect:v('avdInstAfect'),
     cifDeterioro:v('cifDeterioro'),cifActividad:v('cifActividad'),cifParticipacion:v('cifParticipacion'),cifContextual:v('cifContextual'),
   } : {};
