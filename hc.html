@@ -591,7 +591,7 @@ function exportarDocumento(titulo, bodyHTML){
     +'<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">'
     +'</head><body>'
     +'<div class="doc-header"><div><div class="doc-logo">CEN<span>TYR</span></div><div class="doc-subtitle">Historia Cl&iacute;nica Fisioterapia</div></div>'
-    +'<div style="text-align:right;font-size:10px;color:#64748b">Generado: '+new Date().toLocaleDateString('es-PE')+'</div>'
+    +'<div style="text-align:right;font-size:10px;color:#64748b">Generado: '+(function(){var n=new Date();var dd=String(n.getDate()).padStart(2,'0');var mm=String(n.getMonth()+1).padStart(2,'0');var yy=String(n.getFullYear()).slice(-2);var h=n.getHours();var mi=String(n.getMinutes()).padStart(2,'0');var ap=h>=12?'PM':'AM';h=h%12||12;return dd+'/'+mm+'/'+yy+' '+h+':'+mi+' '+ap;})()+'</div>'
     +'</div>'
     +bodyHTML
     +'</body></html>');
@@ -675,8 +675,7 @@ function _buildExamenObjetivoPorCategoria(d, ev, catId){
       + _fld2('Babinski', d.babinski) + _fld2('Coordinación', d.coordinacion)
       + _fld2('Tipo de marcha', d.tipoMarcha) + _fld2('Patrón marcha', d.patronMarcha)
       + _fld2('Transferencia cama↔silla', d.transferenciaCS)
-      + (d.cifDeterioro ? '<div style="grid-column:1/-1">' + _fld2('CIF — Deterioro', d.cifDeterioro) + '</div>' : '')
-      + '</div>';
+            + '</div>';
 
   } else if(catId === 'neuro_pediatrica'){
     h += '<div class="sec-body">'
@@ -1706,7 +1705,7 @@ async function abrirFrmEval(pacId, evalId, catId){
     <!-- Diagnóstico APTA -->
     <div class="hc-sec">
       <div class="hc-sec-hdr" onclick="toggleSec('dxA')">
-        <div class="hc-sec-title">🏥 Diagnóstico Fisioterapéutico (APTA / CIF)</div>
+        <div class="hc-sec-title">🏥 Diagnóstico Fisioterapéutico (APTA)</div>
         <span class="chv" id="chvDxA">▼</span>
       </div>
       <div class="hc-sec-body" id="dxA">
@@ -1718,12 +1717,7 @@ async function abrirFrmEval(pacId, evalId, catId){
             </select></div>
           <div class="field form-full"><label>Diagnóstico fisioterapéutico</label>
             <textarea class="ta" id="dxFT" rows="3" placeholder="Descripción del diagnóstico fisioterapéutico...">${e2(ev?.dxFisio||'')}</textarea></div>
-          <div class="field form-full"><label>CIF — Deterioro de funciones/estructuras</label>
-            <textarea class="ta" id="cifD" rows="2" placeholder="Ej. b710 Movilidad articular...">${e2(ev?.icfDeterioro||'')}</textarea></div>
-          <div class="field form-full"><label>CIF — Limitación de actividad</label>
-            <textarea class="ta" id="cifA" rows="2" placeholder="Ej. d450 Andar...">${e2(ev?.icfActividad||'')}</textarea></div>
-          <div class="field form-full"><label>CIF — Restricción de participación</label>
-            <textarea class="ta" id="cifP" rows="2" placeholder="Ej. d850 Trabajo remunerado...">${e2(ev?.icfParticipacion||'')}</textarea></div>
+
           <div class="field form-full"><label>Pronóstico</label>
             <textarea class="ta" id="pronost" rows="2" placeholder="Pronóstico funcional...">${e2(ev?.pronostico||'')}</textarea></div>
         </div>
@@ -2450,6 +2444,10 @@ const ESCALAS_CATALOGO = [
   { id:'weefim', nombre:'WeeFIM — Medida de Independencia', desc:'18 ítems funcionales adaptados a niños. Máximo 126 pts.',
     dominio:'Funcional pediátrico', cats:['neuro_pediatrica'], ped:true, pedOnly:true,
     render: renderEscalaWeeFIM, calcular: calcularWeeFIM },
+
+  { id:'aims', nombre:'Escala de Desarrollo Motor Infantil de Alberta (AIMS)', desc:'Evaluación observacional del desarrollo motor en 4 posiciones: prono, supino, sedestación y bipedestación.',
+    dominio:'Desarrollo Motor', cats:'all', ped:true,
+    render: renderEscalaAIMS, calcular: calcularAIMS },
 ];
 
 
@@ -3199,6 +3197,33 @@ function calcularFried(id){
   return {puntaje:suma+'/5 criterios',puntajeRaw:suma,interpretacion:interp,color:suma===0?'var(--green)':suma<=2?'var(--amber)':'var(--red)'};
 }
 
+
+// ── AIMS — Alberta Infant Motor Scale ────────────────────────
+function renderEscalaAIMS(d){
+  var items_d = d&&d.items ? d.items : {};
+  var posiciones = [
+    {key:'prono', label:'Prono', placeholder:'Observaciones en posición prono: control cefálico, apoyo en antebrazos, extensión de caderas, propulsión...'},
+    {key:'supino', label:'Supino', placeholder:'Observaciones en posición supino: control de cabeza, movimientos de MMII, volteo, puente...'},
+    {key:'sedestacion', label:'Sedestación', placeholder:'Observaciones en sedestación: control de tronco, apoyo de manos, equilibrio, transiciones...'},
+    {key:'bipedestacion', label:'Bipedestación', placeholder:'Observaciones en bipedestación: apoyo plantar, equilibrio, inicio de marcha, transferencia de peso...'},
+  ];
+  var html = '<div style="display:grid;gap:10px">';
+  posiciones.forEach(function(pos){
+    html += '<div style="padding:12px;background:var(--surf);border-radius:10px;border:1px solid var(--bd)">';
+    html += '<div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:6px">📋 ' + pos.label + '</div>';
+    html += '<textarea class="ta" data-escala-item="' + pos.key + '" rows="3" placeholder="' + pos.placeholder + '" style="font-size:12px;min-height:70px" oninput="recalcularEscala('aims')">' + e2(items_d[pos.key]||'') + '</textarea>';
+    html += '</div>';
+  });
+  return html + '</div>';
+}
+function calcularAIMS(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var count=0;
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){if(el.value&&el.value.trim()!=='') count++;});
+  if(!count) return null;
+  return {puntaje: count + '/4 posiciones evaluadas', puntajeRaw: null, interpretacion: 'Registro observacional por posición. Consultar percentiles AIMS según edad.'};
+}
+
 // ── TARDIEU ──────────────────────────────────────────────────
 function renderEscalaTardieu(d){
   var items_d = d&&d.items ? d.items : {};
@@ -3771,7 +3796,6 @@ function secCardiorespiratorio(d){
        + secEvalCardiaca(d)
        + secFuerzaResistenciaCardio(d)
        + secCapacidadFuncionalCardio(d)
-       + secCIFNeuro(d);  // reutiliza la sección CIF existente
 }
 
 function secAnamnesisCardio(d){
@@ -4028,7 +4052,6 @@ function secGeriatria(d){
        + secMarchaMovilidadGer(d)
        + secAVDDependenciaGer(d)
        + secCuidadorGer(d)
-       + secCIFNeuro(d);  // reutiliza la sección CIF existente
 }
 
 function secAnamnesisGeriatria(d){
@@ -4674,7 +4697,6 @@ function secNeuroAdultos(d){
        + secControlPosturalNeuro(d)
        + secMarchaTransferencias(d)
        + secAVDNeuro(d)
-       + secCIFNeuro(d);
 }
 
 function secEstadoCognitivoCom(d){
@@ -4865,14 +4887,8 @@ function secMarchaTransferencias(d){
     </div>
     <div style="font-size:12px;font-weight:700;color:var(--tx2);margin:12px 0 8px;padding:8px 12px;background:var(--surf3);border-radius:8px">📝 Evaluación cualitativa de la marcha</div>
     <div class="form-grid">
-      <div class="field form-full"><label>Fase de apoyo</label>
-        <textarea class="ta" id="marchaFaseApoyo" rows="2" placeholder="Contacto inicial, apoyo plantar completo, despegue del talón, propulsión...">${e2(d.marchaFaseApoyo||'')}</textarea></div>
-      <div class="field form-full"><label>Fase de balanceo</label>
-        <textarea class="ta" id="marchaFaseBalanceo" rows="2" placeholder="Aceleración, balanceo medio, desaceleración, compensaciones...">${e2(d.marchaFaseBalanceo||'')}</textarea></div>
-      <div class="field form-full"><label>Cadencia y velocidad</label>
-        <textarea class="ta" id="marchaCadencia" rows="2" placeholder="Cadencia observada, velocidad estimada, irregularidades en el ritmo...">${e2(d.marchaCadencia||'')}</textarea></div>
-      <div class="field form-full"><label>Análisis de tronco y MMSS</label>
-        <textarea class="ta" id="marchaTroncoMmss" rows="2" placeholder="Rotación de tronco, braceo, compensaciones de cabeza y miembros superiores...">${e2(d.marchaTroncoMmss||'')}</textarea></div>
+      <div class="field form-full"><label>Descripción del patrón de marcha</label>
+        <textarea class="ta" id="marchaDescripcion" rows="4" placeholder="Descripción del patrón de marcha: fases de apoyo y balanceo, cadencia, velocidad, análisis de tronco y MMSS, compensaciones observadas...">${e2(d.marchaDescripcion||d.marchaFaseApoyo||'')}</textarea></div>
     </div>`);
 }
 
@@ -4889,19 +4905,7 @@ function secAVDNeuro(d){
     </div>`);
 }
 
-function secCIFNeuro(d){
-  return secWrap('cif_neuro','IX. Diagnóstico según CIF','📋',`
-    <div class="form-grid">
-      <div class="field form-full"><label>Deterioro de funciones/estructuras (códigos b/s)</label>
-        <textarea class="ta" id="cifDeterioro" rows="2" placeholder="Ej: b710 Movilidad articular, b730 Fuerza muscular...">${e2(d.cifDeterioro||'')}</textarea></div>
-      <div class="field form-full"><label>Limitación de actividad (códigos d)</label>
-        <textarea class="ta" id="cifActividad" rows="2" placeholder="Ej: d450 Andar, d410 Cambiar postura corporal...">${e2(d.cifActividad||'')}</textarea></div>
-      <div class="field form-full"><label>Restricción de participación</label>
-        <textarea class="ta" id="cifParticipacion" rows="2" placeholder="Ej: d850 Trabajo remunerado, d920 Recreación...">${e2(d.cifParticipacion||'')}</textarea></div>
-      <div class="field form-full"><label>Factores contextuales (facilitadores / barreras)</label>
-        <textarea class="ta" id="cifContextual" rows="2" placeholder="Entorno físico, apoyo familiar, acceso a servicios...">${e2(d.cifContextual||'')}</textarea></div>
-    </div>`);
-}
+// secCIFNeuro eliminada (cambio 3 - diagnóstico CIF removido)
 
 
 // ══════════════════════════════════════════════════════════════
@@ -4917,7 +4921,6 @@ function secNeuroPediatrica(d){
        + secMarchaPed(d)
        + secMMSSPed(d)
        + secAVDPed(d)
-       + secCIFNeuro(d); // reutilizar CIF
 }
 
 function secAnamnesisPed(d){
@@ -4956,9 +4959,7 @@ function secDesarrolloPed(d){
     {id:'hitosGateo',l:'Gateo (esperado 8-10 meses)'},
     {id:'hitosBiped',l:'Bipedestación (esperado 10-12 meses)'},
     {id:'hitosMarcha',l:'Marcha (esperado 12-15 meses)'},
-    {id:'hitosBalbuceo',l:'Balbuceo (esperado 4-6 meses)'},
-    {id:'hitosPriPalab',l:'Primeras palabras (esperado 12 meses)'},
-    {id:'hitosFrases',l:'Frases (esperado 24 meses)'},
+    {id:'hitosLenguaje',l:'Lenguaje (balbuceo ~4-6m / primeras palabras ~12m / frases ~24m)'},
   ];
   return secWrap('desarrollo_ped','III. Historia del desarrollo motor','📅',`
     <div style="display:grid;gap:8px;margin-bottom:12px">
@@ -5119,11 +5120,7 @@ function secMarchaPed(d){
     <div style="font-size:12px;font-weight:700;color:var(--tx2);margin:12px 0 8px;padding:8px 12px;background:var(--surf3);border-radius:8px">📝 Evaluación cualitativa de la marcha</div>
     <div class="form-grid">
       <div class="field form-full"><label>Descripción del patrón de marcha</label>
-        <textarea class="ta" id="marchaPedDescripcion" rows="2" placeholder="Descripción detallada del patrón observado, compensaciones, asimetrías...">${e2(p.marchaPedDescripcion||'')}</textarea></div>
-      <div class="field form-full"><label>Análisis de miembros inferiores</label>
-        <textarea class="ta" id="marchaPedMmii" rows="2" placeholder="Posición de cadera, rodilla, tobillo en las fases de apoyo y balanceo...">${e2(p.marchaPedMmii||'')}</textarea></div>
-      <div class="field form-full"><label>Control de tronco durante la marcha</label>
-        <textarea class="ta" id="marchaPedTronco" rows="2" placeholder="Estabilidad de tronco, inclinaciones, rotaciones compensatorias...">${e2(p.marchaPedTronco||'')}</textarea></div>
+        <textarea class="ta" id="marchaPedDescripcion" rows="4" placeholder="Descripción del patrón de marcha: análisis de MMII, control de tronco, compensaciones, asimetrías observadas...">${e2(p.marchaPedDescripcion||'')}</textarea></div>
     </div>`);
 }
 
@@ -5311,7 +5308,7 @@ async function guardarHC(catId, pacId, modo){
   // Leer campos específicos de neuro pediátrica
   const datosPed = catId==='neuro_pediatrica' ? {
     dxMedico:v('aDxMed'),tiempoEvol:v('tiempoEvol'),tipoParto:v('tipoParto'),semanasGest:v('semanasGest'),pesoNacer:v('pesoNacer'),apgar:v('apgar'),antePrenatal:v('antePrenatal'),antePosnatal:v('antePosnatal'),medicacion:v('medicacion'),
-    hitosSostenCef:v('hitosSostenCef'),hitosSedest:v('hitosSedest'),hitosGateo:v('hitosGateo'),hitosBiped:v('hitosBiped'),hitosMarcha:v('hitosMarcha'),hitosBalbuceo:v('hitosBalbuceo'),hitosPriPalab:v('hitosPriPalab'),hitosFrases:v('hitosFrases'),
+    hitosSostenCef:v('hitosSostenCef'),hitosSedest:v('hitosSedest'),hitosGateo:v('hitosGateo'),hitosBiped:v('hitosBiped'),hitosMarcha:v('hitosMarcha'),hitosLenguaje:v('hitosLenguaje'),
     escolarizacion:v('escolarizacion'),obsDesarrollo:v('obsDesarrollo'),
     alertaPed:v('alertaPed'),comprensionPed:v('comprensionPed'),conductaPed:v('conductaPed'),comunicacionPed:v('comunicacionPed'),obsCognitivoPed:v('obsCognitivoPed'),
     tonoPed_MMSS_D:v('tonoPed_MMSS_D'),tonoPed_MMSS_I:v('tonoPed_MMSS_I'),tonoPed_MMII_D:v('tonoPed_MMII_D'),tonoPed_MMII_I:v('tonoPed_MMII_I'),
