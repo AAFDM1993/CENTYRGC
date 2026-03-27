@@ -1515,8 +1515,9 @@ function buildDetalleEval(ev, pac){
     if(antec) html+='<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">ANTECEDENTES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(antec)+'</div></div>';
   }
 
-  // III. Examen objetivo — renderizado por categoría (igual que en exportación)
-  html += _buildExamenObjetivoPorCategoria(d, ev, catId).replace(/<div class="sec"><div class="sec-hdr">[^<]*<\/div>/,'<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">III. Examen Objetivo</div><div>').replace(/<\/div>$/,'</div>');
+  // III. Examen objetivo — renderizado por categoría
+  html += '<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">III. Examen Objetivo</div>';
+  html += _buildDetalleExamenPorCategoria(d, ev, catId);
 
   // Si es traumatología también mostrar ROM, fuerza y pruebas funcionales
   if(catId==='traumatologia'){
@@ -1595,115 +1596,119 @@ function buildDetalleEval(ev, pac){
 
   return html;
 }
-  html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:14px">';
-  html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">NOMBRE</div><div style="font-size:12px">'+e2(pac.nombre||'—')+'</div></div>';
-  html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">DNI</div><div style="font-size:12px">'+e2(pac.dni||'—')+'</div></div>';
-  if(pac.fechaNac) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">F. NACIMIENTO</div><div style="font-size:12px">'+e2(formatFechaCorta(pac.fechaNac))+'</div></div>';
-  if(pac.sexo) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">SEXO</div><div style="font-size:12px">'+(pac.sexo==='M'?'Masculino':'Femenino')+'</div></div>';
-  if(pac.ocupacion||d.ocupacion) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">OCUPACIÓN</div><div style="font-size:12px">'+e2(pac.ocupacion||d.ocupacion)+'</div></div>';
-  if(pac.telefono) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">TELÉFONO</div><div style="font-size:12px">'+e2(pac.telefono)+'</div></div>';
-  if(pac.fechaInicio) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">INICIO TRATAMIENTO</div><div style="font-size:12px">'+e2(formatFechaCorta(pac.fechaInicio))+'</div></div>';
-  html+='</div>';
 
-  // Anamnesis
-  if(d.dxMedico||pac.dxMedico||d.motivo||pac.motivo||d.antecedentes||pac.antecedentes){
-    html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">II. Anamnesis</div>';
-    var dxMed=d.dxMedico||pac.dxMedico||'';
-    var motivo=d.motivo||pac.motivo||'';
-    var antec=d.antecedentes||pac.antecedentes||'';
-    if(dxMed) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">DX MÉDICO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(dxMed)+'</div></div>';
-    if(motivo) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">MOTIVO DE CONSULTA</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(motivo)+'</div></div>';
-    if(antec) html+='<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">ANTECEDENTES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(antec)+'</div></div>';
+// ── Vista inline de examen objetivo por categoría (para el acordeón) ──────────
+function _buildDetalleExamenPorCategoria(d, ev, catId) {
+  var h = '';
+  var fld = function(lbl, val) {
+    if (!val && val !== 0) return '';
+    return '<div style="margin-bottom:4px"><span style="font-size:10px;color:var(--tx4);font-weight:700;text-transform:uppercase">'
+      + lbl + ': </span><span style="font-size:12px">' + e2(String(val)) + '</span></div>';
+  };
+
+  if (catId === 'traumatologia') {
+    h += fld('EVA', d.eva !== undefined ? d.eva + '/10' : (d.evaValor !== undefined ? d.evaValor + '/10' : ''));
+    h += fld('Trofismo', d.trofismo);
+    h += fld('Localización dolor', d.dolLoc);
+    h += fld('Tipo dolor', d.dolTipo);
+    if (d.palpacion) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">PALPACIÓN</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">' + e2(d.palpacion) + '</div></div>';
+    if (d.pruebas) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">PRUEBAS</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">' + e2(d.pruebas) + '</div></div>';
+
+  } else if (catId === 'neuro_adultos') {
+    h += fld('Nivel de conciencia', d.nConciencia);
+    h += fld('Lateralidad', d.lateralidad);
+    h += fld('Orientación', d.orientacion);
+    h += fld('Comunicación', d.comunicacion);
+    h += fld('Tono MMSS D', d.tono_MMSS_D);
+    h += fld('Tono MMSS I', d.tono_MMSS_I);
+    h += fld('Tono MMII D', d.tono_MMII_D);
+    h += fld('Tono MMII I', d.tono_MMII_I);
+    h += fld('Fuerza MMSS D', d.fuerza_MMSS_D);
+    h += fld('Fuerza MMSS I', d.fuerza_MMSS_I);
+    h += fld('Fuerza MMII D', d.fuerza_MMII_D);
+    h += fld('Fuerza MMII I', d.fuerza_MMII_I);
+    h += fld('Babinski', d.babinski);
+    h += fld('Coordinación', d.coordinacion);
+    h += fld('Tipo marcha', d.tipoMarcha);
+    h += fld('Patrón marcha', d.patronMarcha);
+    h += fld('Transferencia cama↔silla', d.transferenciaCS);
+    if (d.obsMotor) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBS. MOTOR</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">' + e2(d.obsMotor) + '</div></div>';
+
+  } else if (catId === 'neuro_pediatrica') {
+    h += fld('Tipo parto', d.tipoParto);
+    h += fld('Semanas gestación', d.semanasGest);
+    h += fld('APGAR', d.apgar);
+    h += fld('Escolarización', d.escolarizacion);
+    h += fld('Tono MMSS D', d.tonoPed_MMSS_D);
+    h += fld('Tono MMSS I', d.tonoPed_MMSS_I);
+    h += fld('Tono MMII D', d.tonoPed_MMII_D);
+    h += fld('Tono MMII I', d.tonoPed_MMII_I);
+    h += fld('Fuerza MMSS D', d.fuerzaPed_MMSS_D);
+    h += fld('Fuerza MMSS I', d.fuerzaPed_MMSS_I);
+    h += fld('Fuerza MMII D', d.fuerzaPed_MMII_D);
+    h += fld('Fuerza MMII I', d.fuerzaPed_MMII_I);
+    h += fld('Control cefálico', d.controlCefalPed);
+    h += fld('Sedestación', d.sedestacionPed);
+    h += fld('Tipo marcha', d.tipoMarchaPed);
+    h += fld('Patrón marcha', d.patronMarchaPed);
+    if (d.obsMotorPed) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBS. MOTOR</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">' + e2(d.obsMotorPed) + '</div></div>';
+
+  } else if (catId === 'cardiorespiratorio') {
+    h += fld('FC reposo', d.fcReposo ? d.fcReposo + ' lpm' : '');
+    h += fld('FR reposo', d.frReposo ? d.frReposo + ' rpm' : '');
+    h += fld('TA', (d.taSistolica && d.taDiastolica) ? d.taSistolica + '/' + d.taDiastolica + ' mmHg' : '');
+    h += fld('SpO₂ reposo', d.spo2Reposo ? d.spo2Reposo + '%' : '');
+    h += fld('IMC', d.imc ? d.imc + ' kg/m²' : '');
+    h += fld('O₂ suplementario', d.o2Suplem);
+    h += fld('Patrón respiratorio', d.patronResp);
+    h += fld('Tiraje', d.tiraje);
+    h += fld('Tos', d.tos);
+    h += fld('Disnea en reposo', d.disneaReposo);
+    h += fld('NYHA', d.nyha);
+    h += fld('Edema MMII', d.edemaMmii);
+    h += fld('FVC', d.fvc ? d.fvc + ' L' : '');
+    h += fld('FEV1/FVC', d.fev1fvc ? d.fev1fvc + '%' : '');
+    if (d.auscultacion) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">AUSCULTACIÓN</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">' + e2(d.auscultacion) + '</div></div>';
+
+  } else if (catId === 'geriatria') {
+    h += fld('Convivencia', d.convivencia);
+    h += fld('Caídas último año', d.caidasAnio);
+    h += fld('MMSE/MoCA', d.mmseScore);
+    h += fld('Estado cognitivo', d.cognitivo);
+    h += fld('Estado de ánimo', d.estadoAnimo);
+    h += fld('Fragilidad', d.clasifFragilidad);
+    h += fld('Sarcopenia', d.sarcopenia);
+    h += fld('EVA dolor', d.evaGer !== undefined ? d.evaGer + '/10' : '');
+    h += fld('Tipo marcha', d.tipoMarchaGer);
+    h += fld('Patrón marcha', d.patronMarchaGer);
+    h += fld('Ayuda técnica', d.ayudaTecGer);
+    h += fld('Dependencia', d.nivelDependencia);
+    h += fld('TUG', d.tug);
+    h += fld('Velocidad marcha 4m', d.velMarcha4m ? d.velMarcha4m + ' seg' : '');
+
+  } else if (catId === 'postural') {
+    h += fld('Cabeza (frontal)', d.cabezaAnt);
+    h += fld('Hombros (frontal)', d.hombrosAnt);
+    h += fld('Columna', d.columnaPost);
+    h += fld('Pelvis (lateral)', d.pelvisLat);
+    h += fld('Curva cervical', d.curvaCervical);
+    h += fld('Curva dorsal', d.curvaDorsal);
+    h += fld('Curva lumbar', d.curvaLumbar);
+    h += fld('Test Adams', d.testAdams);
+    h += fld('Gibosidad', d.gibosidad);
+    h += fld('Discrepancia MMII real', d.discrepanciaReal ? d.discrepanciaReal + ' cm' : '');
+    h += fld('Flecha cervical', d.flechaCervical ? d.flechaCervical + ' cm' : '');
+    h += fld('Flecha lumbar', d.flechaLumbar ? d.flechaLumbar + ' cm' : '');
+    h += fld('Apoyo plantar D', d.apoyoD);
+    h += fld('Apoyo plantar I', d.apoyoI);
+    h += fld('Test dedos-suelo', d.testDedusSuelo !== '' && d.testDedusSuelo !== undefined ? d.testDedusSuelo + ' cm' : '');
+    if (d.cifDeterioro) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">ALTERACIONES POSTURALES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">' + e2(d.cifDeterioro) + '</div></div>';
+
+  } else {
+    if (d.examObjetivo) h += '<div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">' + e2(d.examObjetivo) + '</div>';
   }
 
-  // Examen físico
-  var tieneExamen = evaVal!==undefined||d.dolLoc||d.palpacion||d.trofismo||d.neuro||d.tegu||d.pruebas||d.examObjetivo||d.postura||d.marcha;
-  if(tieneExamen){
-    html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">III. Examen Físico</div>';
-    html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:10px">';
-    if(evaVal!==undefined) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">EVA DOLOR</div><div style="font-size:13px;font-weight:700;color:var(--red)">'+e2(String(evaVal))+'/10</div></div>';
-    if(d.dolLoc) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">LOCALIZACIÓN</div><div style="font-size:12px">'+e2(d.dolLoc)+'</div></div>';
-    if(d.dolTipo) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">TIPO DOLOR</div><div style="font-size:12px">'+e2(d.dolTipo)+'</div></div>';
-    if(d.postura) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">POSTURA</div><div style="font-size:12px">'+e2(d.postura)+'</div></div>';
-    if(d.marcha) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">MARCHA</div><div style="font-size:12px">'+e2(d.marcha)+'</div></div>';
-    if(d.trofismo) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">TROFISMO</div><div style="font-size:12px">'+e2(d.trofismo)+'</div></div>';
-    if(d.neuro) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">NEUROLÓGICO</div><div style="font-size:12px">'+e2(d.neuro)+'</div></div>';
-    if(d.tegu) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">TEGUMENTARIO</div><div style="font-size:12px">'+e2(d.tegu)+'</div></div>';
-    html+='</div>';
-    if(d.palpacion) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">PALPACIÓN</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.palpacion)+'</div></div>';
-    if(d.pruebasFuncionales&&Object.keys(d.pruebasFuncionales).length){
-      html+='<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:4px;text-transform:uppercase">PRUEBAS FUNCIONALES</div>';
-      Object.keys(d.pruebasFuncionales).forEach(function(reg){
-        var regPruebas=d.pruebasFuncionales[reg];
-        var filled=Object.keys(regPruebas).filter(function(k){return regPruebas[k]&&regPruebas[k]!=='—';});
-        if(!filled.length) return;
-        html+='<div style="font-size:11px;font-weight:700;color:var(--tx2);margin:6px 0 3px">'+e2(reg)+'</div>';
-        filled.forEach(function(nom){
-          var res=regPruebas[nom];
-          var color=res&&res.startsWith('+')?'var(--red)':res&&res.startsWith('-')?'var(--green)':' var(--amber)';
-          html+='<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 8px;background:var(--surf2);border-radius:5px;margin-bottom:2px"><span>'+e2(nom)+'</span><b style="color:'+color+'">'+e2(res)+'</b></div>';
-        });
-      });
-      html+='</div>';
-    }
-    if(d.pruebas) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBSERVACIONES PRUEBAS</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.pruebas)+'</div></div>';
-    if(d.examObjetivo) html+='<div style="margin-bottom:12px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">EXAMEN OBJETIVO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.examObjetivo)+'</div></div>';
-  }
-
-  // ROM
-  if(d.rom&&Object.keys(d.rom).length){
-    html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">ROM</div>';
-    html+='<div style="overflow-x:auto;margin-bottom:12px"><table style="width:100%;border-collapse:collapse;font-size:11px">';
-    html+='<tr><th style="text-align:left;padding:4px 8px;border-bottom:1px solid var(--bd);color:var(--tx4)">Región/Movimiento</th><th style="padding:4px 8px;border-bottom:1px solid var(--bd);color:var(--tx4)">D</th><th style="padding:4px 8px;border-bottom:1px solid var(--bd);color:var(--tx4)">I</th></tr>';
-    var romKeys=Object.keys(d.rom);
-    var grupos={};
-    romKeys.forEach(function(k){var reg=k.split('_')[0];if(!grupos[reg])grupos[reg]=[];grupos[reg].push(k);});
-    Object.keys(grupos).forEach(function(reg){
-      grupos[reg].forEach(function(k,i){
-        var mov=k.replace(reg+'_','').replace(/_[DI]$/,'');
-        var vD=d.rom[k.replace(/_[DI]$/,'_D')]||'';
-        var vI=d.rom[k.replace(/_[DI]$/,'_I')]||'';
-        if(k.endsWith('_D')||(!k.endsWith('_I')&&!k.endsWith('_D'))){
-          html+='<tr style="border-bottom:1px solid var(--bd2)">';
-          if(i===0) html+='<td style="font-weight:700;font-size:10px;padding:3px 8px;color:var(--tx2)" rowspan="'+grupos[reg].filter(function(x){return x.endsWith('_D');}).length+'">'+reg+'</td>';
-          html+='<td style="padding:3px 8px;font-size:11px">'+mov+'</td>';
-          html+='<td style="text-align:center;padding:3px 8px">'+e2(vD||'—')+'</td>';
-          html+='<td style="text-align:center;padding:3px 8px">'+e2(vI||'—')+'</td></tr>';
-        }
-      });
-    });
-    html+='</table></div>';
-  }
-
-  // Diagnóstico
-  if(ev.dxFisio||d.dxFisio||d.aptaPatron||cifDeterioro||cifActividad){
-    html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">IV. Diagnóstico</div>';
-    html+='<div style="display:grid;gap:6px;margin-bottom:12px">';
-    if(d.aptaPatron||ev.aptaPatron) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">PATRÓN APTA: </span><span style="font-size:12px">'+e2(d.aptaPatron||ev.aptaPatron)+'</span></div>';
-    if(ev.dxFisio||d.dxFisio) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">DX FISIO: </span><span style="font-size:12px">'+e2(ev.dxFisio||d.dxFisio)+'</span></div>';
-    if(cifDeterioro) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF DETERIORO: </span><span style="font-size:12px">'+e2(cifDeterioro)+'</span></div>';
-    if(cifActividad) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF ACTIVIDAD: </span><span style="font-size:12px">'+e2(cifActividad)+'</span></div>';
-    if(d.pronostico) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">PRONÓSTICO: </span><span style="font-size:12px">'+e2(d.pronostico)+'</span></div>';
-    html+='</div>';
-  }
-
-  // Plan de tratamiento
-  if(objCorto||objLargo||objEsp||d.planSesiones){
-    html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">V. Plan de Tratamiento</div>';
-    html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:10px">';
-    if(d.planSesiones) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">N° SESIONES</div><div style="font-size:13px;font-weight:700">'+e2(d.planSesiones)+'</div></div>';
-    if(d.planFrecuencia) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">FRECUENCIA</div><div style="font-size:12px">'+e2(d.planFrecuencia)+'</div></div>';
-    if(d.planDuracion) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">DURACIÓN</div><div style="font-size:12px">'+e2(d.planDuracion)+'</div></div>';
-    html+='</div>';
-    if(objCorto) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">META / OBJ. CORTO PLAZO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(objCorto)+'</div></div>';
-    if(objLargo) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBJ. GENERAL / LARGO PLAZO</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(objLargo)+'</div></div>';
-    if(objEsp) html+='<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBJ. ESPECÍFICOS / PLAN GENERAL</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(objEsp)+'</div></div>';
-  }
-
-  // Observaciones
-  if(d.obsExamen||d.aux) html+='<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px;text-transform:uppercase">Observaciones / Auxiliares</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.obsExamen||d.aux||'')+'</div></div>';
-
-  return html;
+  return h ? '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px;margin-bottom:12px">' + h + '</div>' : '';
 }
 
 async function toggleEvalInline(uid, headerEl){
