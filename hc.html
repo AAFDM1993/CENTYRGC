@@ -215,10 +215,16 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
   /* ── Overlay de envío ── */
   #hcSendOverlay > div:last-child{padding:0 24px;}
 
-  /* ── Cards de evaluación y sesión ── */
-  .rev-bar{flex-direction:column;gap:6px;}
-  .timeline{padding-left:18px;}
-  .tl-dot{left:-18px;}
+  /* ── Ficha postural — 2 col grid responsive ── */
+  #sec-mediciones_post > div,
+  #sec-calzado_post > div,
+  #sec-flex_post > div {
+    grid-template-columns: 1fr !important;
+  }
+  /* ── Pestañas inspección visual ── */
+  #sec-insp_visual > div:first-child { flex-wrap: wrap; }
+  #tabAnt, #tabPost, #tabLat { flex: 1; text-align: center; font-size: 11px !important; padding: 6px 4px !important; }
+
 }
 .empty{text-align:center;padding:36px;color:var(--tx4);font-size:13px;}
 .loader{text-align:center;padding:28px;color:var(--tx3);font-size:13px;}
@@ -781,17 +787,6 @@ function _buildExamenObjetivoPorCategoria(d, ev, catId){
       + _fld2('NYHA', d.nyha) + _fld2('Edema MMII', d.edemaMmii)
       + _fld2('FVC', d.fvc ? d.fvc + ' L' : '') + _fld2('FEV1/FVC', d.fev1fvc ? d.fev1fvc + '%' : '')
       + (d.auscultacion ? '<div style="grid-column:1/-1"><div class="field-lbl">Auscultaci&oacute;n</div><div class="field-val">' + e2(d.auscultacion) + '</div></div>' : '')
-      + '</div>';
-
-  } else if(catId === 'geriatria'){
-    h += '<div class="sec-body">'
-      + _fld2('Convivencia', d.convivencia) + _fld2('Caídas último año', d.caidasAnio)
-      + _fld2('MMSE', d.mmseScore) + _fld2('Estado cognitivo', d.cognitivo)
-      + _fld2('Estado de ánimo', d.estadoAnimo) + _fld2('Fragilidad', d.clasifFragilidad)
-      + _fld2('Sarcopenia', d.sarcopenia) + _fld2('EVA dolor', d.evaGer !== undefined ? d.evaGer + '/10' : '')
-      + _fld2('Tipo marcha', d.tipoMarchaGer) + _fld2('Patrón marcha', d.patronMarchaGer)
-      + _fld2('Ayuda técnica', d.ayudaTecGer) + _fld2('Dependencia', d.nivelDependencia)
-      + _fld2('TUG', d.tug) + _fld2('Velocidad marcha 4m', d.velMarcha4m ? d.velMarcha4m + ' seg' : '')
       + '</div>';
 
   } else if(catId === 'postural'){
@@ -1812,21 +1807,6 @@ function _buildDetalleExamenPorCategoria(d, ev, catId) {
     h += fld('FEV1/FVC', d.fev1fvc ? d.fev1fvc + '%' : '');
     if (d.auscultacion) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">AUSCULTACIÓN</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">' + e2(d.auscultacion) + '</div></div>';
 
-  } else if (catId === 'geriatria') {
-    h += fld('Convivencia', d.convivencia);
-    h += fld('Caídas último año', d.caidasAnio);
-    h += fld('MMSE/MoCA', d.mmseScore);
-    h += fld('Estado cognitivo', d.cognitivo);
-    h += fld('Estado de ánimo', d.estadoAnimo);
-    h += fld('Fragilidad', d.clasifFragilidad);
-    h += fld('Sarcopenia', d.sarcopenia);
-    h += fld('EVA dolor', d.evaGer !== undefined ? d.evaGer + '/10' : '');
-    h += fld('Tipo marcha', d.tipoMarchaGer);
-    h += fld('Patrón marcha', d.patronMarchaGer);
-    h += fld('Ayuda técnica', d.ayudaTecGer);
-    h += fld('Dependencia', d.nivelDependencia);
-    h += fld('TUG', d.tug);
-    h += fld('Velocidad marcha 4m', d.velMarcha4m ? d.velMarcha4m + ' seg' : '');
 
   } else if (catId === 'postural') {
     h += fld('Cabeza (frontal)', d.cabezaAnt);
@@ -2579,10 +2559,6 @@ function renderCats(){
 }
 
 // ─── Ver detalle ──────────────────────────────────────
-function verEval(evalId,pacId){exportarEvalModal(evalId,pacId);}
-
-function verSes(sesId,pacId){exportarSesModal(sesId,pacId);}
-
 async function editarPac(id){
   const r=await apiGet('obtenerPaciente',{id});
   if(!r.ok){toast('Error',r.error,'err');return;}
@@ -3119,36 +3095,6 @@ function actualizarPruebas(){
 }
 
 const TODAS_REGIONES = Object.keys(ROM_MOV);
-
-function mkRomRows(sel, romData){
-  if(!sel||!sel.length) return '<tr><td colspan="3" style="text-align:center;color:var(--tx4);font-size:12px;padding:10px">Selecciona regiones afectadas</td></tr>';
-  return sel.map(r=>{
-    const movs=ROM_MOV[r]||[];
-    return movs.map((m,i)=>{
-      const key=r+'_'+m;
-      return '<tr>'
-        +(i===0?'<td rowspan="'+movs.length+'" style="font-weight:700;font-size:11px;vertical-align:top;padding-top:8px;white-space:nowrap">'+r+'</td>':'')
-        +'<td style="font-size:12px">'+m+'</td>'
-        +'<td><input type="text" class="ri" data-rom="'+e2(key)+'" value="'+(romData&&romData[key]?e2(romData[key]):'')+'" placeholder="°" style="width:60px"></td>'
-        +'</tr>';
-    }).join('');
-  }).join('');
-}
-
-function mkFuerzaRows(sel, fData){
-  if(!sel||!sel.length) return '<tr><td colspan="3" style="text-align:center;color:var(--tx4);font-size:12px;padding:10px">Selecciona regiones afectadas</td></tr>';
-  return sel.map(r=>{
-    const gs=FUERZA_GRP[r]||[];
-    return gs.map((gn,i)=>{
-      const key=r+'_'+gn;
-      return '<tr>'
-        +(i===0?'<td rowspan="'+gs.length+'" style="font-weight:700;font-size:11px;vertical-align:top;padding-top:8px;white-space:nowrap">'+r+'</td>':'')
-        +'<td style="font-size:12px">'+gn+'</td>'
-        +'<td><input type="number" class="ri" data-fuerza="'+e2(key)+'" min="0" max="5" value="'+(fData&&fData[key]!==undefined?e2(String(fData[key])):'')+'" placeholder="0-5" style="width:60px"></td>'
-        +'</tr>';
-    }).join('');
-  }).join('');
-}
 
 function secTrauma(d){
   const sel=d.regiones||[];
@@ -4973,352 +4919,165 @@ function secCapacidadFuncionalCardio(d){
 // FICHA GERIÁTRICA
 // ══════════════════════════════════════════════════════════════
 
-function secGeriatria(d){
-  return secAnamnesisGeriatria(d)
-       + secValoracionGlobalGer(d)
-       + secValoracionNutricionalGer(d)
-       + secFragilidadGer(d)
-       + secExamenMusculoEsqueleticoGer(d)
-       + secEquilibrioRiesgoCaidaGer(d)
-       + secMarchaMovilidadGer(d)
-       + secAVDDependenciaGer(d)
-       + secCuidadorGer(d)
-}
-
-function secAnamnesisGeriatria(d){
-  return secWrap('anam_ger','II. Anamnesis Geriátrica','📋',`
-    <div class="form-grid">
-      <div class="field form-full"><label>Diagnóstico médico principal y secundarios</label>
-        <input class="inp" id="aDxMed" value="${e2(d.dxMedico||'')}"
-          placeholder="Diagnóstico médico principal (CIE-10) y comorbilidades"></div>
-      <div class="field form-full"><label>Diagnóstico fisioterapéutico</label>
-        <input class="inp" id="aDxFisio" value="${e2(d.dxFisio||'')}"
-          placeholder="Diagnóstico fisioterapéutico"></div>
-      <div class="field form-full"><label>Motivo de consulta</label>
-        <textarea class="ta" id="aMotivo" rows="2"
-          placeholder="Motivo principal de derivación...">${e2(d.motivo||'')}</textarea></div>
-      <div class="field"><label>Con quién vive</label>
-        <select class="sel" id="convivencia">
-          <option value="">—</option>
-          ${['Solo','Con familiar','Con cuidador profesional','Institución/residencia'].map(v=>`<option ${d.convivencia===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Estado civil</label>
-        <select class="sel" id="estadoCivil">
-          <option value="">—</option>
-          ${['Soltero/a','Casado/a','Viudo/a','Divorciado/a','Unión libre'].map(v=>`<option ${d.estadoCivil===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field form-full"><label>Antecedentes patológicos relevantes</label>
-        <textarea class="ta" id="aAntecedentes" rows="3"
-          placeholder="Fractura cadera, ACV, Parkinson, demencia, osteoporosis, artrosis, HTA, DM, ICC, prótesis...">${e2(d.antecedentes||'')}</textarea></div>
-      <div class="field"><label>Polifarmacia (≥5 medicamentos)</label>
-        <select class="sel" id="polifarmacia">
-          <option value="">—</option>
-          ${['No (< 5 medicamentos)','Sí (5-9 medicamentos)','Polifarmacia extrema (≥10)'].map(v=>`<option ${d.polifarmacia===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Medicamentos de riesgo de caída</label>
-        <select class="sel" id="medRiesgoCaida">
-          <option value="">—</option>
-          ${['No','Sí — benzodiacepinas','Sí — antihipertensivos','Sí — diuréticos','Sí — antipsicóticos','Sí — múltiples'].map(v=>`<option ${d.medRiesgoCaida===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Caídas en el último año</label>
-        <select class="sel" id="caidasAnio">
-          <option value="">—</option>
-          ${['Ninguna','1 caída','2 caídas','3 o más caídas'].map(v=>`<option ${d.caidasAnio===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field form-full"><label>Circunstancias y consecuencias de caídas</label>
-        <textarea class="ta" id="circunstanciaCaidas" rows="2"
-          placeholder="Dónde ocurrió, qué hacía, lesiones resultantes...">${e2(d.circunstanciaCaidas||'')}</textarea></div>
-    </div>`,true);
-}
-
-function secValoracionGlobalGer(d){
-  return secWrap('global_ger','III. Valoración cognitiva y comunicación','🧠',`
-    <div class="form-grid">
-      <div class="field"><label>MMSE / MoCA (puntaje)</label>
-        <input class="inp" id="mmseScore" type="number" min="0" max="30"
-          value="${d.mmseScore||''}" placeholder="0-30"></div>
-      <div class="field"><label>Interpretación cognitiva</label>
-        <select class="sel" id="cognitivo">
-          <option value="">—</option>
-          ${['Normal','Deterioro cognitivo leve','Deterioro cognitivo moderado','Deterioro cognitivo grave','Demencia establecida'].map(v=>`<option ${d.cognitivo===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Estado de ánimo</label>
-        <select class="sel" id="estadoAnimo">
-          <option value="">—</option>
-          ${['Eutímico','Depresión leve','Depresión moderada','Depresión grave','Ansiedad predominante','Mixto'].map(v=>`<option ${d.estadoAnimo===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Comunicación</label>
-        <select class="sel" id="comunicacionGer">
-          <option value="">—</option>
-          ${['Adecuada','Dificultad auditiva','Dificultad visual','Ambas','Dificultad del lenguaje'].map(v=>`<option ${d.comunicacionGer===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Usa audífono</label>
-        <select class="sel" id="audiofono">
-          <option value="">—</option>
-          ${['No','Sí — uno','Sí — bilateral'].map(v=>`<option ${d.audiofono===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Usa gafas/lentes</label>
-        <select class="sel" id="gafas">
-          <option value="">—</option>
-          ${['No','Sí'].map(v=>`<option ${d.gafas===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field form-full"><label>Observaciones cognitivas</label>
-        <textarea class="ta" id="obsCognitivoGer" rows="2"
-          placeholder="Orientación, memoria, atención, comportamiento...">${e2(d.obsCognitivoGer||'')}</textarea></div>
-    </div>
-    <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
-      💡 Aplica el <b>MMSE</b> en la sección de Escalas para registro formal.
-    </div>`);
-}
-
-function secValoracionNutricionalGer(d){
-  return secWrap('nutric_ger','IV. Valoración nutricional','🥗',`
-    <div class="form-grid">
-      <div class="field"><label>Peso actual (kg)</label>
-        <input class="inp" id="pesoGer" type="number" min="0" max="300" step="0.1"
-          value="${d.pesoGer||''}" placeholder="kg"></div>
-      <div class="field"><label>Pérdida de peso reciente</label>
-        <select class="sel" id="perdidaPeso">
-          <option value="">—</option>
-          ${['No','< 1 kg','1-3 kg','> 3 kg','> 5% en 3 meses'].map(v=>`<option ${d.perdidaPeso===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>IMC (kg/m²)</label>
-        <input class="inp" id="imcGer" value="${d.imcGer||''}" placeholder="kg/m²"></div>
-      <div class="field"><label>Apetito</label>
-        <select class="sel" id="apetito">
-          <option value="">—</option>
-          ${['Conservado','Reducido','Muy reducido','Anorexia'].map(v=>`<option ${d.apetito===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Dificultad de deglución</label>
-        <select class="sel" id="deglucion">
-          <option value="">—</option>
-          ${['No','Leve','Moderada','Grave — dieta modificada'].map(v=>`<option ${d.deglucion===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Hidratación estimada</label>
-        <select class="sel" id="hidratacion">
-          <option value="">—</option>
-          ${['Adecuada','Levemente disminuida','Deshidratación leve','Deshidratación moderada'].map(v=>`<option ${d.hidratacion===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Perímetro gemelar (cm)</label>
-        <input class="inp" id="perGemelar" type="number" min="0" max="60" step="0.1"
-          value="${d.perGemelar||''}" placeholder="cm (< 31 cm = sarcopenia)"></div>
-    </div>
-    <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
-      💡 Aplica el <b>MNA Breve</b> en la sección de Escalas para cribado nutricional formal.
-    </div>`);
-}
-
-function secFragilidadGer(d){
-  return secWrap('fragilidad_ger','V. Síndrome de fragilidad','⚠️',`
-    <div class="form-grid">
-      <div class="field"><label>Pérdida de peso involuntaria (> 4.5 kg / > 5% último año)</label>
-        <select class="sel" id="friedPeso">
-          <option value="">—</option>
-          ${['Ausente','Presente'].map(v=>`<option ${d.friedPeso===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Agotamiento / fatiga referida</label>
-        <select class="sel" id="friedAgotamiento">
-          <option value="">—</option>
-          ${['Ausente','Presente'].map(v=>`<option ${d.friedAgotamiento===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Baja actividad física (< umbral por sexo)</label>
-        <select class="sel" id="friedActividad">
-          <option value="">—</option>
-          ${['Ausente','Presente'].map(v=>`<option ${d.friedActividad===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Lentitud de marcha (< 0.8 m/s)</label>
-        <select class="sel" id="friedLentitud">
-          <option value="">—</option>
-          ${['Ausente','Presente'].map(v=>`<option ${d.friedLentitud===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Debilidad muscular (dinamometría < umbral)</label>
-        <select class="sel" id="friedDebilidad">
-          <option value="">—</option>
-          ${['Ausente','Presente'].map(v=>`<option ${d.friedDebilidad===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Clasificación de fragilidad</label>
-        <select class="sel" id="clasifFragilidad">
-          <option value="">—</option>
-          ${['Robusto (0 criterios)','Pre-frágil (1-2 criterios)','Frágil (3-5 criterios)'].map(v=>`<option ${d.clasifFragilidad===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field form-full"><label>Observaciones de fragilidad</label>
-        <textarea class="ta" id="obsFragilidad" rows="2"
-          placeholder="Contexto clínico, observaciones adicionales...">${e2(d.obsFragilidad||'')}</textarea></div>
-    </div>
-    <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
-      💡 Aplica los <b>Criterios de Fried</b> en la sección de Escalas para registro formal con cálculo automático.
-    </div>`);
-}
-
-function secExamenMusculoEsqueleticoGer(d){
-  const mrc=['0 — Sin contracción','1 — Contracción visible','2 — Movimiento sin gravedad','3 — Vence gravedad','4 — Vence resistencia parcial','5 — Fuerza normal'];
-  return secWrap('musculo_ger','VI. Examen músculo-esquelético','🦴',`
-    <div class="form-grid">
-      <div class="field"><label>EVA dolor (0-10)</label>
-        <div class="eva-wrap" style="margin-top:6px">
-          <div class="eva-track" style="flex:1;position:relative">
-            <input type="range" class="eva-sl" id="evaGer" min="0" max="10" step="1"
-              value="${d.evaGer||0}" oninput="g('evaGerD').textContent=this.value">
-          </div>
-          <div class="eva-val" id="evaGerD">${d.evaGer||0}</div>
-        </div></div>
-      <div class="field"><label>Localización del dolor</label>
-        <input class="inp" id="dolLocGer" value="${e2(d.dolLocGer||'')}"
-          placeholder="Región dolorosa principal"></div>
-      <div class="field"><label>Fuerza MMSS D — MRC</label>
-        <select class="sel" id="fuerzaMmssDGer">
-          <option value="">—</option>
-          ${mrc.map(v=>`<option ${d.fuerzaMmssDGer===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Fuerza MMSS I — MRC</label>
-        <select class="sel" id="fuerzaMmssIGer">
-          <option value="">—</option>
-          ${mrc.map(v=>`<option ${d.fuerzaMmssIGer===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Fuerza MMII D — MRC</label>
-        <select class="sel" id="fuerzaMmiiDGer">
-          <option value="">—</option>
-          ${mrc.map(v=>`<option ${d.fuerzaMmiiDGer===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Fuerza MMII I — MRC</label>
-        <select class="sel" id="fuerzaMmiiIGer">
-          <option value="">—</option>
-          ${mrc.map(v=>`<option ${d.fuerzaMmiiIGer===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Dinamometría prensión D (kg)</label>
-        <input class="inp" id="dinamoDGer" type="number" min="0" max="100" step="0.1"
-          value="${d.dinamoDGer||''}" placeholder="kg (H:< 27 / M:< 16 = sarcopenia)"></div>
-      <div class="field"><label>Dinamometría prensión I (kg)</label>
-        <input class="inp" id="dinamoIGer" type="number" min="0" max="100" step="0.1"
-          value="${d.dinamoIGer||''}" placeholder="kg"></div>
-      <div class="field"><label>Sospecha de sarcopenia</label>
-        <select class="sel" id="sarcopenia">
-          <option value="">—</option>
-          ${['Ausente','Sospecha (fuerza baja)','Confirmada (fuerza + masa baja)','Grave (fuerza + masa + rendimiento bajos)'].map(v=>`<option ${d.sarcopenia===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field form-full"><label>ROM articular relevante</label>
-        <textarea class="ta" id="romGer" rows="2"
-          placeholder="Movilidad de articulaciones principales afectadas...">${e2(d.romGer||'')}</textarea></div>
-    </div>`);
-}
-
-function secEquilibrioRiesgoCaidaGer(d){
-  return secWrap('equil_ger','VII. Equilibrio y riesgo de caída','⚖️',`
-    <div class="form-grid">
-      <div class="field"><label>Apoyo monopodal D (seg)</label>
-        <input class="inp" id="monopodDGer" type="number" min="0" max="60" step="0.5"
-          value="${d.monopodDGer||''}" placeholder="segundos"></div>
-      <div class="field"><label>Apoyo monopodal I (seg)</label>
-        <input class="inp" id="monopodIGer" type="number" min="0" max="60" step="0.5"
-          value="${d.monopodIGer||''}" placeholder="segundos"></div>
-      <div class="field"><label>Test de alcance funcional (cm)</label>
-        <input class="inp" id="alcanceFuncGer" type="number" min="0" max="60" step="0.5"
-          value="${d.alcanceFuncGer||''}" placeholder="cm (< 15 cm = alto riesgo)"></div>
-      <div class="field"><label>Velocidad de marcha 4m (seg)</label>
-        <input class="inp" id="velMarcha4m" type="number" min="0" max="60" step="0.1"
-          value="${d.velMarcha4m||''}" placeholder="seg (> 5 seg = < 0.8 m/s)"></div>
-      <div class="field"><label>Miedo a caer (percepción)</label>
-        <select class="sel" id="miedoCaer">
-          <option value="">—</option>
-          ${['Sin miedo','Miedo leve','Miedo moderado','Miedo grave — limita actividad'].map(v=>`<option ${d.miedoCaer===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field form-full"><label>Entorno domiciliario</label>
-        <textarea class="ta" id="entornoDomiciliario" rows="2"
-          placeholder="Barreras arquitectónicas, iluminación, alfombras, baño adaptado, escaleras...">${e2(d.entornoDomiciliario||'')}</textarea></div>
-    </div>
-    <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
-      💡 Cuantifica con <b>Escala de Berg</b>, <b>TUG</b>, <b>SPPB</b>, <b>Tinetti</b> y/o <b>FES-I</b> en la sección de Escalas.
-    </div>`);
-}
-
-function secMarchaMovilidadGer(d){
-  return secWrap('marcha_ger','VIII. Marcha y movilidad','🚶',`
-    <div class="form-grid">
-      <div class="field"><label>Tipo de marcha</label>
-        <select class="sel" id="tipoMarchaGer">
-          <option value="">—</option>
-          ${['No deambula','Asistida por persona','Con ayuda técnica','Independiente con supervisión','Independiente'].map(v=>`<option ${d.tipoMarchaGer===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Patrón de marcha</label>
-        <select class="sel" id="patronMarchaGer">
-          <option value="">—</option>
-          ${['Normal','Antálgica','Parkinsoniana','Festinante','Steppage','Trendelenburg','Senil (base amplia, pasos cortos)','Atáxica','Otra'].map(v=>`<option ${d.patronMarchaGer===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Ayuda técnica</label>
-        <select class="sel" id="ayudaTecGer">
-          <option value="">—</option>
-          ${['Ninguna','Bastón simple','Bastón de cuatro puntos','Andador sin ruedas','Andador con ruedas','Muletas','Silla de ruedas manual','Silla de ruedas eléctrica'].map(v=>`<option ${d.ayudaTecGer===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Escaleras</label>
-        <select class="sel" id="escalerasGer">
-          <option value="">—</option>
-          ${['Sube y baja independiente','Con apoyo en barandal','Con asistencia de persona','No puede'].map(v=>`<option ${d.escalerasGer===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field form-full"><label>Observaciones de marcha</label>
-        <textarea class="ta" id="obsMarchaGer" rows="2"
-          placeholder="Longitud de paso, cadencia, base de sustentación, asimetrías, compensaciones...">${e2(d.obsMarchaGer||'')}</textarea></div>
-    </div>`);
-}
-
-function secAVDDependenciaGer(d){
-  return secWrap('avd_ger','IX. AVD y dependencia funcional','🏠',`
-    <div class="form-grid">
-      <div class="field form-full"><label>AVD básicas afectadas</label>
-        <textarea class="ta" id="avdBasicasGer" rows="2"
-          placeholder="Baño, vestido, aseo, uso WC, alimentación, continencia...">${e2(d.avdBasicasGer||'')}</textarea></div>
-      <div class="field form-full"><label>AVD instrumentales afectadas</label>
-        <textarea class="ta" id="avdInstGer" rows="2"
-          placeholder="Uso teléfono, compras, cocina, limpieza, transporte, medicación, finanzas...">${e2(d.avdInstGer||'')}</textarea></div>
-      <div class="field"><label>Nivel de dependencia general</label>
-        <select class="sel" id="nivelDependencia">
-          <option value="">—</option>
-          ${['Independiente','Dependencia leve','Dependencia moderada','Dependencia grave','Dependencia total'].map(v=>`<option ${d.nivelDependencia===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-    </div>
-    <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
-      💡 Cuantifica con el <b>Índice de Barthel</b> (básicas) y <b>Lawton-Brody</b> (instrumentales) en la sección de Escalas.
-    </div>`);
-}
-
-function secCuidadorGer(d){
-  return secWrap('cuidador_ger','X. Valoración del cuidador (si aplica)','👥',`
-    <div class="form-grid">
-      <div class="field"><label>Cuidador principal</label>
-        <select class="sel" id="tipoCuidador">
-          <option value="">—</option>
-          ${['Ninguno — vive solo','Familiar directo','Cuidador profesional contratado','Institución'].map(v=>`<option ${d.tipoCuidador===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Sobrecarga del cuidador (percepción)</label>
-        <select class="sel" id="sobrecargaCuidador">
-          <option value="">—</option>
-          ${['No aplica','Sin sobrecarga','Sobrecarga leve','Sobrecarga moderada','Sobrecarga grave'].map(v=>`<option ${d.sobrecargaCuidador===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Necesidad de educación al cuidador</label>
-        <select class="sel" id="edCuidador">
-          <option value="">—</option>
-          ${['No','Sí — técnicas de movilización','Sí — ejercicios en casa','Sí — prevención de caídas','Sí — múltiples temas'].map(v=>`<option ${d.edCuidador===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field form-full"><label>Adaptaciones del hogar recomendadas</label>
-        <textarea class="ta" id="adaptacionesHogar" rows="2"
-          placeholder="Barras de apoyo, silla de ducha, alfombra antideslizante, iluminación...">${e2(d.adaptacionesHogar||'')}</textarea></div>
-    </div>`);
-}
-
 // ══════════════════════════════════════════════════════════════
 // FICHA EVALUACIÓN POSTURAL
 // ══════════════════════════════════════════════════════════════
 
 function secPostural(d){
   return secAnamnesisPostural(d)
-       + secInspeccionAnterior(d)
-       + secInspeccionPosterior(d)
-       + secInspeccionLateral(d)
+       + secInspeccionVisualUnificada(d)
        + secMedicionesPosturales(d)
        + secCalzadoApoyoPlantar(d)
-       + secFlexibilidadAcortamientos(d)
-       + secDiagnosticoPostural(d);
+       + secFlexibilidadAcortamientos(d);
 }
 
+function secInspeccionVisualUnificada(d){
+  const opts = (campo, opciones) => opciones.map(v =>
+    `<option ${d[campo]===v?'selected':''}>${v}</option>`).join('');
+
+  return secWrap('insp_visual','III. Inspección visual','👁️',`
+    <!-- Tabs -->
+    <div style="display:flex;gap:4px;margin-bottom:16px;border-bottom:2px solid var(--bd);padding-bottom:0">
+      <button type="button" id="tabAnt"
+        onclick="switchTabInsp('ant')"
+        style="padding:8px 16px;border:none;border-radius:8px 8px 0 0;font-size:12px;font-weight:700;cursor:pointer;background:var(--n500);color:#fff;border-bottom:2px solid var(--n500);margin-bottom:-2px">
+        Vista anterior
+      </button>
+      <button type="button" id="tabPost"
+        onclick="switchTabInsp('post')"
+        style="padding:8px 16px;border:none;border-radius:8px 8px 0 0;font-size:12px;font-weight:700;cursor:pointer;background:var(--surf3);color:var(--tx3);border-bottom:2px solid transparent;margin-bottom:-2px">
+        Vista posterior
+      </button>
+      <button type="button" id="tabLat"
+        onclick="switchTabInsp('lat')"
+        style="padding:8px 16px;border:none;border-radius:8px 8px 0 0;font-size:12px;font-weight:700;cursor:pointer;background:var(--surf3);color:var(--tx3);border-bottom:2px solid transparent;margin-bottom:-2px">
+        Vista lateral D — I
+      </button>
+    </div>
+
+    <!-- Panel Anterior -->
+    <div id="panelInspAnt">
+      <div class="form-grid">
+        <div class="field"><label>Posición cabeza</label>
+          <select class="sel" id="cabezaAnt"><option value="">—</option>
+            ${opts('cabezaAnt',['Centrada','Inclinada derecha','Inclinada izquierda','Rotada derecha','Rotada izquierda'])}
+          </select></div>
+        <div class="field"><label>Hombros</label>
+          <select class="sel" id="hombrosAnt"><option value="">—</option>
+            ${opts('hombrosAnt',['Simétricos','Elevado derecho','Elevado izquierdo','Descendido derecho','Descendido izquierdo'])}
+          </select></div>
+        <div class="field"><label>Línea clavicular</label>
+          <select class="sel" id="clavicular"><option value="">—</option>
+            ${opts('clavicular',['Simétrica','Asimétrica — más alta D','Asimétrica — más alta I'])}
+          </select></div>
+        <div class="field"><label>Triángulo del talle</label>
+          <select class="sel" id="triangulTalle"><option value="">—</option>
+            ${opts('triangulTalle',['Simétrico','Asimétrico — mayor D','Asimétrico — mayor I'])}
+          </select></div>
+        <div class="field"><label>Pelvis / EIAS</label>
+          <select class="sel" id="pelvisAnt"><option value="">—</option>
+            ${opts('pelvisAnt',['Simétrica','Elevada derecha','Elevada izquierda'])}
+          </select></div>
+        <div class="field"><label>Rodillas</label>
+          <select class="sel" id="rodillasAnt"><option value="">—</option>
+            ${opts('rodillasAnt',['Centradas','Valgo bilateral','Varo bilateral','Valgo D / Varo I','Varo D / Valgo I','Asimétrico'])}
+          </select></div>
+        <div class="field"><label>Pie derecho</label>
+          <select class="sel" id="pieDerAnt"><option value="">—</option>
+            ${opts('pieDerAnt',['Normal','Plano','Cavo','Valgo','Varo'])}
+          </select></div>
+        <div class="field"><label>Pie izquierdo</label>
+          <select class="sel" id="pieIzqAnt"><option value="">—</option>
+            ${opts('pieIzqAnt',['Normal','Plano','Cavo','Valgo','Varo'])}
+          </select></div>
+        <div class="field form-full"><label>Observaciones vista anterior</label>
+          <textarea class="ta" id="obsAnt" rows="2"
+            placeholder="Hallazgos adicionales vista anterior...">${e2(d.obsAnt||'')}</textarea></div>
+      </div>
+    </div>
+
+    <!-- Panel Posterior -->
+    <div id="panelInspPost" style="display:none">
+      <div class="form-grid">
+        <div class="field"><label>Occipucio</label>
+          <select class="sel" id="occipucio"><option value="">—</option>
+            ${opts('occipucio',['Centrado','Desviado derecha','Desviado izquierda'])}
+          </select></div>
+        <div class="field"><label>Hombros / Escápulas</label>
+          <select class="sel" id="escapulas"><option value="">—</option>
+            ${opts('escapulas',['Simétricas','Escápula alada derecha','Escápula alada izquierda','Asimétrica — más alta D','Asimétrica — más alta I'])}
+          </select></div>
+        <div class="field"><label>Columna</label>
+          <select class="sel" id="columnaPost"><option value="">—</option>
+            ${opts('columnaPost',['Recta','Escoliosis funcional — curva D','Escoliosis funcional — curva I','Escoliosis estructural — curva D','Escoliosis estructural — curva I','Escoliosis en S'])}
+          </select></div>
+        <div class="field"><label>Pliegues glúteos</label>
+          <select class="sel" id="plieguesGluteos"><option value="">—</option>
+            ${opts('plieguesGluteos',['Simétricos','Asimétrico — más alto D','Asimétrico — más alto I'])}
+          </select></div>
+        <div class="field"><label>Pliegues poplíteos</label>
+          <select class="sel" id="plieguesPopliteos"><option value="">—</option>
+            ${opts('plieguesPopliteos',['Simétricos','Asimétrico — más alto D','Asimétrico — más alto I'])}
+          </select></div>
+        <div class="field"><label>Talones</label>
+          <select class="sel" id="talones"><option value="">—</option>
+            ${opts('talones',['Alineados','Valgo bilateral','Varo bilateral','Valgo D / Varo I','Asimétrico'])}
+          </select></div>
+        <div class="field form-full"><label>Observaciones vista posterior</label>
+          <textarea class="ta" id="obsPost" rows="2"
+            placeholder="Hallazgos adicionales vista posterior...">${e2(d.obsPost||'')}</textarea></div>
+      </div>
+    </div>
+
+    <!-- Panel Lateral -->
+    <div id="panelInspLat" style="display:none">
+      <div class="form-grid">
+        <div class="field"><label>Posición cabeza</label>
+          <select class="sel" id="cabezaLat"><option value="">—</option>
+            ${opts('cabezaLat',['Centrada','Proyectada hacia delante (anteropulsión)','Retropulsión'])}
+          </select></div>
+        <div class="field"><label>Curva cervical</label>
+          <select class="sel" id="curvaCervical"><option value="">—</option>
+            ${opts('curvaCervical',['Lordosis normal','Rectificada','Hiperlordosis','Invertida'])}
+          </select></div>
+        <div class="field"><label>Curva dorsal</label>
+          <select class="sel" id="curvaDorsal"><option value="">—</option>
+            ${opts('curvaDorsal',['Cifosis normal','Rectificada','Hipercifosis','Dorso plano'])}
+          </select></div>
+        <div class="field"><label>Curva lumbar</label>
+          <select class="sel" id="curvaLumbar"><option value="">—</option>
+            ${opts('curvaLumbar',['Lordosis normal','Rectificada','Hiperlordosis','Invertida'])}
+          </select></div>
+        <div class="field"><label>Pelvis</label>
+          <select class="sel" id="pelvisLat"><option value="">—</option>
+            ${opts('pelvisLat',['Neutra','Anteversión leve','Anteversión marcada','Retroversión leve','Retroversión marcada'])}
+          </select></div>
+        <div class="field"><label>Rodillas</label>
+          <select class="sel" id="rodillasLat"><option value="">—</option>
+            ${opts('rodillasLat',['Normales','Hiperextensión bilateral','Hiperextensión D','Hiperextensión I','Flexo bilateral','Flexo D','Flexo I'])}
+          </select></div>
+        <div class="field form-full"><label>Observaciones vista lateral</label>
+          <textarea class="ta" id="obsLat" rows="2"
+            placeholder="Hallazgos adicionales vista lateral, alineación del lóbulo de la oreja / acromion / trocánter / maléolo...">${e2(d.obsLat||'')}</textarea></div>
+      </div>
+    </div>
+  `);
+}
+
+function switchTabInsp(tab){
+  var panels = {ant:'panelInspAnt', post:'panelInspPost', lat:'panelInspLat'};
+  var tabs   = {ant:'tabAnt', post:'tabPost', lat:'tabLat'};
+  Object.keys(panels).forEach(function(k){
+    var panel = document.getElementById(panels[k]);
+    var btn   = document.getElementById(tabs[k]);
+    if(!panel || !btn) return;
+    var active = k === tab;
+    panel.style.display = active ? 'block' : 'none';
+    btn.style.background = active ? 'var(--n500)' : 'var(--surf3)';
+    btn.style.color      = active ? '#fff' : 'var(--tx3)';
+    btn.style.borderBottom = active ? '2px solid var(--n500)' : '2px solid transparent';
+  });
+}
 function secAnamnesisPostural(d){
   return secWrap('anam_post','II. Motivo y antecedentes posturales','📋',`
     <div class="form-grid">
@@ -5343,139 +5102,6 @@ function secAnamnesisPostural(d){
         <input class="inp" id="actFisicaPost" value="${e2(d.actFisicaPost||'')}"
           placeholder="Tipo, frecuencia, carga horaria..."></div>
     </div>`,true);
-}
-
-function secInspeccionAnterior(d){
-  const opts = (campo, opciones) => opciones.map(v =>
-    `<option ${d[campo]===v?'selected':''}>${v}</option>`).join('');
-  return secWrap('insp_ant','III. Inspección visual — Vista anterior','👁️',`
-    <div class="form-grid">
-      <div class="field"><label>Posición cabeza</label>
-        <select class="sel" id="cabezaAnt">
-          <option value="">—</option>
-          ${opts('cabezaAnt',['Centrada','Inclinada derecha','Inclinada izquierda','Rotada derecha','Rotada izquierda'])}
-        </select></div>
-      <div class="field"><label>Hombros</label>
-        <select class="sel" id="hombrosAnt">
-          <option value="">—</option>
-          ${opts('hombrosAnt',['Simétricos','Elevado derecho','Elevado izquierdo','Descendido derecho','Descendido izquierdo'])}
-        </select></div>
-      <div class="field"><label>Línea clavicular</label>
-        <select class="sel" id="clavicular">
-          <option value="">—</option>
-          ${opts('clavicular',['Simétrica','Asimétrica — más alta D','Asimétrica — más alta I'])}
-        </select></div>
-      <div class="field"><label>Triángulo del talle</label>
-        <select class="sel" id="triangulTalle">
-          <option value="">—</option>
-          ${opts('triangulTalle',['Simétrico','Asimétrico — mayor D','Asimétrico — mayor I'])}
-        </select></div>
-      <div class="field"><label>Pelvis / EIAS</label>
-        <select class="sel" id="pelvisAnt">
-          <option value="">—</option>
-          ${opts('pelvisAnt',['Simétrica','Elevada derecha','Elevada izquierda'])}
-        </select></div>
-      <div class="field"><label>Rodillas</label>
-        <select class="sel" id="rodillasAnt">
-          <option value="">—</option>
-          ${opts('rodillasAnt',['Centradas','Valgo bilateral','Varo bilateral','Valgo D / Varo I','Varo D / Valgo I','Asimétrico'])}
-        </select></div>
-      <div class="field"><label>Pie derecho</label>
-        <select class="sel" id="pieDerAnt">
-          <option value="">—</option>
-          ${opts('pieDerAnt',['Normal','Plano','Cavo','Valgo','Varo'])}
-        </select></div>
-      <div class="field"><label>Pie izquierdo</label>
-        <select class="sel" id="pieIzqAnt">
-          <option value="">—</option>
-          ${opts('pieIzqAnt',['Normal','Plano','Cavo','Valgo','Varo'])}
-        </select></div>
-      <div class="field form-full"><label>Observaciones vista anterior</label>
-        <textarea class="ta" id="obsAnt" rows="2"
-          placeholder="Hallazgos adicionales vista anterior...">${e2(d.obsAnt||'')}</textarea></div>
-    </div>`);
-}
-
-function secInspeccionPosterior(d){
-  const opts = (campo, opciones) => opciones.map(v =>
-    `<option ${d[campo]===v?'selected':''}>${v}</option>`).join('');
-  return secWrap('insp_post','IV. Inspección visual — Vista posterior','👁️',`
-    <div class="form-grid">
-      <div class="field"><label>Occipucio</label>
-        <select class="sel" id="occipucio">
-          <option value="">—</option>
-          ${opts('occipucio',['Centrado','Desviado derecha','Desviado izquierda'])}
-        </select></div>
-      <div class="field"><label>Hombros / Escápulas</label>
-        <select class="sel" id="escapulas">
-          <option value="">—</option>
-          ${opts('escapulas',['Simétricas','Escápula alada derecha','Escápula alada izquierda','Asimétrica — más alta D','Asimétrica — más alta I'])}
-        </select></div>
-      <div class="field"><label>Columna</label>
-        <select class="sel" id="columnaPost">
-          <option value="">—</option>
-          ${opts('columnaPost',['Recta','Escoliosis funcional — curva D','Escoliosis funcional — curva I','Escoliosis estructural — curva D','Escoliosis estructural — curva I','Escoliosis en S'])}
-        </select></div>
-      <div class="field"><label>Pliegues glúteos</label>
-        <select class="sel" id="plieguesGluteos">
-          <option value="">—</option>
-          ${opts('plieguesGluteos',['Simétricos','Asimétrico — más alto D','Asimétrico — más alto I'])}
-        </select></div>
-      <div class="field"><label>Pliegues poplíteos</label>
-        <select class="sel" id="plieguesPopliteos">
-          <option value="">—</option>
-          ${opts('plieguesPopliteos',['Simétricos','Asimétrico — más alto D','Asimétrico — más alto I'])}
-        </select></div>
-      <div class="field"><label>Talones</label>
-        <select class="sel" id="talones">
-          <option value="">—</option>
-          ${opts('talones',['Alineados','Valgo bilateral','Varo bilateral','Valgo D / Varo I','Asimétrico'])}
-        </select></div>
-      <div class="field form-full"><label>Observaciones vista posterior</label>
-        <textarea class="ta" id="obsPost" rows="2"
-          placeholder="Hallazgos adicionales vista posterior...">${e2(d.obsPost||'')}</textarea></div>
-    </div>`);
-}
-
-function secInspeccionLateral(d){
-  const opts = (campo, opciones) => opciones.map(v =>
-    `<option ${d[campo]===v?'selected':''}>${v}</option>`).join('');
-  return secWrap('insp_lat','V. Inspección visual — Vista lateral','👁️',`
-    <div class="form-grid">
-      <div class="field"><label>Posición cabeza</label>
-        <select class="sel" id="cabezaLat">
-          <option value="">—</option>
-          ${opts('cabezaLat',['Centrada','Proyectada hacia delante (anteropulsión)','Retropulsión'])}
-        </select></div>
-      <div class="field"><label>Curva cervical</label>
-        <select class="sel" id="curvaCervical">
-          <option value="">—</option>
-          ${opts('curvaCervical',['Lordosis normal','Rectificada','Hiperlordosis','Invertida'])}
-        </select></div>
-      <div class="field"><label>Curva dorsal</label>
-        <select class="sel" id="curvaDorsal">
-          <option value="">—</option>
-          ${opts('curvaDorsal',['Cifosis normal','Rectificada','Hipercifosis','Dorso plano'])}
-        </select></div>
-      <div class="field"><label>Curva lumbar</label>
-        <select class="sel" id="curvaLumbar">
-          <option value="">—</option>
-          ${opts('curvaLumbar',['Lordosis normal','Rectificada','Hiperlordosis','Invertida'])}
-        </select></div>
-      <div class="field"><label>Pelvis</label>
-        <select class="sel" id="pelvisLat">
-          <option value="">—</option>
-          ${opts('pelvisLat',['Neutra','Anteversión leve','Anteversión marcada','Retroversión leve','Retroversión marcada'])}
-        </select></div>
-      <div class="field"><label>Rodillas</label>
-        <select class="sel" id="rodillasLat">
-          <option value="">—</option>
-          ${opts('rodillasLat',['Normales','Hiperextensión bilateral','Hiperextensión D','Hiperextensión I','Flexo bilateral','Flexo D','Flexo I'])}
-        </select></div>
-      <div class="field form-full"><label>Observaciones vista lateral</label>
-        <textarea class="ta" id="obsLat" rows="2"
-          placeholder="Hallazgos adicionales vista lateral, alineación del lóbulo de la oreja / acromion / trocánter / maléolo...">${e2(d.obsLat||'')}</textarea></div>
-    </div>`);
 }
 
 function secMedicionesPosturales(d){
@@ -5889,7 +5515,6 @@ function secAVDNeuro(d){
     </div>`);
 }
 
-// secCIFNeuro eliminada (cambio 3 - diagnóstico CIF removido)
 
 
 // ══════════════════════════════════════════════════════════════
@@ -6389,37 +6014,6 @@ async function guardarHC(catId, pacId, modo){
     limitAVD:v('limitAVD'),suenio:v('suenio'),obsFuncCard:v('obsFuncCard'),
   } : {};
 
-  // Leer campos específicos de geriatría
-  const datosGer = catId==='geriatria' ? {
-    dxMedico:v('aDxMed'),dxFisio:v('aDxFisio'),motivo:v('aMotivo'),
-    convivencia:v('convivencia'),estadoCivil:v('estadoCivil'),antecedentes:v('aAntecedentes'),
-    polifarmacia:v('polifarmacia'),medRiesgoCaida:v('medRiesgoCaida'),
-    caidasAnio:v('caidasAnio'),circunstanciaCaidas:v('circunstanciaCaidas'),
-    // Valoración cognitiva
-    mmseScore:v('mmseScore'),cognitivo:v('cognitivo'),estadoAnimo:v('estadoAnimo'),
-    comunicacionGer:v('comunicacionGer'),audiofono:v('audiofono'),gafas:v('gafas'),obsCognitivoGer:v('obsCognitivoGer'),
-    // Nutricional
-    pesoGer:v('pesoGer'),perdidaPeso:v('perdidaPeso'),imcGer:v('imcGer'),apetito:v('apetito'),
-    hidratacion:v('hidratacion'),
-    // Fragilidad
-    sarcopenia:v('sarcopenia'),clasifFragilidad:v('clasifFragilidad'),obsFragilidad:v('obsFragilidad'),
-    // Examen músculo-esquelético
-    evaGer:Number(v('evaGer')||0),dolLocGer:v('dolLocGer'),
-    fuerzaMmssDGer:v('fuerzaMmssDGer'),fuerzaMmssIGer:v('fuerzaMmssIGer'),
-    fuerzaMmiiDGer:v('fuerzaMmiiDGer'),fuerzaMmiiIGer:v('fuerzaMmiiIGer'),
-    dinamoDGer:v('dinamoDGer'),dinamoIGer:v('dinamoIGer'),
-    romGer:v('romGer'),
-    // Equilibrio y marcha
-    monopodDGer:v('monopodDGer'),monopodIGer:v('monopodIGer'),alcanceFuncGer:v('alcanceFuncGer'),
-    miedoCaer:v('miedoCaer'),
-    tipoMarchaGer:v('tipoMarchaGer'),patronMarchaGer:v('patronMarchaGer'),
-    ayudaTecGer:v('ayudaTecGer'),tug:v('tug'),velMarcha4m:v('velMarcha4m'),obsMarchaGer:v('obsMarchaGer'),
-    // AVD y dependencia
-    avdBasicasGer:v('avdBasicasGer'),avdInstGer:v('avdInstGer'),nivelDependencia:v('nivelDependencia'),
-    // Cuidador
-    tipoCuidador:v('tipoCuidador'),edCuidador:v('edCuidador'),sobrecargaCuidador:v('sobrecargaCuidador'),
-    entornoDomiciliario:v('entornoDomiciliario'),adaptacionesHogar:v('adaptacionesHogar'),
-  } : {};
 
   const datos={
     edad:v('pEdad'),dxMedico:v('aDxMed'),dxFisio:v('aDxFisio'),
@@ -6436,7 +6030,6 @@ async function guardarHC(catId, pacId, modo){
     ...datosNeuro,
     ...datosPed,
     ...datosCardio,
-    ...datosGer,
     ...datosPostural,
   };
   
