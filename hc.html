@@ -953,7 +953,7 @@ function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
     + '<div>'
     + '<div style="font-family:sans-serif;font-weight:800;font-size:20px;color:#1e3a5f;margin-bottom:4px">' + e2(pac.nombre||'—') + '</div>'
     + '<div style="font-size:12px;color:#475569">DNI: ' + e2(pac.dni||'—')
-      + (pac.fechaNac ? ' &nbsp;&bull;&nbsp; Nacimiento: ' + e2(pac.fechaNac) : '')
+      + (pac.fechaNac ? ' &nbsp;&bull;&nbsp; Nacimiento: ' + e2(formatFechaCorta(pac.fechaNac)) : '')
       + (pac.sexo ? ' &nbsp;&bull;&nbsp; ' + (pac.sexo==='M'?'Masculino':'Femenino') : '') + '</div>'
     + (pac.telefono ? '<div style="font-size:12px;color:#475569">Tel: ' + e2(pac.telefono) + '</div>' : '')
     + (pac.ocupacion ? '<div style="font-size:12px;color:#475569">Ocupaci&oacute;n: ' + e2(pac.ocupacion) + '</div>' : '')
@@ -1372,7 +1372,10 @@ async function abrirPac(id){
 
 function formatFecha(raw){
   if(!raw) return '';
-  var d=new Date(raw);
+  var d;
+  // Fechas tipo YYYY-MM-DD se tratan como locales para evitar desfase de zona horaria
+  if(/^\d{4}-\d{2}-\d{2}$/.test(String(raw))) d=new Date(raw+'T12:00:00');
+  else d=new Date(raw);
   if(isNaN(d.getTime())){
     // intentar parsear string tipo "admincentyr · Sat Mar 21..."
     var m=raw.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
@@ -1387,6 +1390,23 @@ function formatFecha(raw){
   var ap=h>=12?'PM':'AM';
   h=h%12||12;
   return dd+'/'+mm+'/'+yy+' '+h+':'+mi+' '+ap;
+}
+function formatFechaCorta(raw){
+  if(!raw) return '';
+  // Si ya tiene el formato correcto DD/MM/AA retornarlo
+  if(/^\d{2}\/\d{2}\/\d{2}$/.test(raw)) return raw;
+  var d=new Date(raw);
+  // Compensar zona horaria para fechas tipo YYYY-MM-DD (que se parsean como UTC)
+  if(/^\d{4}-\d{2}-\d{2}$/.test(String(raw))) d=new Date(raw+'T12:00:00');
+  if(isNaN(d.getTime())){
+    var m=raw.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    if(m) d=new Date((m[3].length===2?'20'+m[3]:m[3])+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0')+'T12:00:00');
+    else return raw;
+  }
+  var dd=String(d.getDate()).padStart(2,'0');
+  var mm=String(d.getMonth()+1).padStart(2,'0');
+  var yy=String(d.getFullYear()).slice(-2);
+  return dd+'/'+mm+'/'+yy;
 }
 function evalCard(ev, pac){
   const pr=session.rol==='admin'||session.rol==='docente';
@@ -1436,11 +1456,11 @@ function buildDetalleEval(ev, pac){
   html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:14px">';
   html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">NOMBRE</div><div style="font-size:12px">'+e2(pac.nombre||'—')+'</div></div>';
   html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">DNI</div><div style="font-size:12px">'+e2(pac.dni||'—')+'</div></div>';
-  if(pac.fechaNac) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">F. NACIMIENTO</div><div style="font-size:12px">'+e2(pac.fechaNac)+'</div></div>';
+  if(pac.fechaNac) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">F. NACIMIENTO</div><div style="font-size:12px">'+e2(formatFechaCorta(pac.fechaNac))+'</div></div>';
   if(pac.sexo) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">SEXO</div><div style="font-size:12px">'+(pac.sexo==='M'?'Masculino':'Femenino')+'</div></div>';
   if(pac.ocupacion||d.ocupacion) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">OCUPACIÓN</div><div style="font-size:12px">'+e2(pac.ocupacion||d.ocupacion)+'</div></div>';
   if(pac.telefono) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">TELÉFONO</div><div style="font-size:12px">'+e2(pac.telefono)+'</div></div>';
-  if(pac.fechaInicio) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">INICIO TRATAMIENTO</div><div style="font-size:12px">'+e2(pac.fechaInicio)+'</div></div>';
+  if(pac.fechaInicio) html+='<div><div style="font-size:10px;color:var(--tx4);font-weight:700">INICIO TRATAMIENTO</div><div style="font-size:12px">'+e2(formatFechaCorta(pac.fechaInicio))+'</div></div>';
   html+='</div>';
 
   // Anamnesis
@@ -1652,10 +1672,29 @@ async function abrirFrmEval(pacId, evalId, catId){
   let ev=null;
   if(evalId){const r=await apiGet('obtenerEvaluacion',{id:evalId});if(r.ok)ev=r.evaluacion;}
   const catNom=getCat(catId).nombre;
+  // Cargar docentes para el selector
+  var docentesEval=[];
+  try{const ru=await apiGet('listarUsuarios');docentesEval=(ru.usuarios||[]).filter(u=>u.rol==='docente');}catch(e){}
+  window._docentesEvalList=docentesEval;
+  const docenteEvalActual=ev?.docente||'';
   v.innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
       <button class="btn btn-ghost btn-sm" onclick="abrirPac('${esc(pacId)}')">← Volver</button>
       <div class="card-title">${evalId?'✏️ Editar':'📋 Nueva'} Evaluación · <span style="color:var(--n300)">${e2(catNom)}</span></div>
+    </div>
+    <!-- Selector de docente evaluación -->
+    <div class="card" style="margin-bottom:14px;padding:14px 18px">
+      <div class="form-grid">
+        <div class="field"><label>Estudiante</label>
+          <input class="inp" id="evalEst" value="${e2(ev?.autor||session.nombre||session.codigo)}" readonly style="background:var(--surf2);cursor:default"></div>
+        <div class="field"><label>Docente supervisor *</label>
+          <div style="position:relative">
+            <input class="inp" id="evalDocInput" placeholder="Buscar docente..." value="${e2(docenteEvalActual)}" oninput="filtrarDocentesEval(this.value)" autocomplete="off">
+            <div id="evalDocenteDD" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surf);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:50;max-height:180px;overflow-y:auto;margin-top:4px"></div>
+          </div>
+          <input type="hidden" id="evalDoc" value="${e2(docenteEvalActual)}">
+        </div>
+      </div>
     </div>
 
     <!-- Examen físico -->
@@ -1757,9 +1796,9 @@ async function abrirFrmEval(pacId, evalId, catId){
     </div>
 
     <div class="btn-group" style="margin-top:18px">
-      <button class="btn btn-ghost btn-sm" onclick="guardarEval('${esc(pacId)}','${evalId||''}','${esc(catId)}','borrador')">💾 Borrador</button>
-      <button class="btn btn-primary" onclick="guardarEval('${esc(pacId)}','${evalId||''}','${esc(catId)}','enviar')">📤 Guardar y enviar al docente</button>
-      <button class="btn btn-ghost" onclick="abrirPac('${esc(pacId)}')">Cancelar</button>
+      <button class="btn btn-ghost" onclick="abrirPac('${esc(pacId)}')">✕ Cancelar</button>
+      <button class="btn btn-ghost btn-sm" onclick="guardarEval('${esc(pacId)}','${evalId||''}','${esc(catId)}','borrador')">💾 Guardar borrador</button>
+      <button class="btn btn-primary" onclick="guardarEval('${esc(pacId)}','${evalId||''}','${esc(catId)}','enviar')">📤 Enviar al docente</button>
     </div>`;
 }
 
@@ -1816,6 +1855,8 @@ function leerROM2(){const r={};document.querySelectorAll('[data-rom]').forEach(e
 function leerF2(){const f={};document.querySelectorAll('[data-f]').forEach(el=>{if(el.value.trim())f[el.dataset.f]=Number(el.value.trim());});return f;}
 
 async function guardarEval(pacId, evalId, catId, modo){
+  const docEval=g('evalDoc')?.value||g('evalDocInput')?.value||'';
+  if(!docEval){toast('⚠️ Debes seleccionar un docente supervisor','Es obligatorio para guardar la evaluación','warn');return;}
   const estado=modo==='borrador'?'borrador':(session.rol==='estudiante'?'pendiente':'aprobada');
   const datosEval={
     evaValor:Number(g('evaS')?.value||0),dolLoc:g('dolL')?.value||'',dolTipo:g('dolT')?.value||'',
@@ -1830,7 +1871,7 @@ async function guardarEval(pacId, evalId, catId, modo){
     planEducacion:g('educ')?.value||''
   };
   const b={action:'guardarEvaluacion',pacienteId:pacId,categoriaId:catId,tipo:'inicial',estado,
-    dxFisio:datosEval.dxFisio,datosEspecificos:datosEval};
+    docente:docEval,dxFisio:datosEval.dxFisio,datosEspecificos:datosEval};
   if(evalId) b.id=evalId;
   const r=await apiPost(b);
   if(!r.ok){toast('Error',r.error,'err');return;}
@@ -1846,6 +1887,32 @@ async function enviarEval(evalId, pacId){
 }
 
 // ─── Formulario Sesión ────────────────────────────────
+
+function filtrarDocentesEval(val){
+  var docentes=window._docentesEvalList||[];
+  var dd=g('evalDocenteDD');
+  if(!dd) return;
+  if(!val||!val.trim()){dd.style.display='none';return;}
+  var v=val.toLowerCase();
+  var matches=docentes.filter(function(d){
+    return (d.nombre||'').toLowerCase().includes(v)||(d.codigo||'').toLowerCase().includes(v);
+  });
+  if(!matches.length){dd.style.display='none';return;}
+  dd.innerHTML=matches.map(function(d){
+    return '<div data-enm="'+encodeURIComponent(d.nombre||d.codigo)+'" style="padding:9px 14px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px">'
+      +'<span style="font-size:10px;background:var(--n100);color:var(--n900);border-radius:4px;padding:1px 5px;font-weight:700">'+e2(d.rol)+'</span>'+e2(d.nombre||d.codigo)+'</div>';
+  }).join('');
+  dd.style.display='block';
+  dd.querySelectorAll('[data-enm]').forEach(function(el){
+    el.addEventListener('click',function(){ selDocEval(el.getAttribute('data-enm')); });
+  });
+}
+function selDocEval(enc){
+  var nombre=decodeURIComponent(enc);
+  var inp=g('evalDocInput'); if(inp) inp.value=nombre;
+  var hid=g('evalDoc'); if(hid) hid.value=nombre;
+  var dd=g('evalDocenteDD'); if(dd) dd.style.display='none';
+}
 function filtrarDocentes(val, docentesParam){
   var docentes=docentesParam||window._docentesList||[];
   var dd=g('docenteDD');
@@ -1919,9 +1986,9 @@ async function abrirFrmSes(pacId, evalId, num, sesId=null){
           </select></div>`:''}
       </div>
       <div class="btn-group" style="margin-top:16px">
-        <button class="btn btn-ghost btn-sm" onclick="guardarSes('${esc(pacId)}','${esc(evalId)}',${num},'${sesId||''}','borrador')">&#128190; Borrador</button>
-        <button class="btn btn-primary" onclick="guardarSes('${esc(pacId)}','${esc(evalId)}',${num},'${sesId||''}','enviar')">&#128228; Enviar al docente</button>
-        <button class="btn btn-ghost" onclick="abrirPac('${esc(pacId)}')">Cancelar</button>
+        <button class="btn btn-ghost" onclick="abrirPac('${esc(pacId)}')">✕ Cancelar</button>
+        <button class="btn btn-ghost btn-sm" onclick="guardarSes('${esc(pacId)}','${esc(evalId)}',${num},'${sesId||''}','borrador')">💾 Guardar borrador</button>
+        <button class="btn btn-primary" onclick="guardarSes('${esc(pacId)}','${esc(evalId)}',${num},'${sesId||''}','enviar')">📤 Enviar al docente</button>
       </div>
     </div>`;
   // Cerrar dropdown docente al click fuera
@@ -1935,6 +2002,8 @@ async function abrirFrmSes(pacId, evalId, num, sesId=null){
 
 async function guardarSes(pacId, evalId, num, sesId, modo){
   const des=g('sDes')?.value?.trim()||'';
+  const doc=g('sDoc')?.value||g('sDocInput')?.value||'';
+  if(!doc){toast('⚠️ Debes seleccionar un docente supervisor','Es obligatorio para guardar la sesión','warn');return;}
   if(modo==='enviar'&&!des){toast('Completa la descripción de la sesión','','warn');return;}
   const estado=modo==='borrador'?'borrador':(session.rol==='estudiante'?'pendiente':'aprobada');
   const b={action:'guardarSesion',pacienteId:pacId,evaluacionId:evalId,numero:num,
@@ -1997,7 +2066,22 @@ async function renderPend(){
   g('vPend').innerHTML='<div class="loader">⏳ Cargando pendientes...</div>';
   const r=await apiGet('pendientesRevision');
   if(!r.ok){g('vPend').innerHTML=`<div class="err-box">${e2(r.error)}</div>`;return;}
-  const ev=r.evaluaciones||[], ses=r.sesiones||[], tot=ev.length+ses.length;
+  var evAll=r.evaluaciones||[], sesAll=r.sesiones||[];
+  // Si es docente, filtrar solo los asignados a este docente
+  var ev=evAll, ses=sesAll;
+  if(session.rol==='docente'){
+    var myName=(session.nombre||'').toLowerCase();
+    var myCode=(session.codigo||'').toLowerCase();
+    ev=evAll.filter(function(e){
+      var d=(e.docente||'').toLowerCase();
+      return d===myName||d===myCode;
+    });
+    ses=sesAll.filter(function(s){
+      var d=(s.docente||'').toLowerCase();
+      return d===myName||d===myCode;
+    });
+  }
+  const tot=ev.length+ses.length;
   const pnoms={};
   await Promise.all([...new Set([...ev.map(e=>e.pacienteId),...ses.map(s=>s.pacienteId)])].map(async id=>{
     const rp=await apiGet('obtenerPaciente',{id});if(rp.ok)pnoms[id]=rp.paciente?.nombre||id;
@@ -2029,7 +2113,13 @@ async function cargarBadge(){
   if(session.rol==='estudiante')return;
   const r=await apiGet('pendientesRevision').catch(()=>({ok:false}));
   if(!r.ok)return;
-  const t=(r.evaluaciones?.length||0)+(r.sesiones?.length||0);
+  var evB=r.evaluaciones||[],sesB=r.sesiones||[];
+  if(session.rol==='docente'){
+    var bn=(session.nombre||'').toLowerCase(),bc=(session.codigo||'').toLowerCase();
+    evB=evB.filter(function(e){var d=(e.docente||'').toLowerCase();return d===bn||d===bc;});
+    sesB=sesB.filter(function(s){var d=(s.docente||'').toLowerCase();return d===bn||d===bc;});
+  }
+  const t=evB.length+sesB.length;
   const b=g('sbBadge');if(b){b.textContent=t;b.style.display=t?'':'none';}
 }
 
@@ -5448,7 +5538,13 @@ function iniciarPollingPendientes(){
     try{
       var r=await apiGet('pendientesRevision').catch(function(){return {ok:false};});
       if(!r.ok) return;
-      var tot=(r.evaluaciones?.length||0)+(r.sesiones?.length||0);
+      var evP=r.evaluaciones||[],sesP=r.sesiones||[];
+      if(session.rol==='docente'){
+        var myn=(session.nombre||'').toLowerCase(),myc=(session.codigo||'').toLowerCase();
+        evP=evP.filter(function(e){var d=(e.docente||'').toLowerCase();return d===myn||d===myc;});
+        sesP=sesP.filter(function(s){var d=(s.docente||'').toLowerCase();return d===myn||d===myc;});
+      }
+      var tot=evP.length+sesP.length;
       var b=g('sbBadge');
       if(b){b.textContent=tot;b.style.display=tot?'':'none';}
       if(tot>_pendCount&&_pendCount>=0){
