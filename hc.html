@@ -1246,11 +1246,42 @@ function filtrarPacs(){
 }
 
 // ─── Formulario Paciente ──────────────────────────────
-function abrirFrmPac(pac=null, preCatId=null, preCatNombre=null){
+async function abrirFrmPac(pac=null, preCatId=null, preCatNombre=null){
   const catId = pac?.categoriaId || preCatId || '';
   const catNom = preCatNombre || getCat(catId).nombre || '';
   views.forEach(v=>g(v).style.display='none');
   const v=g('vEvalForm'); v.style.display='block';
+
+  // Cargar lista de docentes
+  var docentesHC=[];
+  try{const ru=await apiGet('listarUsuarios');docentesHC=(ru.usuarios||[]).filter(u=>u.rol==='docente');}catch(e){}
+  window._docentesHCList=docentesHC;
+  // Docente previo: si viene de una eval existente, recuperar
+  const docenteHCActual=pac?.docenteEval||'';
+
+  // Mostrar selector docente solo a estudiantes (docentes/admin se guardan directamente)
+  const esEstudiante=session.rol==='estudiante';
+  const docSelectorHTML = `
+    <div class="card" style="margin-bottom:14px;padding:14px 18px;border:2px solid var(--bd2)">
+      <div class="form-grid">
+        <div class="field"><label>Estudiante</label>
+          <input class="inp" id="hcEst" value="${e2(session.nombre||session.codigo)}" readonly style="background:var(--surf2);cursor:default"></div>
+        <div class="field"><label>Docente supervisor${esEstudiante?' *':''}</label>
+          <div style="position:relative">
+            <input class="inp" id="hcDocInput" placeholder="Buscar docente..." value="${e2(docenteHCActual)}" oninput="filtrarDocentesHC(this.value)" autocomplete="off">
+            <div id="hcDocenteDD" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surf);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:50;max-height:180px;overflow-y:auto;margin-top:4px"></div>
+          </div>
+          <input type="hidden" id="hcDoc" value="${e2(docenteHCActual)}">
+        </div>
+      </div>
+    </div>`;
+
+  // Botones según rol
+  const btnsBorrador=`<button class="btn btn-ghost btn-sm" onclick="guardarHC('${esc(catId)}','${pac?esc(pac.id):''}','borrador')">💾 Guardar borrador</button>`;
+  const btnsEnviar=esEstudiante
+    ? `<button class="btn btn-primary" onclick="guardarHC('${esc(catId)}','${pac?esc(pac.id):''}','enviar')">📤 Enviar al docente</button>`
+    : `<button class="btn btn-primary" onclick="guardarHC('${esc(catId)}','${pac?esc(pac.id):''}','enviar')">✅ Guardar y aprobar</button>`;
+
   v.innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
       <button class="btn btn-ghost btn-sm" onclick="navTo('pac')">← Volver</button>
@@ -1259,12 +1290,13 @@ function abrirFrmPac(pac=null, preCatId=null, preCatNombre=null){
         <div style="font-size:12px;color:var(--tx3);margin-top:2px">${catPill(catId)} ${e2(catNom)}</div>
       </div>
     </div>
+    ${docSelectorHTML}
     <input type="hidden" id="pC" value="${catId}">
     ${plantillaHTML(catId, pac)}
-    <div class="btn-group" style="margin-top:20px;padding-bottom:40px">
-      <button class="btn btn-ghost btn-sm" onclick="guardarHC('${esc(catId)}','${pac?esc(pac.id):''}','borrador')">💾 Guardar borrador</button>
-      <button class="btn btn-primary" onclick="guardarHC('${esc(catId)}','${pac?esc(pac.id):''}','enviar')">📤 Guardar y enviar al docente</button>
-      <button class="btn btn-ghost" onclick="navTo('pac')">Cancelar</button>
+    <div class="btn-group" style="margin-top:20px;padding-bottom:40px;position:sticky;bottom:0;background:var(--surf2);padding:14px 0 14px;border-top:1px solid var(--bd);z-index:10">
+      <button class="btn btn-ghost" onclick="navTo('pac')">✕ Cancelar</button>
+      ${btnsBorrador}
+      ${btnsEnviar}
     </div>`;
   // Activar acordeones
   v.querySelectorAll('.hc-sec-hdr').forEach(h=>{
@@ -1275,6 +1307,13 @@ function abrirFrmPac(pac=null, preCatId=null, preCatNombre=null){
       if(chv)chv.classList.toggle('open');
     };
   });
+  // Cerrar dropdown al click fuera
+  setTimeout(function(){
+    document.addEventListener('click',function _hcDDClose(e){
+      var dd=g('hcDocenteDD');
+      if(dd&&!dd.contains(e.target)&&e.target.id!=='hcDocInput'){dd.style.display='none';document.removeEventListener('click',_hcDDClose);}
+    });
+  },100);
 }
 
 async function guardarPac(id){
@@ -1810,11 +1849,20 @@ async function abrirFrmEval(pacId, evalId, catId){
       </div>
     </div>
 
-    <div class="btn-group" style="margin-top:18px">
+    <div class="btn-group" style="margin-top:18px;position:sticky;bottom:0;background:var(--surf2);padding:14px 0;border-top:1px solid var(--bd);z-index:10">
       <button class="btn btn-ghost" onclick="abrirPac('${esc(pacId)}')">✕ Cancelar</button>
       <button class="btn btn-ghost btn-sm" onclick="guardarEval('${esc(pacId)}','${evalId||''}','${esc(catId)}','borrador')">💾 Guardar borrador</button>
-      <button class="btn btn-primary" onclick="guardarEval('${esc(pacId)}','${evalId||''}','${esc(catId)}','enviar')">📤 Enviar al docente</button>
+      ${session.rol==='estudiante'
+        ? `<button class="btn btn-primary" onclick="guardarEval('${esc(pacId)}','${evalId||''}','${esc(catId)}','enviar')">📤 Enviar al docente</button>`
+        : `<button class="btn btn-primary" onclick="guardarEval('${esc(pacId)}','${evalId||''}','${esc(catId)}','enviar')">✅ Guardar y aprobar</button>`}
     </div>`;
+  // Cerrar dropdown docente eval al click fuera
+  setTimeout(function(){
+    document.addEventListener('click',function _evalDDClose(e){
+      var dd=g('evalDocenteDD');
+      if(dd&&!dd.contains(e.target)&&e.target.id!=='evalDocInput'){dd.style.display='none';document.removeEventListener('click',_evalDDClose);}
+    });
+  },100);
 }
 
 function toggleSec(id){
@@ -1903,6 +1951,32 @@ async function enviarEval(evalId, pacId){
 
 // ─── Formulario Sesión ────────────────────────────────
 
+
+function filtrarDocentesHC(val){
+  var docentes=window._docentesHCList||[];
+  var dd=g('hcDocenteDD');
+  if(!dd) return;
+  if(!val||!val.trim()){dd.style.display='none';return;}
+  var v=val.toLowerCase();
+  var matches=docentes.filter(function(d){
+    return (d.nombre||'').toLowerCase().includes(v)||(d.codigo||'').toLowerCase().includes(v);
+  });
+  if(!matches.length){dd.style.display='none';return;}
+  dd.innerHTML=matches.map(function(d){
+    return '<div data-hnm="'+encodeURIComponent(d.nombre||d.codigo)+'" style="padding:9px 14px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:8px">'
+      +'<span style="font-size:10px;background:var(--n100);color:var(--n900);border-radius:4px;padding:1px 5px;font-weight:700">'+e2(d.rol)+'</span>'+e2(d.nombre||d.codigo)+'</div>';
+  }).join('');
+  dd.style.display='block';
+  dd.querySelectorAll('[data-hnm]').forEach(function(el){
+    el.addEventListener('click',function(){ selDocHC(el.getAttribute('data-hnm')); });
+  });
+}
+function selDocHC(enc){
+  var nombre=decodeURIComponent(enc);
+  var inp=g('hcDocInput'); if(inp) inp.value=nombre;
+  var hid=g('hcDoc'); if(hid) hid.value=nombre;
+  var dd=g('hcDocenteDD'); if(dd) dd.style.display='none';
+}
 function filtrarDocentesEval(val){
   var docentes=window._docentesEvalList||[];
   var dd=g('evalDocenteDD');
@@ -5651,6 +5725,9 @@ async function guardarHC(catId, pacId, modo){
   const nombre=g('pN')?.value?.trim()||'';
   const dni=g('pD')?.value?.trim()||'';
   if(!nombre||!dni){toast('Nombre y DNI son requeridos','','warn');return;}
+  // Validar docente si es estudiante
+  const docenteHC=g('hcDoc')?.value||g('hcDocInput')?.value||'';
+  if(session.rol==='estudiante'&&!docenteHC){toast('⚠️ Debes seleccionar un docente supervisor','Es obligatorio para guardar la evaluación','warn');return;}
 
   // Leer campos comunes
   const regiones=Array.from(document.querySelectorAll('#regionesWrap span[data-r]')||[]).map(s=>s.getAttribute('data-r'));
@@ -5753,7 +5830,7 @@ async function guardarHC(catId, pacId, modo){
   // Guardar evaluación
   const estado=modo==='borrador'?'borrador':(session.rol==='estudiante'?'pendiente':'aprobada');
   const rEval=await apiPost({action:'guardarEvaluacion',pacienteId:idPac,categoriaId:catId,
-    tipo:'inicial',estado,dxFisio:datos.dxFisio,aptaPatron:'',datosEspecificos:datos});
+    tipo:'inicial',estado,docente:docenteHC,dxFisio:datos.dxFisio,aptaPatron:'',datosEspecificos:datos});
   if(!rEval.ok){toast('Error al guardar evaluación',rEval.error,'err');return;}
   const msgs={borrador:'💾 Borrador guardado',pendiente:'📤 Enviada al docente',aprobada:'✅ Historia guardada'};
   toast(msgs[estado]||'Guardado','','ok');
