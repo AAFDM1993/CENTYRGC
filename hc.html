@@ -169,8 +169,56 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
   .pac-avatar{width:40px;height:40px;font-size:13px;}
   .tl-item{margin-left:0;}
   .form-grid .field.form-full{grid-column:1;}
-  #vSesForm .card,.#vEvalForm .card{margin-bottom:10px;}
+  #vSesForm .card,#vEvalForm .card{margin-bottom:10px;}
   .inp,.sel,.ta{font-size:16px;}
+
+  /* ── Dropdowns y buscadores en móvil ── */
+  #regionDropdown{
+    position:fixed!important;
+    top:auto!important; bottom:0!important;
+    left:0!important; right:0!important;
+    max-height:55vh!important;
+    border-radius:16px 16px 0 0!important;
+    z-index:500!important;
+    box-shadow:0 -8px 32px rgba(0,0,0,.3)!important;
+  }
+  #hcDocenteDD,#evalDocenteDD,#docenteDD{
+    position:fixed!important;
+    top:auto!important; bottom:60px!important;
+    left:12px!important; right:12px!important;
+    max-height:50vh!important;
+    border-radius:12px!important;
+    z-index:500!important;
+    box-shadow:0 -4px 24px rgba(0,0,0,.25)!important;
+  }
+
+  /* ── Tablas de ROM/fuerza en móvil ── */
+  #tablaROMWrap, #tablaFuerzaWrap{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+  #tablaROMWrap table, #tablaFuerzaWrap table{
+    min-width:300px;
+  }
+  .ri{width:52px!important;}
+
+  /* ── Header de evaluación en móvil ── */
+  .hc-sec-hdr{padding:11px 12px;}
+  .hc-sec-body{padding:12px;}
+
+  /* ── Regiones seleccionadas ── */
+  #regionesWrap{min-height:44px;padding:6px 0;}
+
+  /* ── Pruebas funcionales ── */
+  #tablaPruebasWrap select.sel{width:120px!important;}
+
+  /* ── Overlay de envío ── */
+  #hcSendOverlay > div:last-child{padding:0 24px;}
+
+  /* ── Cards de evaluación y sesión ── */
+  .rev-bar{flex-direction:column;gap:6px;}
+  .timeline{padding-left:18px;}
+  .tl-dot{left:-18px;}
 }
 .empty{text-align:center;padding:36px;color:var(--tx4);font-size:13px;}
 .loader{text-align:center;padding:28px;color:var(--tx3);font-size:13px;}
@@ -2837,27 +2885,99 @@ function mkPruebasFuncionales(sel, pruebasGuardadas){
   var html = '';
   regConPruebas.forEach(function(region){
     var key = _keyPrueba(region);
-    var pruebas = PRUEBAS_POR_REGION[key] || [];
+    var todasPruebas = PRUEBAS_POR_REGION[key] || [];
     var savedRegion = pruebasGuardadas[region] || {};
-    html += '<div style="margin-bottom:16px">';
-    html += '<div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:7px 12px;background:var(--surf3);border-radius:8px;display:flex;align-items:center;gap:6px">🔬 ' + e2(region) + '</div>';
-    html += '<div style="display:grid;gap:5px">';
-    pruebas.forEach(function(p){
-      var savedVal = savedRegion[p.nombre] || '';
-      var kid = 'pf_' + region.replace(/\s/g,'_') + '_' + p.nombre.replace(/[^a-z0-9]/gi,'_');
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 10px;background:var(--surf);border-radius:8px;border:1px solid var(--bd)">';
-      html += '<span style="font-size:11px;flex:1;color:var(--tx)">' + e2(p.nombre) + '</span>';
-      html += '<select class="sel" data-prueba-region="' + e2(region) + '" data-prueba-nombre="' + e2(p.nombre) + '" style="font-size:11px;padding:4px 6px;max-width:160px;width:160px">';
-      html += '<option value="">—</option>';
-      ['+  Positivo','-  Negativo','Dudoso','No realizado'].forEach(function(op){
-        html += '<option value="' + e2(op) + '" ' + (savedVal===op?'selected':'') + '>' + e2(op) + '</option>';
-      });
-      html += '</select>';
-      html += '</div>';
+    // Pruebas ya agregadas (guardadas con resultado O agregadas en esta sesión)
+    var agregadas = todasPruebas.filter(function(p){
+      return savedRegion[p.nombre] !== undefined;
     });
-    html += '</div></div>';
+    var regionId = region.replace(/[^a-z0-9]/gi,'_');
+
+    html += '<div style="margin-bottom:16px" id="prueba_region_'+regionId+'">';
+    html += '<div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:7px 12px;background:var(--surf3);border-radius:8px;display:flex;align-items:center;gap:6px">🔬 '+e2(region)+'</div>';
+
+    // Lista de pruebas agregadas
+    html += '<div id="prueba_lista_'+regionId+'" style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">';
+    agregadas.forEach(function(p){
+      var savedVal = savedRegion[p.nombre] || '';
+      html += _mkPruebaFila(region, p.nombre, savedVal, regionId);
+    });
+    html += '</div>';
+
+    // Selector para agregar prueba
+    html += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
+    html += '<select id="prueba_sel_'+regionId+'" class="sel" style="flex:1;min-width:0;font-size:12px">';
+    html += '<option value="">— Agregar prueba...</option>';
+    todasPruebas.forEach(function(p){
+      // Solo mostrar en el selector las que aún no están agregadas
+      if(savedRegion[p.nombre] === undefined){
+        html += '<option value="'+e2(p.nombre)+'">'+e2(p.nombre)+'</option>';
+      }
+    });
+    html += '</select>';
+    html += '<button type="button" class="btn btn-ghost btn-sm" style="flex-shrink:0;white-space:nowrap" ';
+    html += 'onclick="agregarPrueba('+JSON.stringify(region)+','+JSON.stringify(regionId)+')">+ Agregar</button>';
+    html += '</div>';
+
+    html += '</div>';
   });
   return html;
+}
+
+// Genera una fila de prueba individual
+function _mkPruebaFila(region, nombre, savedVal, regionId){
+  var html = '<div data-fila-prueba="1" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surf);border-radius:8px;border:1px solid var(--bd);margin-bottom:5px">';
+  html += '<span style="font-size:11px;flex:1;color:var(--tx)">'+e2(nombre)+'</span>';
+  html += '<select class="sel" data-prueba-region="'+e2(region)+'" data-prueba-nombre="'+e2(nombre)+'" style="font-size:11px;padding:4px 6px;width:140px;flex-shrink:0">';
+  html += '<option value="">—</option>';
+  ['+  Positivo','-  Negativo','Dudoso','No realizado'].forEach(function(op){
+    html += '<option value="'+e2(op)+'"'+(savedVal===op?' selected':'')+'>'+e2(op)+'</option>';
+  });
+  html += '</select>';
+  html += '<button type="button" onclick="quitarPrueba('+JSON.stringify(region)+','+JSON.stringify(nombre)+','+JSON.stringify(regionId)+')" ';
+  html += 'style="background:none;border:none;color:var(--tx4);cursor:pointer;font-size:18px;padding:0 2px;flex-shrink:0;line-height:1" title="Quitar">×</button>';
+  html += '</div>';
+  return html;
+}
+
+// Agrega una prueba a la lista de una región
+function agregarPrueba(region, regionId){
+  var sel = g('prueba_sel_'+regionId);
+  if(!sel || !sel.value) return;
+  var nombre = sel.value;
+  var lista = g('prueba_lista_'+regionId);
+  if(!lista) return;
+  // Verificar que no esté ya agregada
+  if(lista.querySelector('[data-prueba-nombre="'+nombre.replace(/"/g,'\\"')+'"]')){
+    toast('Esa prueba ya fue agregada','','warn'); return;
+  }
+  // Agregar fila
+  lista.insertAdjacentHTML('beforeend', _mkPruebaFila(region, nombre, '', regionId));
+  // Quitar del selector
+  sel.remove(sel.selectedIndex);
+  sel.value = '';
+}
+
+// Quita una prueba de la lista y la devuelve al selector
+function quitarPrueba(region, nombre, regionId){
+  var lista = g('prueba_lista_'+regionId);
+  if(!lista) return;
+  // Buscar la fila por el select con data-prueba-nombre
+  var selEl = lista.querySelector('[data-prueba-region][data-prueba-nombre]');
+  lista.querySelectorAll('[data-prueba-nombre]').forEach(function(el){
+    if(el.getAttribute('data-prueba-nombre') === nombre){
+      var fila = el.closest('[data-fila-prueba]');
+      if(fila) fila.remove();
+    }
+  });
+  // Devolver al selector
+  var sel = g('prueba_sel_'+regionId);
+  if(sel){
+    var opt = document.createElement('option');
+    opt.value = nombre;
+    opt.textContent = nombre;
+    sel.appendChild(opt);
+  }
 }
 
 // Lee las pruebas del DOM y retorna objeto { region: { nombrePrueba: resultado } }
@@ -2921,7 +3041,7 @@ function secTrauma(d){
       <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px">Regiones afectadas</label>
       <div style="position:relative;margin-bottom:8px">
         <input class="inp" id="regionSearch" placeholder="Buscar segmento (ej: Hombro D, Rodilla I...)" oninput="filtrarRegiones(this.value)" autocomplete="off">
-        <div id="regionDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surf);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:50;max-height:200px;overflow-y:auto"></div>
+        <div id="regionDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surf);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:400;max-height:200px;overflow-y:auto"></div>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;min-height:36px;padding:4px 0" id="regionesWrap">
         ${sel.map(r=>`<span data-r="${r}" style="display:inline-flex;align-items:center;gap:4px;background:var(--n500);color:#fff;border-radius:20px;padding:4px 10px 4px 12px;font-size:12px;font-weight:600">${r}<button type="button" onclick="quitarRegion(encodeURIComponent('${r}'),event)" style="background:none;border:none;color:rgba(255,255,255,.75);cursor:pointer;font-size:16px;line-height:1;padding:0 0 0 2px">&#215;</button></span>`).join('')}
@@ -3334,6 +3454,9 @@ function _leerItemsEscala(id){
 
 // ── Display de escalas guardadas (evalCard expandible) ────────
 
+// Mapa global para pasar datos de escalas al modal sin inyectar JSON en onclick
+var _escalaDataStore = {};
+
 function displayEscalasResumen(escalas){
   if(!escalas || !Object.keys(escalas).length) return '';
   var html = '<div style="margin-top:12px;border-top:1px solid var(--bd);padding-top:12px">';
@@ -3342,9 +3465,10 @@ function displayEscalasResumen(escalas){
   Object.keys(escalas).forEach(function(eid){
     var def = _selEsc(eid);
     var datos = escalas[eid];
-    // Si datos viene como string (puede pasar al pasar por JSON.stringify doble), parsearlo
     if(typeof datos === 'string'){ try{ datos = JSON.parse(datos); } catch(ex){ datos = {}; } }
     if(!datos) return;
+    // Guardar en store global para acceder desde onclick sin JSON inline
+    _escalaDataStore[eid] = datos;
     var nombre = def ? def.nombre : eid.replace(/_/g,' ');
     var puntaje = datos.puntajeTotal !== null && datos.puntajeTotal !== undefined ? datos.puntajeTotal : '—';
     var interp  = datos.interpretacion || '';
@@ -3357,15 +3481,17 @@ function displayEscalasResumen(escalas){
     html += '</div>';
     html += '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">';
     html += '<span style="font-size:14px;font-weight:800;color:var(--n700)">'+e2(String(puntaje))+'</span>';
-    html += '<button class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px" onclick="verDetalleEscala(\''+eid+'\','+JSON.stringify(JSON.stringify(datos))+')">📄</button>';
+    // Solo pasa el eid — los datos se leen del store global
+    html += '<button class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px" onclick="verDetalleEscala('+JSON.stringify(eid)+')">📄</button>';
     html += '</div></div>';
   });
   html += '</div></div>';
   return html;
 }
 
-function verDetalleEscala(eid, datosStr){
-  var datos = JSON.parse(datosStr);
+function verDetalleEscala(eid){
+  var datos = _escalaDataStore[eid];
+  if(!datos){ toast('No se encontraron datos de la escala','','warn'); return; }
   if(typeof datos === 'string'){ try{ datos = JSON.parse(datos); } catch(ex){ datos = {}; } }
   var def = _selEsc(eid);
   var m = g('modalDetalleEscala'); if(!m) return;
