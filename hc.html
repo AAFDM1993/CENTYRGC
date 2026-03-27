@@ -2944,8 +2944,10 @@ function mkPruebasFuncionales(sel, pruebasGuardadas){
     var regionId = region.replace(/[^a-z0-9]/gi,'_');
     html += '<div style="margin-bottom:16px" id="prueba_region_'+regionId+'">';
     html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;padding:7px 12px;background:var(--surf3);border-radius:8px">';
-    html += '<span style="font-size:12px;font-weight:700;color:var(--tx2)">\u{1F52C} '+e2(region)+'</span>';
-    html += '<button type="button" class="btn btn-ghost btn-sm" style="font-size:11px;padding:4px 10px" onclick="abrirModalPruebas('+JSON.stringify(region)+','+JSON.stringify(regionId)+')">+ Seleccionar pruebas</button>';
+    html += '<span style="font-size:12px;font-weight:700;color:var(--tx2)">🔬 '+e2(region)+'</span>';
+    html += '<button type="button" class="btn btn-ghost btn-sm" style="font-size:11px;padding:4px 10px"'
+          + ' data-reg="'+e2(region)+'" data-rid="'+e2(regionId)+'"'
+          + ' onclick="abrirModalPruebas(this.getAttribute(\'data-reg\'),this.getAttribute(\'data-rid\'))">+ Seleccionar pruebas</button>';
     html += '</div>';
     html += '<div id="prueba_lista_'+regionId+'" style="display:flex;flex-direction:column;gap:5px">';
     agregadas.forEach(function(p){ html += _mkPruebaFila(region, p.nombre, savedRegion[p.nombre]||'', regionId); });
@@ -2964,7 +2966,9 @@ function _mkPruebaFila(region, nombre, savedVal, regionId){
     html += '<option value="'+e2(op)+'"'+(savedVal===op?' selected':'')+'>'+e2(op)+'</option>';
   });
   html += '</select>';
-  html += '<button type="button" onclick="quitarPrueba('+JSON.stringify(region)+','+JSON.stringify(nombre)+','+JSON.stringify(regionId)+')" ';
+  html += '<button type="button"'
+       + ' data-qreg="'+e2(region)+'" data-qnom="'+e2(nombre)+'" data-qrid="'+e2(regionId)+'"'
+       + ' onclick="quitarPrueba(this.getAttribute(\'data-qreg\'),this.getAttribute(\'data-qnom\'),this.getAttribute(\'data-qrid\'))"';
   html += 'style="background:none;border:none;color:var(--tx4);cursor:pointer;font-size:18px;padding:0 4px;flex-shrink:0;line-height:1" title="Quitar">&times;</button>';
   html += '</div>';
   return html;
