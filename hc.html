@@ -291,6 +291,21 @@ function toast(msg, sub, tipo='ok'){
   setTimeout(()=>d.remove(),3500);
 }
 
+// ─── Overlay de envío ────────────────────────────────
+function showSendOverlay(txt, sub){
+  var ov=g('hcSendOverlay');
+  var t=g('hcSendOverlayTxt');
+  var s=g('hcSendOverlaySub');
+  if(t) t.textContent=txt||'Enviando...';
+  if(s) s.textContent=sub||'';
+  if(ov){ ov.style.display='flex'; }
+}
+function hideSendOverlay(){
+  var ov=g('hcSendOverlay');
+  if(ov){ ov.style.opacity='1'; ov.style.transition='opacity .3s'; ov.style.opacity='0';
+    setTimeout(function(){ ov.style.display='none'; ov.style.opacity='1'; },320); }
+}
+
 // ─── API + Caché en memoria ───────────────────────────
 const _cache = new Map();
 const _CACHE_TTL = {
@@ -2093,33 +2108,46 @@ async function guardarEval(pacId, evalId, catId, modo){
   const docEvalCodigo=g('evalDocCodigo')?.value||'';
   if(!docEval){toast('⚠️ Debes seleccionar un docente supervisor','Es obligatorio para guardar la evaluación','warn');return;}
   const estado=modo==='borrador'?'borrador':(session.rol==='estudiante'?'pendiente':'aprobada');
-  const datosEval={
-    evaValor:Number(g('evaS')?.value||0),dolLoc:g('dolL')?.value||'',dolTipo:g('dolT')?.value||'',
-    postura:g('post')?.value||'',marcha:g('marc')?.value||'',
-    rom:leerROM2(),fuerza:leerF2(),obsExamen:g('obsEx')?.value||'',
-    aptaPatron:g('apta')?.value||'',dxFisio:g('dxFT')?.value||'',
-    icfDeterioro:g('cifD')?.value||'',icfActividad:g('cifA')?.value||'',
-    icfParticipacion:g('cifP')?.value||'',pronostico:g('pronost')?.value||'',
-    objCorto:g('objC')?.value||'',objLargo:g('objL')?.value||'',
-    planSesiones:g('nSes')?.value||'',planFrecuencia:g('freq')?.value||'',
-    planDuracion:g('dur')?.value||'',planPrecauciones:g('prec')?.value||'',
-    planEducacion:g('educ')?.value||''
-  };
-  const b={action:'guardarEvaluacion',pacienteId:pacId,categoriaId:catId,tipo:'inicial',estado,
-    docente:docEval,docenteCodigo:docEvalCodigo,dxFisio:datosEval.dxFisio,datosEspecificos:datosEval};
-  if(evalId) b.id=evalId;
-  const r=await apiPost(b);
-  if(!r.ok){toast('Error',r.error,'err');return;}
-  const msgs={pendiente:'📤 Enviada al docente',aprobada:'✅ Evaluación guardada',borrador:'💾 Borrador guardado'};
-  toast(msgs[estado]||'Guardado','','ok');
-  if(estado==='pendiente') cargarBadge();
-  abrirPac(pacId);
+  showSendOverlay(
+    modo==='borrador' ? '💾 Guardando borrador...' : (session.rol==='estudiante' ? '📤 Enviando al docente...' : '✅ Guardando evaluación...'),
+    modo==='borrador' ? '' : (session.rol==='estudiante' ? 'El docente '+docEval+' recibirá la evaluación' : '')
+  );
+  try{
+    const datosEval={
+      evaValor:Number(g('evaS')?.value||0),dolLoc:g('dolL')?.value||'',dolTipo:g('dolT')?.value||'',
+      postura:g('post')?.value||'',marcha:g('marc')?.value||'',
+      rom:leerROM2(),fuerza:leerF2(),obsExamen:g('obsEx')?.value||'',
+      aptaPatron:g('apta')?.value||'',dxFisio:g('dxFT')?.value||'',
+      icfDeterioro:g('cifD')?.value||'',icfActividad:g('cifA')?.value||'',
+      icfParticipacion:g('cifP')?.value||'',pronostico:g('pronost')?.value||'',
+      objCorto:g('objC')?.value||'',objLargo:g('objL')?.value||'',
+      planSesiones:g('nSes')?.value||'',planFrecuencia:g('freq')?.value||'',
+      planDuracion:g('dur')?.value||'',planPrecauciones:g('prec')?.value||'',
+      planEducacion:g('educ')?.value||''
+    };
+    const b={action:'guardarEvaluacion',pacienteId:pacId,categoriaId:catId,tipo:'inicial',estado,
+      docente:docEval,docenteCodigo:docEvalCodigo,dxFisio:datosEval.dxFisio,datosEspecificos:datosEval};
+    if(evalId) b.id=evalId;
+    const r=await apiPost(b);
+    hideSendOverlay();
+    if(!r.ok){toast('Error',r.error,'err');return;}
+    const msgs={pendiente:'📤 Enviada al docente',aprobada:'✅ Evaluación guardada',borrador:'💾 Borrador guardado'};
+    toast(msgs[estado]||'Guardado','','ok');
+    if(estado==='pendiente') cargarBadge();
+    abrirPac(pacId);
+  }catch(ex){ hideSendOverlay(); toast('Error inesperado',ex.message,'err'); }
 }
 
 async function enviarEval(evalId, pacId){
-  const r=await apiPost({action:'guardarEvaluacion',id:evalId,estado:'pendiente'});
-  if(!r.ok){toast('Error',r.error,'err');return;}
-  toast('📤 Enviada al docente','','ok');abrirPac(pacId);
+  showSendOverlay('📤 Enviando al docente...','');
+  try{
+    const r=await apiPost({action:'guardarEvaluacion',id:evalId,estado:'pendiente'});
+    hideSendOverlay();
+    if(!r.ok){toast('Error',r.error,'err');return;}
+    toast('📤 Enviada al docente','','ok');
+    cargarBadge();
+    abrirPac(pacId);
+  }catch(ex){ hideSendOverlay(); toast('Error inesperado',ex.message,'err'); }
 }
 
 // ─── Formulario Sesión ────────────────────────────────
@@ -2280,26 +2308,38 @@ async function guardarSes(pacId, evalId, num, sesId, modo){
   if(!doc){toast('⚠️ Debes seleccionar un docente supervisor','Es obligatorio para guardar la sesión','warn');return;}
   if(modo==='enviar'&&!des){toast('Completa la descripción de la sesión','','warn');return;}
   const estado=modo==='borrador'?'borrador':(session.rol==='estudiante'?'pendiente':'aprobada');
-  const b={action:'guardarSesion',pacienteId:pacId,evaluacionId:evalId,numero:num,
-    fecha:g('sF')?.value||'',
-    estudiante:g('sEst')?.value||session.nombre||session.codigo,
-    docente:doc,
-    docenteCodigo:docCodigo,
-    evaValor:Number(g('sesEva')?.value||0),
-    descripcion:des,respuesta:g('sRes')?.value||'',estado};
-  if(sesId) b.id=sesId;
-  const r=await apiPost(b);
-  if(!r.ok){toast('Error',r.error,'err');return;}
-  const msgs={pendiente:'📤 Enviada al docente',aprobada:'✅ Sesión guardada',borrador:'💾 Borrador guardado'};
-  toast(msgs[estado],'','ok');
-  if(estado==='pendiente') cargarBadge();
-  abrirPac(pacId);
+  showSendOverlay(
+    modo==='borrador' ? '💾 Guardando sesión...' : (session.rol==='estudiante' ? '📤 Enviando sesión...' : '✅ Guardando sesión...'),
+    modo==='borrador' ? '' : (session.rol==='estudiante' ? 'El docente '+doc+' recibirá la sesión' : '')
+  );
+  try{
+    const b={action:'guardarSesion',pacienteId:pacId,evaluacionId:evalId,numero:num,
+      fecha:g('sF')?.value||'',
+      estudiante:g('sEst')?.value||session.nombre||session.codigo,
+      docente:doc, docenteCodigo:docCodigo,
+      evaValor:Number(g('sesEva')?.value||0),
+      descripcion:des,respuesta:g('sRes')?.value||'',estado};
+    if(sesId) b.id=sesId;
+    const r=await apiPost(b);
+    hideSendOverlay();
+    if(!r.ok){toast('Error',r.error,'err');return;}
+    const msgs={pendiente:'📤 Enviada al docente',aprobada:'✅ Sesión guardada',borrador:'💾 Borrador guardado'};
+    toast(msgs[estado],'','ok');
+    if(estado==='pendiente') cargarBadge();
+    abrirPac(pacId);
+  }catch(ex){ hideSendOverlay(); toast('Error inesperado',ex.message,'err'); }
 }
 
 async function enviarSes(sesId, pacId){
-  const r=await apiPost({action:'guardarSesion',id:sesId,estado:'pendiente'});
-  if(!r.ok){toast('Error',r.error,'err');return;}
-  toast('📤 Enviada al docente','','ok');abrirPac(pacId);
+  showSendOverlay('📤 Enviando sesión...','');
+  try{
+    const r=await apiPost({action:'guardarSesion',id:sesId,estado:'pendiente'});
+    hideSendOverlay();
+    if(!r.ok){toast('Error',r.error,'err');return;}
+    toast('📤 Enviada al docente','','ok');
+    cargarBadge();
+    abrirPac(pacId);
+  }catch(ex){ hideSendOverlay(); toast('Error inesperado',ex.message,'err'); }
 }
 
 // ─── Revisión (docente/admin) ─────────────────────────
@@ -2314,28 +2354,35 @@ async function confirmarRev(estado){
   if(!revTarget)return;
   const com=g('modalRevCom')?.value?.trim()||'';
   if(estado==='rechazada'&&!com){toast('Escribe un comentario para el alumno','','warn');return;}
-  const action=revTarget.tipo==='eval'?'revisarEvaluacion':'revisarSesion';
-  // Incluir nombre del docente revisor (session actual)
-  const revisadoPor=session?.nombre||session?.codigo||'';
-  const r=await apiPost({action,id:revTarget.id,estado,comentario:com,revisadoPor});
-  if(!r.ok){toast('Error',r.error,'err');return;}
-  // Si se aprobó, precargar firma del docente para el sello
-  if(estado==='aprobada'&&session){
-    try{
-      var rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
-      if(rU.ok){
-        var docMe=(rU.usuarios||[]).find(function(u){
-          return u.codigo===session.codigo||u.nombre===session.nombre;
-        });
-        if(docMe&&docMe.firma){
-          await resolverFirmaDoc_(docMe);
-          window._firmaRevisorActual=docMe;
+  cerrarRev();
+  showSendOverlay(
+    estado==='aprobada' ? '✅ Aprobando...' : '❌ Rechazando...',
+    estado==='aprobada' ? 'Notificando al alumno' : 'Enviando comentario al alumno'
+  );
+  try{
+    const action=revTarget.tipo==='eval'?'revisarEvaluacion':'revisarSesion';
+    const revisadoPor=session?.nombre||session?.codigo||'';
+    const r=await apiPost({action,id:revTarget.id,estado,comentario:com,revisadoPor});
+    if(!r.ok){hideSendOverlay();toast('Error',r.error,'err');return;}
+    if(estado==='aprobada'&&session){
+      try{
+        var rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
+        if(rU.ok){
+          var docMe=(rU.usuarios||[]).find(function(u){
+            return u.codigo===session.codigo||u.nombre===session.nombre;
+          });
+          if(docMe&&docMe.firma){
+            await resolverFirmaDoc_(docMe);
+            window._firmaRevisorActual=docMe;
+          }
         }
-      }
-    }catch(e){}
-  }
-  toast(estado==='aprobada'?'✅ Aprobado':'❌ Rechazado','','ok');
-  cerrarRev(); if(revTarget?.pacId)abrirPac(revTarget.pacId); cargarBadge();
+      }catch(e){}
+    }
+    hideSendOverlay();
+    toast(estado==='aprobada'?'✅ Aprobado':'❌ Rechazado','','ok');
+    if(revTarget?.pacId) abrirPac(revTarget.pacId);
+    cargarBadge();
+  }catch(ex){ hideSendOverlay(); toast('Error inesperado',ex.message,'err'); }
 }
 
 // ─── Vista: Pendientes ────────────────────────────────
@@ -3293,14 +3340,18 @@ function displayEscalasResumen(escalas){
   html += '<div style="font-size:10px;font-weight:700;color:var(--tx4);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">📊 Escalas aplicadas</div>';
   html += '<div style="display:flex;flex-direction:column;gap:4px">';
   Object.keys(escalas).forEach(function(eid){
-    var def = _selEsc(eid); if(!def) return;
+    var def = _selEsc(eid);
     var datos = escalas[eid];
-    var puntaje = datos.puntajeTotal!==null && datos.puntajeTotal!==undefined ? datos.puntajeTotal : '—';
+    // Si datos viene como string (puede pasar al pasar por JSON.stringify doble), parsearlo
+    if(typeof datos === 'string'){ try{ datos = JSON.parse(datos); } catch(ex){ datos = {}; } }
+    if(!datos) return;
+    var nombre = def ? def.nombre : eid.replace(/_/g,' ');
+    var puntaje = datos.puntajeTotal !== null && datos.puntajeTotal !== undefined ? datos.puntajeTotal : '—';
     var interp  = datos.interpretacion || '';
-    var fecha   = datos.fechaAplicacion ? ' · '+datos.fechaAplicacion : '';
+    var fecha   = datos.fechaAplicacion ? ' · ' + datos.fechaAplicacion : '';
     html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;background:var(--surf3);border-radius:8px">';
     html += '<div style="flex:1;min-width:0">';
-    html += '<span style="font-size:12px;font-weight:700;color:var(--tx)">'+e2(def.nombre)+'</span>';
+    html += '<span style="font-size:12px;font-weight:700;color:var(--tx)">'+e2(nombre)+'</span>';
     html += '<span style="font-size:11px;color:var(--tx4)">'+e2(fecha)+'</span>';
     if(interp) html += '<div style="font-size:11px;color:var(--tx3);margin-top:1px">'+e2(interp)+'</div>';
     html += '</div>';
@@ -3315,9 +3366,10 @@ function displayEscalasResumen(escalas){
 
 function verDetalleEscala(eid, datosStr){
   var datos = JSON.parse(datosStr);
-  var def = _selEsc(eid); if(!def) return;
+  if(typeof datos === 'string'){ try{ datos = JSON.parse(datos); } catch(ex){ datos = {}; } }
+  var def = _selEsc(eid);
   var m = g('modalDetalleEscala'); if(!m) return;
-  g('modalDetalleEscalaTit').textContent = def.nombre;
+  g('modalDetalleEscalaTit').textContent = def ? def.nombre : eid.replace(/_/g,' ');
   var body = g('modalDetalleEscalaBody');
   var html = '';
   // Fecha y resultado
@@ -5928,13 +5980,15 @@ async function guardarHC(catId, pacId, modo){
   const docenteHCCodigo=g('hcDocCodigo')?.value||'';
   if(session.rol==='estudiante'&&!docenteHC){toast('⚠️ Debes seleccionar un docente supervisor','Es obligatorio para guardar la evaluación','warn');return;}
 
-  // Leer campos comunes
-  const regiones=Array.from(document.querySelectorAll('#regionesWrap span[data-r]')||[]).map(s=>s.getAttribute('data-r'));
-  const rom={};document.querySelectorAll('[data-rom]').forEach(el=>{if(el.value.trim())rom[el.dataset.rom]=el.value.trim();});
-  const fuerza={};document.querySelectorAll('[data-fuerza]').forEach(el=>{if(el.value.trim())fuerza[el.dataset.fuerza]=Number(el.value.trim());});
-
-  // Leer campos específicos de neuro adultos
+  const esBorrador = modo==='borrador';
+  showSendOverlay(
+    esBorrador ? '💾 Guardando borrador...' : '📤 Enviando evaluación...',
+    esBorrador ? 'Guardando datos localmente' : 'Enviando al docente supervisor'
+  );
   function v(id){return g(id)?.value||'';}
+  try{
+
+  // Leer campos comunes
   const datosNeuro = catId==='neuro_adultos' ? {
     nConciencia:v('nConciencia'),lateralidad:v('lateralidad'),orientacion:v('orientacion'),
     comunicacion:v('comunicacion'),memoria:v('memoria'),atencion:v('atencion'),obsCognitivo:v('obsCognitivo'),
@@ -6097,11 +6151,13 @@ async function guardarHC(catId, pacId, modo){
     tipo:'inicial',estado,docente:docenteHC,docenteCodigo:docenteHCCodigo,dxFisio:datos.dxFisio,aptaPatron:'',datosEspecificos:datos};
   if(evalIdExistente) payloadEval.id=evalIdExistente;
   const rEval=await apiPost(payloadEval);
-  if(!rEval.ok){toast('Error al guardar evaluación',rEval.error,'err');return;}
+  if(!rEval.ok){hideSendOverlay();toast('Error al guardar evaluación',rEval.error,'err');return;}
   const msgs={borrador:'💾 Borrador guardado',pendiente:'📤 Enviada al docente',aprobada:'✅ Historia guardada'};
+  hideSendOverlay();
   toast(msgs[estado]||'Guardado','','ok');
   if(estado==='pendiente') cargarBadge();
   abrirPac(idPac);
+  }catch(ex){ hideSendOverlay(); toast('Error inesperado',ex.message,'err'); }
 }
 
 // ─── Modal selección de categoría ────────────────────
@@ -6248,6 +6304,15 @@ function iniciarPollingPendientes(){
   <button id="mnPend" onclick="navTo('pend');setMobileActive('mnPend')"><span>&#9203;</span><span class="lbl">Pendientes</span></button>
   <button id="mnBusq" onclick="navTo('busqhc');setMobileActive('mnBusq')"><span>&#128269;</span><span class="lbl">Buscar</span></button>
   <button id="mnAdmin" style="display:none" onclick="navTo('exporthc');setMobileActive('mnAdmin')"><span>&#128196;</span><span class="lbl">Exportar</span></button>
+</div>
+
+<!-- Overlay de envío/guardado -->
+<div id="hcSendOverlay" style="display:none;position:fixed;inset:0;background:rgba(10,22,40,.82);z-index:1000;flex-direction:column;align-items:center;justify-content:center;gap:20px;backdrop-filter:blur(6px)">
+  <div style="width:52px;height:52px;border:4px solid rgba(255,255,255,.2);border-top-color:#60a5fa;border-radius:50%;animation:hcSpin .75s linear infinite"></div>
+  <div style="text-align:center">
+    <div id="hcSendOverlayTxt" style="color:#fff;font-size:16px;font-weight:700;font-family:'Syne',sans-serif;margin-bottom:6px">Enviando...</div>
+    <div id="hcSendOverlaySub" style="color:rgba(255,255,255,.55);font-size:13px"></div>
+  </div>
 </div>
 
 </body>
