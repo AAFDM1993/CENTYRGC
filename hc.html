@@ -2626,7 +2626,7 @@ function secAnamnesis(catId, pac, d){
   const tienesDxMedico = catId==='traumatologia';
   return secWrap('anam','II. Anamnesis','📋',`
     ${tienesDxMedico?`<div class="field" style="margin-bottom:12px"><label>Diagnóstico médico</label>
-      <input class="inp" id="aDxMed" value="${e2(d.dxMedico||'')}" placeholder="Diagnóstico del médico tratante"></div>`:''}
+      <input class="inp" id="aDxMed" value="${e2(d.dxMedico||'')}" placeholder="Diagnóstico médico"></div>`:''}
     <div class="field" style="margin-bottom:12px"><label>Diagnóstico fisioterapéutico</label>
       <input class="inp" id="aDxFisio" value="${e2(d.dxFisio||'')}" placeholder="Diagnóstico fisioterapéutico"></div>
     <div class="field" style="margin-bottom:12px"><label>Antecedentes importantes y patológicos</label>
@@ -2691,7 +2691,9 @@ const PRUEBAS_POR_REGION = {
     {nombre:'Test de reubicación (inestabilidad)',resultado:''},
     {nombre:'Test de surco (inestabilidad inferior)',resultado:''},
     {nombre:'Test de Cross-body (articulación AC)',resultado:''},
-    {nombre:'Test de Cozen / lateral epicóndilo (codo)',resultado:''},
+    {nombre:'Test de Drop arm (manguito rotador)',resultado:''},
+    {nombre:'Test de Belly press (subescapular)',resultado:''},
+    {nombre:'Test de Bear hug (subescapular)',resultado:''},
   ],
   'Hombro I': [
     {nombre:'Test de Jobe (manguito rotador — supraespinoso)',resultado:''},
@@ -2707,103 +2709,133 @@ const PRUEBAS_POR_REGION = {
     {nombre:'Test de reubicación (inestabilidad)',resultado:''},
     {nombre:'Test de surco (inestabilidad inferior)',resultado:''},
     {nombre:'Test de Cross-body (articulación AC)',resultado:''},
+    {nombre:'Test de Drop arm (manguito rotador)',resultado:''},
+    {nombre:'Test de Belly press (subescapular)',resultado:''},
+    {nombre:'Test de Bear hug (subescapular)',resultado:''},
   ],
   // ── CODO ───────────────────────────────────────────────────
   'Codo D': [
     {nombre:'Test de Cozen (epicondilitis lateral)',resultado:''},
     {nombre:'Test de Mill (epicondilitis lateral)',resultado:''},
     {nombre:'Test de Maudsley (dedo medio)',resultado:''},
-    {nombre:'Test de Golfer\'s elbow (epitrocleitis)',resultado:''},
-    {nombre:'Test de compresión del nervio cubital (Tinel)',resultado:''},
+    {nombre:'Test de Golfer\'s elbow (epitrocleitis medial)',resultado:''},
+    {nombre:'Test de compresión del nervio cubital — Tinel codo',resultado:''},
     {nombre:'Test de valgo stress (LCM)',resultado:''},
     {nombre:'Test de varo stress (LCL)',resultado:''},
-    {nombre:'Test de estabilidad de la articulación radiocubital',resultado:''},
+    {nombre:'Test de estabilidad radiocubital distal',resultado:''},
+    {nombre:'Test de Valgus extension overload (pinzamiento posteromedial)',resultado:''},
   ],
   'Codo I': [
     {nombre:'Test de Cozen (epicondilitis lateral)',resultado:''},
     {nombre:'Test de Mill (epicondilitis lateral)',resultado:''},
     {nombre:'Test de Maudsley (dedo medio)',resultado:''},
-    {nombre:'Test de Golfer\'s elbow (epitrocleitis)',resultado:''},
-    {nombre:'Test de compresión del nervio cubital (Tinel)',resultado:''},
+    {nombre:'Test de Golfer\'s elbow (epitrocleitis medial)',resultado:''},
+    {nombre:'Test de compresión del nervio cubital — Tinel codo',resultado:''},
     {nombre:'Test de valgo stress (LCM)',resultado:''},
     {nombre:'Test de varo stress (LCL)',resultado:''},
-    {nombre:'Test de estabilidad de la articulación radiocubital',resultado:''},
+    {nombre:'Test de estabilidad radiocubital distal',resultado:''},
+    {nombre:'Test de Valgus extension overload (pinzamiento posteromedial)',resultado:''},
   ],
   // ── MUÑECA ─────────────────────────────────────────────────
   'Muñeca D': [
     {nombre:'Test de Phalen (síndrome del túnel carpiano)',resultado:''},
-    {nombre:'Test de Tinel (túnel carpiano)',resultado:''},
-    {nombre:'Maniobra de Durkan (compresión carpal)',resultado:''},
-    {nombre:'Test de Finkelstein (De Quervain)',resultado:''},
+    {nombre:'Test de Tinel — muñeca (túnel carpiano)',resultado:''},
+    {nombre:'Maniobra de Durkan (compresión carpal directa)',resultado:''},
+    {nombre:'Test de Finkelstein (tenosinovitis De Quervain)',resultado:''},
     {nombre:'Test de Watson (inestabilidad escafoides)',resultado:''},
-    {nombre:'Test de estrés del complejo triangular fibrocartilaginoso (TFCC)',resultado:''},
+    {nombre:'Test de estrés del TFCC (fibrocartílago triangular)',resultado:''},
     {nombre:'Test de Froment (nervio cubital)',resultado:''},
     {nombre:'Test de Grip strength (dinamometría)',resultado:''},
+    {nombre:'Test de Tinel — canal de Guyón (nervio cubital)',resultado:''},
+    {nombre:'Test de balanceo del carpo (inestabilidad carpal)',resultado:''},
   ],
   'Muñeca I': [
     {nombre:'Test de Phalen (síndrome del túnel carpiano)',resultado:''},
-    {nombre:'Test de Tinel (túnel carpiano)',resultado:''},
-    {nombre:'Maniobra de Durkan (compresión carpal)',resultado:''},
-    {nombre:'Test de Finkelstein (De Quervain)',resultado:''},
+    {nombre:'Test de Tinel — muñeca (túnel carpiano)',resultado:''},
+    {nombre:'Maniobra de Durkan (compresión carpal directa)',resultado:''},
+    {nombre:'Test de Finkelstein (tenosinovitis De Quervain)',resultado:''},
     {nombre:'Test de Watson (inestabilidad escafoides)',resultado:''},
-    {nombre:'Test de estrés del TFCC',resultado:''},
+    {nombre:'Test de estrés del TFCC (fibrocartílago triangular)',resultado:''},
     {nombre:'Test de Froment (nervio cubital)',resultado:''},
     {nombre:'Test de Grip strength (dinamometría)',resultado:''},
+    {nombre:'Test de Tinel — canal de Guyón (nervio cubital)',resultado:''},
+    {nombre:'Test de balanceo del carpo (inestabilidad carpal)',resultado:''},
   ],
   // ── COLUMNA CERVICAL ────────────────────────────────────────
   'Col. Cervical': [
     {nombre:'Test de compresión de Spurling (radiculopatía cervical)',resultado:''},
     {nombre:'Test de distracción cervical (radiculopatía)',resultado:''},
-    {nombre:'Test de Valsalva (presión intratecal)',resultado:''},
+    {nombre:'Test de Valsalva cervical (presión intratecal)',resultado:''},
     {nombre:'Test de Lhermitte (mielopatía cervical)',resultado:''},
     {nombre:'Test de Adams (flexión cervical)',resultado:''},
     {nombre:'Maniobra de Adson (síndrome del desfiladero torácico)',resultado:''},
-    {nombre:'Test de compresión del plexo braquial (Roos)',resultado:''},
-    {nombre:'Test de rotación cervical (arteria vertebral — Hautant)',resultado:''},
+    {nombre:'Test de compresión del plexo braquial — Roos',resultado:''},
+    {nombre:'Test de rotación cervical — Hautant (arteria vertebral)',resultado:''},
     {nombre:'Test de Sharp-Purser (inestabilidad atlantoaxial)',resultado:''},
+    {nombre:'Test de Jackson (compresión cervical lateral)',resultado:''},
+    {nombre:'Test de flexión-rotación (C1-C2 — cefalea cervicogénica)',resultado:''},
+    {nombre:'Test de máxima compresión foraminal',resultado:''},
+  ],
+  // ── COLUMNA DORSAL ──────────────────────────────────────────
+  'Col. Dorsal': [
+    {nombre:'Test de compresión vertebral dorsal (fractura por aplastamiento)',resultado:''},
+    {nombre:'Test de percusión espinal (dolor vertebral)',resultado:''},
+    {nombre:'Test de Slump (sensibilización neural — dorsal)',resultado:''},
+    {nombre:'Maniobra de Adson modificada (desfiladero torácico)',resultado:''},
+    {nombre:'Test de costilla (disfunción costal)',resultado:''},
+    {nombre:'Test de respiración (movilidad costal)',resultado:''},
+    {nombre:'Test de Adams (escoliosis)',resultado:''},
   ],
   // ── COLUMNA LUMBAR ──────────────────────────────────────────
   'Col. Lumbar': [
-    {nombre:'Test de Lasègue (SLR — ciática)',resultado:''},
+    {nombre:'Test de Lasègue — SLR (ciática / radiculopatía L4-S1)',resultado:''},
     {nombre:'Test de Lasègue cruzado (ciática contralateral)',resultado:''},
-    {nombre:'Test de Bragard (irritación radicular)',resultado:''},
-    {nombre:'Test de Valsalva (presión intradiscal)',resultado:''},
-    {nombre:'Test de Hoover (simulación de dolor)',resultado:''},
+    {nombre:'Test de Bragard (irritación radicular — variante SLR)',resultado:''},
+    {nombre:'Test de Valsalva lumbar (presión intradiscal)',resultado:''},
+    {nombre:'Test de Hoover (simulación / magnif. de dolor)',resultado:''},
     {nombre:'Test de Slump (sensibilización del sistema nervioso)',resultado:''},
-    {nombre:'Test de extensión pasiva en prono (McKenzie)',resultado:''},
-    {nombre:'Maniobra de Naffziger (compresión yugular)',resultado:''},
-    {nombre:'Test de FABER (Patrick) — referido a cadera/SI',resultado:''},
-    {nombre:'Test de FADIR — referido a SI',resultado:''},
+    {nombre:'Test de McKenzie — extensión pasiva en prono',resultado:''},
+    {nombre:'Test de femoral nerve stretch — FNS (L2-L3-L4)',resultado:''},
+    {nombre:'Test de FABER — Patrick (SI / cadera)',resultado:''},
+    {nombre:'Test de FADIR (SI — provoc. anterior)',resultado:''},
     {nombre:'Test de Gaenslen (articulación sacroilíaca)',resultado:''},
-    {nombre:'Test de compresión sacroilíaca',resultado:''},
-    {nombre:'Test de distracción sacroilíaca',resultado:''},
+    {nombre:'Test de compresión sacroilíaca (SI)',resultado:''},
+    {nombre:'Test de distracción sacroilíaca (SI)',resultado:''},
+    {nombre:'Test de Thigh thrust (SI)',resultado:''},
+    {nombre:'Maniobra de Gillet (movilidad SI)',resultado:''},
+    {nombre:'Test de Waddell — signos no orgánicos',resultado:''},
+    {nombre:'Test de Kemp (compresión e inclinación ipsilateral)',resultado:''},
   ],
   // ── CADERA ─────────────────────────────────────────────────
   'Cadera D': [
-    {nombre:'Test de FABER (Patrick) — cadera/sacroilíaco',resultado:''},
+    {nombre:'Test de FABER — Patrick (cadera/sacroilíaco)',resultado:''},
     {nombre:'Test de FADIR (impingement femoroacetabular)',resultado:''},
-    {nombre:'Test de Thomas (contractura de flexores)',resultado:''},
+    {nombre:'Test de Thomas (contractura de flexores de cadera)',resultado:''},
     {nombre:'Test de Ober (contractura de TFL/IT)',resultado:''},
-    {nombre:'Test de Trendelenburg (glúteo medio)',resultado:''},
-    {nombre:'Test de Ely (recto femoral)',resultado:''},
-    {nombre:'Test de la log roll (inestabilidad de cadera)',resultado:''},
-    {nombre:'Test de compresión de cadera (labrum)',resultado:''},
+    {nombre:'Test de Trendelenburg (insuf. glúteo medio)',resultado:''},
+    {nombre:'Test de Ely (retracción recto femoral)',resultado:''},
+    {nombre:'Test de log roll (inestabilidad articular)',resultado:''},
+    {nombre:'Test de compresión del labrum (cadera)',resultado:''},
     {nombre:'Test de impingement anterior (CAM/Pincer)',resultado:''},
     {nombre:'Test de Craig (anteversión femoral)',resultado:''},
-    {nombre:'Test de Stinchfield (flexor de cadera)',resultado:''},
+    {nombre:'Test de Stinchfield (flexor de cadera activo)',resultado:''},
+    {nombre:'Test de Dial (rotación externa — LCP/LPL)',resultado:''},
+    {nombre:'Test de Scour (degeneración articular)',resultado:''},
   ],
   'Cadera I': [
-    {nombre:'Test de FABER (Patrick) — cadera/sacroilíaco',resultado:''},
+    {nombre:'Test de FABER — Patrick (cadera/sacroilíaco)',resultado:''},
     {nombre:'Test de FADIR (impingement femoroacetabular)',resultado:''},
-    {nombre:'Test de Thomas (contractura de flexores)',resultado:''},
+    {nombre:'Test de Thomas (contractura de flexores de cadera)',resultado:''},
     {nombre:'Test de Ober (contractura de TFL/IT)',resultado:''},
-    {nombre:'Test de Trendelenburg (glúteo medio)',resultado:''},
-    {nombre:'Test de Ely (recto femoral)',resultado:''},
-    {nombre:'Test de la log roll (inestabilidad de cadera)',resultado:''},
-    {nombre:'Test de compresión de cadera (labrum)',resultado:''},
+    {nombre:'Test de Trendelenburg (insuf. glúteo medio)',resultado:''},
+    {nombre:'Test de Ely (retracción recto femoral)',resultado:''},
+    {nombre:'Test de log roll (inestabilidad articular)',resultado:''},
+    {nombre:'Test de compresión del labrum (cadera)',resultado:''},
     {nombre:'Test de impingement anterior (CAM/Pincer)',resultado:''},
     {nombre:'Test de Craig (anteversión femoral)',resultado:''},
-    {nombre:'Test de Stinchfield (flexor de cadera)',resultado:''},
+    {nombre:'Test de Stinchfield (flexor de cadera activo)',resultado:''},
+    {nombre:'Test de Dial (rotación externa — LCP/LPL)',resultado:''},
+    {nombre:'Test de Scour (degeneración articular)',resultado:''},
   ],
   // ── RODILLA ────────────────────────────────────────────────
   'Rodilla D': [
@@ -2811,59 +2843,81 @@ const PRUEBAS_POR_REGION = {
     {nombre:'Test de cajón anterior (LCA)',resultado:''},
     {nombre:'Test de cajón posterior (LCP)',resultado:''},
     {nombre:'Test de pivot shift (LCA — inestabilidad rotatoria)',resultado:''},
-    {nombre:'Test de valgo stress 0° (LCM — completo)',resultado:''},
-    {nombre:'Test de valgo stress 30° (LCM — aislado)',resultado:''},
-    {nombre:'Test de varo stress 0° (LCL)',resultado:''},
-    {nombre:'Test de varo stress 30° (LCL — aislado)',resultado:''},
+    {nombre:'Test de valgo stress 0° (LCM completo)',resultado:''},
+    {nombre:'Test de valgo stress 30° (LCM aislado)',resultado:''},
+    {nombre:'Test de varo stress 0° (LCL completo)',resultado:''},
+    {nombre:'Test de varo stress 30° (LCL aislado)',resultado:''},
     {nombre:'Test de McMurray (menisco)',resultado:''},
     {nombre:'Test de Apley (menisco)',resultado:''},
-    {nombre:'Test de Thessaly (menisco)',resultado:''},
+    {nombre:'Test de Thessaly (menisco — dinámico)',resultado:''},
     {nombre:'Test de compresión lateral de rótula',resultado:''},
     {nombre:'Test de aprensión rotuliana',resultado:''},
-    {nombre:'Clarke (condromalacia rotuliana)',resultado:''},
-    {nombre:'Test de dial (LCP / esquina posterolateral)',resultado:''},
+    {nombre:'Test de Clarke (condromalacia rotuliana)',resultado:''},
+    {nombre:'Test de dial (esquina posterolateral)',resultado:''},
+    {nombre:'Test de Godfrey (LCP — caída posterior)',resultado:''},
+    {nombre:'Test de recurvatum en rotación externa (EPL)',resultado:''},
   ],
   'Rodilla I': [
     {nombre:'Test de Lachman (LCA)',resultado:''},
     {nombre:'Test de cajón anterior (LCA)',resultado:''},
     {nombre:'Test de cajón posterior (LCP)',resultado:''},
     {nombre:'Test de pivot shift (LCA — inestabilidad rotatoria)',resultado:''},
-    {nombre:'Test de valgo stress 0° (LCM — completo)',resultado:''},
-    {nombre:'Test de valgo stress 30° (LCM — aislado)',resultado:''},
-    {nombre:'Test de varo stress 0° (LCL)',resultado:''},
-    {nombre:'Test de varo stress 30° (LCL — aislado)',resultado:''},
+    {nombre:'Test de valgo stress 0° (LCM completo)',resultado:''},
+    {nombre:'Test de valgo stress 30° (LCM aislado)',resultado:''},
+    {nombre:'Test de varo stress 0° (LCL completo)',resultado:''},
+    {nombre:'Test de varo stress 30° (LCL aislado)',resultado:''},
     {nombre:'Test de McMurray (menisco)',resultado:''},
     {nombre:'Test de Apley (menisco)',resultado:''},
-    {nombre:'Test de Thessaly (menisco)',resultado:''},
+    {nombre:'Test de Thessaly (menisco — dinámico)',resultado:''},
     {nombre:'Test de compresión lateral de rótula',resultado:''},
     {nombre:'Test de aprensión rotuliana',resultado:''},
-    {nombre:'Clarke (condromalacia rotuliana)',resultado:''},
-    {nombre:'Test de dial (LCP / esquina posterolateral)',resultado:''},
+    {nombre:'Test de Clarke (condromalacia rotuliana)',resultado:''},
+    {nombre:'Test de dial (esquina posterolateral)',resultado:''},
+    {nombre:'Test de Godfrey (LCP — caída posterior)',resultado:''},
+    {nombre:'Test de recurvatum en rotación externa (EPL)',resultado:''},
   ],
-  // ── TOBILLO ────────────────────────────────────────────────
+  // ── TOBILLO / PIE ──────────────────────────────────────────
   'Tobillo D': [
-    {nombre:'Test del cajón anterior (LPA — inestabilidad)',resultado:''},
+    {nombre:'Test del cajón anterior (LPAA — inestabilidad lateral)',resultado:''},
     {nombre:'Test de stress en inversión (LCL — LPAA)',resultado:''},
-    {nombre:'Test de Thompson (tendón de Aquiles)',resultado:''},
+    {nombre:'Test de Thompson (rotura tendón de Aquiles)',resultado:''},
     {nombre:'Test de compresión de peroné (fractura)',resultado:''},
-    {nombre:'Test de Ottawa Ankle Rules (fractura)',resultado:''},
+    {nombre:'Test de Ottawa Ankle Rules (fractura maleolar)',resultado:''},
     {nombre:'Test de Mulder (neuroma de Morton)',resultado:''},
     {nombre:'Test de Windlass (fascitis plantar)',resultado:''},
-    {nombre:'Test de Tinel tobillo (atrapamiento nervio tibial)',resultado:''},
+    {nombre:'Test de Tinel — tobillo (nervio tibial posterior)',resultado:''},
     {nombre:'Test de Kleiger (lesión sindesmosis)',resultado:''},
-    {nombre:'Test de dorsiflexión con rodilla extendida (Silfverskiöld)',resultado:''},
+    {nombre:'Test de Silfverskiöld (dorsiflexión con rodilla extendida)',resultado:''},
+    {nombre:'Test de eversión stress (deltoides)',resultado:''},
+    {nombre:'Test de compresión sindesmosis (squeeze test)',resultado:''},
   ],
   'Tobillo I': [
-    {nombre:'Test del cajón anterior (LPA — inestabilidad)',resultado:''},
+    {nombre:'Test del cajón anterior (LPAA — inestabilidad lateral)',resultado:''},
     {nombre:'Test de stress en inversión (LCL — LPAA)',resultado:''},
-    {nombre:'Test de Thompson (tendón de Aquiles)',resultado:''},
+    {nombre:'Test de Thompson (rotura tendón de Aquiles)',resultado:''},
     {nombre:'Test de compresión de peroné (fractura)',resultado:''},
-    {nombre:'Test de Ottawa Ankle Rules (fractura)',resultado:''},
+    {nombre:'Test de Ottawa Ankle Rules (fractura maleolar)',resultado:''},
     {nombre:'Test de Mulder (neuroma de Morton)',resultado:''},
     {nombre:'Test de Windlass (fascitis plantar)',resultado:''},
-    {nombre:'Test de Tinel tobillo (atrapamiento nervio tibial)',resultado:''},
+    {nombre:'Test de Tinel — tobillo (nervio tibial posterior)',resultado:''},
     {nombre:'Test de Kleiger (lesión sindesmosis)',resultado:''},
-    {nombre:'Test de dorsiflexión con rodilla extendida (Silfverskiöld)',resultado:''},
+    {nombre:'Test de Silfverskiöld (dorsiflexión con rodilla extendida)',resultado:''},
+    {nombre:'Test de eversión stress (deltoides)',resultado:''},
+    {nombre:'Test de compresión sindesmosis (squeeze test)',resultado:''},
+  ],
+  // ── CERVICAL (alias sin punto para compatibilidad) ──────────
+  'Cervical': [
+    {nombre:'Test de compresión de Spurling (radiculopatía cervical)',resultado:''},
+    {nombre:'Test de distracción cervical (radiculopatía)',resultado:''},
+    {nombre:'Test de Valsalva cervical (presión intratecal)',resultado:''},
+    {nombre:'Test de Lhermitte (mielopatía cervical)',resultado:''},
+    {nombre:'Test de Adams (flexión cervical)',resultado:''},
+    {nombre:'Maniobra de Adson (síndrome del desfiladero torácico)',resultado:''},
+    {nombre:'Test de compresión del plexo braquial — Roos',resultado:''},
+    {nombre:'Test de rotación cervical — Hautant (arteria vertebral)',resultado:''},
+    {nombre:'Test de Sharp-Purser (inestabilidad atlantoaxial)',resultado:''},
+    {nombre:'Test de Jackson (compresión cervical lateral)',resultado:''},
+    {nombre:'Test de flexión-rotación (C1-C2 — cefalea cervicogénica)',resultado:''},
   ],
 };
 
@@ -2880,127 +2934,122 @@ function _keyPrueba(region){
 function mkPruebasFuncionales(sel, pruebasGuardadas){
   pruebasGuardadas = pruebasGuardadas || {};
   var regConPruebas = (sel||[]).filter(function(r){ return _keyPrueba(r); });
-  if(!regConPruebas.length) return '<p style="color:var(--tx4);font-size:12px;padding:10px">Selecciona un segmento con pruebas disponibles (hombro, codo, muñeca, columna, cadera, rodilla, tobillo).</p>';
-
+  if(!regConPruebas.length) return '';
   var html = '';
   regConPruebas.forEach(function(region){
     var key = _keyPrueba(region);
     var todasPruebas = PRUEBAS_POR_REGION[key] || [];
     var savedRegion = pruebasGuardadas[region] || {};
-    // Pruebas ya agregadas (guardadas con resultado O agregadas en esta sesión)
-    var agregadas = todasPruebas.filter(function(p){
-      return savedRegion[p.nombre] !== undefined;
-    });
+    var agregadas = todasPruebas.filter(function(p){ return savedRegion[p.nombre] !== undefined; });
     var regionId = region.replace(/[^a-z0-9]/gi,'_');
-
     html += '<div style="margin-bottom:16px" id="prueba_region_'+regionId+'">';
-    html += '<div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:7px 12px;background:var(--surf3);border-radius:8px;display:flex;align-items:center;gap:6px">🔬 '+e2(region)+'</div>';
-
-    // Lista de pruebas agregadas
-    html += '<div id="prueba_lista_'+regionId+'" style="display:flex;flex-direction:column;gap:5px;margin-bottom:8px">';
-    agregadas.forEach(function(p){
-      var savedVal = savedRegion[p.nombre] || '';
-      html += _mkPruebaFila(region, p.nombre, savedVal, regionId);
-    });
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;padding:7px 12px;background:var(--surf3);border-radius:8px">';
+    html += '<span style="font-size:12px;font-weight:700;color:var(--tx2)">\u{1F52C} '+e2(region)+'</span>';
+    html += '<button type="button" class="btn btn-ghost btn-sm" style="font-size:11px;padding:4px 10px" onclick="abrirModalPruebas('+JSON.stringify(region)+','+JSON.stringify(regionId)+')">+ Seleccionar pruebas</button>';
     html += '</div>';
-
-    // Selector para agregar prueba
-    html += '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
-    html += '<select id="prueba_sel_'+regionId+'" class="sel" style="flex:1;min-width:0;font-size:12px">';
-    html += '<option value="">— Agregar prueba...</option>';
-    todasPruebas.forEach(function(p){
-      // Solo mostrar en el selector las que aún no están agregadas
-      if(savedRegion[p.nombre] === undefined){
-        html += '<option value="'+e2(p.nombre)+'">'+e2(p.nombre)+'</option>';
-      }
-    });
-    html += '</select>';
-    html += '<button type="button" class="btn btn-ghost btn-sm" style="flex-shrink:0;white-space:nowrap" ';
-    html += 'onclick="agregarPrueba('+JSON.stringify(region)+','+JSON.stringify(regionId)+')">+ Agregar</button>';
-    html += '</div>';
-
-    html += '</div>';
+    html += '<div id="prueba_lista_'+regionId+'" style="display:flex;flex-direction:column;gap:5px">';
+    agregadas.forEach(function(p){ html += _mkPruebaFila(region, p.nombre, savedRegion[p.nombre]||'', regionId); });
+    if(!agregadas.length) html += '<div style="font-size:12px;color:var(--tx4);padding:4px 12px;font-style:italic">Sin pruebas seleccionadas</div>';
+    html += '</div></div>';
   });
   return html;
 }
 
-// Genera una fila de prueba individual
 function _mkPruebaFila(region, nombre, savedVal, regionId){
-  var html = '<div data-fila-prueba="1" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surf);border-radius:8px;border:1px solid var(--bd);margin-bottom:5px">';
+  var html = '<div data-fila-prueba="1" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surf);border-radius:8px;border:1px solid var(--bd)">';
   html += '<span style="font-size:11px;flex:1;color:var(--tx)">'+e2(nombre)+'</span>';
   html += '<select class="sel" data-prueba-region="'+e2(region)+'" data-prueba-nombre="'+e2(nombre)+'" style="font-size:11px;padding:4px 6px;width:140px;flex-shrink:0">';
-  html += '<option value="">—</option>';
+  html += '<option value="">&#8212;</option>';
   ['+  Positivo','-  Negativo','Dudoso','No realizado'].forEach(function(op){
     html += '<option value="'+e2(op)+'"'+(savedVal===op?' selected':'')+'>'+e2(op)+'</option>';
   });
   html += '</select>';
   html += '<button type="button" onclick="quitarPrueba('+JSON.stringify(region)+','+JSON.stringify(nombre)+','+JSON.stringify(regionId)+')" ';
-  html += 'style="background:none;border:none;color:var(--tx4);cursor:pointer;font-size:18px;padding:0 2px;flex-shrink:0;line-height:1" title="Quitar">×</button>';
+  html += 'style="background:none;border:none;color:var(--tx4);cursor:pointer;font-size:18px;padding:0 4px;flex-shrink:0;line-height:1" title="Quitar">&times;</button>';
   html += '</div>';
   return html;
 }
 
-// Agrega una prueba a la lista de una región
-function agregarPrueba(region, regionId){
-  var sel = g('prueba_sel_'+regionId);
-  if(!sel || !sel.value) return;
-  var nombre = sel.value;
-  var lista = g('prueba_lista_'+regionId);
-  if(!lista) return;
-  // Verificar que no esté ya agregada
-  if(lista.querySelector('[data-prueba-nombre="'+nombre.replace(/"/g,'\\"')+'"]')){
-    toast('Esa prueba ya fue agregada','','warn'); return;
-  }
-  // Agregar fila
-  lista.insertAdjacentHTML('beforeend', _mkPruebaFila(region, nombre, '', regionId));
-  // Quitar del selector
-  sel.remove(sel.selectedIndex);
-  sel.value = '';
+var _modalPruebasRegion = '', _modalPruebasRegionId = '';
+
+function abrirModalPruebas(region, regionId){
+  _modalPruebasRegion = region;
+  _modalPruebasRegionId = regionId;
+  var m = g('modalPruebas'); if(!m) return;
+  var tit = g('modalPruebasTit'); if(tit) tit.textContent = region;
+  var busq = g('pruebaSearch'); if(busq) busq.value = '';
+  _renderListaPruebas('');
+  m.style.display = 'flex';
+  if(busq) setTimeout(function(){ busq.focus(); }, 100);
 }
 
-// Quita una prueba de la lista y la devuelve al selector
+function cerrarModalPruebas(){
+  var m = g('modalPruebas'); if(m) m.style.display = 'none';
+}
+
+function filtrarModalPruebas(q){
+  _renderListaPruebas((q||'').toLowerCase());
+}
+
+function _renderListaPruebas(q){
+  var lista = g('pruebasList'); if(!lista) return;
+  var key = _keyPrueba(_modalPruebasRegion);
+  var todas = PRUEBAS_POR_REGION[key] || [];
+  var filtradas = q ? todas.filter(function(p){ return p.nombre.toLowerCase().indexOf(q) !== -1; }) : todas;
+  if(!filtradas.length){
+    lista.innerHTML = '<div style="text-align:center;color:var(--tx4);font-size:13px;padding:20px">Sin resultados</div>';
+    return;
+  }
+  var listaDOM = g('prueba_lista_'+_modalPruebasRegionId);
+  var yaAgregadas = {};
+  if(listaDOM){
+    listaDOM.querySelectorAll('[data-prueba-nombre]').forEach(function(el){
+      yaAgregadas[el.getAttribute('data-prueba-nombre')] = true;
+    });
+  }
+  lista.innerHTML = filtradas.map(function(p){
+    var ya = !!yaAgregadas[p.nombre];
+    return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:var(--surf2);border:1px solid var(--bd);border-radius:10px;'+(ya?'opacity:.5':'cursor:pointer')+'" '
+      +(ya ? '' : 'data-prueba="'+e2(p.nombre)+'" onclick="_seleccionarPrueba(this.getAttribute(\'data-prueba\'))"')+'>'
+      +'<span style="font-size:12px;flex:1;color:var(--tx)">'+e2(p.nombre)+'</span>'
+      +(ya
+        ? '<span style="font-size:11px;color:var(--green);font-weight:700;flex-shrink:0">&#10003; Agregada</span>'
+        : '<button class="btn btn-primary btn-sm" style="flex-shrink:0">+ Agregar</button>')
+      +'</div>';
+  }).join('');
+}
+
+function _seleccionarPrueba(nombre){
+  var lista = g('prueba_lista_'+_modalPruebasRegionId); if(!lista) return;
+  var existe = false;
+  lista.querySelectorAll('[data-prueba-nombre]').forEach(function(el){
+    if(el.getAttribute('data-prueba-nombre') === nombre) existe = true;
+  });
+  if(existe) return;
+  var vacio = lista.querySelector('[style*="font-style:italic"]');
+  if(vacio) vacio.remove();
+  lista.insertAdjacentHTML('beforeend', _mkPruebaFila(_modalPruebasRegion, nombre, '', _modalPruebasRegionId));
+  _renderListaPruebas(g('pruebaSearch') ? g('pruebaSearch').value.toLowerCase() : '');
+}
+
 function quitarPrueba(region, nombre, regionId){
-  var lista = g('prueba_lista_'+regionId);
-  if(!lista) return;
-  // Buscar la fila por el select con data-prueba-nombre
-  var selEl = lista.querySelector('[data-prueba-region][data-prueba-nombre]');
+  var lista = g('prueba_lista_'+regionId); if(!lista) return;
   lista.querySelectorAll('[data-prueba-nombre]').forEach(function(el){
     if(el.getAttribute('data-prueba-nombre') === nombre){
-      var fila = el.closest('[data-fila-prueba]');
-      if(fila) fila.remove();
+      var fila = el.closest('[data-fila-prueba]'); if(fila) fila.remove();
     }
   });
-  // Devolver al selector
-  var sel = g('prueba_sel_'+regionId);
-  if(sel){
-    var opt = document.createElement('option');
-    opt.value = nombre;
-    opt.textContent = nombre;
-    sel.appendChild(opt);
+  if(_modalPruebasRegionId === regionId){
+    _renderListaPruebas(g('pruebaSearch') ? g('pruebaSearch').value.toLowerCase() : '');
   }
 }
 
-// Lee las pruebas del DOM y retorna objeto { region: { nombrePrueba: resultado } }
-function leerPruebasFuncionales(){
-  var resultado = {};
-  document.querySelectorAll('[data-prueba-region]').forEach(function(el){
-    if(!el.value) return;
-    var reg = el.getAttribute('data-prueba-region');
-    var nom = el.getAttribute('data-prueba-nombre');
-    if(!resultado[reg]) resultado[reg] = {};
-    resultado[reg][nom] = el.value;
-  });
-  return resultado;
-}
-
-// Actualiza el bloque de pruebas al cambiar regiones
 function actualizarPruebas(){
   var sel = Array.from(document.querySelectorAll('#regionesWrap span[data-r]')).map(function(s){return s.getAttribute('data-r');});
   var saved = leerPruebasFuncionales();
   var pw = g('tablaPruebasWrap');
   if(pw) pw.innerHTML = mkPruebasFuncionales(sel, saved);
 }
-
 
 const TODAS_REGIONES = Object.keys(ROM_MOV);
 
@@ -3086,7 +3135,6 @@ function secTrauma(d){
     <div class="field" style="margin-bottom:14px"><label>Inspección</label>
       <textarea class="ta" id="tTegu" rows="3" placeholder="Coloración, edema, cicatrices, heridas, cambios cutáneos...">${e2(d.tegu||'')}</textarea></div>
     <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px;display:flex;align-items:center;gap:6px">🔬 Pruebas funcionales específicas por segmento</div>
-    <div style="font-size:11px;color:var(--tx4);margin-bottom:8px;padding:6px 10px;background:var(--surf3);border-radius:7px">Las pruebas aparecen automáticamente según los segmentos seleccionados.</div>
     <div id="tablaPruebasWrap" style="margin-bottom:14px">${mkPruebasFuncionales(sel, d.pruebasFuncionales||{})}</div>
     <div class="field" style="margin-bottom:14px"><label>Observaciones adicionales de pruebas</label>
       <textarea class="ta" id="tPruebas" rows="2" placeholder="Pruebas no listadas, hallazgos adicionales, contexto clínico...">${e2(d.pruebas||'')}</textarea></div>
@@ -3336,7 +3384,7 @@ function _renderListaEscalas(q){
   lista.innerHTML = filtradas.map(function(e){
     var yaEsta = _escalaYaAgregada(e.id);
     return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:var(--surf2);border:1px solid var(--bd);border-radius:10px;'+(yaEsta?'opacity:.55':'cursor:pointer')+'" '
-      +(yaEsta?'':'onclick="seleccionarEscala(\''+e.id+'\')"')+'>'
+      +(yaEsta?'':'data-selesc="'+e2(e.id)+'" onclick="seleccionarEscala(this.getAttribute(\'data-selesc\'))"')+'>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-weight:700;font-size:13px;color:var(--tx)">'+e2(e.nombre)+'</div>'
       +'<div style="font-size:11px;color:var(--tx3);margin-top:2px">'+e2(e.desc)+'</div>'
@@ -3481,8 +3529,8 @@ function displayEscalasResumen(escalas){
     html += '</div>';
     html += '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">';
     html += '<span style="font-size:14px;font-weight:800;color:var(--n700)">'+e2(String(puntaje))+'</span>';
-    // Solo pasa el eid — los datos se leen del store global
-    html += '<button class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px" onclick="verDetalleEscala('+JSON.stringify(eid)+')">📄</button>';
+    // Botón 📄 usa data-eid para evitar problemas de comillas en onclick
+    html += '<button class="btn btn-ghost btn-sm" style="padding:3px 8px;font-size:11px" data-eid="'+e2(eid)+'" onclick="verDetalleEscala(this.getAttribute(\'data-eid\'))">📄</button>';
     html += '</div></div>';
   });
   html += '</div></div>';
@@ -6432,7 +6480,24 @@ function iniciarPollingPendientes(){
   <button id="mnAdmin" style="display:none" onclick="navTo('exporthc');setMobileActive('mnAdmin')"><span>&#128196;</span><span class="lbl">Exportar</span></button>
 </div>
 
-<!-- Overlay de envío/guardado -->
+<!-- Modal Pruebas Funcionales -->
+<div id="modalPruebas" style="display:none;position:fixed;inset:0;background:rgba(10,22,40,.75);z-index:700;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+  <div style="background:var(--surf);border:1px solid var(--bd);border-radius:18px;padding:24px;width:100%;max-width:580px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0">
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--tx)">🔬 <span id="modalPruebasTit">Pruebas funcionales</span></div>
+        <div style="font-size:11px;color:var(--tx4);margin-top:2px">Selecciona las pruebas a aplicar en este segmento</div>
+      </div>
+      <button onclick="cerrarModalPruebas()" style="background:rgba(255,255,255,.1);border:none;color:var(--tx3);width:30px;height:30px;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <input class="inp" id="pruebaSearch" placeholder="🔍 Buscar prueba..." oninput="filtrarModalPruebas(this.value)" style="margin-bottom:12px;flex-shrink:0">
+    <div id="pruebasList" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:6px;padding-right:4px"></div>
+    <div style="margin-top:14px;flex-shrink:0">
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="cerrarModalPruebas()">✓ Listo</button>
+    </div>
+  </div>
+</div>
+
 <div id="hcSendOverlay" style="display:none;position:fixed;inset:0;background:rgba(10,22,40,.82);z-index:1000;flex-direction:column;align-items:center;justify-content:center;gap:20px;backdrop-filter:blur(6px)">
   <div style="width:52px;height:52px;border:4px solid rgba(255,255,255,.2);border-top-color:#60a5fa;border-radius:50%;animation:hcSpin .75s linear infinite"></div>
   <div style="text-align:center">
