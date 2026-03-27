@@ -1382,7 +1382,7 @@ async function abrirPac(id){
     <div class="card" style="margin-bottom:14px">
       <div class="card-hdr">
         <div class="card-title">📋 Evaluaciones</div>
-        ${puedeEditar?`<button class="btn btn-primary btn-sm" onclick="abrirFrmEval('${esc(pac.id)}',null,'${esc(pac.categoriaId)}')">+ Nueva evaluación</button>`:''}
+        ${puedeEditar?`<button class="btn btn-primary btn-sm" onclick="abrirFrmPac(Object.assign({},pacActivo,{_evalId:'',datosEspecificos:{}}),'${esc(pac.categoriaId)}','${esc(cat.nombre)}')">+ Nueva evaluación</button>`:''}
       </div>
       ${evals.length?evals.map(ev=>evalCard(ev,pac)).join(''):'<div class="empty">Sin evaluaciones.</div>'}
     </div>
