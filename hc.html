@@ -1297,36 +1297,50 @@ async function _generarHCPdf(pacId, docFirmante){
     }));
 
     // 2. Construir mapa de firmas — SIEMPRE fresco, resolver cada firma a base64
+    // Prefijos de grado a normalizar para matching robusto
+    var _gradosPrefijos = ['Lic. ','Mtra. ','Mtro. ','Dra. ','Dr. ','Mg. ','Mgtr. '];
+    function _normNombre(n){
+      if(!n) return '';
+      var s = String(n).trim();
+      for(var i=0;i<_gradosPrefijos.length;i++){
+        if(s.startsWith(_gradosPrefijos[i])) s = s.substring(_gradosPrefijos[i].length).trim();
+      }
+      return s;
+    }
+    // Buscar en mapa normalizando posibles prefijos de grado
+    function _findEnMapa(clave){
+      if(!clave) return null;
+      return firmasMap[clave] || firmasMap[_normNombre(clave)] || null;
+    }
+
     var firmasMap = {};
     try{
       const rU = await apiGet('listarUsuarios');
       if(rU.ok){
-        // Resolver todas las firmas en paralelo (fileId → base64)
         await Promise.all((rU.usuarios||[]).map(async function(u){
           if(u.firma && !u.firma.startsWith('data:image')){
             u.firma = await resolverFirma_(u.firma);
           }
-          console.log('[PDF-firma] usuario='+u.nombre+' codigo='+u.codigo+' firma='+( u.firma ? (u.firma.startsWith('data:image')?'base64('+u.firma.length+')':u.firma.substring(0,30)) : 'vacía'));
-          firmasMap[u.nombre]  = u;
-          firmasMap[u.codigo]  = u;
+          // Indexar por todas las variantes del nombre para matching robusto
+          var nombreBase = u.nombre || '';
+          var nombreNorm = _normNombre(nombreBase);
+          var nombreConGrado = u.gradoAcademico ? u.gradoAcademico+' '+nombreBase : nombreBase;
+          firmasMap[nombreBase]     = u;
+          firmasMap[nombreNorm]     = u;
+          firmasMap[nombreConGrado] = u;
+          firmasMap[u.codigo]       = u;
           if(u.ctmp) firmasMap[u.ctmp] = u;
         }));
         window._listaUsuariosCache = rU.usuarios;
       }
     }catch(e){ console.warn('firmasMap error:', e); }
 
-    // Log del estado final del firmasMap y los revisores
-    evals.forEach(function(ev){
-      console.log('[PDF-rev] eval revisadoPor='+ev.revisadoPor+' docente='+ev.docente+' → encontrado='+(!!firmasMap[ev.revisadoPor]||!!firmasMap[ev.docente]));
-    });
-
-    // 3. Resolver firma del firmante del modal (si tiene fileId sin resolver)
+    // 3. Resolver firma del firmante del modal
     if(docFirmante && docFirmante.firma && !docFirmante.firma.startsWith('data:image')){
       docFirmante.firma = await resolverFirma_(docFirmante.firma);
     }
-    // Si el firmante no tiene firma propia, buscarla en el mapa por nombre o ctmp
     if(docFirmante && !docFirmante.firma){
-      const match = firmasMap[docFirmante.nombre] || firmasMap[docFirmante.ctmp] || null;
+      const match = _findEnMapa(docFirmante.nombre) || _findEnMapa(docFirmante.ctmp) || null;
       if(match && match.firma) docFirmante.firma = match.firma;
     }
 
@@ -1346,6 +1360,25 @@ async function _generarHCPdf(pacId, docFirmante){
 }
 
 // ─── BUILD HC COMPLETA ─────────────────────────────────────
+// Helper global para buscar en firmasMap normalizando prefijos de grado
+function _findInMap(map, clave){
+  if(!map || !clave) return null;
+  if(map[clave]) return map[clave];
+  // Quitar prefijo de grado si viene incluido
+  var s = String(clave).trim();
+  var prefijos = ['Lic. ','Mtra. ','Mtro. ','Dra. ','Dr. ','Mg. ','Mgtr. '];
+  for(var i=0;i<prefijos.length;i++){
+    if(s.startsWith(prefijos[i])){ var norm=s.substring(prefijos[i].length).trim(); if(map[norm]) return map[norm]; }
+  }
+  // Búsqueda insensible a mayúsculas como fallback
+  var lower = s.toLowerCase();
+  var keys = Object.keys(map);
+  for(var j=0;j<keys.length;j++){
+    if(keys[j].toLowerCase()===lower) return map[keys[j]];
+  }
+  return null;
+}
+
 function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
   var html = '';
   var cat = getCat(pac.categoriaId);
@@ -1416,7 +1449,7 @@ function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
       }
 
       // Sello docente que revisó
-      var docRevisor = firmasMap[ev.revisadoPor] || firmasMap[ev.docente] || null;
+      var docRevisor = _findInMap(firmasMap, ev.revisadoPor) || _findInMap(firmasMap, ev.docente) || null;
       if(docRevisor){
         html += '<div style="border-top:1px solid #d1fae5;margin-top:12px;padding-top:10px;display:flex;justify-content:flex-end">'
           + mkSelloDocente(docRevisor) + '</div>';
@@ -1445,9 +1478,10 @@ function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
         + (s.respuesta ? '<div><div class="field-lbl">Respuesta paciente</div><div class="field-val">' + e2(s.respuesta) + '</div></div>' : '')
         + (s.descripcion ? '<div style="grid-column:1/-1"><div class="field-lbl">Descripci&oacute;n</div><div class="field-val">' + e2(s.descripcion) + '</div></div>' : '')
         + '</div></div>';
-      if(s.estado === 'aprobada' && s.revisadoPor && firmasMap[s.revisadoPor]){
+      var _sDocRev = _findInMap(firmasMap, s.revisadoPor) || _findInMap(firmasMap, s.docente) || null;
+      if(s.estado === 'aprobada' && _sDocRev){
         html += '<div style="border-top:1px solid #d1fae5;margin-top:4px;padding:8px 14px;display:flex;justify-content:flex-end">'
-          + mkSelloDocente(firmasMap[s.revisadoPor])
+          + mkSelloDocente(_sDocRev)
           + '</div>';
       }
     });
@@ -2271,7 +2305,7 @@ async function verEvalConFirma(evalId, pacId, docFirmanteOverride){
     if(docFirmanteOverride){
       firmaHTML = mkSelloDocente(docFirmanteOverride);
     } else if(ev.revisadoPor){
-      var docRev = firmasMap[ev.revisadoPor] || firmasMap[ev.docente] || null;
+      var docRev = _findInMap(firmasMap, ev.revisadoPor) || _findInMap(firmasMap, ev.docente) || null;
       if(docRev) firmaHTML = mkSelloDocente(docRev);
     } else if(ev.docente){
       var docSup = firmasMap[ev.docente] || null;
@@ -2318,7 +2352,7 @@ async function verSesConFirma(sesId, pacId, docFirmanteOverride){
     if(docFirmanteOverride){
       firmaHTML = mkSelloDocente(docFirmanteOverride);
     } else if(s.revisadoPor){
-      var docRev = firmasMap[s.revisadoPor] || firmasMap[s.docente] || null;
+      var docRev = _findInMap(firmasMap, s.revisadoPor) || _findInMap(firmasMap, s.docente) || null;
       if(docRev) firmaHTML = mkSelloDocente(docRev);
     } else if(s.docente){
       var docSup = firmasMap[s.docente] || null;
