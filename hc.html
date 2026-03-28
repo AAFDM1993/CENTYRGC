@@ -839,13 +839,42 @@ function _buildExamenObjetivoPorCategoria(d, ev, catId){
   var h = '<div class="sec"><div class="sec-hdr">III. Examen Objetivo</div>';
 
   if(catId === 'traumatologia'){
+    var eva = d.eva !== undefined ? d.eva : (ev.evaValor !== undefined ? ev.evaValor : '—');
     h += '<div class="sec-body">'
-      + '<div><div class="field-lbl">EVA</div><div class="field-val">' + e2(String(d.eva!==undefined?d.eva:(ev.evaValor!==undefined?ev.evaValor:'—'))) + '/10</div></div>'
-      + (d.trofismo ? '<div><div class="field-lbl">Trofismo</div><div class="field-val">' + e2(d.trofismo) + '</div></div>' : '')
-      + (d.palpacion ? '<div style="grid-column:1/-1"><div class="field-lbl">Palpaci&oacute;n</div><div class="field-val">' + e2(d.palpacion) + '</div></div>' : '')
-      + (d.pruebas ? '<div style="grid-column:1/-1"><div class="field-lbl">Pruebas funcionales</div><div class="field-val">' + e2(d.pruebas) + '</div></div>' : '')
-      + '</div>'
-      + (d.rom && Object.keys(d.rom).length ? buildRomTable(d.rom) : '');
+      + '<div><div class="field-lbl">EVA</div><div class="field-val">' + e2(String(eva)) + '/10</div></div>'
+      + _fld2('Localización dolor', d.dolLoc)
+      + _fld2('Tipo de dolor', d.dolTipo)
+      + _fld2('Trofismo', d.trofismo)
+      + (d.palpacion ? '<div style="grid-column:1/-1">'+_fld2('Palpación', d.palpacion)+'</div>' : '')
+      + (d.neuro     ? '<div style="grid-column:1/-1">'+_fld2('Valoración neurológica', d.neuro)+'</div>' : '')
+      + (d.tegu      ? '<div style="grid-column:1/-1">'+_fld2('Tegumentario', d.tegu)+'</div>' : '')
+      + (d.aux       ? '<div style="grid-column:1/-1">'+_fld2('Auxiliares diagnóstico', d.aux)+'</div>' : '')
+      + (d.examObjetivo ? '<div style="grid-column:1/-1">'+_fld2('Examen objetivo', d.examObjetivo)+'</div>' : '')
+      + '</div>';
+    // Pruebas funcionales
+    if(d.pruebasFuncionales && typeof d.pruebasFuncionales === 'object' && Object.keys(d.pruebasFuncionales).length){
+      h += '<div style="padding:8px 14px 4px"><div style="font-size:10px;font-weight:700;color:#1e3a5f;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Pruebas funcionales</div>';
+      Object.keys(d.pruebasFuncionales).forEach(function(region){
+        var pruebas = d.pruebasFuncionales[region];
+        if(!pruebas || !Object.keys(pruebas).length) return;
+        h += '<div style="font-size:11px;font-weight:700;color:#475569;margin:6px 0 3px">'+e2(region)+'</div>';
+        h += '<table class="tbl-rom"><thead><tr><th style="text-align:left">Prueba</th><th>Resultado</th></tr></thead><tbody>';
+        Object.keys(pruebas).forEach(function(nombre){
+          h += '<tr><td>'+e2(nombre)+'</td><td style="text-align:center;font-weight:700">'+e2(String(pruebas[nombre]||'—'))+'</td></tr>';
+        });
+        h += '</tbody></table>';
+      });
+      h += '</div>';
+    } else if(d.pruebas){
+      h += '<div style="padding:4px 14px">'+_fld2('Pruebas funcionales', d.pruebas)+'</div>';
+    }
+    // Tablas ROM y Fuerza
+    var romData = d.rom || ev.rom || {};
+    if(typeof romData === 'string'){ try{ romData = JSON.parse(romData); }catch(e){ romData = {}; } }
+    var fuerzaData = d.fuerza || ev.fuerza || {};
+    if(typeof fuerzaData === 'string'){ try{ fuerzaData = JSON.parse(fuerzaData); }catch(e){ fuerzaData = {}; } }
+    h += buildRomTable(romData);
+    h += buildFuerzaTable(fuerzaData);
 
   } else if(catId === 'neuro_adultos'){
     h += '<div class="sec-body">'
@@ -922,6 +951,84 @@ function _buildExamenObjetivoPorCategoria(d, ev, catId){
   }
 
   return h + '</div>';
+}
+
+// ─── TABLAS ROM Y FUERZA PARA PDF ─────────────────────
+function buildRomTable(rom){
+  if(!rom || !Object.keys(rom).length) return '';
+  // Agrupar claves por región (e.g. "Tobillo D_Dorsiflexión" → región "Tobillo D")
+  var regiones = {};
+  Object.keys(rom).forEach(function(k){
+    if(!rom[k] && rom[k] !== 0) return; // omitir vacíos
+    // Formato: "Region_Movimiento" (ej: "Tobillo D_Dorsiflexión") o "Region_Mov_D"/"Region_Mov_I"
+    var parts = k.split('_');
+    var reg = parts[0];
+    if(parts.length >= 2){
+      // Buscar región real en ROM_MOV
+      var found = Object.keys(ROM_MOV).find(function(r){ return k.startsWith(r+'_'); });
+      if(found) reg = found;
+    }
+    if(!regiones[reg]) regiones[reg] = {};
+    var mov = k.substring(reg.length + 1);
+    regiones[reg][mov] = rom[k];
+  });
+  if(!Object.keys(regiones).length) return '';
+  var h = '<div style="padding:8px 14px 12px">';
+  h += '<div style="font-size:10px;font-weight:700;color:#1e3a5f;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Rango de movimiento (°)</div>';
+  h += '<table class="tbl-rom" style="font-size:11px"><thead><tr>'
+    + '<th style="text-align:left">Región</th>'
+    + '<th>Movimiento</th>'
+    + '<th>Valor</th>'
+    + '</tr></thead><tbody>';
+  Object.keys(regiones).forEach(function(reg){
+    var movs = regiones[reg];
+    var keys = Object.keys(movs);
+    if(!keys.length) return;
+    keys.forEach(function(mov, i){
+      h += '<tr>';
+      if(i === 0) h += '<td rowspan="'+keys.length+'" style="font-weight:700;border:1px solid #e2e8f0;padding:4px 8px">'+e2(reg)+'</td>';
+      h += '<td>'+e2(mov)+'</td>';
+      h += '<td style="text-align:center;font-weight:700;color:#1d4ed8">'+e2(String(movs[mov]))+'</td>';
+      h += '</tr>';
+    });
+  });
+  h += '</tbody></table></div>';
+  return h;
+}
+
+function buildFuerzaTable(fuerza){
+  if(!fuerza || !Object.keys(fuerza).length) return '';
+  var regiones = {};
+  Object.keys(fuerza).forEach(function(k){
+    if(!fuerza[k] && fuerza[k] !== 0) return;
+    var found = Object.keys(FUERZA_GRP).find(function(r){ return k.startsWith(r+'_'); });
+    var reg = found || k.split('_')[0];
+    if(!regiones[reg]) regiones[reg] = {};
+    var mus = k.substring(reg.length + 1);
+    regiones[reg][mus] = fuerza[k];
+  });
+  if(!Object.keys(regiones).length) return '';
+  var h = '<div style="padding:4px 14px 12px">';
+  h += '<div style="font-size:10px;font-weight:700;color:#1e3a5f;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Fuerza muscular (0–5)</div>';
+  h += '<table class="tbl-rom"><thead><tr>'
+    + '<th style="text-align:left">Región</th>'
+    + '<th>Grupo muscular</th>'
+    + '<th>Grado</th>'
+    + '</tr></thead><tbody>';
+  Object.keys(regiones).forEach(function(reg){
+    var movs = regiones[reg];
+    var keys = Object.keys(movs);
+    if(!keys.length) return;
+    keys.forEach(function(mus, i){
+      h += '<tr>';
+      if(i === 0) h += '<td rowspan="'+keys.length+'" style="font-weight:700;border:1px solid #e2e8f0;padding:4px 8px">'+e2(reg)+'</td>';
+      h += '<td>'+e2(mus)+'</td>';
+      h += '<td style="text-align:center;font-weight:700;color:#1d4ed8">'+e2(String(movs[mus]))+'</td>';
+      h += '</tr>';
+    });
+  });
+  h += '</tbody></table></div>';
+  return h;
 }
 
 // Helper campo para export
@@ -1159,22 +1266,24 @@ async function _generarHCPdf(pacId, docFirmante){
     const evals = await Promise.all(evalsBasic.map(async ev => {
       try{
         const rEv = await apiGet('obtenerEvaluacion', {id: ev.id});
-        console.log('[PDF] obtenerEvaluacion id='+ev.id+' ok='+rEv.ok, rEv.evaluacion ? Object.keys(rEv.evaluacion) : 'null');
         if(rEv.ok && rEv.evaluacion){
           const raw = rEv.evaluacion.datosEspecificos;
-          console.log('[PDF] datosEspecificos type='+typeof raw, typeof raw==='string' ? raw.substring(0,120) : raw);
           if(typeof raw === 'string' && raw){
             try{ rEv.evaluacion.datosEspecificos = JSON.parse(raw); }catch(e){ rEv.evaluacion.datosEspecificos = {}; }
           } else if(!raw){
             rEv.evaluacion.datosEspecificos = {};
           }
-          console.log('[PDF] datosEspecificos keys=', Object.keys(rEv.evaluacion.datosEspecificos||{}));
+          // Parsear también rom y fuerza si vienen como string
+          ['rom','fuerza'].forEach(function(f){
+            if(typeof rEv.evaluacion[f] === 'string'){
+              try{ rEv.evaluacion[f] = JSON.parse(rEv.evaluacion[f]); }catch(e){ rEv.evaluacion[f] = {}; }
+            }
+          });
           return rEv.evaluacion;
         }
       }catch(e){ console.error('[PDF] obtenerEvaluacion error:', e); }
-      return ev; // fallback: datos básicos
+      return ev;
     }));
-    console.log('[PDF] evals cargadas:', evals.length, evals.map(e=>({catId:e.categoriaId, despKeys:Object.keys(e.datosEspecificos||{})})));
 
     // 2. Cargar usuarios para construir mapa de firmas
     var firmasMap = {};
