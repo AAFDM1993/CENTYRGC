@@ -1448,18 +1448,18 @@ function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
         html += _buildEscalasExport(escalas);
       }
 
-      // Sello del docente revisor — dentro del bloque, en sección de aprobación
+      // Sello al final de la evaluación — integrado sin cuadro extra
       var docRevisor = _findInMap(firmasMap, ev.revisadoPor) || _findInMap(firmasMap, ev.docente) || null;
-      var selloRevisor = docRevisor ? mkSelloDocente(docRevisor) : '';
-      html += '<div class="sec" style="border-color:#16a34a">'
-        + '<div class="sec-hdr" style="background:#16a34a">Evaluaci\u00f3n Aprobada</div>'
-        + '<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:12px 14px">'
-        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;flex:1;min-width:0">'
-        + '<div><div class="field-lbl">Revisado por</div><div class="field-val">' + e2(ev.revisadoPor||'—') + '</div></div>'
-        + (ev.comentarioDocente ? '<div><div class="field-lbl">Comentario</div><div class="field-val">' + e2(ev.comentarioDocente) + '</div></div>' : '')
-        + '</div>'
-        + (selloRevisor ? '<div style="flex-shrink:0">' + selloRevisor + '</div>' : '')
-        + '</div></div>';
+      if(docRevisor){
+        var selloRevisor = mkSelloDocente(docRevisor);
+        html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;margin-top:8px">'
+          + '<div style="flex:1;min-width:0">'
+          + '<div style="font-size:10px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Evaluación aprobada</div>'
+          + (ev.comentarioDocente ? '<div style="font-size:11px;color:#475569">' + e2(ev.comentarioDocente) + '</div>' : '')
+          + '</div>'
+          + '<div style="flex-shrink:0">' + selloRevisor + '</div>'
+          + '</div>';
+      }
       html += '</div>';
     });
   } else {
@@ -1474,26 +1474,32 @@ function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
       var estadoColor = s.estado==='aprobada' ? '#16a34a' : s.estado==='pendiente' ? '#d97706' : '#94a3b8';
       var _sDocRev = _findInMap(firmasMap, s.revisadoPor) || _findInMap(firmasMap, s.docente) || null;
       var selloSes = (s.estado==='aprobada' && _sDocRev) ? mkSelloDocente(_sDocRev) : '';
+
       html += '<div class="sec" style="border-radius:0;margin-bottom:0;border-top:none">'
+        // ── Encabezado: Sesión #N — Fecha  |  ESTADO
         + '<div class="sec-hdr" style="background:' + estadoColor + ';display:flex;align-items:center;justify-content:space-between">'
         + '<span>Sesi\u00f3n #' + e2(String(s.numero)) + ' &mdash; ' + e2(formatFecha(s.fecha||'')) + '</span>'
         + '<span style="font-size:10px;opacity:.85">' + e2(s.estado).toUpperCase() + '</span>'
         + '</div>'
-        + '<div class="sec-body">'
+        // ── Cuerpo: dos columnas — contenido | sello
+        + '<div style="display:flex;align-items:flex-start;gap:0">'
+        //   Columna izquierda: todos los datos
+        + '<div style="flex:1;min-width:0;padding:10px 14px">'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px">'
         + '<div><div class="field-lbl">Estudiante</div><div class="field-val">' + e2(s.estudiante||s.terapeuta||'—') + '</div></div>'
-        + (s.docente ? '<div><div class="field-lbl">Docente supervisor</div><div class="field-val">' + e2(s.docente) + '</div></div>' : '')
         + '<div><div class="field-lbl">EVA</div><div class="field-val">' + e2(String(s.evaValor??'—')) + '/10</div></div>'
-        + (s.respuesta ? '<div><div class="field-lbl">Respuesta paciente</div><div class="field-val">' + e2(s.respuesta) + '</div></div>' : '')
-        + (s.descripcion ? '<div style="grid-column:1/-1"><div class="field-lbl">Descripci\u00f3n</div><div class="field-val">' + e2(s.descripcion) + '</div></div>' : '')
+        + (s.respuesta ? '<div><div class="field-lbl">Respuesta paciente</div><div class="field-val">' + e2(s.respuesta) + '</div></div>' : '<div></div>')
         + '</div>'
+        + (s.descripcion ? '<div style="margin-top:8px"><div class="field-lbl">Descripci\u00f3n / Actividades</div><div class="field-val" style="margin-top:2px;line-height:1.5">' + e2(s.descripcion) + '</div></div>' : '')
+        + (s.comentarioDocente ? '<div style="margin-top:6px"><div class="field-lbl">Comentario docente</div><div class="field-val">' + e2(s.comentarioDocente) + '</div></div>' : '')
+        + '</div>'
+        //   Columna derecha: sello (solo si aprobada y hay sello)
         + (selloSes
-            ? '<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:10px 14px;border-top:1px solid #d1fae5">'
-              + '<div><div class="field-lbl">Revisado por</div><div class="field-val">' + e2(s.revisadoPor||'—') + '</div>'
-              + (s.comentarioDocente ? '<div class="field-lbl" style="margin-top:6px">Comentario</div><div class="field-val">' + e2(s.comentarioDocente) + '</div>' : '')
-              + '</div>'
-              + '<div style="flex-shrink:0">' + selloSes + '</div>'
+            ? '<div style="flex-shrink:0;padding:10px 14px;border-left:1px solid #e2e8f0;display:flex;align-items:center;justify-content:center">'
+              + selloSes
               + '</div>'
             : '')
+        + '</div>'
         + '</div>';
     });
     html += '</div>';
