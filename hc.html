@@ -272,8 +272,7 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
       <div id="sbAdminSec" style="display:none">
         <div class="sb-divider"></div>
         <div class="sb-sec">Admin</div>
-        <button class="sb-btn" id="sbCats" onclick="navTo('cats')"><span>🏷️</span> Categorías</button>
-        <button class="sb-btn" id="sbFirmas" onclick="navTo('firmas')"><span>&#128395;</span> Firmas</button>
+                <button class="sb-btn" id="sbFirmas" onclick="navTo('firmas')"><span>&#128395;</span> Firmas</button>
         <button class="sb-btn" id="sbExportHC" onclick="navTo('exporthc')"><span>&#128196;</span> Exportar HC</button>
       </div>
     </aside>
@@ -323,7 +322,7 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
 
 <script>
 // ─── Config ───────────────────────────────────────────
-const HC_URL = 'https://script.google.com/macros/s/AKfycbweI3QqCwONsAV4QVPlC1oLO7TqVaDPAU9I_SKWxQjePQn-fd_F3wU39vPjToL06g-6/exec';
+const HC_URL = 'https://script.google.com/macros/s/AKfycbxAUtF7cGZmHCDP1m5NBbl1ui0S-EoD4lx1jicL_XGtgw3TnCJexJj_7vi-93bvMNDL/exec';
 const SK = 'centyr_hc_s';
 const TTL = 6*60*60*1000;
 
@@ -483,8 +482,8 @@ async function iniciarApp(){
 }
 
 // ─── Nav ──────────────────────────────────────────────
-const views=['vPac','vDetalle','vEvalForm','vSesForm','vPend','vCats','vBusqHC','vFirmas','vExportHC'];
-const sbs=['sbPac','sbPend','sbCats','sbBusqHC','sbFirmas','sbExportHC'];
+const views=['vPac','vDetalle','vEvalForm','vSesForm','vPend','vBusqHC','vFirmas','vExportHC'];
+const sbs=['sbPac','sbPend','sbBusqHC','sbFirmas','sbExportHC'];
 
 function setMobileActive(id){
   ['mnPac','mnPend','mnBusq','mnAdmin'].forEach(function(b){
@@ -497,7 +496,6 @@ function navTo(v){
   sbs.forEach(x=>{const e=g(x);if(e)e.classList.remove('active');});
   if(v==='pac'){g('vPac').style.display='block';g('sbPac').classList.add('active');renderPacs();}
   if(v==='pend'){g('vPend').style.display='block';g('sbPend')?.classList.add('active');renderPend();}
-  if(v==='cats'){g('vCats').style.display='block';g('sbCats')?.classList.add('active');renderCats();}
   if(v==='busqhc'){g('vBusqHC').style.display='block';g('sbBusqHC')?.classList.add('active');renderBusqHC();}
   if(v==='firmas'){g('vFirmas').style.display='block';g('sbFirmas')?.classList.add('active');renderFirmas();}
   if(v==='exporthc'){g('vExportHC').style.display='block';g('sbExportHC')?.classList.add('active');renderExportHC();}
@@ -566,13 +564,14 @@ async function buscarHC(){
 // ─── SELLO DIGITAL DOCENTE ────────────────────────────
 function mkSelloDocente(doc){
   if(!doc) return '';
-  var nombre=doc.nombre||doc.codigo||'';
-  var ctmp=doc.ctmp||'';
-  var cargo=doc.cargo||'';
-  var firma=doc.firma||'';
-  var imgTag='';
-  if(firma&&firma.startsWith('data:image')){
-    imgTag='<img src="'+firma+'" style="max-width:130px;max-height:65px;display:block;margin:0 auto 6px">';
+  var grado  = doc.gradoAcademico ? doc.gradoAcademico+' ' : '';
+  var nombre = (grado + (doc.nombre||doc.codigo||'')).trim();
+  var ctmp   = doc.ctmp||'';
+  var cargo  = doc.cargo||'';
+  var firma  = doc.firma||'';
+  var imgTag = '';
+  if(firma && firma.startsWith('data:image')){
+    imgTag = '<img src="'+firma+'" style="max-width:130px;max-height:65px;display:block;margin:0 auto 6px">';
   }
   return '<div class="sello-doc" style="border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;display:inline-block">'
     +imgTag
@@ -589,13 +588,95 @@ var _exportCallback=null;
 var _exportando=false;
 
 function abrirModalFirmaExport(callback){
-  _exportCallback=callback;
-  // Pre-rellenar con datos del usuario logueado si es docente
-  var nom=g('firmaExNombre'); var ctmp=g('firmaExCtmp');
-  if(nom&&!nom.value&&session&&session.nombre) nom.value=session.nombre;
-  var m=g('modalFirmaExport');
-  if(m) m.style.display='flex';
-  if(nom) setTimeout(function(){nom.focus();},100);
+  _exportCallback = callback;
+  // Pre-rellenar con datos del usuario logueado si es docente/admin
+  var nom = g('firmaExNombre');
+  var grd = g('firmaExGrado');
+  var busca = g('firmaExBusca');
+  if(nom && !nom.value && session && session.nombre) nom.value = session.nombre;
+  if(busca) busca.value = '';
+  var dd = g('firmaExDD'); if(dd) dd.style.display = 'none';
+  var m = g('modalFirmaExport');
+  if(m) m.style.display = 'flex';
+  if(busca) setTimeout(function(){ busca.focus(); }, 100);
+  // Pre-cargar grado si el usuario tiene uno registrado
+  if(grd && window._listaUsuariosCache){
+    var me = (window._listaUsuariosCache||[]).find(function(u){
+      return u.codigo === (session&&session.codigo);
+    });
+    if(me && me.gradoAcademico) grd.value = me.gradoAcademico;
+  }
+}
+
+function filtrarFirmaExBusca(val){
+  var dd = g('firmaExDD'); if(!dd) return;
+  if(!val||!val.trim()){dd.style.display='none';return;}
+  var v = val.toLowerCase();
+  var usuarios = window._listaUsuariosCache || [];
+  var matches = usuarios.filter(function(u){
+    return (u.nombre||'').toLowerCase().includes(v)
+        || (u.ctmp||'').toLowerCase().includes(v)
+        || (u.codigo||'').toLowerCase().includes(v);
+  });
+  if(!matches.length){dd.style.display='none';return;}
+  dd.innerHTML = matches.slice(0,8).map(function(u){
+    var grado = u.gradoAcademico ? u.gradoAcademico+' ' : '';
+    return '<div data-ucod="'+e2(u.codigo)+'" style="padding:9px 14px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:space-between;gap:8px">'
+      +'<span>'+e2(grado+u.nombre)+'</span>'
+      +(u.ctmp?'<span style="font-size:10px;color:var(--tx4)">CTMP '+e2(u.ctmp)+'</span>':'')
+      +'</div>';
+  }).join('');
+  dd.style.display = 'block';
+  dd.querySelectorAll('[data-ucod]').forEach(function(el){
+    el.addEventListener('click', function(){
+      seleccionarFirmaEx(el.getAttribute('data-ucod'));
+    });
+  });
+}
+
+function seleccionarFirmaEx(codigo){
+  var usuarios = window._listaUsuariosCache || [];
+  var u = usuarios.find(function(x){ return x.codigo === codigo; });
+  if(!u) return;
+  var nom = g('firmaExNombre'); if(nom) nom.value = u.nombre||'';
+  var ctmp = g('firmaExCtmp'); if(ctmp) ctmp.value = u.ctmp||'';
+  var grd = g('firmaExGrado'); if(grd) grd.value = u.gradoAcademico||'';
+  var cargo = g('firmaExCargo');
+  if(cargo && u.cargo) cargo.value = u.cargo;
+  var busca = g('firmaExBusca'); if(busca) busca.value = u.nombre||'';
+  var dd = g('firmaExDD'); if(dd) dd.style.display = 'none';
+}
+
+async function confirmarExportConFirma(){
+  if(_exportando){toast('Exportación en curso...','Espera un momento','warn');return;}
+  _exportando = true;
+  var nombre  = (g('firmaExNombre')?.value||'').trim();
+  var ctmp    = (g('firmaExCtmp')?.value||'').trim();
+  var cargo   = (g('firmaExCargo')?.value||'').trim();
+  var grado   = (g('firmaExGrado')?.value||'').trim();
+  if(!nombre){toast('Ingresa los apellidos y nombres','','warn');_exportando=false;return;}
+  cerrarModalFirmaExport();
+  var docFirmante = {nombre:nombre, ctmp:ctmp, cargo:cargo, gradoAcademico:grado, firma:''};
+  try{
+    // Cargar usuarios si no están en caché
+    if(!window._listaUsuariosCache){
+      var rU = await apiGet('listarUsuarios').catch(function(){return {ok:false};});
+      if(rU.ok) window._listaUsuariosCache = rU.usuarios||[];
+    }
+    var match = (window._listaUsuariosCache||[]).find(function(u){
+      return (u.nombre||'').toLowerCase() === nombre.toLowerCase()
+          || (u.ctmp||'').trim() === ctmp
+          || (u.codigo||'').toLowerCase() === (session&&session.codigo||'').toLowerCase();
+    });
+    if(match && match.firma){
+      await resolverFirmaDoc_(match);
+      docFirmante.firma = match.firma;
+      if(!grado && match.gradoAcademico) docFirmante.gradoAcademico = match.gradoAcademico;
+      if(!cargo && match.cargo) docFirmante.cargo = match.cargo;
+    }
+  }catch(e){}
+  if(_exportCallback) _exportCallback(docFirmante);
+  _exportando = false;
 }
 
 function cerrarModalFirmaExport(){
@@ -1119,26 +1200,32 @@ function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
 
 async function renderFirmas(){
   var v=g('vFirmas');
-  v.innerHTML='<div class="loader">&#9203; Cargando...</div>';
+  v.innerHTML='<div class="loader">Cargando...</div>';
   var r=await apiGet('listarUsuarios').catch(function(){return {ok:false,error:'Error de red'};});
   if(!r.ok){
-    v.innerHTML='<div class="card-hdr"><div class="card-title">&#128395; Firmas</div></div>'
-      +'<div class="err-box">&#9888; '+e2(r.error||'Error')+'<br><small>Verifica que <b>listarUsuarios</b> est&eacute; en doGet del GAS y redesplegar.</small></div>';
+    v.innerHTML='<div class="card-hdr"><div class="card-title">Firmas</div></div>'
+      +'<div class="err-box">'+e2(r.error||'Error')+'<br><small>Verifica que <b>listarUsuarios</b> esté en doGet del GAS y redesplegar.</small></div>';
     return;
   }
   var docs=(r.usuarios||[]).filter(function(u){return u.rol==='docente';});
   _firmasDocentes=docs;
+  // Guardar en caché para el modal de exportación
+  window._listaUsuariosCache = r.usuarios||[];
   if(!docs.length){
-    v.innerHTML='<div class="card-hdr"><div class="card-title">&#128395; Firmas</div></div>'
-      +'<div class="empty" style="padding:32px;text-align:center"><div style="font-size:32px;margin-bottom:12px">&#128100;</div>'
+    v.innerHTML='<div class="card-hdr"><div class="card-title">Firmas</div></div>'
+      +'<div class="empty" style="padding:32px;text-align:center">'
       +'<b>No hay docentes registrados</b><br><span style="font-size:12px;color:var(--tx4)">Crea usuarios con rol <b>docente</b> en el Sheet (_usuarios).</span></div>';
     return;
   }
-  v.innerHTML='<div class="card-hdr"><div class="card-title">&#128395; Firmas y Sellos de Docentes</div>'
+  var gradosOpts = ['','Lic.','Mtra.','Mtro.','Dra.','Dr.'].map(function(g){
+    return '<option value="'+g+'">'+( g||'— Sin grado —')+'</option>';
+  }).join('');
+
+  v.innerHTML='<div class="card-hdr"><div class="card-title">Firmas y Sellos de Docentes</div>'
     +'<div style="font-size:12px;color:var(--tx4)">'+docs.length+' docente'+(docs.length!==1?'s':'')+'</div></div>'
     +'<div style="background:var(--surf3);border:1px solid var(--bd2);border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:12px;color:var(--tx3)">'
-    +'<b>&#128161;</b> Sube PNG/JPG (m&aacute;x 40KB) o pega Base64. El CTMP es la colegiatura del docente.</div>'
-    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px">'
+    +'Sube PNG/JPG (máx 40KB) o pega Base64. El CTMP es la colegiatura del docente.</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">'
     +docs.map(function(doc,i){
       var ini=(doc.nombre||doc.codigo||'?').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase();
       var hasFirma=!!(doc.firma&&doc.firma.length>10);
@@ -1146,30 +1233,39 @@ async function renderFirmas(){
         +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">'
         +'<div style="width:38px;height:38px;border-radius:50%;background:var(--n100);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;color:var(--n500);flex-shrink:0">'+ini+'</div>'
         +'<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px;color:var(--tx)">'+e2(doc.nombre||doc.codigo)+'</div>'
-        +'<div style="font-size:11px;color:var(--tx4)">'+e2(doc.codigo)+(doc.ctmp?' &bull; CTMP: <b>'+e2(doc.ctmp)+'</b>':'')+'</div></div></div>'
-        // Preview: cargará imagen async después del render
-        +'<div id="selloPreview_'+i+'" style="border:1px solid var(--bd);border-radius:8px;padding:12px;background:var(--surf2);min-height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:10px">'
-        +(hasFirma?'<div style="font-size:11px;color:var(--tx4)">&#9203; Cargando...</div>'
+        +'<div style="font-size:11px;color:var(--tx4)">'+e2(doc.codigo)+(doc.ctmp?' · CTMP: <b>'+e2(doc.ctmp)+'</b>':'')+'</div></div></div>'
+        // Sello preview
+        +'<div id="selloPreview_'+i+'" style="border:1px solid var(--bd);border-radius:8px;padding:12px;background:var(--surf2);min-height:90px;display:flex;flex-direction:column;align-items:center;justify-content:center;margin-bottom:10px">'
+        +(hasFirma?'<div style="font-size:11px;color:var(--tx4)">Cargando...</div>'
           :'<div style="font-size:11px;color:var(--tx4);margin-bottom:4px">Sin firma</div>'
             +'<div style="border-top:1.5px solid #1e3a5f;width:130px;margin:0 auto 3px"></div>'
             +'<div style="font-size:10px;font-weight:700;text-align:center;color:var(--tx)">'+e2(doc.nombre||doc.codigo)+'</div>'
             +(doc.ctmp?'<div style="font-size:10px;text-align:center;color:var(--tx3)">CTMP: '+e2(doc.ctmp)+'</div>':''))
         +'</div>'
-        +'<div class="field" style="margin-bottom:10px"><label style="font-size:11px">N&uacute;mero colegiatura CTMP</label>'
+        // Fields: CTMP, Grado, Cargo
+        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
+        +'<div class="field"><label style="font-size:11px">Grado académico</label>'
+        +'<select class="sel" id="grado_'+i+'">'
+        +gradosOpts.replace('value="'+(doc.gradoAcademico||'')+'"','value="'+(doc.gradoAcademico||'')+'" selected')
+        +'</select></div>'
+        +'<div class="field"><label style="font-size:11px">N° Colegiatura CTMP</label>'
         +'<input class="inp" id="ctmp_'+i+'" value="'+e2(doc.ctmp||'')+'" placeholder="Ej: 123456"></div>'
+        +'</div>'
+        +'<div class="field" style="margin-bottom:8px"><label style="font-size:11px">Cargo (aparece en el sello)</label>'
+        +'<input class="inp" id="cargo_'+i+'" value="'+e2(doc.cargo||'')+'" placeholder="Ej: Docente supervisor · Fisioterapeuta" style="font-size:11px"></div>'
         +'<div class="field" style="margin-bottom:10px"><label style="font-size:11px">Pegar Base64 <span style="color:var(--tx4);font-weight:400">(alternativa)</span></label>'
         +'<textarea class="ta" id="b64_'+i+'" rows="2" placeholder="data:image/png;base64,..." style="font-size:10px;font-family:monospace"></textarea></div>'
         +'<div class="btn-group" style="flex-wrap:wrap;gap:6px">'
-        +'<label class="btn btn-ghost btn-sm" style="cursor:pointer;flex:1">&#128247; Subir imagen'
+        +'<label class="btn btn-ghost btn-sm" style="cursor:pointer;flex:1">Subir imagen'
         +'<input type="file" accept="image/png,image/jpeg,image/gif" style="display:none" onchange="subirFirma(this,\''+e2(doc.codigo)+'\','+i+')"></label>'
-        +'<button class="btn btn-ghost btn-sm" style="flex:1" onclick="guardarB64(\''+e2(doc.codigo)+'\','+i+')">&#128203; Base64</button>'
-        +(hasFirma?'<button class="btn btn-ghost btn-sm" onclick="eliminarFirma(\''+e2(doc.codigo)+'\','+i+')" style="color:var(--red)">&#128465;</button>':'')
+        +'<button class="btn btn-ghost btn-sm" style="flex:1" onclick="guardarB64(\''+e2(doc.codigo)+'\','+i+')">Base64</button>'
+        +(hasFirma?'<button class="btn btn-ghost btn-sm" onclick="eliminarFirma(\''+e2(doc.codigo)+'\','+i+')" style="color:var(--red)">Eliminar</button>':'')
         +'</div>'
-        +'<div style="margin-top:8px"><button class="btn btn-primary btn-sm" style="width:100%" onclick="guardarCtmp(\''+e2(doc.codigo)+'\','+i+')">&#128190; Guardar CTMP</button></div>'
-        +(hasFirma?'<div style="font-size:10px;color:var(--green);margin-top:6px">&#10003; Firma registrada en Drive</div>':'')
+        +'<div style="margin-top:8px"><button class="btn btn-primary btn-sm" style="width:100%" onclick="guardarDatosDocente(\''+e2(doc.codigo)+'\','+i+')">Guardar datos del sello</button></div>'
+        +(hasFirma?'<div style="font-size:10px;color:var(--green);margin-top:6px">Firma registrada</div>':'')
         +'</div>';
     }).join('')+'</div>';
-  // Cargar previews async para docentes con firma
+  // Cargar previews async
   docs.forEach(function(doc,i){
     if(doc.firma&&doc.firma.length>10) _cargarPreviewFirma(doc,i);
   });
@@ -1263,14 +1359,19 @@ async function eliminarFirma(codigo, idx){
   toast('Firma eliminada','','ok'); renderFirmas();
 }
 
-async function guardarCtmp(codigo, idx){
-  var val=(g('ctmp_'+idx)?.value||'').trim();
-  if(!val){toast('Escribe el n\u00famero CTMP primero','','warn');return;}
-  var r=await apiPost({action:'guardarCtmpDocente',codigo:codigo,ctmp:val}).catch(function(){return {ok:false,error:'Error de red'};});
-  if(!r.ok){toast('Error al guardar CTMP',r.error||'Verifica el GAS','err');return;}
-  toast('&#9989; CTMP '+val+' guardado para '+codigo,'','ok');
+async function guardarDatosDocente(codigo, idx){
+  var ctmp  = (g('ctmp_'+idx)?.value||'').trim();
+  var grado = (g('grado_'+idx)?.value||'').trim();
+  var cargo = (g('cargo_'+idx)?.value||'').trim();
+  var r = await apiPost({action:'guardarCtmpDocente',codigo,ctmp,gradoAcademico:grado,cargo})
+    .catch(function(){return {ok:false,error:'Error de red'};});
+  if(!r.ok){toast('Error al guardar',r.error||'Verifica el GAS','err');return;}
+  toast('Datos del sello guardados para '+codigo,'','ok');
   renderFirmas();
 }
+
+// Mantener alias por compatibilidad
+async function guardarCtmp(codigo, idx){ return guardarDatosDocente(codigo, idx); }
 
 async function renderPacs(){
   g('vPac').innerHTML=`
@@ -6129,29 +6230,53 @@ function iniciarPollingPendientes(){
  
 <!-- Modal Firma Exportación -->
 <div id="modalFirmaExport" style="display:none;position:fixed;inset:0;background:rgba(10,22,40,.65);z-index:900;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
-  <div style="background:var(--surf);border:1px solid var(--bd);border-radius:18px;padding:24px;width:100%;max-width:420px;box-shadow:0 24px 60px rgba(0,0,0,.3)">
-    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--tx);margin-bottom:4px">&#128393; Datos del firmante</div>
-    <div style="font-size:12px;color:var(--tx4);margin-bottom:16px">Estos datos aparecerán en el sello del documento exportado.</div>
+  <div style="background:var(--surf);border:1px solid var(--bd);border-radius:18px;padding:24px;width:100%;max-width:460px;box-shadow:0 24px 60px rgba(0,0,0,.3)">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--tx);margin-bottom:4px">Datos del firmante</div>
+    <div style="font-size:12px;color:var(--tx4);margin-bottom:14px">Estos datos aparecerán en el sello del documento exportado.</div>
+
+    <!-- Selector rápido del sistema -->
+    <div class="field" style="margin-bottom:12px">
+      <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase">Seleccionar del sistema (opcional)</label>
+      <div style="position:relative">
+        <input class="inp" id="firmaExBusca" placeholder="Buscar por nombre o colegiatura..."
+          oninput="filtrarFirmaExBusca(this.value)" autocomplete="off">
+        <div id="firmaExDD" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surf);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:50;max-height:180px;overflow-y:auto;margin-top:4px"></div>
+      </div>
+    </div>
+
     <div class="form-grid">
+      <div class="field">
+        <label>Grado académico</label>
+        <select class="sel" id="firmaExGrado">
+          <option value="">—</option>
+          <option value="Lic.">Lic.</option>
+          <option value="Mtra.">Mtra.</option>
+          <option value="Mtro.">Mtro.</option>
+          <option value="Dra.">Dra.</option>
+          <option value="Dr.">Dr.</option>
+        </select>
+      </div>
       <div class="field form-full">
         <label>Apellidos y nombres *</label>
         <input class="inp" id="firmaExNombre" placeholder="Ej: Quispe Mamani, Carlos Alberto">
       </div>
-      <div class="field form-full">
+      <div class="field">
         <label>N° Colegiatura CTMP *</label>
         <input class="inp" id="firmaExCtmp" placeholder="Ej: 123456">
       </div>
       <div class="field form-full">
         <label>Cargo</label>
-        <input class="inp" id="firmaExCargo" value="Coordinador del Centro Docente de Terapia F&#237;sica y Rehabilitaci&#243;n &ldquo;CENTYR-UPT&rdquo;" readonly style="background:var(--surf2);color:var(--tx3);cursor:default;font-size:11px">
+        <input class="inp" id="firmaExCargo" placeholder="Ej: Coordinador del Centro Docente..."
+          value="Coordinador del Centro Docente de Terapia Física y Rehabilitación &ldquo;CENTYR-UPT&rdquo;"
+          style="font-size:11px">
       </div>
     </div>
-    <div style="margin-top:6px;padding:8px 12px;background:var(--surf3);border-radius:8px;font-size:11px;color:var(--tx3)">
+    <div style="margin-top:8px;padding:8px 12px;background:var(--surf3);border-radius:8px;font-size:11px;color:var(--tx3)">
       <b>Firma digital:</b> Se adjuntará automáticamente si el firmante tiene firma registrada en el sistema.
     </div>
     <div class="btn-group" style="margin-top:16px">
       <button class="btn btn-ghost btn-sm" onclick="cerrarModalFirmaExport()">Cancelar</button>
-      <button class="btn btn-primary" onclick="confirmarExportConFirma()">&#128196; Exportar</button>
+      <button class="btn btn-primary" onclick="confirmarExportConFirma()">Exportar</button>
     </div>
   </div>
 </div>
