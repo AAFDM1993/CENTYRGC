@@ -1640,7 +1640,7 @@ async function abrirPac(id){
       </div>
       <div class="btn-group">
         ${puedeEditar?`<button class="btn btn-ghost btn-sm" onclick="editarPac('${esc(pac.id)}')">✏️ Editar</button>`:''}
-        ${pr?`<button class="btn btn-ghost btn-sm" onclick="exportarHCPaciente('${esc(pac.id)}')">📄 Exportar PDF</button>`:''}
+        ${(session.rol==='admin'||session.rol==='docente')?`<button class="btn btn-ghost btn-sm" onclick="exportarHCPaciente('${esc(pac.id)}')">📄 Exportar PDF</button>`:''}
         ${session.rol==='admin'?`<button class="btn btn-danger btn-sm" onclick="eliminarPac('${esc(pac.id)}','${esc(pac.nombre)}')">🗑️</button>`:''}
       </div>
     </div>
