@@ -560,7 +560,54 @@ async function buscarHC(){
 }
 
 
-// ─── SELLO DIGITAL DOCENTE ────────────────────────────
+// ─── SELLO DIGITAL ASYNC (para vista inline — carga firma lazy) ──────────────
+function mkSelloInline(nombreOCodigo, uid){
+  // Genera placeholder y lanza carga async de firma
+  var doc = (_firmasDocentes||[]).find(function(d){
+    return d.nombre===nombreOCodigo || d.codigo===nombreOCodigo;
+  });
+  if(!doc) doc = (window._listaUsuariosCache||[]).find(function(u){
+    return u.nombre===nombreOCodigo || u.codigo===nombreOCodigo;
+  });
+  if(!doc) return ''; // docente no encontrado en sistema
+
+  var grado  = doc.gradoAcademico ? doc.gradoAcademico+' ' : '';
+  var nombre = (grado + (doc.nombre||doc.codigo||'')).trim();
+  var ctmp   = doc.ctmp||'';
+  var cargo  = doc.cargo||'';
+  var selloId = 'sello_'+uid;
+
+  // Si ya tiene firma resuelta (base64) renderizar directo
+  if(doc.firma && doc.firma.startsWith('data:image')){
+    return _mkSelloHTML(selloId, nombre, ctmp, cargo, doc.firma);
+  }
+
+  // Render placeholder y resolver async
+  var placeholder = _mkSelloHTML(selloId, nombre, ctmp, cargo, '');
+  if(doc.firma && !doc.firma.startsWith('data:image')){
+    // fileId → resolver async y actualizar DOM
+    resolverFirma_(doc.firma).then(function(b64){
+      var el = document.getElementById(selloId);
+      if(el && b64){
+        el.outerHTML = _mkSelloHTML(selloId, nombre, ctmp, cargo, b64);
+      }
+    });
+  }
+  return placeholder;
+}
+
+function _mkSelloHTML(id, nombre, ctmp, cargo, firma){
+  var imgTag = firma ? '<img src="'+firma+'" style="max-width:110px;max-height:55px;display:block;margin:0 auto 4px">' : '';
+  return '<div id="'+id+'" style="border:1px solid var(--bd);border-radius:8px;background:var(--surf3);padding:10px 14px;display:inline-block;text-align:center;min-width:140px">'
+    + imgTag
+    + '<div style="border-top:1.5px solid var(--n500);width:130px;margin:0 auto 3px"></div>'
+    + '<div style="font-size:11px;font-weight:700;color:var(--tx)">'+e2(nombre)+'</div>'
+    + (ctmp?'<div style="font-size:10px;color:var(--tx3)">CTMP: '+e2(ctmp)+'</div>':'')
+    + (cargo?'<div style="font-size:9px;color:var(--tx4);max-width:160px;line-height:1.3;margin-top:2px">'+e2(cargo)+'</div>':'')
+    + '</div>';
+}
+
+
 function mkSelloDocente(doc){
   if(!doc) return '';
   var grado  = doc.gradoAcademico ? doc.gradoAcademico+' ' : '';
@@ -1726,6 +1773,12 @@ async function abrirPac(id){
   if(!rP.ok){v.innerHTML=`<div class="err-box">${e2(rP.error)}</div>`;return;}
   const pac=rP.paciente; pacActivo=pac;
   const evals=rE.evaluaciones||[], ses=rS.sesiones||[];
+  // Pre-cargar usuarios para sellos (no bloqueante)
+  if(!window._listaUsuariosCache){
+    apiGet('listarUsuarios').then(function(rU){
+      if(rU.ok) window._listaUsuariosCache = rU.usuarios||[];
+    }).catch(function(){});
+  }
   const cat=getCat(pac.categoriaId);
   const esPropio=session.rol==='estudiante'&&(pac.creadoPor===session.codigo||pac.asignadoA===session.codigo);
   const puedeEditar=session.rol!=='estudiante'||esPropio;
@@ -1995,14 +2048,20 @@ function buildDetalleEval(ev, pac){
     html += displayEscalasResumen(escalasData);
   }
 
-  // Estado de revisión del docente
+  // Estado de revisión del docente + sello
   if(ev.estado==='aprobada'||ev.estado==='rechazada'){
-    var revColor=ev.estado==='aprobada'?'var(--green)':'var(--red)';
-    var revIcon=ev.estado==='aprobada'?'✅':'❌';
-    html+='<div style="margin-top:12px;padding:10px 14px;border-radius:10px;background:'+(ev.estado==='aprobada'?'var(--green2)':'var(--red2)')+';border:1px solid '+(ev.estado==='aprobada'?'rgba(34,197,94,.3)':'rgba(239,68,68,.25)')+';">';
-    html+='<div style="font-size:12px;font-weight:700;color:'+revColor+'">'+revIcon+' '+(ev.estado==='aprobada'?'Aprobada':'Rechazada')+' — '+e2(ev.revisadoPor||'')+'</div>';
-    if(ev.comentarioDocente) html+='<div style="font-size:12px;color:var(--tx2);margin-top:4px;padding:6px 8px;background:rgba(0,0,0,.06);border-radius:6px">'+e2(ev.comentarioDocente)+'</div>';
-    html+='</div>';
+    var revColor = ev.estado==='aprobada' ? 'var(--green)' : 'var(--red)';
+    var revIcon  = ev.estado==='aprobada' ? '✅' : '❌';
+    var revisor  = ev.revisadoPor || ev.docente || '';
+    var selloUID = 'rev_'+ev.id.replace(/[^a-z0-9]/gi,'_');
+    var selloHTML = revisor ? mkSelloInline(revisor, selloUID) : '';
+    html += '<div style="margin-top:12px;padding:12px 14px;border-radius:10px;background:'+(ev.estado==='aprobada'?'var(--green2)':'var(--red2)')+';border:1px solid '+(ev.estado==='aprobada'?'rgba(34,197,94,.3)':'rgba(239,68,68,.25)')+';display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">';
+    html += '<div style="flex:1;min-width:0">';
+    html += '<div style="font-size:12px;font-weight:700;color:'+revColor+'">'+revIcon+' '+(ev.estado==='aprobada'?'Aprobada':'Rechazada')+(revisor?' — '+e2(revisor):'')+'</div>';
+    if(ev.comentarioDocente) html += '<div style="font-size:12px;color:var(--tx2);margin-top:4px;padding:6px 8px;background:rgba(0,0,0,.06);border-radius:6px">'+e2(ev.comentarioDocente)+'</div>';
+    html += '</div>';
+    if(selloHTML) html += '<div style="flex-shrink:0">'+selloHTML+'</div>';
+    html += '</div>';
   }
 
   return html;
@@ -2288,18 +2347,21 @@ function sesCard(s, pac, evalAp){
         ${bdg(s.estado)}
       </div>
       ${s.descripcion?`<div style="font-size:12px;color:var(--tx3);margin-bottom:6px">${e2(s.descripcion.substring(0,120))}${s.descripcion.length>120?'...':''}</div>`:''}
-      ${s.comentarioDocente&&s.estado!=='borrador'?`<div class="rev-bar ${s.estado}" style="margin-bottom:8px">
-        <div style="font-size:16px">${s.estado==='aprobada'?'✅':'❌'}</div>
-        <div><div style="font-size:11px;font-weight:700;color:${s.estado==='aprobada'?'var(--green)':'var(--red)'}">${s.estado==='aprobada'?'Aprobada':'Rechazada'} — ${e2(s.revisadoPor)}</div>
-          ${s.comentarioDocente?`<div class="rev-comment">${e2(s.comentarioDocente)}</div>`:''}</div></div>`:''}
       <!-- Detalle expandible -->
       <div id="${uid}" style="display:none;margin-top:10px;border-top:1px solid var(--bd);padding-top:10px">
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:10px">
           <div><div style="font-size:10px;color:var(--tx4);font-weight:700">EVA</div><div style="font-size:13px;font-weight:700;color:var(--red)">${s.evaValor??'—'}/10</div></div>
           ${s.respuesta?`<div><div style="font-size:10px;color:var(--tx4);font-weight:700">RESPUESTA PACIENTE</div><div style="font-size:12px">${e2(s.respuesta)}</div></div>`:''}
-          ${s.docente?`<div><div style="font-size:10px;color:var(--tx4);font-weight:700">DOCENTE</div><div style="font-size:12px">${e2(s.docente)}</div></div>`:''}
         </div>
-        ${s.descripcion?`<div><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:4px;text-transform:uppercase">Descripción completa</div><div style="font-size:12px;background:var(--surf3);border-radius:8px;padding:10px;line-height:1.6">${e2(s.descripcion)}</div></div>`:''}
+        ${s.descripcion?`<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:4px;text-transform:uppercase">Descripción completa</div><div style="font-size:12px;background:var(--surf3);border-radius:8px;padding:10px;line-height:1.6">${e2(s.descripcion)}</div></div>`:''}
+        ${(s.estado==='aprobada'||s.estado==='rechazada')&&s.revisadoPor ? `
+        <div style="margin-top:10px;padding:12px 14px;border-radius:10px;background:${s.estado==='aprobada'?'var(--green2)':'var(--red2)'};border:1px solid ${s.estado==='aprobada'?'rgba(34,197,94,.3)':'rgba(239,68,68,.25)'};display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:700;color:${s.estado==='aprobada'?'var(--green)':'var(--red)'}">${s.estado==='aprobada'?'✅ Aprobada':'❌ Rechazada'} — ${e2(s.revisadoPor)}</div>
+            ${s.comentarioDocente?`<div style="font-size:12px;color:var(--tx2);margin-top:4px;padding:6px 8px;background:rgba(0,0,0,.06);border-radius:6px">${e2(s.comentarioDocente)}</div>`:''}
+          </div>
+          <div style="flex-shrink:0">${mkSelloInline(s.revisadoPor||s.docente||'','sesr_${uid}')}</div>
+        </div>` : ''}
       </div>
       <div class="btn-group" style="margin-top:8px">
         ${s.estado==='borrador'||s.estado==='rechazada'?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmSes('${esc(pac.id)}','${esc(s.evaluacionId)}',${s.numero},'${esc(s.id)}')">✏️ Editar</button>`:''}
