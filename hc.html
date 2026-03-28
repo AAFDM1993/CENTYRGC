@@ -680,11 +680,15 @@ async function confirmarExportConFirma(){
     const match = (window._listaUsuariosCache||[]).find(u=>
       (u.nombre||'').toLowerCase()===nombre.toLowerCase() || (u.ctmp||'')===ctmp
     );
-    if(match && match.firma){
-      await resolverFirmaDoc_(match);
-      docFirmante.firma = match.firma;
+    if(match){
+      // Resolver firma si todavía es fileId de Drive
+      if(match.firma && !match.firma.startsWith('data:image')){
+        match.firma = await resolverFirma_(match.firma);
+      }
+      if(match.firma) docFirmante.firma = match.firma;
       if(!grado && match.gradoAcademico) docFirmante.gradoAcademico = match.gradoAcademico;
       if(!cargo  && match.cargo)         docFirmante.cargo           = match.cargo;
+      if(!ctmp   && match.ctmp)          docFirmante.ctmp            = match.ctmp;
     }
   }catch(e){}
   const cb = _exportCallback;
@@ -1154,46 +1158,6 @@ async function previsualizarFirma(codigo,idx){
   img.style.cssText='max-width:130px;max-height:52px;object-fit:contain;display:block;margin:0 auto 4px';
   if(!img.parentNode) box.insertBefore(img,box.firstChild);
 }
-async function exportarHC(pacId){
-  if(!pacId){toast('ID de paciente no válido','','err');return;}
-  toast('\u23F3 Preparando exportación...','','ok');
-  try{
-    const [rP,rE,rS]=await Promise.all([
-      apiGet('obtenerPaciente',{id:pacId}),
-      apiGet('listarEvaluaciones',{pacienteId:pacId}),
-      apiGet('listarSesiones',{pacienteId:pacId})
-    ]);
-    if(!rP.ok){toast('Error al cargar paciente',rP.error||'','err');return;}
-    const pac=rP.paciente;
-    const evals=(rE.evaluaciones||[]).filter(function(ev){return ev.estado==='aprobada';});
-    const ses=rS.sesiones||[];
-    // Cargar firmas
-    var firmasMap={};
-    var rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
-    if(rU.ok){
-      await Promise.all((rU.usuarios||[]).map(async function(u){
-        await resolverFirmaDoc_(u);
-        firmasMap[u.nombre]=u; firmasMap[u.codigo]=u;
-      }));
-    }
-    // Sello del usuario logueado (si tiene firma)
-    var docFirmante={
-      nombre: session?.nombre||session?.codigo||'',
-      ctmp: (firmasMap[session?.nombre||'']||firmasMap[session?.codigo||'']||{}).ctmp||'',
-      cargo: 'Coordinador del Centro Docente de Terapia F\u00EDsica y Rehabilitaci\u00F3n \u201CCENTYR-UPT\u201D',
-      firma: (firmasMap[session?.nombre||'']||firmasMap[session?.codigo||'']||{}).firma||''
-    };
-    var selloFirmante=mkSelloDocente(docFirmante);
-    exportarDocumento(
-      'HC_'+e2(pac.nombre||pacId).replace(/\s+/g,'_'),
-      buildHCCompletaHTML(pac,evals,ses,firmasMap,selloFirmante)
-    );
-  }catch(err){
-    toast('Error al exportar',err.message||'','err');
-    console.error('exportarHC error:',err);
-  }
-}
-
 // ─── RENDERIZAR VISTA ADMIN: EXPORTAR HC ──────────────────
 function renderExportHC(){
   var v=g('vExportHC');
@@ -1285,22 +1249,36 @@ async function _generarHCPdf(pacId, docFirmante){
       return ev;
     }));
 
-    // 2. Cargar usuarios para construir mapa de firmas
+    // 2. Construir mapa de firmas — SIEMPRE fresco, resolver cada firma a base64
     var firmasMap = {};
     try{
       const rU = await apiGet('listarUsuarios');
       if(rU.ok){
-        await Promise.all((rU.usuarios||[]).map(async u=>{
-          await resolverFirmaDoc_(u);
-          firmasMap[u.nombre] = u;
-          firmasMap[u.codigo] = u;
+        // Resolver todas las firmas en paralelo (fileId → base64)
+        await Promise.all((rU.usuarios||[]).map(async function(u){
+          if(u.firma && !u.firma.startsWith('data:image')){
+            u.firma = await resolverFirma_(u.firma);
+          }
+          firmasMap[u.nombre]  = u;
+          firmasMap[u.codigo]  = u;
           if(u.ctmp) firmasMap[u.ctmp] = u;
         }));
+        // Actualizar caché con firmas ya resueltas
         window._listaUsuariosCache = rU.usuarios;
       }
-    }catch(e){ /* firmasMap queda vacío — el PDF se genera sin firmas */ }
+    }catch(e){ console.warn('firmasMap error:', e); }
 
-    // 3. Sello del firmante seleccionado en el modal
+    // 3. Resolver firma del firmante del modal (si tiene fileId sin resolver)
+    if(docFirmante && docFirmante.firma && !docFirmante.firma.startsWith('data:image')){
+      docFirmante.firma = await resolverFirma_(docFirmante.firma);
+    }
+    // Si el firmante no tiene firma propia, buscarla en el mapa por nombre o ctmp
+    if(docFirmante && !docFirmante.firma){
+      const match = firmasMap[docFirmante.nombre] || firmasMap[docFirmante.ctmp] || null;
+      if(match && match.firma) docFirmante.firma = match.firma;
+    }
+
+    // 4. Sello del firmante seleccionado en el modal
     var selloFirmante = docFirmante ? mkSelloDocente(docFirmante) : '';
 
     // 4. Generar y abrir el PDF
