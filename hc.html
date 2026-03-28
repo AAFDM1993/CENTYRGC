@@ -221,10 +221,6 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
   #sec-flex_post > div {
     grid-template-columns: 1fr !important;
   }
-  /* ── Pestañas inspección visual ── */
-  #sec-insp_visual > div:first-child { flex-wrap: wrap; }
-  #tabAnt, #tabPost, #tabLat { flex: 1; text-align: center; font-size: 11px !important; padding: 6px 4px !important; }
-
 }
 .empty{text-align:center;padding:36px;color:var(--tx4);font-size:13px;}
 .loader{text-align:center;padding:28px;color:var(--tx3);font-size:13px;}
@@ -327,7 +323,7 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
 
 <script>
 // ─── Config ───────────────────────────────────────────
-const HC_URL = 'https://script.google.com/macros/s/AKfycbxAUtF7cGZmHCDP1m5NBbl1ui0S-EoD4lx1jicL_XGtgw3TnCJexJj_7vi-93bvMNDL/exec';
+const HC_URL = 'https://script.google.com/macros/s/AKfycbweI3QqCwONsAV4QVPlC1oLO7TqVaDPAU9I_SKWxQjePQn-fd_F3wU39vPjToL06g-6/exec';
 const SK = 'centyr_hc_s';
 const TTL = 6*60*60*1000;
 
@@ -901,15 +897,15 @@ async function resolverFirma_(firma){
   if(firma.startsWith('data:image')) return firma;
   if(_firmaCache[firma]) return _firmaCache[firma];
   try{
-    var rF=await fetch(HC_URL+'?action=getFirma&fileId='+encodeURIComponent(firma)+(session?'&token='+encodeURIComponent(session.token):'')).then(function(r){return r.json();}).catch(function(){return {ok:false};});
-    if(rF.ok&&rF.data){
-      var b64='data:'+(rF.mimeType||'image/png')+';base64,'+rF.data;
-      _firmaCache[firma]=b64;
+    // Usar POST igual que el resto de la API para evitar bloqueo CORS con GET
+    var rF = await apiPost({action:'getFirma', fileId:firma}).catch(function(){return {ok:false};});
+    if(rF.ok && rF.data){
+      var b64 = 'data:'+(rF.mimeType||'image/png')+';base64,'+rF.data;
+      _firmaCache[firma] = b64;
       return b64;
     }
-    // Intentar como URL directa si el GAS la devuelve como url
-    if(rF.ok&&rF.url){
-      _firmaCache[firma]=rF.url;
+    if(rF.ok && rF.url){
+      _firmaCache[firma] = rF.url;
       return rF.url;
     }
     console.warn('resolverFirma_: no se pudo cargar fileId='+firma, rF);
@@ -1279,13 +1275,13 @@ async function guardarCtmp(codigo, idx){
 async function renderPacs(){
   g('vPac').innerHTML=`
     <div class="card-hdr">
-      <div><div class="card-title">👤 Pacientes</div></div>
+      <div><div class="card-title">Pacientes</div></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <input class="inp" id="fBusca" placeholder="🔍 Buscar..." oninput="filtrarPacs()" style="width:180px">
         <button class="btn btn-primary btn-sm" onclick="abrirModalCategoria()">+ Nuevo paciente</button>
       </div>
     </div>
-    <div id="pacBox"><div class="loader">⏳ Cargando...</div></div>`;
+    <div id="pacBox"><div class="loader">Cargando...</div></div>`;
   const r=await apiGet('listarPacientes');
   if(!r.ok){g('pacBox').innerHTML=`<div class="err-box">${e2(r.error)}</div>`;return;}
   window._pacs=r.pacientes||[];
@@ -1314,8 +1310,8 @@ function filtrarPacs(){
         ${bdg(p.estado||'activo')}
       </div>
       <div style="display:flex;gap:10px;font-size:11px;color:var(--tx3);margin-bottom:8px">
-        <span>📋 ${p.evalTotal||0} eval</span>
-        ${p.evalPendiente>0?`<span style="color:var(--amber)">⏳ ${p.evalPendiente} pend</span>`:''}
+        <span>${p.evalTotal||0} eval</span>
+        ${p.evalPendiente>0?`<span style="color:var(--amber)">${p.evalPendiente} pend</span>`:''}
         ${p.evalAprobada>0?`<span style="color:var(--green)">✓ ${p.evalAprobada}</span>`:''}
       </div>
       <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center" onclick="event.stopPropagation();abrirPac('${esc(p.id)}')">👁️ Ver historia clínica</button>
@@ -1365,7 +1361,7 @@ async function abrirFrmPac(pac=null, preCatId=null, preCatNombre=null){
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
       <button class="btn btn-ghost btn-sm" onclick="navTo('pac')">← Volver</button>
       <div>
-        <div class="card-title">${pac?'✏️ Editar':'📋 Nueva historia clínica'}</div>
+        <div class="card-title">${pac?'Editar':'Nueva historia clínica'}</div>
         <div style="font-size:12px;color:var(--tx3);margin-top:2px">${catPill(catId)} ${e2(catNom)}</div>
       </div>
     </div>
@@ -1412,7 +1408,7 @@ async function guardarPac(id){
 // ─── Detalle Paciente ─────────────────────────────────
 async function abrirPac(id){
   views.forEach(v=>g(v).style.display='none');
-  const v=g('vDetalle');v.style.display='block';v.innerHTML='<div class="loader">⏳ Cargando...</div>';
+  const v=g('vDetalle');v.style.display='block';v.innerHTML='<div class="loader">Cargando...</div>';
   const [rP,rE,rS]=await Promise.all([apiGet('obtenerPaciente',{id}),apiGet('listarEvaluaciones',{pacienteId:id}),apiGet('listarSesiones',{pacienteId:id})]);
   if(!rP.ok){v.innerHTML=`<div class="err-box">${e2(rP.error)}</div>`;return;}
   const pac=rP.paciente; pacActivo=pac;
@@ -1458,7 +1454,7 @@ async function abrirPac(id){
     <!-- Evaluaciones -->
     <div class="card" style="margin-bottom:14px">
       <div class="card-hdr">
-        <div class="card-title">📋 Evaluaciones</div>
+        <div class="card-title">Evaluaciones</div>
         ${puedeEditar?`<button class="btn btn-primary btn-sm" onclick="abrirFrmPac(Object.assign({},pacActivo,{_evalId:'',datosEspecificos:{}}),'${esc(pac.categoriaId)}','${esc(cat.nombre)}')">+ Nueva evaluación</button>`:''}
       </div>
       ${evals.length?evals.map(ev=>evalCard(ev,pac)).join(''):'<div class="empty">Sin evaluaciones.</div>'}
@@ -1467,7 +1463,7 @@ async function abrirPac(id){
     <!-- Sesiones -->
     <div class="card">
       <div class="card-hdr">
-        <div><div class="card-title">🗓️ Sesiones de tratamiento</div><div style="font-size:12px;color:var(--tx3)">${ses.length} sesión(es)</div></div>
+        <div><div class="card-title">Sesiones de tratamiento</div><div style="font-size:12px;color:var(--tx3)">${ses.length} sesión(es)</div></div>
         ${puedeNuevaSes?`<button class="btn btn-primary btn-sm" onclick="abrirFrmSes('${esc(pac.id)}','${evalAp?.id||''}',${ses.length+1})">+ Nueva sesión</button>`:''}
         ${!evalAp?`<span style="font-size:11px;color:var(--tx4)">Requiere evaluación aprobada</span>`:''}
       </div>
@@ -2002,7 +1998,7 @@ async function abrirFrmEval(pacId, evalId, catId){
   v.innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
       <button class="btn btn-ghost btn-sm" onclick="abrirPac('${esc(pacId)}')">← Volver</button>
-      <div class="card-title">${evalId?'✏️ Editar':'📋 Nueva'} Evaluación · <span style="color:var(--n300)">${e2(catNom)}</span></div>
+      <div class="card-title">${evalId?'Editar':'Nueva'} Evaluación · <span style="color:var(--n300)">${e2(catNom)}</span></div>
     </div>
     <!-- Selector de docente evaluación -->
     <div class="card" style="margin-bottom:14px;padding:14px 18px">
@@ -2023,7 +2019,7 @@ async function abrirFrmEval(pacId, evalId, catId){
     <!-- Examen físico -->
     <div class="hc-sec">
       <div class="hc-sec-hdr" onclick="toggleSec('exF')">
-        <div class="hc-sec-title">🔬 Examen físico</div>
+        <div class="hc-sec-title">Examen físico</div>
         <span class="chv open" id="chvExF">▼</span>
       </div>
       <div class="hc-sec-body open" id="exF">
@@ -2067,7 +2063,7 @@ async function abrirFrmEval(pacId, evalId, catId){
     <!-- Diagnóstico APTA -->
     <div class="hc-sec">
       <div class="hc-sec-hdr" onclick="toggleSec('dxA')">
-        <div class="hc-sec-title">🏥 Diagnóstico Fisioterapéutico (APTA)</div>
+        <div class="hc-sec-title">Diagnóstico Fisioterapéutico (APTA)</div>
         <span class="chv" id="chvDxA">▼</span>
       </div>
       <div class="hc-sec-body" id="dxA">
@@ -2089,7 +2085,7 @@ async function abrirFrmEval(pacId, evalId, catId){
     <!-- Plan de tratamiento -->
     <div class="hc-sec">
       <div class="hc-sec-hdr" onclick="toggleSec('plan')">
-        <div class="hc-sec-title">🎯 Plan de tratamiento</div>
+        <div class="hc-sec-title">Plan de tratamiento</div>
         <span class="chv" id="chvPlan">▼</span>
       </div>
       <div class="hc-sec-body" id="plan">
@@ -2428,7 +2424,7 @@ async function enviarSes(sesId, pacId){
 // ─── Revisión (docente/admin) ─────────────────────────
 function abrirRev(tipo, id, pacId){
   revTarget={tipo,id,pacId};
-  g('modalRevTit').textContent=tipo==='eval'?'📋 Revisar evaluación':'🗓️ Revisar sesión';
+  g('modalRevTit').textContent=tipo==='eval'?'Revisar evaluación':'Revisar sesión';
   g('modalRevCom').value='';
   g('modalRev').classList.add('open');
 }
@@ -2497,11 +2493,11 @@ async function renderPend(){
   }));
 
   g('vPend').innerHTML=`
-    <div class="card-hdr"><div class="card-title">⏳ Pendientes de revisión</div><span class="badge ${tot?'pendiente':'aprobada'}">${tot} pendiente(s)</span></div>
+    <div class="card-hdr"><div class="card-title">Pendientes de revisión</div><span class="badge ${tot?'pendiente':'aprobada'}">${tot} pendiente(s)</span></div>
     ${tot===0?'<div class="empty">✅ Todo al día. Sin pendientes.</div>':''}
     ${ev.length?`<div style="font-size:11px;font-weight:700;color:var(--tx4);text-transform:uppercase;margin-bottom:8px">Evaluaciones (${ev.length})</div>
       ${ev.map(e=>`<div style="background:var(--surf2);border:1px solid var(--amber);border-radius:12px;padding:14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <div><div style="font-weight:700">👤 ${e2(pnoms[e.pacienteId]||e.pacienteId)}</div>
+        <div><div style="font-weight:700">${e2(pnoms[e.pacienteId]||e.pacienteId)}</div>
           <div style="font-size:12px;color:var(--tx3)">Evaluación · ${e2(e.autor)} · ${e2(e.fecha)}</div></div>
         <div class="btn-group">
           <button class="btn btn-ghost btn-sm" onclick="abrirPac('${esc(e.pacienteId)}')">👁️ Ver</button>
@@ -2509,7 +2505,7 @@ async function renderPend(){
         </div></div>`).join('')}`:''}
     ${ses.length?`<div style="font-size:11px;font-weight:700;color:var(--tx4);text-transform:uppercase;margin:14px 0 8px">Sesiones (${ses.length})</div>
       ${ses.map(s=>`<div style="background:var(--surf2);border:1px solid var(--amber);border-radius:12px;padding:14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <div><div style="font-weight:700">👤 ${e2(pnoms[s.pacienteId]||s.pacienteId)}</div>
+        <div><div style="font-weight:700">${e2(pnoms[s.pacienteId]||s.pacienteId)}</div>
           <div style="font-size:12px;color:var(--tx3)">Sesión #${s.numero} · ${e2(s.autor)} · ${e2(s.fecha)}</div></div>
         <div class="btn-group">
           <button class="btn btn-ghost btn-sm" onclick="abrirPac('${esc(s.pacienteId)}')">👁️ Ver</button>
@@ -2543,7 +2539,7 @@ async function cargarBadge(){
 // ─── Vista: Categorías ────────────────────────────────
 function renderCats(){
   g('vCats').innerHTML=`
-    <div class="card-hdr"><div class="card-title">🏷️ Categorías</div></div>
+    <div class="card-hdr"><div class="card-title">Categorías</div></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px">
       ${cats.map(c=>`<div style="background:var(--surf2);border:1px solid ${c.color}44;border-radius:14px;padding:16px">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
@@ -2554,7 +2550,7 @@ function renderCats(){
       </div>`).join('')}
     </div>
     <div style="margin-top:14px;padding:14px;background:var(--surf2);border:1px solid var(--bd);border-radius:12px;font-size:12px;color:var(--tx3)">
-      💡 Las plantillas específicas por categoría se pueden personalizar. Puedes proporcionar los campos adicionales para cada categoría y se integrarán en la evaluación.
+      Las plantillas específicas por categoría se pueden personalizar. Puedes proporcionar los campos adicionales para cada categoría y se integrarán en la evaluación.
     </div>`;
 }
 
@@ -2618,7 +2614,7 @@ function secWrap(id, titulo, icono, contenido, abierta){
 function secFiliacion(pac, d){
   const p=pac||{};
   const hoy=new Date().toISOString().slice(0,10);
-  return secWrap('fil','I. Filiación','👤',`
+  return secWrap('fil','I. Filiación','',`
     <div class="form-grid">
       <div class="field form-full"><label>Nombres y apellidos *</label>
         <input class="inp" id="pN" value="${e2(p.nombre||'')}" placeholder="Apellidos y nombres completos"></div>
@@ -2649,7 +2645,7 @@ function secFiliacion(pac, d){
 
 function secAnamnesis(catId, pac, d){
   const tienesDxMedico = catId==='traumatologia';
-  return secWrap('anam','II. Anamnesis','📋',`
+  return secWrap('anam','II. Anamnesis','',`
     ${tienesDxMedico?`<div class="field" style="margin-bottom:12px"><label>Diagnóstico médico</label>
       <input class="inp" id="aDxMed" value="${e2(d.dxMedico||'')}" placeholder="Diagnóstico médico"></div>`:''}
     <div class="field" style="margin-bottom:12px"><label>Diagnóstico fisioterapéutico</label>
@@ -2969,7 +2965,7 @@ function mkPruebasFuncionales(sel, pruebasGuardadas){
     var regionId = region.replace(/[^a-z0-9]/gi,'_');
     html += '<div style="margin-bottom:16px" id="prueba_region_'+regionId+'">';
     html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;padding:7px 12px;background:var(--surf3);border-radius:8px">';
-    html += '<span style="font-size:12px;font-weight:700;color:var(--tx2)">🔬 '+e2(region)+'</span>';
+    html += '<span style="font-size:12px;font-weight:700;color:var(--tx2)">'+e2(region)+'</span>';
     html += '<button type="button" class="btn btn-ghost btn-sm" style="font-size:11px;padding:4px 10px"'
           + ' data-reg="'+e2(region)+'" data-rid="'+e2(regionId)+'"'
           + ' onclick="abrirModalPruebas(this.getAttribute(\'data-reg\'),this.getAttribute(\'data-rid\'))">+ Seleccionar pruebas</button>';
@@ -3098,7 +3094,7 @@ const TODAS_REGIONES = Object.keys(ROM_MOV);
 
 function secTrauma(d){
   const sel=d.regiones||[];
-  return secWrap('trauma','III. Examen objetivo','🦴',`
+  return secWrap('trauma','III. Examen objetivo — Fisioterapia Neuromusculoesquelética','',`
     <div style="margin-bottom:16px">
       <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px">Regiones afectadas</label>
       <div style="position:relative;margin-bottom:8px">
@@ -3147,7 +3143,7 @@ function secTrauma(d){
     <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px">Tegumentario</div>
     <div class="field" style="margin-bottom:14px"><label>Inspección</label>
       <textarea class="ta" id="tTegu" rows="3" placeholder="Coloración, edema, cicatrices, heridas, cambios cutáneos...">${e2(d.tegu||'')}</textarea></div>
-    <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px;display:flex;align-items:center;gap:6px">🔬 Pruebas funcionales específicas por segmento</div>
+    <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px;display:flex;align-items:center;gap:6px">Pruebas funcionales específicas por segmento</div>
     <div id="tablaPruebasWrap" style="margin-bottom:14px">${mkPruebasFuncionales(sel, d.pruebasFuncionales||{})}</div>
     <div class="field" style="margin-bottom:14px"><label>Observaciones adicionales de pruebas</label>
       <textarea class="ta" id="tPruebas" rows="2" placeholder="Pruebas no listadas, hallazgos adicionales, contexto clínico...">${e2(d.pruebas||'')}</textarea></div>
@@ -3358,8 +3354,8 @@ function secEscalas(catId, datosEscalas){
   }
   html += '</div>';
   html += '<button type="button" class="btn btn-ghost btn-sm" style="margin-top:10px;width:100%;justify-content:center;border-style:dashed" onclick="abrirModalEscalas()">'
-        + '📊 + Agregar escala</button>';
-  return secWrap('escalas','Escalas aplicadas','📊', html, true);
+        + '+ Agregar escala</button>';
+  return secWrap('escalas','Escalas aplicadas','', html, true);
 }
 
 // ── Modal: abrir / cerrar / filtrar ─────────────────────────
@@ -3521,7 +3517,7 @@ var _escalaDataStore = {};
 function displayEscalasResumen(escalas){
   if(!escalas || !Object.keys(escalas).length) return '';
   var html = '<div style="margin-top:12px;border-top:1px solid var(--bd);padding-top:12px">';
-  html += '<div style="font-size:10px;font-weight:700;color:var(--tx4);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">📊 Escalas aplicadas</div>';
+  html += '<div style="font-size:10px;font-weight:700;color:var(--tx4);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Escalas aplicadas</div>';
   html += '<div style="display:flex;flex-direction:column;gap:4px">';
   Object.keys(escalas).forEach(function(eid){
     var def = _selEsc(eid);
@@ -4087,7 +4083,7 @@ function renderEscalaAIMS(d){
   var html = '<div style="display:grid;gap:10px">';
   posiciones.forEach(function(pos){
     html += '<div style="padding:12px;background:var(--surf);border-radius:10px;border:1px solid var(--bd)">';
-    html += '<div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:6px">📋 ' + pos.label + '</div>';
+    html += '<div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:6px">' + pos.label + '</div>';
     html += '<textarea class="ta" data-escala-item="' + pos.key + '" rows="3" placeholder="' + pos.placeholder + '" style="font-size:12px;min-height:70px" oninput="recalcularEscala(\'aims\')">' + e2(items_d[pos.key]||'') + '</textarea>';
     html += '</div>';
   });
@@ -4676,7 +4672,7 @@ function secCardiorespiratorio(d){
 }
 
 function secAnamnesisCardio(d){
-  return secWrap('anam_cardio','II. Anamnesis Cardiorrespiratoria','📋',`
+  return secWrap('anam_cardio','II. Anamnesis Cardiorrespiratoria','',`
     <div class="form-grid">
       <div class="field form-full"><label>Diagnóstico médico principal (CIE-10)</label>
         <input class="inp" id="aDxMed" value="${e2(d.dxMedico||'')}"
@@ -4706,7 +4702,7 @@ function secAnamnesisCardio(d){
 }
 
 function secSignosVitales(d){
-  return secWrap('sv_cardio','III. Signos vitales y parámetros basales','🩺',`
+  return secWrap('sv_cardio','III. Signos vitales y parámetros basales','',`
     <div class="form-grid">
       <div class="field"><label>FC en reposo (lpm)</label>
         <input class="inp" id="fcReposo" type="number" min="0" max="250"
@@ -4755,7 +4751,7 @@ function secSignosVitales(d){
 }
 
 function secEvalRespiratoria(d){
-  return secWrap('resp_cardio','IV. Evaluación respiratoria','🫁',`
+  return secWrap('resp_cardio','IV. Evaluación respiratoria','',`
     <div class="form-grid">
       <div class="field"><label>Patrón respiratorio</label>
         <select class="sel" id="patronResp">
@@ -4809,7 +4805,7 @@ function secEvalRespiratoria(d){
 }
 
 function secEvalCardiaca(d){
-  return secWrap('card_func','V. Evaluación cardíaca funcional','❤️',`
+  return secWrap('card_func','V. Evaluación cardíaca funcional','',`
     <div class="form-grid">
       <div class="field"><label>Disnea en reposo</label>
         <select class="sel" id="disneaReposo">
@@ -4849,13 +4845,13 @@ function secEvalCardiaca(d){
           placeholder="Ansiedad, depresión, tabaquismo activo, red de apoyo, adherencia estimada...">${e2(d.psicosocial||'')}</textarea></div>
     </div>
     <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
-      💡 Cuantifica con <b>MRC disnea</b> y <b>NYHA</b> en la sección de Escalas.
+      Cuantifica con <b>MRC disnea</b> y <b>NYHA</b> en la sección de Escalas.
     </div>`);
 }
 
 function secFuerzaResistenciaCardio(d){
   const mrc=['0 — Sin contracción','1 — Contracción visible','2 — Movimiento sin gravedad','3 — Vence gravedad','4 — Vence resistencia parcial','5 — Fuerza normal'];
-  return secWrap('fuerza_cardio','VI. Fuerza y resistencia muscular','💪',`
+  return secWrap('fuerza_cardio','VI. Fuerza y resistencia muscular','',`
     <div class="form-grid">
       <div class="field"><label>Fuerza MMSS D — MRC</label>
         <select class="sel" id="fuerzaMmssDCard">
@@ -4888,12 +4884,12 @@ function secFuerzaResistenciaCardio(d){
           placeholder="Fatiga precoz, debilidad generalizada, asimetrías...">${e2(d.obsFuerzaCard||'')}</textarea></div>
     </div>
     <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
-      💡 Cuantifica resistencia con <b>6MWT</b> y <b>Sit-to-Stand 30s</b> en la sección de Escalas.
+      Cuantifica resistencia con <b>6MWT</b> y <b>Sit-to-Stand 30s</b> en la sección de Escalas.
     </div>`);
 }
 
 function secCapacidadFuncionalCardio(d){
-  return secWrap('funcional_cardio','VII. Capacidad funcional y AVD','🏃',`
+  return secWrap('funcional_cardio','VII. Capacidad funcional y AVD','',`
     <div class="form-grid">
       <div class="field"><label>Limitación en AVD por disnea o fatiga</label>
         <select class="sel" id="limitAVD">
@@ -4910,7 +4906,7 @@ function secCapacidadFuncionalCardio(d){
           placeholder="AVD afectadas, tolerancia al esfuerzo, independencia general...">${e2(d.obsFuncCard||'')}</textarea></div>
     </div>
     <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
-      💡 Cuantifica con el <b>Índice de Barthel</b> en la sección de Escalas si aplica.
+      Cuantifica con el <b>Índice de Barthel</b> en la sección de Escalas si aplica.
     </div>`);
 }
 
@@ -4934,152 +4930,116 @@ function secPostural(d){
 function secInspeccionVisualUnificada(d){
   const opts = (campo, opciones) => opciones.map(v =>
     `<option ${d[campo]===v?'selected':''}>${v}</option>`).join('');
+  const subHdr = (txt) =>
+    `<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;
+      letter-spacing:.5px;padding:6px 10px;background:var(--surf3);border-radius:7px;
+      margin:0 0 10px;grid-column:1/-1">${txt}</div>`;
 
-  return secWrap('insp_visual','III. Inspección visual','👁️',`
-    <!-- Tabs -->
-    <div style="display:flex;gap:4px;margin-bottom:16px;border-bottom:2px solid var(--bd);padding-bottom:0">
-      <button type="button" id="tabAnt"
-        onclick="switchTabInsp('ant')"
-        style="padding:8px 16px;border:none;border-radius:8px 8px 0 0;font-size:12px;font-weight:700;cursor:pointer;background:var(--n500);color:#fff;border-bottom:2px solid var(--n500);margin-bottom:-2px">
-        Vista anterior
-      </button>
-      <button type="button" id="tabPost"
-        onclick="switchTabInsp('post')"
-        style="padding:8px 16px;border:none;border-radius:8px 8px 0 0;font-size:12px;font-weight:700;cursor:pointer;background:var(--surf3);color:var(--tx3);border-bottom:2px solid transparent;margin-bottom:-2px">
-        Vista posterior
-      </button>
-      <button type="button" id="tabLat"
-        onclick="switchTabInsp('lat')"
-        style="padding:8px 16px;border:none;border-radius:8px 8px 0 0;font-size:12px;font-weight:700;cursor:pointer;background:var(--surf3);color:var(--tx3);border-bottom:2px solid transparent;margin-bottom:-2px">
-        Vista lateral D — I
-      </button>
-    </div>
+  return secWrap('insp_visual','III. Inspección visual','',`
+    <div class="form-grid">
 
-    <!-- Panel Anterior -->
-    <div id="panelInspAnt">
-      <div class="form-grid">
-        <div class="field"><label>Posición cabeza</label>
-          <select class="sel" id="cabezaAnt"><option value="">—</option>
-            ${opts('cabezaAnt',['Centrada','Inclinada derecha','Inclinada izquierda','Rotada derecha','Rotada izquierda'])}
-          </select></div>
-        <div class="field"><label>Hombros</label>
-          <select class="sel" id="hombrosAnt"><option value="">—</option>
-            ${opts('hombrosAnt',['Simétricos','Elevado derecho','Elevado izquierdo','Descendido derecho','Descendido izquierdo'])}
-          </select></div>
-        <div class="field"><label>Línea clavicular</label>
-          <select class="sel" id="clavicular"><option value="">—</option>
-            ${opts('clavicular',['Simétrica','Asimétrica — más alta D','Asimétrica — más alta I'])}
-          </select></div>
-        <div class="field"><label>Triángulo del talle</label>
-          <select class="sel" id="triangulTalle"><option value="">—</option>
-            ${opts('triangulTalle',['Simétrico','Asimétrico — mayor D','Asimétrico — mayor I'])}
-          </select></div>
-        <div class="field"><label>Pelvis / EIAS</label>
-          <select class="sel" id="pelvisAnt"><option value="">—</option>
-            ${opts('pelvisAnt',['Simétrica','Elevada derecha','Elevada izquierda'])}
-          </select></div>
-        <div class="field"><label>Rodillas</label>
-          <select class="sel" id="rodillasAnt"><option value="">—</option>
-            ${opts('rodillasAnt',['Centradas','Valgo bilateral','Varo bilateral','Valgo D / Varo I','Varo D / Valgo I','Asimétrico'])}
-          </select></div>
-        <div class="field"><label>Pie derecho</label>
-          <select class="sel" id="pieDerAnt"><option value="">—</option>
-            ${opts('pieDerAnt',['Normal','Plano','Cavo','Valgo','Varo'])}
-          </select></div>
-        <div class="field"><label>Pie izquierdo</label>
-          <select class="sel" id="pieIzqAnt"><option value="">—</option>
-            ${opts('pieIzqAnt',['Normal','Plano','Cavo','Valgo','Varo'])}
-          </select></div>
-        <div class="field form-full"><label>Observaciones vista anterior</label>
-          <textarea class="ta" id="obsAnt" rows="2"
-            placeholder="Hallazgos adicionales vista anterior...">${e2(d.obsAnt||'')}</textarea></div>
-      </div>
-    </div>
+      ${subHdr('Vista anterior')}
+      <div class="field"><label>Posición cabeza</label>
+        <select class="sel" id="cabezaAnt"><option value="">—</option>
+          ${opts('cabezaAnt',['Centrada','Inclinada derecha','Inclinada izquierda','Rotada derecha','Rotada izquierda'])}
+        </select></div>
+      <div class="field"><label>Hombros</label>
+        <select class="sel" id="hombrosAnt"><option value="">—</option>
+          ${opts('hombrosAnt',['Simétricos','Elevado derecho','Elevado izquierdo','Descendido derecho','Descendido izquierdo'])}
+        </select></div>
+      <div class="field"><label>Línea clavicular</label>
+        <select class="sel" id="clavicular"><option value="">—</option>
+          ${opts('clavicular',['Simétrica','Asimétrica — más alta D','Asimétrica — más alta I'])}
+        </select></div>
+      <div class="field"><label>Triángulo del talle</label>
+        <select class="sel" id="triangulTalle"><option value="">—</option>
+          ${opts('triangulTalle',['Simétrico','Asimétrico — mayor D','Asimétrico — mayor I'])}
+        </select></div>
+      <div class="field"><label>Pelvis / EIAS</label>
+        <select class="sel" id="pelvisAnt"><option value="">—</option>
+          ${opts('pelvisAnt',['Simétrica','Elevada derecha','Elevada izquierda'])}
+        </select></div>
+      <div class="field"><label>Rodillas</label>
+        <select class="sel" id="rodillasAnt"><option value="">—</option>
+          ${opts('rodillasAnt',['Centradas','Valgo bilateral','Varo bilateral','Valgo D / Varo I','Varo D / Valgo I','Asimétrico'])}
+        </select></div>
+      <div class="field"><label>Pie derecho</label>
+        <select class="sel" id="pieDerAnt"><option value="">—</option>
+          ${opts('pieDerAnt',['Normal','Plano','Cavo','Valgo','Varo'])}
+        </select></div>
+      <div class="field"><label>Pie izquierdo</label>
+        <select class="sel" id="pieIzqAnt"><option value="">—</option>
+          ${opts('pieIzqAnt',['Normal','Plano','Cavo','Valgo','Varo'])}
+        </select></div>
+      <div class="field form-full"><label>Observaciones vista anterior</label>
+        <textarea class="ta" id="obsAnt" rows="2"
+          placeholder="Hallazgos adicionales vista anterior...">${e2(d.obsAnt||'')}</textarea></div>
 
-    <!-- Panel Posterior -->
-    <div id="panelInspPost" style="display:none">
-      <div class="form-grid">
-        <div class="field"><label>Occipucio</label>
-          <select class="sel" id="occipucio"><option value="">—</option>
-            ${opts('occipucio',['Centrado','Desviado derecha','Desviado izquierda'])}
-          </select></div>
-        <div class="field"><label>Hombros / Escápulas</label>
-          <select class="sel" id="escapulas"><option value="">—</option>
-            ${opts('escapulas',['Simétricas','Escápula alada derecha','Escápula alada izquierda','Asimétrica — más alta D','Asimétrica — más alta I'])}
-          </select></div>
-        <div class="field"><label>Columna</label>
-          <select class="sel" id="columnaPost"><option value="">—</option>
-            ${opts('columnaPost',['Recta','Escoliosis funcional — curva D','Escoliosis funcional — curva I','Escoliosis estructural — curva D','Escoliosis estructural — curva I','Escoliosis en S'])}
-          </select></div>
-        <div class="field"><label>Pliegues glúteos</label>
-          <select class="sel" id="plieguesGluteos"><option value="">—</option>
-            ${opts('plieguesGluteos',['Simétricos','Asimétrico — más alto D','Asimétrico — más alto I'])}
-          </select></div>
-        <div class="field"><label>Pliegues poplíteos</label>
-          <select class="sel" id="plieguesPopliteos"><option value="">—</option>
-            ${opts('plieguesPopliteos',['Simétricos','Asimétrico — más alto D','Asimétrico — más alto I'])}
-          </select></div>
-        <div class="field"><label>Talones</label>
-          <select class="sel" id="talones"><option value="">—</option>
-            ${opts('talones',['Alineados','Valgo bilateral','Varo bilateral','Valgo D / Varo I','Asimétrico'])}
-          </select></div>
-        <div class="field form-full"><label>Observaciones vista posterior</label>
-          <textarea class="ta" id="obsPost" rows="2"
-            placeholder="Hallazgos adicionales vista posterior...">${e2(d.obsPost||'')}</textarea></div>
-      </div>
-    </div>
+      ${subHdr('Vista posterior')}
+      <div class="field"><label>Occipucio</label>
+        <select class="sel" id="occipucio"><option value="">—</option>
+          ${opts('occipucio',['Centrado','Desviado derecha','Desviado izquierda'])}
+        </select></div>
+      <div class="field"><label>Hombros / Escápulas</label>
+        <select class="sel" id="escapulas"><option value="">—</option>
+          ${opts('escapulas',['Simétricas','Escápula alada derecha','Escápula alada izquierda','Asimétrica — más alta D','Asimétrica — más alta I'])}
+        </select></div>
+      <div class="field"><label>Columna</label>
+        <select class="sel" id="columnaPost"><option value="">—</option>
+          ${opts('columnaPost',['Recta','Escoliosis funcional — curva D','Escoliosis funcional — curva I','Escoliosis estructural — curva D','Escoliosis estructural — curva I','Escoliosis en S'])}
+        </select></div>
+      <div class="field"><label>Pliegues glúteos</label>
+        <select class="sel" id="plieguesGluteos"><option value="">—</option>
+          ${opts('plieguesGluteos',['Simétricos','Asimétrico — más alto D','Asimétrico — más alto I'])}
+        </select></div>
+      <div class="field"><label>Pliegues poplíteos</label>
+        <select class="sel" id="plieguesPopliteos"><option value="">—</option>
+          ${opts('plieguesPopliteos',['Simétricos','Asimétrico — más alto D','Asimétrico — más alto I'])}
+        </select></div>
+      <div class="field"><label>Talones</label>
+        <select class="sel" id="talones"><option value="">—</option>
+          ${opts('talones',['Alineados','Valgo bilateral','Varo bilateral','Valgo D / Varo I','Asimétrico'])}
+        </select></div>
+      <div class="field form-full"><label>Observaciones vista posterior</label>
+        <textarea class="ta" id="obsPost" rows="2"
+          placeholder="Hallazgos adicionales vista posterior...">${e2(d.obsPost||'')}</textarea></div>
 
-    <!-- Panel Lateral -->
-    <div id="panelInspLat" style="display:none">
-      <div class="form-grid">
-        <div class="field"><label>Posición cabeza</label>
-          <select class="sel" id="cabezaLat"><option value="">—</option>
-            ${opts('cabezaLat',['Centrada','Proyectada hacia delante (anteropulsión)','Retropulsión'])}
-          </select></div>
-        <div class="field"><label>Curva cervical</label>
-          <select class="sel" id="curvaCervical"><option value="">—</option>
-            ${opts('curvaCervical',['Lordosis normal','Rectificada','Hiperlordosis','Invertida'])}
-          </select></div>
-        <div class="field"><label>Curva dorsal</label>
-          <select class="sel" id="curvaDorsal"><option value="">—</option>
-            ${opts('curvaDorsal',['Cifosis normal','Rectificada','Hipercifosis','Dorso plano'])}
-          </select></div>
-        <div class="field"><label>Curva lumbar</label>
-          <select class="sel" id="curvaLumbar"><option value="">—</option>
-            ${opts('curvaLumbar',['Lordosis normal','Rectificada','Hiperlordosis','Invertida'])}
-          </select></div>
-        <div class="field"><label>Pelvis</label>
-          <select class="sel" id="pelvisLat"><option value="">—</option>
-            ${opts('pelvisLat',['Neutra','Anteversión leve','Anteversión marcada','Retroversión leve','Retroversión marcada'])}
-          </select></div>
-        <div class="field"><label>Rodillas</label>
-          <select class="sel" id="rodillasLat"><option value="">—</option>
-            ${opts('rodillasLat',['Normales','Hiperextensión bilateral','Hiperextensión D','Hiperextensión I','Flexo bilateral','Flexo D','Flexo I'])}
-          </select></div>
-        <div class="field form-full"><label>Observaciones vista lateral</label>
-          <textarea class="ta" id="obsLat" rows="2"
-            placeholder="Hallazgos adicionales vista lateral, alineación del lóbulo de la oreja / acromion / trocánter / maléolo...">${e2(d.obsLat||'')}</textarea></div>
-      </div>
+      ${subHdr('Vista lateral D — I')}
+      <div class="field"><label>Posición cabeza</label>
+        <select class="sel" id="cabezaLat"><option value="">—</option>
+          ${opts('cabezaLat',['Centrada','Proyectada hacia delante (anteropulsión)','Retropulsión'])}
+        </select></div>
+      <div class="field"><label>Curva cervical</label>
+        <select class="sel" id="curvaCervical"><option value="">—</option>
+          ${opts('curvaCervical',['Lordosis normal','Rectificada','Hiperlordosis','Invertida'])}
+        </select></div>
+      <div class="field"><label>Curva dorsal</label>
+        <select class="sel" id="curvaDorsal"><option value="">—</option>
+          ${opts('curvaDorsal',['Cifosis normal','Rectificada','Hipercifosis','Dorso plano'])}
+        </select></div>
+      <div class="field"><label>Curva lumbar</label>
+        <select class="sel" id="curvaLumbar"><option value="">—</option>
+          ${opts('curvaLumbar',['Lordosis normal','Rectificada','Hiperlordosis','Invertida'])}
+        </select></div>
+      <div class="field"><label>Pelvis</label>
+        <select class="sel" id="pelvisLat"><option value="">—</option>
+          ${opts('pelvisLat',['Neutra','Anteversión leve','Anteversión marcada','Retroversión leve','Retroversión marcada'])}
+        </select></div>
+      <div class="field"><label>Rodillas</label>
+        <select class="sel" id="rodillasLat"><option value="">—</option>
+          ${opts('rodillasLat',['Normales','Hiperextensión bilateral','Hiperextensión D','Hiperextensión I','Flexo bilateral','Flexo D','Flexo I'])}
+        </select></div>
+      <div class="field form-full"><label>Observaciones vista lateral</label>
+        <textarea class="ta" id="obsLat" rows="2"
+          placeholder="Hallazgos adicionales vista lateral, alineación del lóbulo de la oreja / acromion / trocánter / maléolo...">${e2(d.obsLat||'')}</textarea></div>
+
     </div>
   `);
 }
 
-function switchTabInsp(tab){
-  var panels = {ant:'panelInspAnt', post:'panelInspPost', lat:'panelInspLat'};
-  var tabs   = {ant:'tabAnt', post:'tabPost', lat:'tabLat'};
-  Object.keys(panels).forEach(function(k){
-    var panel = document.getElementById(panels[k]);
-    var btn   = document.getElementById(tabs[k]);
-    if(!panel || !btn) return;
-    var active = k === tab;
-    panel.style.display = active ? 'block' : 'none';
-    btn.style.background = active ? 'var(--n500)' : 'var(--surf3)';
-    btn.style.color      = active ? '#fff' : 'var(--tx3)';
-    btn.style.borderBottom = active ? '2px solid var(--n500)' : '2px solid transparent';
-  });
-}
+function switchTabInsp(){ /* no-op — vistas siempre visibles */ }
 function secAnamnesisPostural(d){
-  return secWrap('anam_post','II. Motivo y antecedentes posturales','📋',`
+  return secWrap('anam_post','II. Motivo y antecedentes posturales','',`
     <div class="form-grid">
       <div class="field form-full"><label>Diagnóstico fisioterapéutico</label>
         <input class="inp" id="aDxFisio" value="${e2(d.dxFisio||'')}"
@@ -5105,7 +5065,7 @@ function secAnamnesisPostural(d){
 }
 
 function secMedicionesPosturales(d){
-  return secWrap('mediciones_post','VI. Mediciones posturales','📏',`
+  return secWrap('mediciones_post','VI. Mediciones posturales','',`
     <div class="form-grid">
       <div class="field"><label>Discrepancia MMII real (cm)</label>
         <input class="inp" id="discrepanciaReal" type="number" min="0" max="20" step="0.1"
@@ -5147,7 +5107,7 @@ function secMedicionesPosturales(d){
 }
 
 function secCalzadoApoyoPlantar(d){
-  return secWrap('calzado_post','VII. Calzado y apoyo plantar','👟',`
+  return secWrap('calzado_post','VII. Calzado y apoyo plantar','',`
     <div class="form-grid">
       <div class="field"><label>Desgaste del calzado</label>
         <select class="sel" id="desgasteCalzado">
@@ -5176,7 +5136,7 @@ function secCalzadoApoyoPlantar(d){
 }
 
 function secFlexibilidadAcortamientos(d){
-  return secWrap('flex_post','VIII. Flexibilidad y acortamientos musculares','🧘',`
+  return secWrap('flex_post','VIII. Flexibilidad y acortamientos musculares','',`
     <div class="form-grid">
       <div class="field"><label>Test dedos-suelo (cm)</label>
         <input class="inp" id="testDedusSuelo" type="number" min="-30" max="50" step="0.5"
@@ -5233,7 +5193,7 @@ function secFlexibilidadAcortamientos(d){
 }
 
 function secDiagnosticoPostural(d){
-  return secWrap('dx_post','IX. Diagnóstico e impresión clínica postural','📋',`
+  return secWrap('dx_post','IX. Diagnóstico e impresión clínica postural','',`
     <div class="form-grid">
       <div class="field form-full"><label>Alteraciones posturales principales identificadas</label>
         <textarea class="ta" id="cifDeterioro" rows="3"
@@ -5258,7 +5218,7 @@ function secNeuroAdultos(d){
 }
 
 function secHistoriaNeuro(d){
-  return secWrap('historia_neuro','III. Historia clínica neurológica','📋',`
+  return secWrap('historia_neuro','III. Historia clínica neurológica','',`
     <div class="form-grid">
       <div class="field form-full"><label>Diagnóstico médico (CIE-10)</label>
         <input class="inp" id="dxNeuroMedico" value="${e2(d.dxNeuroMedico||d.dxMedico||'')}"
@@ -5310,7 +5270,7 @@ function secHistoriaNeuro(d){
 }
 
 function secEstadoCognitivoCom(d){
-  return secWrap('cognitivo','IV. Estado cognitivo y comunicación','🧠',`
+  return secWrap('cognitivo','IV. Estado cognitivo y comunicación','',`
     <div class="form-grid">
       <div class="field"><label>Nivel de conciencia</label>
         <select class="sel" id="nConciencia">
@@ -5352,7 +5312,7 @@ function secExamenMotorNeuro(d){
   const tono=['Normal','Hipotonía leve','Hipotonía moderada','Hipotonía grave','Hipertonía leve','Espasticidad leve','Espasticidad moderada','Espasticidad grave','Rigidez'];
   const mrc=['0 — Sin contracción','1 — Contracción visible sin movimiento','2 — Movimiento sin gravedad','3 — Vence gravedad','4 — Vence resistencia parcial','5 — Fuerza normal'];
   const reflejos=['Normal (++)','Aumentado (+++)','Vivo (++++  )','Disminuido (+)','Abolido (0)'];
-  return secWrap('motor_neuro','V. Examen motor','💪',`
+  return secWrap('motor_neuro','V. Examen motor','',`
     <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Tono muscular — Ashworth Modificada por segmento</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:14px">
       ${segmentos.map(seg=>`<div class="field"><label>${seg}</label>
@@ -5401,7 +5361,7 @@ function secExamenMotorNeuro(d){
 }
 
 function secSensibilidadNeuro(d){
-  return secWrap('sensibilidad','VI. Sensibilidad','🔍',`
+  return secWrap('sensibilidad','VI. Sensibilidad','',`
     <div class="form-grid">
       <div class="field"><label>Sensibilidad táctil</label>
         <select class="sel" id="sensTactil">
@@ -5434,7 +5394,7 @@ function secSensibilidadNeuro(d){
 }
 
 function secControlPosturalNeuro(d){
-  return secWrap('postural_neuro','VII. Control postural y equilibrio','⚖️',`
+  return secWrap('postural_neuro','VII. Control postural y equilibrio','',`
     <div class="form-grid">
       <div class="field"><label>Control cefálico</label>
         <select class="sel" id="controlCefal">
@@ -5460,12 +5420,12 @@ function secControlPosturalNeuro(d){
         <textarea class="ta" id="obsPostural" rows="2" placeholder="Reacciones de equilibrio, estrategias compensatorias...">${e2(d.obsPostural||'')}</textarea></div>
     </div>
     <div style="font-size:11px;color:var(--tx4);margin-top:6px;padding:8px;background:var(--surf3);border-radius:8px">
-      💡 Para cuantificar el equilibrio usa la <b>Escala de Berg</b> y el <b>TUG</b> en la sección de Escalas aplicadas.
+      Para cuantificar el equilibrio usa la <b>Escala de Berg</b> y el <b>TUG</b> en la sección de Escalas aplicadas.
     </div>`);
 }
 
 function secMarchaTransferencias(d){
-  return secWrap('marcha_neuro','VIII. Marcha y transferencias','🚶',`
+  return secWrap('marcha_neuro','VIII. Marcha y transferencias','',`
     <div class="form-grid">
       <div class="field"><label>Tipo de marcha</label>
         <select class="sel" id="tipoMarcha">
@@ -5503,7 +5463,7 @@ function secMarchaTransferencias(d){
 }
 
 function secAVDNeuro(d){
-  return secWrap('avd_neuro','IX. Actividades de la vida diaria','🏠',`
+  return secWrap('avd_neuro','IX. Actividades de la vida diaria','',`
     <div class="form-grid">
       <div class="field form-full"><label>AVD básicas afectadas</label>
         <textarea class="ta" id="avdBasicasAfect" rows="2" placeholder="Alimentación, higiene, vestido, continencia...">${e2(d.avdBasicasAfect||'')}</textarea></div>
@@ -5511,7 +5471,7 @@ function secAVDNeuro(d){
         <textarea class="ta" id="avdInstAfect" rows="2" placeholder="Uso de teléfono, transporte, manejo de medicación...">${e2(d.avdInstAfect||'')}</textarea></div>
     </div>
     <div style="font-size:11px;color:var(--tx4);margin-top:6px;padding:8px;background:var(--surf3);border-radius:8px">
-      💡 Cuantifica con el <b>Índice de Barthel</b> y/o <b>Lawton-Brody</b> en la sección de Escalas.
+      Cuantifica con el <b>Índice de Barthel</b> y/o <b>Lawton-Brody</b> en la sección de Escalas.
     </div>`);
 }
 
@@ -5534,7 +5494,7 @@ function secNeuroPediatrica(d){
 
 function secAnamnesisPed(d){
   const p = d||{};
-  return secWrap('anam_ped','II. Antecedentes pediátricos','📋',`
+  return secWrap('anam_ped','II. Antecedentes pediátricos','',`
     <div class="form-grid">
       <div class="field"><label>Diagnóstico médico (CIE-10)</label>
         <input class="inp" id="aDxMed" value="${e2(p.dxMedico||'')}" placeholder="Ej: G80.1 — Parálisis cerebral espástica"></div>
@@ -5570,7 +5530,7 @@ function secDesarrolloPed(d){
     {id:'hitosMarcha',l:'Marcha (esperado 12-15 meses)'},
     {id:'hitosLenguaje',l:'Lenguaje (balbuceo ~4-6m / primeras palabras ~12m / frases ~24m)'},
   ];
-  return secWrap('desarrollo_ped','III. Historia del desarrollo motor','📅',`
+  return secWrap('desarrollo_ped','III. Historia del desarrollo motor','',`
     <div style="display:grid;gap:8px;margin-bottom:12px">
       ${hitos.map(h=>`<div style="padding:10px 12px;background:var(--surf);border-radius:10px;border:1px solid var(--bd)">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
@@ -5593,7 +5553,7 @@ function secDesarrolloPed(d){
 
 function secCognitivoPed(d){
   const p=d||{};
-  return secWrap('cognitivo_ped','IV. Estado cognitivo y conductual','🧠',`
+  return secWrap('cognitivo_ped','IV. Estado cognitivo y conductual','',`
     <div class="form-grid">
       <div class="field"><label>Nivel de alerta y atención</label>
         <select class="sel" id="alertaPed">
@@ -5626,7 +5586,7 @@ function secMotorPed(d){
   const tono=['Normal','Hipotónico leve','Hipotónico moderado','Hipotónico grave','Hipertónico leve','Espasticidad leve','Espasticidad moderada','Espasticidad grave','Fluctuante'];
   const mrc=['0 — Sin contracción','1 — Contracción visible','2 — Movimiento sin gravedad','3 — Vence gravedad','4 — Vence resistencia parcial','5 — Fuerza normal'];
   const reflexPrim=['Ausente','Presente e integrado','Persistente (anormal)'];
-  return secWrap('motor_ped','V. Examen motor pediátrico','💪',`
+  return secWrap('motor_ped','V. Examen motor pediátrico','',`
     <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Tono muscular por segmento</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:14px">
       ${segmentos.map(seg=>`<div class="field"><label>${seg}</label>
@@ -5671,13 +5631,13 @@ function secMotorPed(d){
         <textarea class="ta" id="obsMotorPed" rows="2" placeholder="Patrones dominantes, asimetrías, compensaciones...">${e2(p.obsMotorPed||'')}</textarea></div>
     </div>
     <div style="font-size:11px;color:var(--tx4);margin-top:6px;padding:8px;background:var(--surf3);border-radius:8px">
-      💡 Clasifica el nivel funcional con <b>GMFCS</b> y <b>MACS</b> en la sección de Escalas.
+      Clasifica el nivel funcional con <b>GMFCS</b> y <b>MACS</b> en la sección de Escalas.
     </div>`);
 }
 
 function secControlPosturalPed(d){
   const p=d||{};
-  return secWrap('postural_ped','VI. Control postural','⚖️',`
+  return secWrap('postural_ped','VI. Control postural','',`
     <div class="form-grid">
       <div class="field"><label>Control cefálico</label>
         <select class="sel" id="controlCefalPed">
@@ -5706,7 +5666,7 @@ function secControlPosturalPed(d){
 
 function secMarchaPed(d){
   const p=d||{};
-  return secWrap('marcha_ped','VII. Marcha y movilidad','🚶',`
+  return secWrap('marcha_ped','VII. Marcha y movilidad','',`
     <div class="form-grid">
       <div class="field"><label>Tipo de marcha</label>
         <select class="sel" id="tipoMarchaPed">
@@ -5735,7 +5695,7 @@ function secMarchaPed(d){
 
 function secMMSSPed(d){
   const p=d||{};
-  return secWrap('mmss_ped','VIII. Función de miembro superior','✋',`
+  return secWrap('mmss_ped','VIII. Función de miembro superior','',`
     <div class="form-grid">
       <div class="field"><label>Prensión dominante</label>
         <select class="sel" id="prensionPed">
@@ -5756,13 +5716,13 @@ function secMMSSPed(d){
         <textarea class="ta" id="obsMMSSPed" rows="2" placeholder="Uso bimanual, compensaciones, habilidades finas...">${e2(p.obsMMSSPed||'')}</textarea></div>
     </div>
     <div style="font-size:11px;color:var(--tx4);margin-top:6px;padding:8px;background:var(--surf3);border-radius:8px">
-      💡 Cuantifica la función de mano con <b>MACS</b> en la sección de Escalas.
+      Cuantifica la función de mano con <b>MACS</b> en la sección de Escalas.
     </div>`);
 }
 
 function secAVDPed(d){
   const p=d||{};
-  return secWrap('avd_ped','IX. AVD y participación','🏠',`
+  return secWrap('avd_ped','IX. AVD y participación','',`
     <div class="form-grid">
       <div class="field"><label>Alimentación</label>
         <select class="sel" id="alimentPed">
@@ -5780,12 +5740,12 @@ function secAVDPed(d){
         <textarea class="ta" id="progDomiciliario" rows="2" placeholder="Rutinas, ejercicios en casa, indicaciones para cuidadores...">${e2(p.progDomiciliario||'')}</textarea></div>
     </div>
     <div style="font-size:11px;color:var(--tx4);margin-top:6px;padding:8px;background:var(--surf3);border-radius:8px">
-      💡 Cuantifica la independencia funcional con <b>WeeFIM</b> en la sección de Escalas.
+      Cuantifica la independencia funcional con <b>WeeFIM</b> en la sección de Escalas.
     </div>`);
 }
 
 function secPlanTratamiento(d){
-  return secWrap('plan','IV. Plan de tratamiento','🎯',`
+  return secWrap('plan','IV. Plan de tratamiento','',`
     <div class="form-grid">
       <div class="field form-full"><label>Meta</label>
         <textarea class="ta" id="planMeta" rows="2" placeholder="Meta general del tratamiento fisioterapeutico...">${e2(d.meta||'')}</textarea></div>
@@ -6209,7 +6169,7 @@ function iniciarPollingPendientes(){
   <div style="background:var(--surf);border:1px solid var(--bd);border-radius:18px;padding:24px;width:100%;max-width:580px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(0,0,0,.4)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0">
       <div>
-        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--tx)">🔬 <span id="modalPruebasTit">Pruebas funcionales</span></div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--tx)"><span id="modalPruebasTit">Pruebas funcionales</span></div>
         <div style="font-size:11px;color:var(--tx4);margin-top:2px">Selecciona las pruebas a aplicar en este segmento</div>
       </div>
       <button onclick="cerrarModalPruebas()" style="background:rgba(255,255,255,.1);border:none;color:var(--tx3);width:30px;height:30px;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
