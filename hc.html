@@ -1448,12 +1448,18 @@ function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
         html += _buildEscalasExport(escalas);
       }
 
-      // Sello docente que revisó
+      // Sello del docente revisor — dentro del bloque, en sección de aprobación
       var docRevisor = _findInMap(firmasMap, ev.revisadoPor) || _findInMap(firmasMap, ev.docente) || null;
-      if(docRevisor){
-        html += '<div style="border-top:1px solid #d1fae5;margin-top:12px;padding-top:10px;display:flex;justify-content:flex-end">'
-          + mkSelloDocente(docRevisor) + '</div>';
-      }
+      var selloRevisor = docRevisor ? mkSelloDocente(docRevisor) : '';
+      html += '<div class="sec" style="border-color:#16a34a">'
+        + '<div class="sec-hdr" style="background:#16a34a">Evaluaci\u00f3n Aprobada</div>'
+        + '<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:12px 14px">'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;flex:1;min-width:0">'
+        + '<div><div class="field-lbl">Revisado por</div><div class="field-val">' + e2(ev.revisadoPor||'—') + '</div></div>'
+        + (ev.comentarioDocente ? '<div><div class="field-lbl">Comentario</div><div class="field-val">' + e2(ev.comentarioDocente) + '</div></div>' : '')
+        + '</div>'
+        + (selloRevisor ? '<div style="flex-shrink:0">' + selloRevisor + '</div>' : '')
+        + '</div></div>';
       html += '</div>';
     });
   } else {
@@ -1466,9 +1472,11 @@ function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
       + '<div style="background:#1e3a5f;color:#fff;font-weight:700;font-size:12px;padding:8px 16px;border-radius:8px 8px 0 0;text-transform:uppercase;letter-spacing:.5px">Sesiones de Tratamiento (' + ses.length + ')</div>';
     ses.forEach(function(s){
       var estadoColor = s.estado==='aprobada' ? '#16a34a' : s.estado==='pendiente' ? '#d97706' : '#94a3b8';
+      var _sDocRev = _findInMap(firmasMap, s.revisadoPor) || _findInMap(firmasMap, s.docente) || null;
+      var selloSes = (s.estado==='aprobada' && _sDocRev) ? mkSelloDocente(_sDocRev) : '';
       html += '<div class="sec" style="border-radius:0;margin-bottom:0;border-top:none">'
         + '<div class="sec-hdr" style="background:' + estadoColor + ';display:flex;align-items:center;justify-content:space-between">'
-        + '<span>Sesi&oacute;n #' + e2(String(s.numero)) + ' &mdash; ' + e2(formatFecha(s.fecha||'')) + '</span>'
+        + '<span>Sesi\u00f3n #' + e2(String(s.numero)) + ' &mdash; ' + e2(formatFecha(s.fecha||'')) + '</span>'
         + '<span style="font-size:10px;opacity:.85">' + e2(s.estado).toUpperCase() + '</span>'
         + '</div>'
         + '<div class="sec-body">'
@@ -1476,14 +1484,17 @@ function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
         + (s.docente ? '<div><div class="field-lbl">Docente supervisor</div><div class="field-val">' + e2(s.docente) + '</div></div>' : '')
         + '<div><div class="field-lbl">EVA</div><div class="field-val">' + e2(String(s.evaValor??'—')) + '/10</div></div>'
         + (s.respuesta ? '<div><div class="field-lbl">Respuesta paciente</div><div class="field-val">' + e2(s.respuesta) + '</div></div>' : '')
-        + (s.descripcion ? '<div style="grid-column:1/-1"><div class="field-lbl">Descripci&oacute;n</div><div class="field-val">' + e2(s.descripcion) + '</div></div>' : '')
-        + '</div></div>';
-      var _sDocRev = _findInMap(firmasMap, s.revisadoPor) || _findInMap(firmasMap, s.docente) || null;
-      if(s.estado === 'aprobada' && _sDocRev){
-        html += '<div style="border-top:1px solid #d1fae5;margin-top:4px;padding:8px 14px;display:flex;justify-content:flex-end">'
-          + mkSelloDocente(_sDocRev)
-          + '</div>';
-      }
+        + (s.descripcion ? '<div style="grid-column:1/-1"><div class="field-lbl">Descripci\u00f3n</div><div class="field-val">' + e2(s.descripcion) + '</div></div>' : '')
+        + '</div>'
+        + (selloSes
+            ? '<div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:10px 14px;border-top:1px solid #d1fae5">'
+              + '<div><div class="field-lbl">Revisado por</div><div class="field-val">' + e2(s.revisadoPor||'—') + '</div>'
+              + (s.comentarioDocente ? '<div class="field-lbl" style="margin-top:6px">Comentario</div><div class="field-val">' + e2(s.comentarioDocente) + '</div>' : '')
+              + '</div>'
+              + '<div style="flex-shrink:0">' + selloSes + '</div>'
+              + '</div>'
+            : '')
+        + '</div>';
     });
     html += '</div>';
   }
