@@ -665,40 +665,37 @@ function seleccionarFirmaEx(codigo){
 }
 
 async function confirmarExportConFirma(){
-  if(_exportando){toast('Exportación en curso...','Espera un momento','warn');return;}
-  _exportando = true;
-  var nombre  = (g('firmaExNombre')?.value||'').trim();
-  var ctmp    = (g('firmaExCtmp')?.value||'').trim();
-  var cargo   = (g('firmaExCargo')?.value||'').trim();
-  var grado   = (g('firmaExGrado')?.value||'').trim();
-  if(!nombre){toast('Ingresa los apellidos y nombres','','warn');_exportando=false;return;}
-  cerrarModalFirmaExport();
-  var docFirmante = {nombre:nombre, ctmp:ctmp, cargo:cargo, gradoAcademico:grado, firma:''};
+  var nombre = (g('firmaExNombre')?.value||'').trim();
+  var ctmp   = (g('firmaExCtmp')?.value||'').trim();
+  var cargo  = (g('firmaExCargo')?.value||'').trim();
+  var grado  = (g('firmaExGrado')?.value||'').trim();
+  if(!nombre){ toast('Ingresa los apellidos y nombres','','warn'); return; }
+
+  var docFirmante = {nombre, ctmp, cargo, gradoAcademico:grado, firma:''};
   try{
-    // Cargar usuarios si no están en caché
     if(!window._listaUsuariosCache){
-      var rU = await apiGet('listarUsuarios').catch(function(){return {ok:false};});
+      const rU = await apiGet('listarUsuarios').catch(()=>({ok:false}));
       if(rU.ok) window._listaUsuariosCache = rU.usuarios||[];
     }
-    var match = (window._listaUsuariosCache||[]).find(function(u){
-      return (u.nombre||'').toLowerCase() === nombre.toLowerCase()
-          || (u.ctmp||'').trim() === ctmp
-          || (u.codigo||'').toLowerCase() === (session&&session.codigo||'').toLowerCase();
-    });
+    const match = (window._listaUsuariosCache||[]).find(u=>
+      (u.nombre||'').toLowerCase()===nombre.toLowerCase() || (u.ctmp||'')===ctmp
+    );
     if(match && match.firma){
       await resolverFirmaDoc_(match);
       docFirmante.firma = match.firma;
       if(!grado && match.gradoAcademico) docFirmante.gradoAcademico = match.gradoAcademico;
-      if(!cargo && match.cargo) docFirmante.cargo = match.cargo;
+      if(!cargo  && match.cargo)         docFirmante.cargo           = match.cargo;
     }
   }catch(e){}
-  if(_exportCallback) _exportCallback(docFirmante);
-  _exportando = false;
+  const cb = _exportCallback;
+  cerrarModalFirmaExport();
+  if(cb) cb(docFirmante);
 }
 
 function cerrarModalFirmaExport(){
   var m=g('modalFirmaExport'); if(m) m.style.display='none';
-  _exportCallback=null;
+  _exportCallback = null;
+  _exportando = false;
 }
 
 function exportarDocumento(titulo, bodyHTML){
@@ -1136,55 +1133,55 @@ async function buscarPacExport(){
 }
 
 function exportarHCPaciente(pacId){
-  if(session.rol === 'admin'){
-    abrirModalFirmaExport(function(docFirmante){
-      _generarHCPdf(pacId, docFirmante);
-    });
-  } else {
-    _generarHCPdf(pacId, null);
-  }
+  // Siempre mostrar el modal para confirmar firmante
+  // — el modal pre-rellena los datos del usuario logueado automáticamente
+  abrirModalFirmaExport(function(docFirmante){
+    _generarHCPdf(pacId, docFirmante);
+  });
 }
 
-async function _generarHCPdf(pacId, docFirmanteOverride){
-  showSendOverlay('Generando PDF...', 'Cargando historia clínica completa');
+async function _generarHCPdf(pacId, docFirmante){
+  showSendOverlay('Generando PDF...', 'Cargando historia clínica');
   try{
+    // 1. Cargar datos del paciente, evaluaciones y sesiones
     const [rP, rE, rS] = await Promise.all([
-      apiGet('obtenerPaciente', {id:pacId}),
-      apiGet('listarEvaluaciones', {pacienteId:pacId}),
-      apiGet('listarSesiones', {pacienteId:pacId})
+      apiGet('obtenerPaciente',    {id: pacId}),
+      apiGet('listarEvaluaciones', {pacienteId: pacId}),
+      apiGet('listarSesiones',     {pacienteId: pacId})
     ]);
     if(!rP.ok){ hideSendOverlay(); toast('Error al cargar paciente', rP.error||'', 'err'); return; }
-    const pac  = rP.paciente;
+
+    const pac   = rP.paciente;
     const evals = (rE.evaluaciones||[]).filter(ev => ev.estado === 'aprobada');
     const ses   = rS.sesiones||[];
 
-    // Cargar usuarios y resolver firmas
-    if(!window._listaUsuariosCache){
-      const rU = await apiGet('listarUsuarios').catch(()=>({ok:false}));
-      if(rU.ok) window._listaUsuariosCache = rU.usuarios||[];
-    }
+    // 2. Cargar usuarios para construir mapa de firmas
     var firmasMap = {};
-    await Promise.all((window._listaUsuariosCache||[]).map(async u=>{
-      await resolverFirmaDoc_(u);
-      firmasMap[u.nombre] = u;
-      firmasMap[u.codigo] = u;
-      if(u.ctmp) firmasMap[u.ctmp] = u;
-    }));
+    try{
+      const rU = await apiGet('listarUsuarios');
+      if(rU.ok){
+        await Promise.all((rU.usuarios||[]).map(async u=>{
+          await resolverFirmaDoc_(u);
+          firmasMap[u.nombre] = u;
+          firmasMap[u.codigo] = u;
+          if(u.ctmp) firmasMap[u.ctmp] = u;
+        }));
+        window._listaUsuariosCache = rU.usuarios;
+      }
+    }catch(e){ /* firmasMap queda vacío — el PDF se genera sin firmas */ }
 
-    // Sello del firmante override (admin) o del docente revisor/supervisor
-    var selloFirmante = '';
-    if(docFirmanteOverride){
-      selloFirmante = mkSelloDocente(docFirmanteOverride);
-    }
+    // 3. Sello del firmante seleccionado en el modal
+    var selloFirmante = docFirmante ? mkSelloDocente(docFirmante) : '';
 
+    // 4. Generar y abrir el PDF
     hideSendOverlay();
-    exportarDocumento(
-      'HC_' + e2(pac.nombre||pacId).replace(/\s+/g,'_'),
-      buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante)
-    );
-  } catch(err){
+    const titulo = 'HC_' + e2(pac.nombre||pacId).replace(/\s+/g,'_');
+    exportarDocumento(titulo, buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante));
+
+  }catch(err){
     hideSendOverlay();
-    toast('Error al generar PDF', err.message||'', 'err');
+    console.error('_generarHCPdf error:', err);
+    toast('Error al generar PDF: ' + (err.message||'error desconocido'), '', 'err');
   }
 }
 
