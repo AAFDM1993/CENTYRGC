@@ -1152,8 +1152,29 @@ async function _generarHCPdf(pacId, docFirmante){
     if(!rP.ok){ hideSendOverlay(); toast('Error al cargar paciente', rP.error||'', 'err'); return; }
 
     const pac   = rP.paciente;
-    const evals = (rE.evaluaciones||[]).filter(ev => ev.estado === 'aprobada');
+    const evalsBasic = (rE.evaluaciones||[]).filter(ev => ev.estado === 'aprobada');
     const ses   = rS.sesiones||[];
+
+    // Cargar datos COMPLETOS de cada evaluación (listarEvaluaciones no incluye datosEspecificos)
+    const evals = await Promise.all(evalsBasic.map(async ev => {
+      try{
+        const rEv = await apiGet('obtenerEvaluacion', {id: ev.id});
+        console.log('[PDF] obtenerEvaluacion id='+ev.id+' ok='+rEv.ok, rEv.evaluacion ? Object.keys(rEv.evaluacion) : 'null');
+        if(rEv.ok && rEv.evaluacion){
+          const raw = rEv.evaluacion.datosEspecificos;
+          console.log('[PDF] datosEspecificos type='+typeof raw, typeof raw==='string' ? raw.substring(0,120) : raw);
+          if(typeof raw === 'string' && raw){
+            try{ rEv.evaluacion.datosEspecificos = JSON.parse(raw); }catch(e){ rEv.evaluacion.datosEspecificos = {}; }
+          } else if(!raw){
+            rEv.evaluacion.datosEspecificos = {};
+          }
+          console.log('[PDF] datosEspecificos keys=', Object.keys(rEv.evaluacion.datosEspecificos||{}));
+          return rEv.evaluacion;
+        }
+      }catch(e){ console.error('[PDF] obtenerEvaluacion error:', e); }
+      return ev; // fallback: datos básicos
+    }));
+    console.log('[PDF] evals cargadas:', evals.length, evals.map(e=>({catId:e.categoriaId, despKeys:Object.keys(e.datosEspecificos||{})})));
 
     // 2. Cargar usuarios para construir mapa de firmas
     var firmasMap = {};
