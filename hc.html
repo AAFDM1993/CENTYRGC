@@ -589,7 +589,6 @@ var _exportando=false;
 
 function abrirModalFirmaExport(callback){
   _exportCallback = callback;
-  // Pre-rellenar con datos del usuario logueado si es docente/admin
   var nom = g('firmaExNombre');
   var grd = g('firmaExGrado');
   var busca = g('firmaExBusca');
@@ -598,14 +597,33 @@ function abrirModalFirmaExport(callback){
   var dd = g('firmaExDD'); if(dd) dd.style.display = 'none';
   var m = g('modalFirmaExport');
   if(m) m.style.display = 'flex';
-  if(busca) setTimeout(function(){ busca.focus(); }, 100);
-  // Pre-cargar grado si el usuario tiene uno registrado
-  if(grd && window._listaUsuariosCache){
+  // Precargar lista de usuarios para el buscador
+  if(!window._listaUsuariosCache){
+    apiGet('listarUsuarios').then(function(rU){
+      if(rU.ok) window._listaUsuariosCache = rU.usuarios||[];
+      // Pre-rellenar grado del usuario logueado
+      if(grd && window._listaUsuariosCache){
+        var me = window._listaUsuariosCache.find(function(u){
+          return u.codigo === (session&&session.codigo);
+        });
+        if(me){
+          if(me.gradoAcademico && grd) grd.value = me.gradoAcademico;
+          if(me.cargo){ var c=g('firmaExCargo'); if(c&&!c.value) c.value=me.cargo; }
+          if(me.ctmp){ var ct=g('firmaExCtmp'); if(ct&&!ct.value) ct.value=me.ctmp; }
+        }
+      }
+    }).catch(function(){});
+  } else {
     var me = (window._listaUsuariosCache||[]).find(function(u){
       return u.codigo === (session&&session.codigo);
     });
-    if(me && me.gradoAcademico) grd.value = me.gradoAcademico;
+    if(me){
+      if(me.gradoAcademico && grd) grd.value = me.gradoAcademico;
+      if(me.cargo){ var c=g('firmaExCargo'); if(c&&!c.value) c.value=me.cargo; }
+      if(me.ctmp){ var ct=g('firmaExCtmp'); if(ct&&!ct.value) ct.value=me.ctmp; }
+    }
   }
+  if(busca) setTimeout(function(){ busca.focus(); }, 150);
 }
 
 function filtrarFirmaExBusca(val){
@@ -684,33 +702,6 @@ function cerrarModalFirmaExport(){
   _exportCallback=null;
 }
 
-async function confirmarExportConFirma(){
-  if(_exportando){toast('Exportación en curso...','Espera un momento','warn');return;}
-  _exportando=true;
-  var nombre=(g('firmaExNombre')?.value||'').trim();
-  var ctmp=(g('firmaExCtmp')?.value||'').trim();
-  var cargo='Coordinador del Centro Docente de Terapia Física y Rehabilitación “CENTYR-UPT”';
-  if(!nombre){toast('Ingresa los apellidos y nombres','','warn');return;}
-  cerrarModalFirmaExport();
-  // Buscar firma del usuario en sistema
-  var docFirmante={nombre:nombre,ctmp:ctmp,cargo:cargo,firma:''};
-  try{
-    var rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
-    if(rU.ok){
-      var match=(rU.usuarios||[]).find(function(u){
-        return (u.nombre||'').toLowerCase()===nombre.toLowerCase()
-            ||(u.codigo||'').toLowerCase()===(session&&session.codigo||'').toLowerCase();
-      });
-      if(match&&match.firma){
-        await resolverFirmaDoc_(match);
-        docFirmante.firma=match.firma;
-      }
-    }
-  }catch(e){}
-  if(_exportCallback) _exportCallback(docFirmante);
-  _exportando=false;
-}
-
 function exportarDocumento(titulo, bodyHTML){
   var w=window.open('','_blank','width=900,height=700');
   if(!w){toast('Permite ventanas emergentes para exportar','','warn');return;}
@@ -748,7 +739,10 @@ function exportarDocumento(titulo, bodyHTML){
 
 // ─── BUILD HTML EVALUACIÓN ────────────────────────────
 function buildEvalHTML(ev, pac, firmaHTML){
-  var d = ev.datosEspecificos || ev || {};
+  // datosEspecificos puede llegar como string JSON — parsear si es necesario
+  var desp = ev.datosEspecificos || {};
+  if(typeof desp === 'string'){ try{ desp = JSON.parse(desp); }catch(e){ desp = {}; } }
+  var d = Object.assign({}, ev, desp);
   var catId = ev.categoriaId || pac.categoriaId || '';
   var rows = '';
 
@@ -756,42 +750,58 @@ function buildEvalHTML(ev, pac, firmaHTML){
   rows += '<div class="sec"><div class="sec-hdr">I. Filiaci&oacute;n</div><div class="sec-body">'
     + '<div><div class="field-lbl">Nombres y Apellidos</div><div class="field-val">' + e2(pac.nombre||'') + '</div></div>'
     + '<div><div class="field-lbl">DNI</div><div class="field-val">' + e2(pac.dni||'') + '</div></div>'
-    + '<div><div class="field-lbl">Fecha de nacimiento</div><div class="field-val">' + e2(pac.fechaNac||'') + '</div></div>'
-    + '<div><div class="field-lbl">Ocupaci&oacute;n</div><div class="field-val">' + e2(pac.ocupacion||d.ocupacion||'—') + '</div></div>'
+    + (pac.fechaNac?'<div><div class="field-lbl">Fecha de nacimiento</div><div class="field-val">' + e2(pac.fechaNac) + '</div></div>':'')
+    + (pac.ocupacion||d.ocupacion?'<div><div class="field-lbl">Ocupaci&oacute;n</div><div class="field-val">' + e2(pac.ocupacion||d.ocupacion||'—') + '</div></div>':'')
+    + (pac.telefono?'<div><div class="field-lbl">Tel&eacute;fono</div><div class="field-val">' + e2(pac.telefono) + '</div></div>':'')
+    + (pac.medico?'<div><div class="field-lbl">M&eacute;dico tratante</div><div class="field-val">' + e2(pac.medico) + '</div></div>':'')
     + '</div></div>';
 
   // ── II. Anamnesis ──
+  var dxMed = d.dxMedico || d.dxNeuroMedico || pac.dxMedico || '';
+  var motivo = d.motivo || pac.motivo || '';
+  var antecedentes = d.antecedentes || d.antecedentesNeuro || pac.antecedentes || '';
   rows += '<div class="sec"><div class="sec-hdr">II. Anamnesis</div><div class="sec-body full">'
-    + (d.dxMedico ? '<div><div class="field-lbl">Diagn&oacute;stico M&eacute;dico</div><div class="field-val">' + e2(d.dxMedico) + '</div></div>' : '')
+    + (dxMed?'<div><div class="field-lbl">Diagn&oacute;stico M&eacute;dico</div><div class="field-val">' + e2(dxMed) + '</div></div>':'')
     + '<div><div class="field-lbl">Diagn&oacute;stico Fisioterapéutico</div><div class="field-val">' + e2(d.dxFisio||ev.dxFisio||'—') + '</div></div>'
-    + (d.antecedentes ? '<div><div class="field-lbl">Antecedentes</div><div class="field-val">' + e2(d.antecedentes) + '</div></div>' : '')
-    + (d.motivo ? '<div><div class="field-lbl">Motivo de consulta</div><div class="field-val">' + e2(d.motivo) + '</div></div>' : '')
+    + (motivo?'<div><div class="field-lbl">Motivo de consulta</div><div class="field-val">' + e2(motivo) + '</div></div>':'')
+    + (antecedentes?'<div><div class="field-lbl">Antecedentes</div><div class="field-val">' + e2(antecedentes) + '</div></div>':'')
     + '</div></div>';
 
   // ── III. Examen objetivo — según categoría ──
   rows += _buildExamenObjetivoPorCategoria(d, ev, catId);
 
   // ── IV. Plan de Tratamiento ──
-  rows += '<div class="sec"><div class="sec-hdr">IV. Plan de Tratamiento</div><div class="sec-body full">'
-    + (d.meta ? '<div><div class="field-lbl">Meta</div><div class="field-val">' + e2(d.meta) + '</div></div>' : '')
-    + (d.objGeneral ? '<div><div class="field-lbl">Objetivo General</div><div class="field-val">' + e2(d.objGeneral) + '</div></div>' : '')
-    + (d.objEspecificos ? '<div><div class="field-lbl">Objetivos Espec&iacute;ficos</div><div class="field-val">' + e2(d.objEspecificos) + '</div></div>' : '')
-    + (d.planGeneral ? '<div><div class="field-lbl">Plan General</div><div class="field-val">' + e2(d.planGeneral) + '</div></div>' : '')
-    + '</div></div>';
+  var meta = d.meta || d.objCorto || '';
+  var objG = d.objGeneral || d.objLargo || '';
+  var objE = d.objEspecificos || d.planGeneral || '';
+  var nSes = d.planSesiones || '';
+  var freq = d.planFrecuencia || '';
+  var dur  = d.planDuracion || '';
+  var hasPlan = meta||objG||objE||nSes||freq||dur;
+  if(hasPlan){
+    rows += '<div class="sec"><div class="sec-hdr">IV. Plan de Tratamiento</div><div class="sec-body full">'
+      + (nSes?'<div><div class="field-lbl">N° Sesiones</div><div class="field-val">' + e2(nSes) + (freq?' · '+e2(freq):'') + (dur?' · '+e2(dur)+'</div></div>':'</div></div>'):'')
+      + (meta?'<div><div class="field-lbl">Meta / Objetivo corto plazo</div><div class="field-val">' + e2(meta) + '</div></div>':'')
+      + (objG?'<div><div class="field-lbl">Objetivo General</div><div class="field-val">' + e2(objG) + '</div></div>':'')
+      + (objE?'<div><div class="field-lbl">Objetivos Espec&iacute;ficos / Plan</div><div class="field-val">' + e2(objE) + '</div></div>':'')
+      + '</div></div>';
+  }
 
   // ── V. Escalas aplicadas ──
-  if(d.escalas && Object.keys(d.escalas).length){
-    rows += _buildEscalasExport(d.escalas);
+  var escalas = d.escalas;
+  if(escalas && typeof escalas === 'string'){ try{ escalas = JSON.parse(escalas); }catch(e){ escalas = null; } }
+  if(escalas && Object.keys(escalas).length){
+    rows += _buildEscalasExport(escalas);
   }
 
   // ── VI. Estado de aprobación + firma ──
   if(ev.estado === 'aprobada'){
-    rows += '<div class="sec" style="border-color:#16a34a;position:relative">'
-      + '<div class="sec-hdr" style="background:#16a34a">&#10003; Evaluaci&oacute;n Aprobada</div>'
+    rows += '<div class="sec" style="border-color:#16a34a">'
+      + '<div class="sec-hdr" style="background:#16a34a">Evaluaci&oacute;n Aprobada</div>'
       + '<div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:12px 14px">'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;flex:1">'
       + '<div><div class="field-lbl">Revisado por</div><div class="field-val">' + e2(ev.revisadoPor||'—') + '</div></div>'
-      + '<div><div class="field-lbl">Comentario</div><div class="field-val">' + e2(ev.comentarioDocente||'—') + '</div></div>'
+      + (ev.comentarioDocente?'<div><div class="field-lbl">Comentario</div><div class="field-val">' + e2(ev.comentarioDocente) + '</div></div>':'')
       + '</div>'
       + firmaHTML
       + '</div></div>';
@@ -1655,7 +1665,8 @@ function evalCard(ev, pac){
       ${puedeSend?`<button class="btn btn-primary btn-sm" onclick="enviarEval('${esc(ev.id)}','${esc(pac.id)}')">📤 Enviar al docente</button>`:''}
       ${pr&&ev.estado==='pendiente'?`<button class="btn btn-ghost btn-sm" onclick="toggleEvalInline('${uid}',null)">👁️ Ver contenido</button>`:''}
       ${pr&&ev.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('eval','${esc(ev.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
-      ${pr&&(ev.estado==='aprobada'||ev.estado==='rechazada')?`<button class="btn btn-ghost btn-sm" onclick="toggleEvalInline('${uid}',null)">👁️ Ver</button>`:''}
+      ${(ev.estado==='aprobada'||ev.estado==='rechazada')?`<button class="btn btn-ghost btn-sm" onclick="toggleEvalInline('${uid}',null)">👁️ Ver</button>`:''}
+      ${ev.estado==='aprobada'?`<button class="btn btn-ghost btn-sm" onclick="exportarEvalModal('${esc(ev.id)}','${esc(pac.id)}')">📄 PDF</button>`:''}
     </div>
   </div>`;
 }
@@ -2016,6 +2027,7 @@ function sesCard(s, pac, evalAp){
         ${s.estado==='borrador'||s.estado==='rechazada'?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmSes('${esc(pac.id)}','${esc(s.evaluacionId)}',${s.numero},'${esc(s.id)}')">✏️ Editar</button>`:''}
         ${puedeSend&&(s.estado==='borrador'||s.estado==='rechazada')?`<button class="btn btn-primary btn-sm" onclick="enviarSes('${esc(s.id)}','${esc(pac.id)}')">📤 Enviar</button>`:''}
         ${pr&&s.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('ses','${esc(s.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
+        ${s.estado==='aprobada'?`<button class="btn btn-ghost btn-sm" onclick="exportarSesModal('${esc(s.id)}','${esc(pac.id)}')">📄 PDF</button>`:''}
       </div>
     </div>
   </div>`;
