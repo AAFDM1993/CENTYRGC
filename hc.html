@@ -702,12 +702,10 @@ function cerrarModalFirmaExport(){
 }
 
 function exportarDocumento(titulo, bodyHTML){
-  var w=window.open('','_blank','width=900,height=700');
-  if(!w){toast('Permite ventanas emergentes para exportar','','warn');return;}
-  w.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
+  var fullHTML = '<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
     +'<title>'+titulo+'</title>'
     +'<style>'
-    +'*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact}'
+    +'*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
     +'body{font-family:"Plus Jakarta Sans",Arial,sans-serif;font-size:12px;color:#0f172a;background:#fff;padding:24px}'
     +'.doc-header{display:flex;align-items:center;justify-content:space-between;border-bottom:2.5px solid #1e3a5f;padding-bottom:12px;margin-bottom:18px}'
     +'.doc-logo{font-family:sans-serif;font-weight:800;font-size:18px;color:#1e3a5f;letter-spacing:-0.5px}'
@@ -722,18 +720,49 @@ function exportarDocumento(titulo, bodyHTML){
     +'.tbl-rom{width:100%;border-collapse:collapse;font-size:11px}'
     +'.tbl-rom th{background:#eff6ff;color:#1e3a5f;padding:5px 8px;text-align:center;border:1px solid #e2e8f0;font-weight:700}'
     +'.tbl-rom td{border:1px solid #e2e8f0;padding:4px 8px;text-align:center}'
-    +'.sello-doc{text-align:center;min-width:170px;padding:10px 14px 10px}'
-    +'@media print{body{padding:14px}}'
+    +'.sello-doc{text-align:center;min-width:170px;padding:10px 14px}'
+    +'@media print{body{padding:14px}button{display:none}}'
     +'</style>'
     +'<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">'
     +'</head><body>'
-    +'<div class="doc-header"><div><div class="doc-logo">CEN<span>TYR</span></div><div class="doc-subtitle">Historia Cl&iacute;nica Fisioterapia</div></div>'
-    +'<div style="text-align:right;font-size:10px;color:#64748b">Generado: '+(function(){var n=new Date();var dd=String(n.getDate()).padStart(2,'0');var mm=String(n.getMonth()+1).padStart(2,'0');var yy=String(n.getFullYear()).slice(-2);var h=n.getHours();var mi=String(n.getMinutes()).padStart(2,'0');var ap=h>=12?'PM':'AM';h=h%12||12;return dd+'/'+mm+'/'+yy+' '+h+':'+mi+' '+ap;})()+'</div>'
-    +'</div>'
+    +'<div class="doc-header">'
+    +'<div><div class="doc-logo">CEN<span>TYR</span></div><div class="doc-subtitle">Historia Cl&iacute;nica Fisioterapia</div></div>'
+    +'<div style="text-align:right;font-size:10px;color:#64748b">Generado: '
+    +(function(){var n=new Date();var dd=String(n.getDate()).padStart(2,'0');var mm=String(n.getMonth()+1).padStart(2,'0');var yy=n.getFullYear();var h=n.getHours();var mi=String(n.getMinutes()).padStart(2,'0');var ap=h>=12?'PM':'AM';h=h%12||12;return dd+'/'+mm+'/'+yy+' '+h+':'+mi+' '+ap;})()
+    +'</div></div>'
     +bodyHTML
-    +'</body></html>');
-  w.document.close();
-  setTimeout(function(){w.print();},600);
+    +'<div style="text-align:center;margin-top:24px">'
+    +'<button onclick="window.print()" style="background:#1e3a5f;color:#fff;border:none;padding:10px 28px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">Imprimir / Guardar PDF</button>'
+    +'</div>'
+    +'</body></html>';
+
+  // Usar Blob URL para evitar bloqueo de popups con document.write
+  try{
+    var blob = new Blob([fullHTML], {type:'text/html;charset=utf-8'});
+    var url  = URL.createObjectURL(blob);
+    var w    = window.open(url, '_blank');
+    if(!w){
+      // Fallback: crear link de descarga
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = titulo + '.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast('Archivo descargado — ábrelo en el navegador para imprimir','','ok');
+    }
+    // Liberar blob después de 60s
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 60000);
+  } catch(err){
+    // Fallback final: data URI
+    var encoded = 'data:text/html;charset=utf-8,' + encodeURIComponent(fullHTML);
+    var a = document.createElement('a');
+    a.href = encoded;
+    a.download = titulo + '.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
 }
 
 // ─── BUILD HTML EVALUACIÓN ────────────────────────────
@@ -1104,6 +1133,59 @@ async function buscarPacExport(){
   });
   html+='</div>';
   box.innerHTML=html;
+}
+
+function exportarHCPaciente(pacId){
+  if(session.rol === 'admin'){
+    abrirModalFirmaExport(function(docFirmante){
+      _generarHCPdf(pacId, docFirmante);
+    });
+  } else {
+    _generarHCPdf(pacId, null);
+  }
+}
+
+async function _generarHCPdf(pacId, docFirmanteOverride){
+  showSendOverlay('Generando PDF...', 'Cargando historia clínica completa');
+  try{
+    const [rP, rE, rS] = await Promise.all([
+      apiGet('obtenerPaciente', {id:pacId}),
+      apiGet('listarEvaluaciones', {pacienteId:pacId}),
+      apiGet('listarSesiones', {pacienteId:pacId})
+    ]);
+    if(!rP.ok){ hideSendOverlay(); toast('Error al cargar paciente', rP.error||'', 'err'); return; }
+    const pac  = rP.paciente;
+    const evals = (rE.evaluaciones||[]).filter(ev => ev.estado === 'aprobada');
+    const ses   = rS.sesiones||[];
+
+    // Cargar usuarios y resolver firmas
+    if(!window._listaUsuariosCache){
+      const rU = await apiGet('listarUsuarios').catch(()=>({ok:false}));
+      if(rU.ok) window._listaUsuariosCache = rU.usuarios||[];
+    }
+    var firmasMap = {};
+    await Promise.all((window._listaUsuariosCache||[]).map(async u=>{
+      await resolverFirmaDoc_(u);
+      firmasMap[u.nombre] = u;
+      firmasMap[u.codigo] = u;
+      if(u.ctmp) firmasMap[u.ctmp] = u;
+    }));
+
+    // Sello del firmante override (admin) o del docente revisor/supervisor
+    var selloFirmante = '';
+    if(docFirmanteOverride){
+      selloFirmante = mkSelloDocente(docFirmanteOverride);
+    }
+
+    hideSendOverlay();
+    exportarDocumento(
+      'HC_' + e2(pac.nombre||pacId).replace(/\s+/g,'_'),
+      buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante)
+    );
+  } catch(err){
+    hideSendOverlay();
+    toast('Error al generar PDF', err.message||'', 'err');
+  }
 }
 
 // ─── BUILD HC COMPLETA ─────────────────────────────────────
@@ -1558,6 +1640,7 @@ async function abrirPac(id){
       </div>
       <div class="btn-group">
         ${puedeEditar?`<button class="btn btn-ghost btn-sm" onclick="editarPac('${esc(pac.id)}')">✏️ Editar</button>`:''}
+        ${pr?`<button class="btn btn-ghost btn-sm" onclick="exportarHCPaciente('${esc(pac.id)}')">📄 Exportar PDF</button>`:''}
         ${session.rol==='admin'?`<button class="btn btn-danger btn-sm" onclick="eliminarPac('${esc(pac.id)}','${esc(pac.nombre)}')">🗑️</button>`:''}
       </div>
     </div>
@@ -1681,7 +1764,6 @@ function evalCard(ev, pac){
       ${pr&&ev.estado==='pendiente'?`<button class="btn btn-ghost btn-sm" onclick="toggleEvalInline('${uid}',null)">👁️ Ver contenido</button>`:''}
       ${pr&&ev.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('eval','${esc(ev.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
       ${(ev.estado==='aprobada'||ev.estado==='rechazada')?`<button class="btn btn-ghost btn-sm" onclick="toggleEvalInline('${uid}',null)">👁️ Ver</button>`:''}
-      ${ev.estado==='aprobada'&&pr?`<button class="btn btn-ghost btn-sm" onclick="exportarEvalModal('${esc(ev.id)}','${esc(pac.id)}')">📄 PDF</button>`:''}
     </div>
   </div>`;
 }
@@ -2118,7 +2200,6 @@ function sesCard(s, pac, evalAp){
         ${s.estado==='borrador'||s.estado==='rechazada'?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmSes('${esc(pac.id)}','${esc(s.evaluacionId)}',${s.numero},'${esc(s.id)}')">✏️ Editar</button>`:''}
         ${puedeSend&&(s.estado==='borrador'||s.estado==='rechazada')?`<button class="btn btn-primary btn-sm" onclick="enviarSes('${esc(s.id)}','${esc(pac.id)}')">📤 Enviar</button>`:''}
         ${pr&&s.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('ses','${esc(s.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
-        ${s.estado==='aprobada'&&pr?`<button class="btn btn-ghost btn-sm" onclick="exportarSesModal('${esc(s.id)}','${esc(pac.id)}')">📄 PDF</button>`:''}
       </div>
     </div>
   </div>`;
