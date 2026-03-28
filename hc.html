@@ -1306,14 +1306,19 @@ async function _generarHCPdf(pacId, docFirmante){
           if(u.firma && !u.firma.startsWith('data:image')){
             u.firma = await resolverFirma_(u.firma);
           }
+          console.log('[PDF-firma] usuario='+u.nombre+' codigo='+u.codigo+' firma='+( u.firma ? (u.firma.startsWith('data:image')?'base64('+u.firma.length+')':u.firma.substring(0,30)) : 'vacía'));
           firmasMap[u.nombre]  = u;
           firmasMap[u.codigo]  = u;
           if(u.ctmp) firmasMap[u.ctmp] = u;
         }));
-        // Actualizar caché con firmas ya resueltas
         window._listaUsuariosCache = rU.usuarios;
       }
     }catch(e){ console.warn('firmasMap error:', e); }
+
+    // Log del estado final del firmasMap y los revisores
+    evals.forEach(function(ev){
+      console.log('[PDF-rev] eval revisadoPor='+ev.revisadoPor+' docente='+ev.docente+' → encontrado='+(!!firmasMap[ev.revisadoPor]||!!firmasMap[ev.docente]));
+    });
 
     // 3. Resolver firma del firmante del modal (si tiene fileId sin resolver)
     if(docFirmante && docFirmante.firma && !docFirmante.firma.startsWith('data:image')){
