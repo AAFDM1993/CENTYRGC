@@ -1807,6 +1807,11 @@ async function abrirFrmPac(pac=null, preCatId=null, preCatNombre=null){
       const chv=h.querySelector('.chv');
       b.classList.toggle('open');
       if(chv)chv.classList.toggle('open');
+      // Montar widget postural si existe y está vacío
+      if(b.classList.contains('open')){
+        const mount=b.querySelector('#wpost_mount');
+        if(mount&&!mount.hasChildNodes()&&window.wpostMount) window.wpostMount();
+      }
     };
   });
   // Cerrar dropdown al click fuera
@@ -3071,21 +3076,7 @@ async function reasignarPac(pacId){
 // ══════════════════════════════════════════════════
 // PLANTILLAS POR CATEGORÍA
 // ══════════════════════════════════════════════════
-function wpostOptSection(catId,d){
-  if(catId==='neuro_pediatrica'||catId==='postural') return '';
-  if(d.widgetPostural) window._wpostPending=d.widgetPostural;
-  if(d.obsInspeccionVisual) window._wpostPendingObs=d.obsInspeccionVisual;
-  return '<div class="hc-sec" style="margin-bottom:10px">'
-    +'<div class="hc-sec-hdr" onclick="var b=this.nextElementSibling;'
-    +'b.classList.toggle(\'open\');this.querySelector(\'.chv\').classList.toggle(\'open\');'
-    +'if(b.classList.contains(\'open\')&&document.getElementById(\'wpost_mount\')&&!document.getElementById(\'wpost_mount\').hasChildNodes())window.wpostMount()">'
-    +'<div class="hc-sec-title">Inspeccion postural visual (opcional)</div>'
-    +'<span class="chv">&#9660;</span></div>'
-    +'<div class="hc-sec-body" id="sec-wpost-opt"><div id="wpost_mount"></div>'
-    +'<div class="field form-full" style="margin-top:12px"><label>Observaciones de inspeccion visual</label>'
-    +'<textarea class="ta" id="obsInspeccionVisual" rows="3" placeholder="Observaciones..."></textarea></div>'
-    +'</div></div>';
-}
+
 
 function plantillaHTML(catId, pac){
   const d = pac?.datosEspecificos || {};
@@ -3093,15 +3084,12 @@ function plantillaHTML(catId, pac){
 
   if(catId === 'traumatologia'){
     secciones += secTrauma(d);
-    secciones += wpostOptSection(catId, d);
   } else if(catId === 'neuro_adultos'){
     secciones += secNeuroAdultos(d);
-    secciones += wpostOptSection(catId, d);
   } else if(catId === 'neuro_pediatrica'){
     secciones += secNeuroPediatrica(d);
   } else if(catId === 'cardiorespiratorio'){
     secciones += secCardiorespiratorio(d);
-    secciones += wpostOptSection(catId, d);
   } else if(catId === 'postural'){
     secciones += secPostural(d);
   }
@@ -6401,10 +6389,6 @@ async function guardarHC(catId, pacId, modo){
     ...datosPed,
     ...datosCardio,
     ...datosPostural,
-    ...(catId!=='postural'&&catId!=='neuro_pediatrica'?{
-      obsInspeccionVisual: v('obsInspeccionVisual'),
-      widgetPostural: (window.wpostGetData?JSON.stringify(window.wpostGetData()):null)
-    }:{}),
   };
   
   // Guardar paciente
@@ -6724,13 +6708,5 @@ window.wpostMount=function(){
   }
 };
 
-document.addEventListener("click",function(e){
-  var hdr=e.target.closest(".hc-sec-hdr");
-  if(!hdr) return;
-  var body=hdr.nextElementSibling;
-  if(!body) return;
-  var mount=body.querySelector("#wpost_mount");
-  if(mount&&!mount.hasChildNodes()) window.wpostMount();
-});
 </body>
 </html>
