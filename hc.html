@@ -1006,25 +1006,33 @@ function _buildExamenObjetivoPorCategoria(d, ev, catId){
       + '</div>';
 
   } else if(catId === 'postural'){
-    h += '<div class="sec-body">'
-      + _fld2('Cabeza (frontal)', d.cabezaAnt) + _fld2('Hombros (frontal)', d.hombrosAnt)
-      + _fld2('Columna', d.columnaPost) + _fld2('Pelvis (lateral)', d.pelvisLat)
-      + _fld2('Curva cervical', d.curvaCervical) + _fld2('Curva dorsal', d.curvaDorsal)
-      + _fld2('Curva lumbar', d.curvaLumbar) + _fld2('Test Adams', d.testAdams)
-      + _fld2('Gibosidad', d.gibosidad) + _fld2('Discrepancia MMII real', d.discrepanciaReal ? d.discrepanciaReal + ' cm' : '')
-      + _fld2('Flecha cervical', d.flechaCervical ? d.flechaCervical + ' cm' : '') + _fld2('Flecha lumbar', d.flechaLumbar ? d.flechaLumbar + ' cm' : '')
-      + _fld2('Apoyo plantar D', d.apoyoD) + _fld2('Apoyo plantar I', d.apoyoI)
-      + _fld2('Test dedos-suelo', d.testDedusSuelo !== '' && d.testDedusSuelo !== undefined ? d.testDedusSuelo + ' cm' : '')
-      + (d.cifDeterioro ? '<div style="grid-column:1/-1"><div class="field-lbl">Alteraciones posturales</div><div class="field-val">' + e2(d.cifDeterioro) + '</div></div>' : '')
-      + '</div>';
-
-  } else {
-    // Genérica
-    h += '<div class="sec-body full">'
-      + (d.examObjetivo ? '<div><div class="field-lbl">Hallazgos</div><div class="field-val">' + e2(d.examObjetivo) + '</div></div>' : '')
-      
-      + (d.obsInspeccionVisual ? '<div style="grid-column:1/-1">' + _fld2('Observaciones inspección visual', d.obsInspeccionVisual) + '</div>' : '')
-      + (d.widgetPostural ? (function(){var wp=d.widgetPostural;if(typeof wp==='string'){try{wp=JSON.parse(wp);}catch(e){wp=null;}}if(!wp)return '';var rows='';var VLBL={ant:'Anterior',post:'Posterior',latd:'Lateral D',lati:'Lateral I'};['ant','post','latd','lati'].forEach(function(v){if(!wp[v]||!wp[v].length)return;rows+='<div style="font-weight:700;font-size:10px;color:#1e3a5f;margin:4px 0 2px">'+VLBL[v]+'</div>';wp[v].forEach(function(d){rows+='<div style="font-size:10px">'+e2(d.alt)+'</div>';});});if(!rows)return '';return '<div style="grid-column:1/-1"><div class="field-lbl">Inspección postural (widget)</div>'+rows+'</div>';})() : '')+ '</div>';
+    h += '<div class="sec-body">';
+    var pf=[['discrepanciaReal','Discrepancia MMII real','cm'],['discrepanciaAparente','Discrepancia MMII aparente','cm'],
+      ['flechaCervical','Flecha cervical','cm'],['flechaLumbar','Flecha lumbar','cm'],
+      ['testAdams','Test Adams',''],['anguloRotTronco','Angulo rot. tronco',''],
+      ['gibosidad','Gibosidad',''],['plomada','Plomada',''],['desviacionPlomada','Desviacion plomada','cm'],
+      ['desgasteCalzado','Desgaste calzado',''],['apoyoD','Apoyo plantar D',''],['apoyoI','Apoyo plantar I',''],
+      ['plantillas','Plantillas',''],['obsMediciones','Obs. mediciones',''],['obsCalzado','Obs. calzado',''],
+      ['relacionSintomas','Relacion sintomas',''],['cifDeterioro','CIF Deterioro',''],['cifContextual','CIF Contextual','']];
+    pf.forEach(function(f){if(d[f[0]])h+=_fld2(f[1],d[f[0]]+(f[2]?' '+f[2]:''));});
+    if(d.obsInspeccionVisual)
+      h+='<div style="grid-column:1/-1">'+_fld2('Observaciones inspeccion visual',d.obsInspeccionVisual)+'</div>';
+    if(d.widgetPostural){
+      var wp=d.widgetPostural;
+      if(typeof wp==='string'){try{wp=JSON.parse(wp);}catch(e){wp=null;}}
+      if(wp){
+        var VLBL={ant:'Vista Anterior',post:'Vista Posterior',latd:'Lateral D',lati:'Lateral I'};
+        var wh='';
+        ['ant','post','latd','lati'].forEach(function(v){
+          if(!wp[v]||!wp[v].length)return;
+          wh+='<b style="font-size:10px;color:#1e3a5f">'+VLBL[v]+':</b> ';
+          wh+=wp[v].map(function(item){return e2(item.alt||item.altId);}).join(', ')+'<br>';
+        });
+        if(wh)h+='<div style="grid-column:1/-1"><div class="field-lbl">Inspeccion postural</div><div class="field-val">'+wh+'</div></div>';
+      }
+    }
+    h += '</div>';
+})() : '')+ '</div>';
   }
 
   return h + '</div>';
@@ -2473,7 +2481,8 @@ async function editarEvalRechazada(pacId, evalId, catId){
 
   // Fusionar los datosEspecificos de la eval en el objeto pac
   // para que plantillaHTML(catId, pac) precargue todos los campos
-  const datosEsp = ev.datosEspecificos || {};
+  var datosEsp = ev.datosEspecificos || {};
+  if(typeof datosEsp==='string'){try{datosEsp=JSON.parse(datosEsp);}catch(e){datosEsp={};}}
   const pacConDatos = Object.assign({}, pac, datosEsp, {
     // Campos del paciente tienen prioridad sobre datosEspecificos genéricos
     id:          pac.id,
