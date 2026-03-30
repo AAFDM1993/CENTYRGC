@@ -306,7 +306,10 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
 <!-- Modal revisión -->
 <div class="modal-ov" id="modalRev">
   <div class="modal-box">
-    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#fff;margin-bottom:14px" id="modalRevTit">Revisar</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#fff" id="modalRevTit">Revisar</div>
+    <button onclick="cerrarRev()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:8px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
     <div class="field" style="margin-bottom:16px">
       <label>Comentario <span style="color:var(--tx4);font-weight:400">(obligatorio si rechaza)</span></label>
       <textarea class="ta" id="modalRevCom" rows="3" placeholder="Observaciones para el alumno..."></textarea>
@@ -1316,15 +1319,51 @@ async function buscarPacExport(){
   box.innerHTML=html;
 }
 
-function exportarHCPaciente(pacId){
-  // Siempre mostrar el modal para confirmar firmante
-  // — el modal pre-rellena los datos del usuario logueado automáticamente
-  abrirModalFirmaExport(function(docFirmante){
-    _generarHCPdf(pacId, docFirmante);
+async function abrirSelectorExportPDF(pacId){
+  const rE = await apiGet('listarEvaluaciones', {pacienteId: pacId});
+  if(!rE.ok){ toast('Error', rE.error, 'err'); return; }
+  const evs = (rE.evaluaciones||[]).filter(function(ev){ return ev.estado==='aprobada'; });
+  if(!evs.length){ toast('Sin evaluaciones aprobadas','','warn'); return; }
+  if(evs.length===1){ exportarHCPaciente(pacId,[evs[0].id]); return; }
+  // Modal selector
+  var old=document.getElementById('modalSelectorExport'); if(old) old.remove();
+  var modal=document.createElement('div');
+  modal.id='modalSelectorExport';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(10,22,40,.75);z-index:950;'
+    +'display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)';
+  var items=evs.map(function(ev,idx){
+    var cat=getCat(ev.categoriaId||'')||{};
+    return '<label style="display:flex;align-items:center;gap:8px;padding:8px 12px;'
+      +'border-radius:8px;border:1px solid var(--bd);cursor:pointer;margin-bottom:6px">'
+      +'<input type="checkbox" class="expEvalCk" value="'+ev.id+'" checked style="width:16px;height:16px;cursor:pointer">'
+      +'<span style="font-size:13px"><b>'+(cat.nombre||ev.categoriaId)+' #'+(idx+1)+'</b>'
+      +' &middot; '+e2(ev.fecha)+'</span></label>';
+  }).join('');
+  modal.innerHTML='<div style="background:var(--surf);border:1px solid var(--bd);border-radius:18px;'
+    +'padding:24px;width:100%;max-width:420px;box-shadow:0 24px 60px rgba(0,0,0,.4)">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +'<div style="font-weight:700;font-size:15px;color:var(--tx)">Seleccionar evaluaciones</div>'
+    +'<button onclick="document.getElementById(\'modalSelectorExport\').remove()" '
+    +'style="background:rgba(128,128,128,.15);border:none;color:var(--tx3);width:28px;height:28px;'
+    +'border-radius:8px;font-size:16px;cursor:pointer">&#x2715;</button></div>'
+    +'<div style="font-size:12px;color:var(--tx4);margin-bottom:14px">Selecciona qu&eacute; evaluaciones incluir en el PDF</div>'
+    +items
+    +'<div style="display:flex;gap:8px;margin-top:16px">'
+    +'<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'modalSelectorExport\').remove()">Cancelar</button>'
+    +'<button id="btnConfirmExport" class="btn btn-primary">&#x1F4C4; Exportar seleccionadas</button>'
+    +'</div></div>';
+  document.body.appendChild(modal);
+  // Bind confirm button using closure — avoids string interpolation of pacId
+  document.getElementById('btnConfirmExport').addEventListener('click', function(){
+    var ids=Array.from(document.querySelectorAll('#modalSelectorExport .expEvalCk:checked'))
+      .map(function(x){return x.value;});
+    if(!ids.length){ toast('Selecciona al menos una evaluaci\u00f3n','','warn'); return; }
+    document.getElementById('modalSelectorExport').remove();
+    exportarHCPaciente(pacId, ids);
   });
 }
 
-async function _generarHCPdf(pacId, docFirmante){
+async function _generarHCPdf(pacId, docFirmante, evalIds){
   showSendOverlay('Generando PDF...', 'Cargando historia clínica');
   try{
     // 1. Cargar datos del paciente, evaluaciones y sesiones
@@ -1336,7 +1375,8 @@ async function _generarHCPdf(pacId, docFirmante){
     if(!rP.ok){ hideSendOverlay(); toast('Error al cargar paciente', rP.error||'', 'err'); return; }
 
     const pac   = rP.paciente;
-    const evalsBasic = (rE.evaluaciones||[]).filter(ev => ev.estado === 'aprobada');
+    const evalsBasic = (rE.evaluaciones||[]).filter(ev => ev.estado === 'aprobada'
+      && (!evalIds || !evalIds.length || evalIds.indexOf(ev.id) >= 0));
     const ses   = rS.sesiones||[];
 
     // Cargar datos COMPLETOS de cada evaluación (listarEvaluaciones no incluye datosEspecificos)
@@ -1924,7 +1964,7 @@ async function abrirPac(id){
       </div>
       <div class="btn-group">
         ${puedeEditar?`<button class="btn btn-ghost btn-sm" onclick="editarPac('${esc(pac.id)}')">✏️ Editar</button>`:''}
-        ${(session.rol==='admin'||session.rol==='docente')?`<button class="btn btn-ghost btn-sm" onclick="exportarHCPaciente('${esc(pac.id)}')">📄 Exportar PDF</button>`:''}
+        ${(session.rol==='admin'||session.rol==='docente')?`<button class="btn btn-ghost btn-sm" onclick="abrirSelectorExportPDF('${esc(pac.id)}')">📄 Exportar PDF</button>`:''}
         ${session.rol==='admin'?`<button class="btn btn-danger btn-sm" onclick="eliminarPac('${esc(pac.id)}','${esc(pac.nombre)}')">🗑️</button>`:''}
       </div>
     </div>
@@ -2043,6 +2083,7 @@ function evalCard(ev, pac, numEval){
     ${detalle}
     <div class="btn-group" style="margin-top:8px">
       ${(ev.estado==='borrador'||ev.estado==='rechazada')&&(pr||(session.rol==='estudiante'&&(pac.asignadoA===session.codigo||pac.creadoPor===session.codigo||ev.autor===session.codigo||ev.autorCodigo===session.codigo)))?`<button class="btn btn-ghost btn-sm" onclick="editarEvalRechazada('${esc(pac.id)}','${esc(ev.id)}','${esc(pac.categoriaId)}')">✏️ Editar</button>`:''}
+      ${ev.estado==='aprobada'&&(session.rol==='admin'||session.rol==='docente')?`<button class="btn btn-ghost btn-sm" style="border-color:var(--amber);color:var(--amber)" onclick="editarEvalAprobada('${esc(pac.id)}','${esc(ev.id)}','${esc(pac.categoriaId)}')">✏️ Editar (doc)</button>`:''}
       ${ev.estado==='pendiente'&&session.rol==='estudiante'?`<span style="font-size:11px;color:var(--amber);padding:4px 8px">⏳ En revisión — no editable</span>`:''}
       ${puedeSend?`<button class="btn btn-primary btn-sm" onclick="enviarEval('${esc(ev.id)}','${esc(pac.id)}')">📤 Enviar al docente</button>`:''}
       ${pr&&ev.estado==='pendiente'?`<button class="btn btn-ghost btn-sm" onclick="toggleEvalInline('${uid}',null)">👁️ Ver contenido</button>`:''}
@@ -2499,6 +2540,16 @@ function sesCard(s, pac, evalAp){
 }
 
 // ─── Editar evaluación rechazada/borrador con plantilla correcta por categoría ─
+async function editarEvalAprobada(pacId, evalId, catId){
+  // Solo admin y docente pueden usar esta función
+  if(session.rol!=='admin'&&session.rol!=='docente'){
+    toast('Sin permisos','Solo docentes y administradores pueden editar evaluaciones aprobadas','warn');
+    return;
+  }
+  // Mismo flujo que editarEvalRechazada
+  return editarEvalRechazada(pacId, evalId, catId);
+}
+
 async function editarEvalRechazada(pacId, evalId, catId){
   // Cargar tanto el paciente como la evaluación
   const [rP, rE] = await Promise.all([
@@ -6607,7 +6658,10 @@ function iniciarPollingPendientes(){
 <!-- Modal Firma Exportación -->
 <div id="modalFirmaExport" style="display:none;position:fixed;inset:0;background:rgba(10,22,40,.65);z-index:900;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
   <div style="background:var(--surf);border:1px solid var(--bd);border-radius:18px;padding:24px;width:100%;max-width:460px;box-shadow:0 24px 60px rgba(0,0,0,.3)">
-    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--tx);margin-bottom:4px">Datos del firmante</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+    <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--tx)">Datos del firmante</div>
+    <button onclick="cerrarModalFirmaExport()" style="background:rgba(128,128,128,.15);border:none;color:var(--tx3);width:28px;height:28px;border-radius:8px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
     <div style="font-size:12px;color:var(--tx4);margin-bottom:14px">Estos datos aparecerán en el sello del documento exportado.</div>
 
     <!-- Selector rápido del sistema -->
