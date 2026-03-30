@@ -855,6 +855,21 @@ function buildEvalHTML(ev, pac, firmaHTML){
 
   // ── Flexibilidad y acortamientos ──
   (function(){
+    var items={};
+    if(d.escalas&&d.escalas.flex_acort&&d.escalas.flex_acort.items){
+      items=d.escalas.flex_acort.items;
+    } else {
+      var flds=['testDedusSuelo','testSchober','thomasD','thomasI','elyD','elyI',
+        'popliD','popliI','oberD','oberI','dorsiflexD','dorsiflexI','obsFlexPost'];
+      flds.forEach(function(k){ if(d[k]) items[k]=d[k]; });
+    }
+    var LABELS={'testDedusSuelo':'Test dedos-suelo','testSchober':'Test Schober',
+      'thomasD':'Test Thomas D','thomasI':'Test Thomas I','elyD':'Test Ely D',
+      'elyI':'Test Ely I','popliD':'Angulo popliteo D','popliI':'Angulo popliteo I',
+      'oberD':'Test Ober D','oberI':'Test Ober I','dorsiflexD':'Dorsiflexion D',
+      'dorsiflexI':'Dorsiflexion I','obsFlexPost':'Observaciones'};
+    var UNITS={'testDedusSuelo':' cm','testSchober':' cm',
+      'popliD':' grados','popliI':' grados','dorsiflexD':' grados','dorsiflexI':' grados'};
     var flexFields=[
       ['testDedusSuelo','Test dedos-suelo','cm'],['testSchober','Test Schober','cm'],
       ['thomasD','Test Thomas D',''],['thomasI','Test Thomas I',''],
@@ -864,14 +879,15 @@ function buildEvalHTML(ev, pac, firmaHTML){
       ['dorsiflexD','Dorsiflexion tobillo D','&deg;'],['dorsiflexI','Dorsiflexion tobillo I','&deg;'],
       ['obsFlexPost','Observaciones','']
     ];
-    var hasData=flexFields.some(function(f){return !!d[f[0]];});
+    var hasData=Object.values(items).some(function(v){return !!v;});
     if(hasData){
-      rows += '<div class="sec"><div class="sec-hdr">Flexibilidad y acortamientos</div><div class="sec-body">';
+      rows+='<div class="sec"><div class="sec-hdr">Flexibilidad y acortamientos</div><div class="sec-body">';
       flexFields.forEach(function(f){
-        if(!d[f[0]]) return;
-        rows += _fld2(f[1], d[f[0]]+(f[2]?' '+f[2]:''));
+        var v=items[f[0]];
+        if(!v) return;
+        rows+=_fld2(f[1], e2(String(v))+(f[2]?' '+f[2]:''));
       });
-      rows += '</div></div>';
+      rows+='</div></div>';
     }
   })();
   // ── IV. Plan de Tratamiento ──
@@ -1212,7 +1228,7 @@ function buildSesHTML(s,pac,firmaHTML){
   rows+='<div class="sec"><div class="sec-hdr">Sesi&oacute;n #'+s.numero+' &mdash; '+e2(formatFechaCorta(s.fecha||''))+'</div><div class="sec-body">'
     +'<div><div class="field-lbl">Estudiante</div><div class="field-val">'+e2(s.estudiante||s.terapeuta||'—')+'</div></div>'
     +'<div><div class="field-lbl">Docente supervisor</div><div class="field-val">'+e2(s.docente||'—')+'</div></div>'
-    +'<div><div class="field-lbl">EVA</div><div class="field-val">'+e2(String(s.evaValor??'—'))+'/10</div></div>'
+    +(s.evaValor!==null&&s.evaValor!==undefined&&s.evaValor!==''?'<div><div class="field-lbl">EVA</div><div class="field-val">'+e2(String(s.evaValor))+'/10</div></div>':'')
     +(s.respuesta?'<div><div class="field-lbl">Respuesta del paciente</div><div class="field-val">'+e2(s.respuesta)+'</div></div>':'')
     +'<div style="grid-column:1/-1"><div class="field-lbl">Descripci&oacute;n</div><div class="field-val">'+e2(s.descripcion||'—')+'</div></div>'
     +'</div></div>';
@@ -1599,7 +1615,7 @@ function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
         + '<div style="flex:1;min-width:0;padding:10px 14px">'
         + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 16px">'
         + '<div><div class="field-lbl">Estudiante</div><div class="field-val">' + e2(s.estudiante||s.terapeuta||'—') + '</div></div>'
-        + '<div><div class="field-lbl">EVA</div><div class="field-val">' + e2(String(s.evaValor??'—')) + '/10</div></div>'
+        + (s.evaValor!==null&&s.evaValor!==undefined&&s.evaValor!==''?'<div><div class="field-lbl">EVA</div><div class="field-val">'+e2(String(s.evaValor))+'/10</div></div>':'')
         + (s.respuesta ? '<div><div class="field-lbl">Respuesta paciente</div><div class="field-val">' + e2(s.respuesta) + '</div></div>' : '<div></div>')
         + '</div>'
         + (s.descripcion ? '<div style="margin-top:8px"><div class="field-lbl">Descripci\u00f3n / Actividades</div><div class="field-val" style="margin-top:2px;line-height:1.5">' + e2(s.descripcion) + '</div></div>' : '')
@@ -2960,12 +2976,10 @@ async function abrirFrmSes(pacId, evalId, num, sesId=null){
           <input type="hidden" id="sDoc" value="${e2(docenteActual)}">
           <input type="hidden" id="sDocCodigo" value="">
         </div>
-        <div class="field"><label>EVA inicial (0-10)</label>
-          <div class="eva-wrap" style="margin-top:6px">
-            <div class="eva-track" style="position:relative">
-              <input type="range" class="eva-sl" id="sesEva" min="0" max="10" step="1" value="${ses?.evaValor??0}" oninput="g('sesEvaD').textContent=this.value">
-            </div>
-            <div class="eva-val" id="sesEvaD">${ses?.evaValor??0}</div>
+        <div class="field"><label>EVA / Dolor (opcional)</label>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+            <input type="number" class="inp" id="sesEva" min="0" max="10" step="1" style="width:80px" value="${ses?.evaValor!==null&&ses?.evaValor!==undefined&&ses?.evaValor!==''?ses.evaValor:''}" placeholder="—">
+            <span style="font-size:11px;color:var(--tx3)">0 = sin dolor · 10 = máximo</span>
           </div></div>
         <div class="field form-full"><label>Descripci&oacute;n de la sesi&oacute;n *</label>
           <textarea class="ta" id="sDes" rows="5" placeholder="Procedimientos realizados, par&aacute;metros, &aacute;reas tratadas...">${e2(ses?.descripcion||'')}</textarea></div>
@@ -3007,7 +3021,7 @@ async function guardarSes(pacId, evalId, num, sesId, modo){
       fecha:g('sF')?.value||'',
       estudiante:g('sEst')?.value||session.nombre||session.codigo,
       docente:doc, docenteCodigo:docCodigo,
-      evaValor:Number(g('sesEva')?.value||0),
+      evaValor:g('sesEva')?.value!==''&&g('sesEva')?.value!==null?Number(g('sesEva').value):null,
       descripcion:des,respuesta:g('sRes')?.value||'',estado};
     if(sesId) b.id=sesId;
     const r=await apiPost(b);
