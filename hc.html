@@ -1884,7 +1884,7 @@ async function abrirPac(id){
     <div class="card" style="margin-bottom:14px">
       <div class="card-hdr">
         <div class="card-title">Evaluaciones</div>
-        ${puedeEditar?`<button class="btn btn-primary btn-sm" onclick="abrirFrmPac(Object.assign({},pacActivo,{_evalId:'',datosEspecificos:{}}),'${esc(pac.categoriaId)}','${esc(cat.nombre)}')">+ Nueva evaluación</button>`:''}
+        ${puedeEditar?`<button class="btn btn-primary btn-sm" onclick="abrirModalCategoriaParaEval(pacActivo)">+ Nueva evaluación</button>`:''}
       </div>
       ${evals.length?evals.map(ev=>evalCard(ev,pac)).join(''):'<div class="empty">Sin evaluaciones.</div>'}
     </div>
@@ -5409,8 +5409,7 @@ function secCapacidadFuncionalCardio(d){
 // ══════════════════════════════════════════════════════════════
 
 function secPostural(d){
-  return secAnamnesisPostural(d)
-       + secInspeccionVisualUnificada(d)
+  return secInspeccionVisualUnificada(d)
        + secMedicionesPosturales(d)
        + secCalzadoApoyoPlantar(d)
        + secFlexibilidadAcortamientos(d);
@@ -6430,7 +6429,17 @@ function cerrarModalCategoria(){
 }
 function seleccionarCategoria(catId, catNombre){
   cerrarModalCategoria();
-  abrirFrmPac(null, catId, catNombre);
+  if(window._pacParaEval){
+    var p=Object.assign({},window._pacParaEval,{_evalId:'',datosEspecificos:{},categoriaId:catId});
+    window._pacParaEval=null;
+    abrirFrmPac(p, catId, catNombre);
+  } else {
+    abrirFrmPac(null, catId, catNombre);
+  }
+}
+function abrirModalCategoriaParaEval(pac){
+  window._pacParaEval = pac;
+  abrirModalCategoria();
 }
 
 
@@ -6627,18 +6636,8 @@ window.wpostMount=function(){
   var mount=document.getElementById('wpost_mount');
   if(!mount||mount.hasChildNodes()) return;
   var html='';
-  html+='<div style="display:flex;height:500px;background:var(--surf3);border-radius:10px;overflow:hidden;border:1px solid var(--bd);margin-bottom:10px">';
-  html+='<div style="width:148px;min-width:130px;background:var(--surf);border-right:1px solid var(--bd);display:flex;flex-direction:column;flex-shrink:0">';
-  html+='<div style="padding:6px 10px 4px;font-size:9px;font-weight:700;text-transform:uppercase;color:var(--tx3)">Alteraciones</div>';
-  html+='<div id="wpost_ig" style="padding:5px 7px;display:grid;grid-template-columns:1fr 1fr;gap:5px;overflow-y:auto;flex:1;align-content:start"></div>';
-  html+='<div style="padding:5px 8px;font-size:9px;color:var(--tx4);line-height:1.5;border-top:1px solid var(--bd)">Arrastra o clic + clic imagen</div>';
-  html+='</div>';
-  html+='<div style="flex:1;min-width:0;display:flex;flex-direction:column;padding:6px;gap:5px;overflow:hidden">';
-  html+='<div id="wpost_pts" style="display:flex;gap:4px;flex-shrink:0">';
-  html+='<button class="btn btn-ghost btn-sm wpost-ptab wpost-ptab-on" data-p="0">Anterior + Posterior</button>';
-  html+='<button class="btn btn-ghost btn-sm wpost-ptab" data-p="1">Lateral D + Lateral I</button>';
-  html+='</div>';
-  html+='<div id="wpost_p0" style="display:flex;justify-content:center;gap:6px;flex:1;min-height:0;overflow:hidden">';
+  html+='<div style="display:flex;flex-direction:column;gap:8px;background:var(--surf3);border-radius:10px;padding:8px;border:1px solid var(--bd);margin-bottom:10px">';
+  html+='<div style="display:flex;gap:6px;height:320px">';
   ['ant','post'].forEach(function(k){
     var lbl=k==='ant'?'Vista Anterior':'Vista Posterior';
     html+='<div style="flex:1;background:var(--surf);border-radius:10px;border:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden;min-width:0">';
@@ -6649,7 +6648,12 @@ window.wpostMount=function(){
     html+='</div></div>';
   });
   html+='</div>';
-  html+='<div id="wpost_p1" style="display:none;justify-content:center;gap:6px;flex:1;min-height:0;overflow:hidden">';
+  html+='<div style="background:var(--surf);border-radius:10px;border:1px solid var(--bd);padding:8px">';
+  html+='<div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tx3);margin-bottom:6px">Alteraciones</div>';
+  html+='<div id="wpost_ig" style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px"></div>';
+  html+='<div style="margin-top:6px;font-size:9px;color:var(--tx4)">Arrastra icono a imagen o clic icono + clic imagen</div>';
+  html+='</div>';
+  html+='<div style="display:flex;gap:6px;height:320px">';
   ['latd','lati'].forEach(function(k){
     var lbl=k==='latd'?'Lateral Derecha':'Lateral Izquierda';
     html+='<div style="flex:1;background:var(--surf);border-radius:10px;border:1px solid var(--bd);display:flex;flex-direction:column;overflow:hidden;min-width:0">';
@@ -6660,7 +6664,7 @@ window.wpostMount=function(){
     html+='</div></div>';
   });
   html+='</div>';
-  html+='</div></div>';
+  html+='</div>';
   html+='<div id="wpost_ghost" style="position:fixed;pointer-events:none;z-index:99999;display:none;align-items:center;gap:6px;padding:5px 11px;border-radius:10px;font-size:14px;font-weight:700;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.3);transform:translate(-50%,-50%)"></div>';
   html+='<div style="margin-top:12px"><label style="font-size:11px;font-weight:600;color:var(--tx2);display:block;margin-bottom:4px">Observaciones de inspeccion visual</label><textarea id="obsInspeccionVisual" class="ta" rows="3" placeholder="Describe los hallazgos generales..." style="width:100%"></textarea></div>';
   mount.innerHTML=html;
@@ -6672,14 +6676,7 @@ window.wpostMount=function(){
     if(img) img.src=IMGS[k];
     if(vb) VBS[k]=vb;
   });
-  document.getElementById('wpost_pts').addEventListener('click',function(e){
-    var t=e.target.closest('.wpost-ptab'); if(!t) return;
-    document.querySelectorAll('.wpost-ptab').forEach(function(x){x.classList.remove('wpost-ptab-on');});
-    t.classList.add('wpost-ptab-on');
-    var p=t.dataset.p;
-    document.getElementById('wpost_p0').style.display=p==='0'?'flex':'none';
-    document.getElementById('wpost_p1').style.display=p==='1'?'flex':'none';
-  });
+  
   document.addEventListener('mousemove',function(e){
     if(!dragging) return;
     posG(e.clientX,e.clientY);
