@@ -1020,7 +1020,7 @@ function _buildExamenObjetivoPorCategoria(d, ev, catId){
           h+='<div style="text-align:center">';
           h+='<div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:3px">'+lbl+'</div>';
           h+='<div style="position:relative;display:inline-block;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden">';
-          if(_imgs[v])h+='<img src="'+_imgs[v]+'" style="display:block;width:auto;height:auto">';
+          if(_imgs[v])h+='<img src="'+_imgs[v]+'" style="display:block;width:auto;height:auto;max-height:320px">';
           if(_wdata&&_wdata[v])_wdata[v].forEach(function(chip){
             var alt=_alts.find(function(a){return a.id===chip.altId;});
             if(!alt)return;
