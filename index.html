@@ -3209,7 +3209,7 @@ const dias = todosLosDias;
           const fechaStr=fmt(d);
           const pasado=new Date(fechaStr+'T'+hora+':00')<new Date();
           const norm=s=>String(s).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-          const matchEsp=(r,en)=>{const rc=norm(r.camilla),ne=norm(en);return rc===ne||rc.startsWith(ne)||ne.startsWith(rc);};
+          const matchEsp=(r,en)=>{const rc=norm(r.camilla),ne=norm(en);return rc===ne;};
           const rsvEsp=agendaReservas.filter(r=>norm(r.fecha)===norm(fechaStr)&&norm(r.horaInicio)===norm(hora)&&norm(r.area)===norm(area.nombre)&&matchEsp(r,esp.nombre));
           const lleno=rsvEsp.length>=cap;
           const bloq=typeof esBloqueado==='function'&&esBloqueado(fechaStr,hora,area.nombre,esp.nombre);
