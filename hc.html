@@ -1017,11 +1017,11 @@ function _buildExamenObjetivoPorCategoria(d, ev, catId){
       + _fld2('FC reposo', d.fcReposo ? d.fcReposo + ' lpm' : '') + _fld2('FR reposo', d.frReposo ? d.frReposo + ' rpm' : '')
       + _fld2('TA', (d.taSistolica && d.taDiastolica) ? d.taSistolica + '/' + d.taDiastolica + ' mmHg' : '')
       + _fld2('SpO₂ reposo', d.spo2Reposo ? d.spo2Reposo + '%' : '')
-      + _fld2('IMC', d.imc ? d.imc + ' kg/m²' : '') + _fld2('O₂ suplementario', d.o2Suplem)
+      + _fld2('IMC', d.imc ? d.imc + ' kg/m²' : '')
       + _fld2('Patrón respiratorio', d.patronResp) + _fld2('Tiraje', d.tiraje)
       + _fld2('Tos', d.tos) + _fld2('Disnea en reposo', d.disneaReposo)
       + _fld2('NYHA', d.nyha) + _fld2('Edema MMII', d.edemaMmii)
-      + _fld2('FVC', d.fvc ? d.fvc + ' L' : '') + _fld2('FEV1/FVC', d.fev1fvc ? d.fev1fvc + '%' : '')
+      + _fld2('PEF', d.pef ? d.pef + ' L/min' : '') + _fld2('FVC', d.fvc ? d.fvc + ' L' : '') + _fld2('FEV1', d.fev1 ? d.fev1 + ' L' : '') + _fld2('FEV1/FVC', d.fev1fvc ? d.fev1fvc + '%' : '')
       + (d.auscultacion ? '<div style="grid-column:1/-1"><div class="field-lbl">Auscultaci&oacute;n</div><div class="field-val">' + e2(d.auscultacion) + '</div></div>' : '')
       + '</div>';
 
@@ -5335,10 +5335,8 @@ function calcularWeeFIM(id){
 // ══════════════════════════════════════════════════════════════
 
 function secCardiorespiratorio(d){
-  return secAnamnesisCardio(d)
-       + secSignosVitales(d)
-       + secEvalRespiratoria(d)
-       + secEvalCardiaca(d)
+  return secSignosVitales(d)
+       + secEvalCardioRespiratoria(d)
        + secFuerzaResistenciaCardio(d)
        + secCapacidadFuncionalCardio(d)
 }
@@ -5378,146 +5376,138 @@ function secSignosVitales(d){
     <div class="form-grid">
       <div class="field"><label>FC en reposo (lpm)</label>
         <input class="inp" id="fcReposo" type="number" min="0" max="250"
-          value="${d.fcReposo||''}" placeholder="lpm"></div>
+          value="${d.fcReposo||\'\'}" placeholder="lpm"></div>
       <div class="field"><label>FR en reposo (rpm)</label>
         <input class="inp" id="frReposo" type="number" min="0" max="60"
-          value="${d.frReposo||''}" placeholder="rpm"></div>
+          value="${d.frReposo||\'\'}" placeholder="rpm"></div>
       <div class="field"><label>TA sistólica (mmHg)</label>
         <input class="inp" id="taSistolica" type="number" min="0" max="300"
-          value="${d.taSistolica||''}" placeholder="mmHg"></div>
+          value="${d.taSistolica||\'\'}" placeholder="mmHg"></div>
       <div class="field"><label>TA diastólica (mmHg)</label>
         <input class="inp" id="taDiastolica" type="number" min="0" max="200"
-          value="${d.taDiastolica||''}" placeholder="mmHg"></div>
+          value="${d.taDiastolica||\'\'}" placeholder="mmHg"></div>
       <div class="field"><label>SpO₂ en reposo (%)</label>
         <input class="inp" id="spo2Reposo" type="number" min="0" max="100"
-          value="${d.spo2Reposo||''}" placeholder="%"></div>
-      <div class="field"><label>Temperatura (&deg;C)</label>
-        <input class="inp" id="temperatura" type="number" min="30" max="45" step="0.1"
-          value="${d.temperatura||''}" placeholder="&deg;C"></div>
+          value="${d.spo2Reposo||\'\'}" placeholder="%"></div>
       <div class="field"><label>Peso (kg)</label>
         <input class="inp" id="peso" type="number" min="0" max="300" step="0.1"
-          value="${d.peso||''}" placeholder="kg"></div>
+          value="${d.peso||\'\'}" placeholder="kg"
+          oninput="(function(){var p=document.getElementById('peso'),t=document.getElementById('talla'),i=document.getElementById('imc');if(p&&t&&i&&p.value&&t.value){var h=Number(t.value)/100;i.value=h>0?(Number(p.value)/(h*h)).toFixed(1):'';}})()"
+        ></div>
       <div class="field"><label>Talla (cm)</label>
         <input class="inp" id="talla" type="number" min="0" max="250"
-          value="${d.talla||''}" placeholder="cm"></div>
-      <div class="field"><label>IMC (kg/m²)</label>
-        <input class="inp" id="imc" value="${d.imc||''}" placeholder="Calculado" readonly
-          style="background:var(--surf2);cursor:default"></div>
-      <div class="field"><label>O₂ suplementario</label>
-        <select class="sel" id="o2Suplem">
-          <option value=""></option>
-          ${['No requiere','Cánula nasal','Mascarilla simple','Mascarilla con reservorio','VNI','VMI'].map(v=>`<option ${d.o2Suplem===v?'selected':''}>${v}</option>`).join('')}
-        </select></div>
-      <div class="field"><label>Flujo O₂ (L/min)</label>
-        <input class="inp" id="flujoO2" type="number" min="0" max="60" step="0.5"
-          value="${d.flujoO2||''}" placeholder="L/min"></div>
-    </div>
-    <script>
-      (function(){
-        var p=document.getElementById('peso'), t=document.getElementById('talla'), i=document.getElementById('imc');
-        function calcIMC(){if(p&&t&&i&&p.value&&t.value){var h=Number(t.value)/100;i.value=h>0?(Number(p.value)/(h*h)).toFixed(1):'';}};
-        if(p)p.addEventListener('input',calcIMC);
-        if(t)t.addEventListener('input',calcIMC);
-      })();
-    <\/script>`);
+          value="${d.talla||\'\'}" placeholder="cm"
+          oninput="(function(){var p=document.getElementById('peso'),t=document.getElementById('talla'),i=document.getElementById('imc');if(p&&t&&i&&p.value&&t.value){var h=Number(t.value)/100;i.value=h>0?(Number(p.value)/(h*h)).toFixed(1):'';}})()"
+        ></div>
+      <div class="field"><label>IMC (kg/m²) — calculado automáticamente</label>
+        <input class="inp" id="imc" value="${d.imc||\'\'}" placeholder="Se calcula al ingresar Peso y Talla" readonly
+          style="background:var(--surf3);cursor:default;font-weight:700;color:var(--n900)"></div>
+    </div>`);
 }
 
-function secEvalRespiratoria(d){
-  return secWrap('resp_cardio','IV. Evaluación respiratoria','',`
+
+function secEvalCardioRespiratoria(d){
+  return secWrap('cardio_resp','IV. Evaluación cardiorrespiratoria','',`
+    <div style="font-size:12px;font-weight:700;color:var(--n900);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--bd2)">🫁 Evaluación Respiratoria</div>
     <div class="form-grid">
       <div class="field"><label>Patrón respiratorio</label>
         <select class="sel" id="patronResp">
           <option value=""></option>
-          ${['Normal','Paradójico','Abdominal predominante','Apical predominante','Mixto'].map(v=>`<option ${d.patronResp===v?'selected':''}>${v}</option>`).join('')}
+          ${['Normal','Paradójico','Abdominal predominante','Apical predominante','Mixto'].map(v=>`<option ${d.patronResp===v?'selected':''}>\${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Uso musculatura accesoria</label>
         <select class="sel" id="muscAccesoria">
           <option value=""></option>
-          ${['No','Leve','Moderado','Importante'].map(v=>`<option ${d.muscAccesoria===v?'selected':''}>${v}</option>`).join('')}
+          ${['No','Leve','Moderado','Importante'].map(v=>`<option ${d.muscAccesoria===v?'selected':''}>\${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Tiraje</label>
         <select class="sel" id="tiraje">
           <option value=""></option>
-          ${['Ninguno','Supraclavicular','Intercostal','Subcostal','Mixto'].map(v=>`<option ${d.tiraje===v?'selected':''}>${v}</option>`).join('')}
+          ${['Ninguno','Supraclavicular','Intercostal','Subcostal','Mixto'].map(v=>`<option ${d.tiraje===v?'selected':''}>\${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Tipo de tórax</label>
         <select class="sel" id="tipoTorax">
           <option value=""></option>
-          ${['Normal','En barril','Pectus excavatum','Pectus carinatum','Cifoescoliosis','Asimétrico'].map(v=>`<option ${d.tipoTorax===v?'selected':''}>${v}</option>`).join('')}
+          ${['Normal','En barril','Pectus excavatum','Pectus carinatum','Cifoescoliosis','Asimétrico'].map(v=>`<option ${d.tipoTorax===v?'selected':''}>\${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Expansión torácica</label>
         <select class="sel" id="expansionToracica">
           <option value=""></option>
-          ${['Simétrica y conservada','Asimétrica D > I','Asimétrica I > D','Disminuida bilateral','Muy reducida'].map(v=>`<option ${d.expansionToracica===v?'selected':''}>${v}</option>`).join('')}
+          ${['Simétrica y conservada','Asimétrica D > I','Asimétrica I > D','Disminuida bilateral','Muy reducida'].map(v=>`<option ${d.expansionToracica===v?'selected':''}>\${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Tos</label>
         <select class="sel" id="tos">
           <option value=""></option>
-          ${['Ausente','Seca','Productiva eficaz','Productiva ineficaz','Crónica'].map(v=>`<option ${d.tos===v?'selected':''}>${v}</option>`).join('')}
+          ${['Ausente','Seca','Productiva eficaz','Productiva ineficaz','Crónica'].map(v=>`<option ${d.tos===v?'selected':''}>\${v}</option>`).join('')}
         </select></div>
       <div class="field form-full"><label>Auscultación pulmonar</label>
         <textarea class="ta" id="auscultacion" rows="3"
-          placeholder="Descripción por zonas (apex, medio, base D/I): murmullo vesicular, crepitantes, sibilancias, roncus, frotes...">${e2(d.auscultacion||'')}</textarea></div>
-      <div class="field form-full"><label>Expectoración</label>
-        <textarea class="ta" id="expectoracion" rows="2"
-          placeholder="Color, consistencia y cantidad diaria estimada...">${e2(d.expectoracion||'')}</textarea></div>
-      <div class="field"><label>PEF (L/min)</label>
-        <input class="inp" id="pef" type="number" min="0" max="900"
-          value="${d.pef||''}" placeholder="L/min (si disponible)"></div>
-      <div class="field"><label>FVC (L)</label>
-        <input class="inp" id="fvc" type="number" min="0" max="10" step="0.01"
-          value="${d.fvc||''}" placeholder="L (espirometría)"></div>
-      <div class="field"><label>FEV1 (L)</label>
-        <input class="inp" id="fev1" type="number" min="0" max="10" step="0.01"
-          value="${d.fev1||''}" placeholder="L (espirometría)"></div>
-      <div class="field"><label>FEV1/FVC (%)</label>
-        <input class="inp" id="fev1fvc" type="number" min="0" max="100" step="0.1"
-          value="${d.fev1fvc||''}" placeholder="% (espirometría)"></div>
-    </div>`);
-}
-
-function secEvalCardiaca(d){
-  return secWrap('card_func','V. Evaluación cardíaca funcional','',`
+          placeholder="Descripción por zonas (apex, medio, base D/I): murmullo vesicular, crepitantes, sibilancias, roncus, frotes...">${e2(d.auscultacion||'')}\</textarea></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--n900);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--bd2)">❤️ Evaluación Cardíaca Funcional</div>
     <div class="form-grid">
       <div class="field"><label>Disnea en reposo</label>
         <select class="sel" id="disneaReposo">
           <option value=""></option>
-          ${['No','Sí — leve','Sí — moderada','Sí — grave'].map(v=>`<option ${d.disneaReposo===v?'selected':''}>${v}</option>`).join('')}
+          ${['No','Sí — leve','Sí — moderada','Sí — grave'].map(v=>`<option ${d.disneaReposo===v?'selected':''}>\${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Ortopnea</label>
         <select class="sel" id="ortopnea">
           <option value=""></option>
-          ${['No','1 almohada','2 almohadas','3 o más almohadas','Decúbito imposible'].map(v=>`<option ${d.ortopnea===v?'selected':''}>${v}</option>`).join('')}
+          ${['No','1 almohada','2 almohadas','3 o más almohadas','Decúbito imposible'].map(v=>`<option ${d.ortopnea===v?'selected':''}>\${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Edema MMII</label>
         <select class="sel" id="edemaMmii">
           <option value=""></option>
-          ${['Ausente','Grado 1 — leve maleolar','Grado 2 — hasta la rodilla','Grado 3 — hasta el muslo','Grado 4 — anasarca'].map(v=>`<option ${d.edemaMmii===v?'selected':''}>${v}</option>`).join('')}
+          ${['Ausente','Grado 1 — leve maleolar','Grado 2 — hasta la rodilla','Grado 3 — hasta el muslo','Grado 4 — anasarca'].map(v=>`<option ${d.edemaMmii===v?'selected':''}>\${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Dolor torácico al esfuerzo</label>
         <select class="sel" id="dolorToracico">
           <option value=""></option>
-          ${['No','Sí — ocasional','Sí — frecuente'].map(v=>`<option ${d.dolorToracico===v?'selected':''}>${v}</option>`).join('')}
+          ${['No','Sí — ocasional','Sí — frecuente'].map(v=>`<option ${d.dolorToracico===v?'selected':''}>\${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Palpitaciones</label>
         <select class="sel" id="palpitaciones">
           <option value=""></option>
-          ${['No','En reposo','Con esfuerzo','Frecuentes'].map(v=>`<option ${d.palpitaciones===v?'selected':''}>${v}</option>`).join('')}
+          ${['No','En reposo','Con esfuerzo','Frecuentes'].map(v=>`<option ${d.palpitaciones===v?'selected':''}>\${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Tos nocturna</label>
         <select class="sel" id="tosNocturna">
           <option value=""></option>
-          ${['No','Ocasional','Frecuente'].map(v=>`<option ${d.tosNocturna===v?'selected':''}>${v}</option>`).join('')}
+          ${['No','Ocasional','Frecuente'].map(v=>`<option ${d.tosNocturna===v?'selected':''}>\${v}</option>`).join('')}
         </select></div>
       <div class="field form-full"><label>Actividades que desencadenan síntomas</label>
         <textarea class="ta" id="activDesencan" rows="2"
-          placeholder="Subir escaleras, caminar distancias largas, actividad doméstica...">${e2(d.activDesencan||'')}</textarea></div>
+          placeholder="Subir escaleras, caminar distancias largas, actividad doméstica...">${e2(d.activDesencan||'')}\</textarea></div>
       <div class="field form-full"><label>Aspectos psicosociales</label>
         <textarea class="ta" id="psicosocial" rows="2"
-          placeholder="Ansiedad, depresión, tabaquismo activo, red de apoyo, adherencia estimada...">${e2(d.psicosocial||'')}</textarea></div>
+          placeholder="Ansiedad, depresión, tabaquismo activo, red de apoyo, adherencia estimada...">${e2(d.psicosocial||'')}\</textarea></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--n900);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--bd2)">📊 Espirometría</div>
+    <div style="background:var(--surf2);border:1px solid var(--bd2);border-radius:12px;padding:16px">
+      <div class="form-grid">
+        <div class="field"><label>PEF — Flujo espiratorio pico (L/min)</label>
+          <input class="inp" id="pef" type="number" min="0" max="900"
+            value="${d.pef||''}" placeholder="L/min"></div>
+        <div class="field"><label>FVC — Capacidad vital forzada (L)</label>
+          <input class="inp" id="fvc" type="number" min="0" max="10" step="0.01"
+            value="${d.fvc||''}" placeholder="L"></div>
+        <div class="field"><label>FEV1 — Volumen espiratorio forzado 1s (L)</label>
+          <input class="inp" id="fev1" type="number" min="0" max="10" step="0.01"
+            value="${d.fev1||''}" placeholder="L"></div>
+        <div class="field"><label>FEV1/FVC — Índice de Tiffeneau (%)</label>
+          <input class="inp" id="fev1fvc" type="number" min="0" max="100" step="0.1"
+            value="${d.fev1fvc||''}" placeholder="%" ></div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:11px;color:var(--tx3)">Interpretación orientativa:</span>
+        <span style="font-size:11px;background:var(--green2);color:var(--green);border-radius:6px;padding:2px 8px">FEV1/FVC ≥70% Normal</span>
+        <span style="font-size:11px;background:var(--amber2);color:var(--amber);border-radius:6px;padding:2px 8px">FEV1/FVC &lt;70% Obstructivo</span>
+        <span style="font-size:11px;background:var(--red2);color:var(--red);border-radius:6px;padding:2px 8px">FVC &lt;80% pred. Restrictivo</span>
+      </div>
     </div>
     <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
-      Cuantifica con <b>MRC disnea</b> y <b>NYHA</b> en la sección de Escalas.
+      Cuantifica disnea con <b>escala MRC</b> y clase funcional con <b>NYHA</b> en la sección de Escalas.
     </div>`);
 }
 
@@ -6519,12 +6509,12 @@ async function guardarHC(catId, pacId, modo){
     antecedentes:v('aAntecedentes'),medicacionActual:v('medicacionActual'),
     // Signos vitales
     fcReposo:v('fcReposo'),frReposo:v('frReposo'),taSistolica:v('taSistolica'),taDiastolica:v('taDiastolica'),
-    spo2Reposo:v('spo2Reposo'),temperatura:v('temperatura'),peso:v('peso'),talla:v('talla'),
-    imc:v('imc'),o2Suplem:v('o2Suplem'),flujoO2:v('flujoO2'),
+    spo2Reposo:v('spo2Reposo'),peso:v('peso'),talla:v('talla'),
+    imc:v('imc'),
     // Evaluación respiratoria
     patronResp:v('patronResp'),muscAccesoria:v('muscAccesoria'),tiraje:v('tiraje'),tos:v('tos'),
-    expectoracion:v('expectoracion'),tipoTorax:v('tipoTorax'),expansionToracica:v('expansionToracica'),
-    auscultacion:v('auscultacion'),pef:v('pef'),fvc:v('fvc'),fev1fvc:v('fev1fvc'),
+    tipoTorax:v('tipoTorax'),expansionToracica:v('expansionToracica'),
+    auscultacion:v('auscultacion'),pef:v('pef'),fvc:v('fvc'),fev1:v('fev1'),fev1fvc:v('fev1fvc'),
     // Evaluación cardíaca
     disneaReposo:v('disneaReposo'),ortopnea:v('ortopnea'),dolorToracico:v('dolorToracico'),
     palpitaciones:v('palpitaciones'),tosNocturna:v('tosNocturna'),nyha:v('nyha'),edemaMmii:v('edemaMmii'),
