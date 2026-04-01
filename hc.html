@@ -5376,31 +5376,31 @@ function secSignosVitales(d){
     <div class="form-grid">
       <div class="field"><label>FC en reposo (lpm)</label>
         <input class="inp" id="fcReposo" type="number" min="0" max="250"
-          value="${d.fcReposo||\'\'}" placeholder="lpm"></div>
+          value="${d.fcReposo||''}" placeholder="lpm"></div>
       <div class="field"><label>FR en reposo (rpm)</label>
         <input class="inp" id="frReposo" type="number" min="0" max="60"
-          value="${d.frReposo||\'\'}" placeholder="rpm"></div>
+          value="${d.frReposo||''}" placeholder="rpm"></div>
       <div class="field"><label>TA sistólica (mmHg)</label>
         <input class="inp" id="taSistolica" type="number" min="0" max="300"
-          value="${d.taSistolica||\'\'}" placeholder="mmHg"></div>
+          value="${d.taSistolica||''}" placeholder="mmHg"></div>
       <div class="field"><label>TA diastólica (mmHg)</label>
         <input class="inp" id="taDiastolica" type="number" min="0" max="200"
-          value="${d.taDiastolica||\'\'}" placeholder="mmHg"></div>
+          value="${d.taDiastolica||''}" placeholder="mmHg"></div>
       <div class="field"><label>SpO₂ en reposo (%)</label>
         <input class="inp" id="spo2Reposo" type="number" min="0" max="100"
-          value="${d.spo2Reposo||\'\'}" placeholder="%"></div>
+          value="${d.spo2Reposo||''}" placeholder="%"></div>
       <div class="field"><label>Peso (kg)</label>
         <input class="inp" id="peso" type="number" min="0" max="300" step="0.1"
-          value="${d.peso||\'\'}" placeholder="kg"
+          value="${d.peso||''}" placeholder="kg"
           oninput="(function(){var p=document.getElementById('peso'),t=document.getElementById('talla'),i=document.getElementById('imc');if(p&&t&&i&&p.value&&t.value){var h=Number(t.value)/100;i.value=h>0?(Number(p.value)/(h*h)).toFixed(1):'';}})()"
         ></div>
       <div class="field"><label>Talla (cm)</label>
         <input class="inp" id="talla" type="number" min="0" max="250"
-          value="${d.talla||\'\'}" placeholder="cm"
+          value="${d.talla||''}" placeholder="cm"
           oninput="(function(){var p=document.getElementById('peso'),t=document.getElementById('talla'),i=document.getElementById('imc');if(p&&t&&i&&p.value&&t.value){var h=Number(t.value)/100;i.value=h>0?(Number(p.value)/(h*h)).toFixed(1):'';}})()"
         ></div>
       <div class="field"><label>IMC (kg/m²) — calculado automáticamente</label>
-        <input class="inp" id="imc" value="${d.imc||\'\'}" placeholder="Se calcula al ingresar Peso y Talla" readonly
+        <input class="inp" id="imc" value="${d.imc||''}" placeholder="Se calcula al ingresar Peso y Talla" readonly
           style="background:var(--surf3);cursor:default;font-weight:700;color:var(--n900)"></div>
     </div>`);
 }
@@ -5413,75 +5413,75 @@ function secEvalCardioRespiratoria(d){
       <div class="field"><label>Patrón respiratorio</label>
         <select class="sel" id="patronResp">
           <option value=""></option>
-          ${['Normal','Paradójico','Abdominal predominante','Apical predominante','Mixto'].map(v=>`<option ${d.patronResp===v?'selected':''}>\${v}</option>`).join('')}
+          ${['Normal','Paradójico','Abdominal predominante','Apical predominante','Mixto'].map(v=>`<option ${d.patronResp===v?'selected':''}>${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Uso musculatura accesoria</label>
         <select class="sel" id="muscAccesoria">
           <option value=""></option>
-          ${['No','Leve','Moderado','Importante'].map(v=>`<option ${d.muscAccesoria===v?'selected':''}>\${v}</option>`).join('')}
+          ${['No','Leve','Moderado','Importante'].map(v=>`<option ${d.muscAccesoria===v?'selected':''}>${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Tiraje</label>
         <select class="sel" id="tiraje">
           <option value=""></option>
-          ${['Ninguno','Supraclavicular','Intercostal','Subcostal','Mixto'].map(v=>`<option ${d.tiraje===v?'selected':''}>\${v}</option>`).join('')}
+          ${['Ninguno','Supraclavicular','Intercostal','Subcostal','Mixto'].map(v=>`<option ${d.tiraje===v?'selected':''}>${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Tipo de tórax</label>
         <select class="sel" id="tipoTorax">
           <option value=""></option>
-          ${['Normal','En barril','Pectus excavatum','Pectus carinatum','Cifoescoliosis','Asimétrico'].map(v=>`<option ${d.tipoTorax===v?'selected':''}>\${v}</option>`).join('')}
+          ${['Normal','En barril','Pectus excavatum','Pectus carinatum','Cifoescoliosis','Asimétrico'].map(v=>`<option ${d.tipoTorax===v?'selected':''}>${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Expansión torácica</label>
         <select class="sel" id="expansionToracica">
           <option value=""></option>
-          ${['Simétrica y conservada','Asimétrica D > I','Asimétrica I > D','Disminuida bilateral','Muy reducida'].map(v=>`<option ${d.expansionToracica===v?'selected':''}>\${v}</option>`).join('')}
+          ${['Simétrica y conservada','Asimétrica D > I','Asimétrica I > D','Disminuida bilateral','Muy reducida'].map(v=>`<option ${d.expansionToracica===v?'selected':''}>${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Tos</label>
         <select class="sel" id="tos">
           <option value=""></option>
-          ${['Ausente','Seca','Productiva eficaz','Productiva ineficaz','Crónica'].map(v=>`<option ${d.tos===v?'selected':''}>\${v}</option>`).join('')}
+          ${['Ausente','Seca','Productiva eficaz','Productiva ineficaz','Crónica'].map(v=>`<option ${d.tos===v?'selected':''}>${v}</option>`).join('')}
         </select></div>
       <div class="field form-full"><label>Auscultación pulmonar</label>
         <textarea class="ta" id="auscultacion" rows="3"
-          placeholder="Descripción por zonas (apex, medio, base D/I): murmullo vesicular, crepitantes, sibilancias, roncus, frotes...">${e2(d.auscultacion||'')}\</textarea></div>
+          placeholder="Descripción por zonas (apex, medio, base D/I): murmullo vesicular, crepitantes, sibilancias, roncus, frotes...">${e2(d.auscultacion||'')}</textarea></div>
     </div>
     <div style="font-size:12px;font-weight:700;color:var(--n900);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--bd2)">❤️ Evaluación Cardíaca Funcional</div>
     <div class="form-grid">
       <div class="field"><label>Disnea en reposo</label>
         <select class="sel" id="disneaReposo">
           <option value=""></option>
-          ${['No','Sí — leve','Sí — moderada','Sí — grave'].map(v=>`<option ${d.disneaReposo===v?'selected':''}>\${v}</option>`).join('')}
+          ${['No','Sí — leve','Sí — moderada','Sí — grave'].map(v=>`<option ${d.disneaReposo===v?'selected':''}>${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Ortopnea</label>
         <select class="sel" id="ortopnea">
           <option value=""></option>
-          ${['No','1 almohada','2 almohadas','3 o más almohadas','Decúbito imposible'].map(v=>`<option ${d.ortopnea===v?'selected':''}>\${v}</option>`).join('')}
+          ${['No','1 almohada','2 almohadas','3 o más almohadas','Decúbito imposible'].map(v=>`<option ${d.ortopnea===v?'selected':''}>${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Edema MMII</label>
         <select class="sel" id="edemaMmii">
           <option value=""></option>
-          ${['Ausente','Grado 1 — leve maleolar','Grado 2 — hasta la rodilla','Grado 3 — hasta el muslo','Grado 4 — anasarca'].map(v=>`<option ${d.edemaMmii===v?'selected':''}>\${v}</option>`).join('')}
+          ${['Ausente','Grado 1 — leve maleolar','Grado 2 — hasta la rodilla','Grado 3 — hasta el muslo','Grado 4 — anasarca'].map(v=>`<option ${d.edemaMmii===v?'selected':''}>${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Dolor torácico al esfuerzo</label>
         <select class="sel" id="dolorToracico">
           <option value=""></option>
-          ${['No','Sí — ocasional','Sí — frecuente'].map(v=>`<option ${d.dolorToracico===v?'selected':''}>\${v}</option>`).join('')}
+          ${['No','Sí — ocasional','Sí — frecuente'].map(v=>`<option ${d.dolorToracico===v?'selected':''}>${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Palpitaciones</label>
         <select class="sel" id="palpitaciones">
           <option value=""></option>
-          ${['No','En reposo','Con esfuerzo','Frecuentes'].map(v=>`<option ${d.palpitaciones===v?'selected':''}>\${v}</option>`).join('')}
+          ${['No','En reposo','Con esfuerzo','Frecuentes'].map(v=>`<option ${d.palpitaciones===v?'selected':''}>${v}</option>`).join('')}
         </select></div>
       <div class="field"><label>Tos nocturna</label>
         <select class="sel" id="tosNocturna">
           <option value=""></option>
-          ${['No','Ocasional','Frecuente'].map(v=>`<option ${d.tosNocturna===v?'selected':''}>\${v}</option>`).join('')}
+          ${['No','Ocasional','Frecuente'].map(v=>`<option ${d.tosNocturna===v?'selected':''}>${v}</option>`).join('')}
         </select></div>
       <div class="field form-full"><label>Actividades que desencadenan síntomas</label>
         <textarea class="ta" id="activDesencan" rows="2"
-          placeholder="Subir escaleras, caminar distancias largas, actividad doméstica...">${e2(d.activDesencan||'')}\</textarea></div>
+          placeholder="Subir escaleras, caminar distancias largas, actividad doméstica...">${e2(d.activDesencan||'')}</textarea></div>
       <div class="field form-full"><label>Aspectos psicosociales</label>
         <textarea class="ta" id="psicosocial" rows="2"
-          placeholder="Ansiedad, depresión, tabaquismo activo, red de apoyo, adherencia estimada...">${e2(d.psicosocial||'')}\</textarea></div>
+          placeholder="Ansiedad, depresión, tabaquismo activo, red de apoyo, adherencia estimada...">${e2(d.psicosocial||'')}</textarea></div>
     </div>
     <div style="font-size:12px;font-weight:700;color:var(--n900);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--bd2)">📊 Espirometría</div>
     <div style="background:var(--surf2);border:1px solid var(--bd2);border-radius:12px;padding:16px">
