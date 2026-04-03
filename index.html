@@ -3027,15 +3027,25 @@ async function iniciarAgenda(){
 }
 
 function _recargarCalendarios(){
+  // 1. Render inmediato con datos actuales (sin esperar red)
+  agendaReservas=[];
+  renderCalendario();
+  const v=new Date(calFechaBase);v.setDate(v.getDate()+4);
+  const lbl=g('calSemanaLabel');
+  if(lbl)lbl.textContent=fmtDia(calFechaBase)+' \u2013 '+fmtDia(v)+' / '+v.getFullYear();
+  // Poner el grid en estado cargando de forma sutil
+  const grid=g('calGrid');
+  if(grid)grid.style.opacity='0.45';
+  // 2. Cargar datos en paralelo y actualizar
   const finSem=new Date(calFechaBase);finSem.setDate(finSem.getDate()+4);
-  return cargarReservasSemana().then(()=>{
-    cargarBloqueos(fmt(calFechaBase),fmt(finSem)).then(()=>{
-      renderCalendario();
-      // Actualizar label de la semana
-      const v=new Date(calFechaBase);v.setDate(v.getDate()+4);
-      const lbl=g('calSemanaLabel');
-      if(lbl)lbl.textContent=fmtDia(calFechaBase)+' – '+fmtDia(v)+' / '+v.getFullYear();
-    });
+  Promise.all([
+    cargarReservasSemana(),
+    cargarBloqueos(fmt(calFechaBase),fmt(finSem))
+  ]).then(()=>{
+    renderCalendario();
+    if(grid)grid.style.opacity='';
+  }).catch(()=>{
+    if(grid)grid.style.opacity='';
   });
 }
 function semanaAnterior(){ calFechaBase.setDate(calFechaBase.getDate()-7); _recargarCalendarios(); }
@@ -3209,7 +3219,7 @@ const dias = todosLosDias;
           const fechaStr=fmt(d);
           const pasado=new Date(fechaStr+'T'+hora+':00')<new Date();
           const norm=s=>String(s).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-          const matchEsp=(r,en)=>{const rc=norm(r.camilla),ne=norm(en);return rc===ne;};
+          const matchEsp=(r,en)=>{const rc=norm(r.camilla),ne=norm(en);return rc===ne||rc.startsWith(ne)||ne.startsWith(rc);};
           const rsvEsp=agendaReservas.filter(r=>norm(r.fecha)===norm(fechaStr)&&norm(r.horaInicio)===norm(hora)&&norm(r.area)===norm(area.nombre)&&matchEsp(r,esp.nombre));
           const lleno=rsvEsp.length>=cap;
           const bloq=typeof esBloqueado==='function'&&esBloqueado(fechaStr,hora,area.nombre,esp.nombre);
@@ -3367,6 +3377,41 @@ async function guardarAgendaConfig(){
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
 
+// ── Overlay "Reservando..." ───────────────────────────────
+function mostrarOverlayReservando(paciente){
+  let ov=document.getElementById('_rsvOverlay');
+  if(!ov){
+    ov=document.createElement('div');
+    ov.id='_rsvOverlay';
+    ov.style.cssText='position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;background:rgba(10,22,40,.72);backdrop-filter:blur(4px);transition:opacity .2s';
+    ov.innerHTML=`<div style="background:var(--surf);border-radius:20px;padding:32px 36px;display:flex;flex-direction:column;align-items:center;gap:16px;box-shadow:0 24px 60px rgba(10,22,40,.45);min-width:220px;text-align:center">
+      <div id="_rsvOvSpinner" style="width:42px;height:42px;border:4px solid var(--n100);border-top-color:var(--n500);border-radius:50%;animation:_rsvSpin .7s linear infinite"></div>
+      <div>
+        <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--n900);margin-bottom:4px">Reservando…</div>
+        <div id="_rsvOvPac" style="font-size:12px;color:var(--tx3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+      </div>
+    </div>`;
+    if(!document.getElementById('_rsvSpinStyle')){
+      const st=document.createElement('style');
+      st.id='_rsvSpinStyle';
+      st.textContent='@keyframes _rsvSpin{to{transform:rotate(360deg)}}';
+      document.head.appendChild(st);
+    }
+    document.body.appendChild(ov);
+  }
+  const pac=document.getElementById('_rsvOvPac');
+  if(pac)pac.textContent=paciente||'';
+  ov.style.opacity='0';
+  ov.style.display='flex';
+  requestAnimationFrame(()=>{ ov.style.opacity='1'; });
+}
+function ocultarOverlayReservando(){
+  const ov=document.getElementById('_rsvOverlay');
+  if(!ov)return;
+  ov.style.opacity='0';
+  setTimeout(()=>{ ov.style.display='none'; },200);
+}
+
 // ── Reservar slot ─────────────────────────────────────────
 function abrirReservaEspacio(fecha,hora,area,espacio,capacidad,fechaLabel){
   rsvPendiente={fecha,hora,area,camilla:espacio,capacidad,esEstudiante:false};
@@ -3394,7 +3439,8 @@ async function confirmarReserva(){
   if(!rsvPendiente)return;
   const pac=vi('rsvPaciente').trim();
   if(!pac){const e=g('rsvErr');e.textContent='El nombre del paciente es requerido';e.style.display='block';return}
-  showLoader('Guardando reserva...');
+  cerrarReservaModal();
+  mostrarOverlayReservando(pac);
   const esEst=rsvPendiente.esEstudiante||false;
   const fromModal=rsvPendiente.fromModal||false;
   try{
@@ -3406,7 +3452,8 @@ async function confirmarReserva(){
       paciente:pac, docente:vi('rsvDocente'), observacion:vi('rsvObs')
     });
     hideLoader();if(!r.ok)throw new Error(r.error);
-    cerrarReservaModal();toast('Reserva creada','','ok');
+    ocultarOverlayReservando();
+    toast('Reserva creada','','ok');
     if(esEst){
       await cargarReservasEst();
       const _finSemC=new Date(calEstFechaBase);_finSemC.setDate(_finSemC.getDate()+4);
@@ -3415,7 +3462,13 @@ async function confirmarReserva(){
     }
     else if(fromModal){ const finM=new Date(calFechaBase);finM.setDate(finM.getDate()+4); await cargarReservasSemana(); await cargarBloqueos(fmt(calFechaBase),fmt(finM)); renderCalendarioModal(); }
     else { await cargarReservasSemana();renderCalendario(); }
-  }catch(e){hideLoader();const er=g('rsvErr');er.textContent=e.message;er.style.display='block';}
+  }catch(e){
+    ocultarOverlayReservando();
+    hideLoader();
+    // Reabrir modal con el error visible
+    g('reservaModal').style.display='flex';
+    const er=g('rsvErr');er.textContent=e.message;er.style.display='block';
+  }
 }
 
 async function pedirEliminar(fecha,hora,area,camilla){
