@@ -2106,6 +2106,18 @@ function evalCard(ev, pac, numEval){
   // El acordeón carga los datos completos al abrirse (lazy load via toggleEvalInline)
   var detalle='<div id="'+uid+'" data-eval-id="'+ev.id+'" data-pac-id="'+pac.id+'" style="display:none;margin-top:14px;border-top:1px solid var(--bd);padding-top:14px"></div>';
 
+  // FIX: el docente solo puede revisar si es el asignado a esta evaluación (o es admin)
+  function puedeRevisarEval(){
+    if(session.rol==='admin') return true;
+    if(session.rol!=='docente') return false;
+    var myName=(session.nombre||'').toLowerCase();
+    var myCode=(session.codigo||'').toLowerCase();
+    var dn=(ev.docente||'').toLowerCase();
+    var dc=(ev.docenteCodigo||'').toLowerCase();
+    return dn===myName||dn===myCode||dc===myCode||dc===myName;
+  }
+  const puedeRev = puedeRevisarEval();
+
 
   return `<div style="background:var(--surf3);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-bottom:8px">
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px">
@@ -2127,8 +2139,9 @@ function evalCard(ev, pac, numEval){
       ${ev.estado==='aprobada'&&(session.rol==='admin'||session.rol==='docente')?`<button class="btn btn-ghost btn-sm" style="border-color:var(--amber);color:var(--amber)" onclick="editarEvalAprobada('${esc(pac.id)}','${esc(ev.id)}','${esc(pac.categoriaId)}')">✏️ Editar (doc)</button>`:''}
       ${ev.estado==='pendiente'&&session.rol==='estudiante'?`<span style="font-size:11px;color:var(--amber);padding:4px 8px">⏳ En revisión — no editable</span>`:''}
       ${puedeSend?`<button class="btn btn-primary btn-sm" onclick="enviarEval('${esc(ev.id)}','${esc(pac.id)}')">📤 Enviar al docente</button>`:''}
-      ${pr&&ev.estado==='pendiente'?`<button class="btn btn-ghost btn-sm" onclick="toggleEvalInline('${uid}',null)">👁️ Ver contenido</button>`:''}
-      ${pr&&ev.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('eval','${esc(ev.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
+      ${puedeRev&&ev.estado==='pendiente'?`<button class="btn btn-ghost btn-sm" onclick="toggleEvalInline('${uid}',null)">👁️ Ver contenido</button>`:''}
+      ${puedeRev&&ev.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('eval','${esc(ev.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
+      ${ev.estado==='pendiente'&&session.rol==='docente'&&!puedeRev?`<span style="font-size:11px;color:var(--tx4);padding:4px 8px">⏳ Asignado a otro docente</span>`:''}
       ${(ev.estado==='aprobada'||ev.estado==='rechazada')?`<button class="btn btn-ghost btn-sm" onclick="toggleEvalInline('${uid}',null)">👁️ Ver</button>`:''}
     </div>
   </div>`;
@@ -2540,6 +2553,18 @@ function sesCard(s, pac, evalAp){
   const pr=session.rol==='admin'||session.rol==='docente';
   const puedeSend=(s.estado==='borrador'||s.estado==='rechazada')&&evalAp&&session.rol==='estudiante'&&(s.autor===session.codigo||s.autorCodigo===session.codigo||pac.asignadoA===session.codigo||pac.creadoPor===session.codigo);
   const uid='ses_'+s.id.replace(/[^a-z0-9]/gi,'_');
+
+  // FIX: el docente solo puede revisar si es el asignado a esta sesión (o es admin)
+  function puedeRevisarSes(){
+    if(session.rol==='admin') return true;
+    if(session.rol!=='docente') return false;
+    var myName=(session.nombre||'').toLowerCase();
+    var myCode=(session.codigo||'').toLowerCase();
+    var dn=(s.docente||'').toLowerCase();
+    var dc=(s.docenteCodigo||'').toLowerCase();
+    return dn===myName||dn===myCode||dc===myCode||dc===myName;
+  }
+  const puedeRev = puedeRevisarSes();
   return `<div class="tl-item">
     <div class="tl-dot ${s.estado}">S${s.numero}</div>
     <div style="background:var(--surf2);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-left:4px">
@@ -2574,7 +2599,8 @@ function sesCard(s, pac, evalAp){
       <div class="btn-group" style="margin-top:8px">
         ${s.estado==='borrador'||s.estado==='rechazada'?`<button class="btn btn-ghost btn-sm" onclick="abrirFrmSes('${esc(pac.id)}','${esc(s.evaluacionId)}',${s.numero},'${esc(s.id)}')">✏️ Editar</button>`:''}
         ${puedeSend&&(s.estado==='borrador'||s.estado==='rechazada')?`<button class="btn btn-primary btn-sm" onclick="enviarSes('${esc(s.id)}','${esc(pac.id)}')">📤 Enviar</button>`:''}
-        ${pr&&s.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('ses','${esc(s.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
+        ${puedeRev&&s.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('ses','${esc(s.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
+        ${s.estado==='pendiente'&&session.rol==='docente'&&!puedeRev?`<span style="font-size:11px;color:var(--tx4);padding:4px 8px">⏳ Asignado a otro docente</span>`:''}
       </div>
     </div>
   </div>`;
