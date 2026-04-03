@@ -3439,17 +3439,22 @@ async function confirmarReserva(){
   if(!rsvPendiente)return;
   const pac=vi('rsvPaciente').trim();
   if(!pac){const e=g('rsvErr');e.textContent='El nombre del paciente es requerido';e.style.display='block';return}
-  cerrarReservaModal();
-  mostrarOverlayReservando(pac);
+  // Leer todos los datos ANTES de cerrar el modal (cerrar pone rsvPendiente=null)
   const esEst=rsvPendiente.esEstudiante||false;
   const fromModal=rsvPendiente.fromModal||false;
+  const _fecha=rsvPendiente.fecha, _hora=rsvPendiente.hora;
+  const _area=rsvPendiente.area, _camilla=rsvPendiente.camilla;
+  const _cap=rsvPendiente.capacidad||1;
+  const _doc=vi('rsvDocente'), _obs=vi('rsvObs');
+  cerrarReservaModal();
+  mostrarOverlayReservando(pac);
   try{
     const r=await apiPost({
       action:'crearReserva',
-      fecha:rsvPendiente.fecha, horaInicio:rsvPendiente.hora,
-      area:rsvPendiente.area, camilla:rsvPendiente.camilla,
-      capacidad:rsvPendiente.capacidad||1,
-      paciente:pac, docente:vi('rsvDocente'), observacion:vi('rsvObs')
+      fecha:_fecha, horaInicio:_hora,
+      area:_area, camilla:_camilla,
+      capacidad:_cap,
+      paciente:pac, docente:_doc, observacion:_obs
     });
     hideLoader();if(!r.ok)throw new Error(r.error);
     ocultarOverlayReservando();
