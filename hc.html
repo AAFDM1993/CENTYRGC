@@ -6960,10 +6960,16 @@ async function guardarHC(catId, pacId, modo){
   };
   
   // Guardar paciente
-  const bPac={action:'guardarPaciente',nombre,dni,
-    sexo:v('pS'),fechaNac:v('pFN'),telefono:v('pT'),ocupacion:v('pO'),
-    categoriaId:catId,fechaInicio:v('pFI'),responsable:v('pR'),telResponsable:v('pTR'),estado:'activo'};
-  if(pacId) bPac.id=pacId;
+  // FIX: solo enviar campos con valor para no sobreescribir datos existentes con cadenas vacías
+  const bPac = {action:'guardarPaciente', nombre, dni, categoriaId:catId, estado:'activo'};
+  if(pacId) bPac.id = pacId;
+  const _sv = v('pS');   if(_sv)  bPac.sexo          = _sv;
+  const _fn = v('pFN');  if(_fn)  bPac.fechaNac       = _fn;
+  const _tel= v('pT');   if(_tel) bPac.telefono       = _tel;
+  const _oc = v('pO');   if(_oc)  bPac.ocupacion      = _oc;
+  const _fi = v('pFI');  if(_fi)  bPac.fechaInicio    = _fi;
+  const _re = v('pR');   if(_re)  bPac.responsable    = _re;
+  const _tr = v('pTR');  if(_tr)  bPac.telResponsable = _tr;
   const rPac=await apiPost(bPac);
   if(!rPac.ok){toast('Error al guardar paciente',rPac.error,'err');return;}
   const idPac=pacId||rPac.id;
