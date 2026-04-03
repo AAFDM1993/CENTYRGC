@@ -293,11 +293,11 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
 </div>
 
 <!-- Modal selección de categoría -->
-<div id="modalCatSelect" style="display:none;position:fixed;inset:0;background:rgba(10,22,40,.75);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+<div id="modalCatSelect" style="display:none;position:fixed;inset:0;background:rgba(10,22,40,.75);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(4px)" onclick="if(event.target===this)cerrarModalCategoria()">
   <div style="background:var(--surf);border:1px solid var(--bd);border-radius:18px;padding:24px;width:100%;max-width:440px;box-shadow:0 24px 60px rgba(0,0,0,.5)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
-      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#fff">Seleccionar categoría</div>
-      <button onclick="cerrarModalCategoria()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:8px;font-size:16px;cursor:pointer">✕</button>
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--tx)">Seleccionar tipo de ficha</div>
+      <button onclick="cerrarModalCategoria()" title="Cerrar" style="background:var(--surf2);border:1px solid var(--bd);color:var(--tx3);width:32px;height:32px;border-radius:8px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;flex-shrink:0">&#x2715;</button>
     </div>
     <div id="catSelectList" style="display:grid;grid-template-columns:1fr 1fr;gap:8px"></div>
   </div>
@@ -980,7 +980,7 @@ function _buildExamenObjetivoPorCategoria(d, ev, catId){
       + _fld2('Clasificación funcional', d.clasificacionFuncional)
       + _fld2('Dolor neurológico', d.dolorNeuro)
       + _fld2('EVA dolor neurológico', d.evaNeuroDolor!==undefined&&d.evaNeuroDolor!==''?d.evaNeuroDolor+'/10':'')
-      + (d.historiaCondicion?'<div style="grid-column:1/-1"><div class="field-lbl">Historia de la condición</div><div class="field-val">'+e2(d.historiaCondicion)+'</div></div>':'')
+
       + _fld2('Nivel de conciencia', d.nConciencia) + _fld2('Lateralidad', d.lateralidad)
       + _fld2('Orientación', d.orientacion) + _fld2('Comunicación', d.comunicacion)
       + _fld2('Memoria', d.memoria) + _fld2('Atención', d.atencion)
@@ -1021,8 +1021,27 @@ function _buildExamenObjetivoPorCategoria(d, ev, catId){
       + _fld2('Patrón respiratorio', d.patronResp) + _fld2('Tiraje', d.tiraje)
       + _fld2('Tos', d.tos) + _fld2('Disnea en reposo', d.disneaReposo)
       + _fld2('NYHA', d.nyha) + _fld2('Edema MMII', d.edemaMmii)
-      + _fld2('PEF', d.pef ? d.pef + ' L/min' : '') + _fld2('FVC', d.fvc ? d.fvc + ' L' : '') + _fld2('FEV1', d.fev1 ? d.fev1 + ' L' : '') + _fld2('FEV1/FVC', d.fev1fvc ? d.fev1fvc + '%' : '')
+      
       + (d.auscultacion ? '<div style="grid-column:1/-1"><div class="field-lbl">Auscultaci&oacute;n</div><div class="field-val">' + e2(d.auscultacion) + '</div></div>' : '')
+      + '</div>';
+
+  } else if(catId === 'paralisis_facial'){
+    h += '<div class="sec-body">'
+      + _fld2('Diagnóstico', d.dxFacial)
+      + _fld2('Tipo de parálisis', d.tipoParalisis)
+      + _fld2('Lado afectado', d.ladoFacial)
+      + _fld2('Tiempo de evolución', d.tiempoEvolFacial)
+      + _fld2('Etiología', d.etiologiaFacial)
+      + _fld2('Grado House-Brackmann', d.houseBrackmann)
+      + _fld2('Ojo / Lagoftalmos', d.lagoftalmos)
+      + _fld2('Sincinesias', d.sincinesias)
+      + _fld2('Simetría en reposo', d.simetriaReposo)
+      + _fld2('Elevación ceja', d.elevacionCeja)
+      + _fld2('Cierre ocular', d.cierreOcular)
+      + _fld2('Sonrisa', d.sonrisa)
+      + _fld2('Elevación comisura', d.elevacionComisura)
+      + _fld2('Fruncir labios', d.fruncirLabios)
+      + (d.observacionesFacial?'<div style="grid-column:1/-1"><div class="field-lbl">Observaciones</div><div class="field-val">'+e2(d.observacionesFacial)+'</div></div>':'')
       + '</div>';
 
   } else if(catId === 'postural'){
@@ -3217,6 +3236,8 @@ function plantillaHTML(catId, pac){
     secciones += secCardiorespiratorio(d);
   } else if(catId === 'postural'){
     secciones += secPostural(d);
+  } else if(catId === 'paralisis_facial'){
+    secciones += secParalisisFacial(d);
   }
 
   secciones += secPlanTratamiento(d);
@@ -3827,6 +3848,18 @@ const ESCALAS_CATALOGO = [
   { id:'nyha', nombre:'NYHA — Clase funcional cardíaca', desc:'Clasifica la limitación funcional por insuficiencia cardíaca en 4 clases.',
     dominio:'Cardíaco', cats:['cardiorespiratorio','geriatria','postural'], ped:false,
     render: renderEscalaNYHA, calcular: calcularNYHA },
+
+  { id:'espirometria', nombre:'Espirometría — PEF / FVC / FEV1 / FEV1/FVC', desc:'Registra los valores espirométricos principales y muestra interpretación orientativa.',
+    dominio:'Respiratorio', cats:['cardiorespiratorio'], ped:false,
+    render: renderEscalaEspirometria, calcular: calcularEspirometria },
+
+  { id:'asia', nombre:'ASIA — Clasificación de lesión medular', desc:'American Spinal Injury Association. Clasifica el nivel neurológico y el grado de lesión medular (A-E) con exploración motora y sensitiva.',
+    dominio:'Lesión medular', cats:['neuro_adultos'], ped:false,
+    render: renderEscalaASIA, calcular: calcularASIA },
+
+  { id:'sunnybrook', nombre:'Sunnybrook — Parálisis facial', desc:'Evalúa simetría en reposo, movimiento voluntario y sincinesias. Puntuación compuesta 0-100 (mayor = mejor función).',
+    dominio:'Parálisis facial', cats:['paralisis_facial'], ped:false,
+    render: renderEscalaSunnybrook, calcular: calcularSunnybrook },
 
   // ── GERIÁTRICA ───────────────────────────────────────────
 
@@ -4510,6 +4543,160 @@ function calcularNYHA(id){
   var m={I:'Limitación mínima',II:'Limitación leve',III:'Limitación marcada',IV:'Limitación severa'};
   var c={I:'var(--green)',II:'var(--amber)',III:'#ea580c',IV:'var(--red)'};
   return {puntaje: 'Clase '+el.value, puntajeRaw: el.value, interpretacion: m[el.value]||'', color: c[el.value]||''};
+}
+
+// ── ESPIROMETRÍA ─────────────────────────────────────
+function renderEscalaEspirometria(d){
+  var items_d = d&&d.items ? d.items : {};
+  var html = '<div style="display:grid;gap:10px">';
+  html += _numItem('espirometria','pef',  items_d.pef||'',  'PEF — Flujo espiratorio pico (L/min)', 0, 900,  'L/min');
+  html += _numItem('espirometria','fvc',  items_d.fvc||'',  'FVC — Capacidad vital forzada (L)',    0, 10,   'L');
+  html += _numItem('espirometria','fev1', items_d.fev1||'', 'FEV1 — Volumen espiratorio forzado 1s (L)', 0, 10, 'L');
+  html += _numItem('espirometria','fev1fvc', items_d.fev1fvc||'', 'FEV1/FVC — Índice de Tiffeneau (%)', 0, 100, '%');
+  html += '</div>';
+  html += '<div style="margin-top:12px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px;background:var(--surf3);border-radius:8px">';
+  html += '<span style="font-size:11px;color:var(--tx3);font-weight:600">Interpretación orientativa:</span>';
+  html += '<span style="font-size:11px;background:var(--green2);color:var(--green);border-radius:6px;padding:2px 8px">FEV1/FVC ≥70% Normal</span>';
+  html += '<span style="font-size:11px;background:var(--amber2);color:var(--amber);border-radius:6px;padding:2px 8px">FEV1/FVC &lt;70% Obstructivo</span>';
+  html += '<span style="font-size:11px;background:var(--red2);color:var(--red);border-radius:6px;padding:2px 8px">FVC &lt;80% pred. Restrictivo</span>';
+  html += '</div>';
+  return html;
+}
+function calcularEspirometria(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var pef   = parseFloat(b.querySelector('[data-escala-item="pef"]')?.value||'');
+  var fvc   = parseFloat(b.querySelector('[data-escala-item="fvc"]')?.value||'');
+  var fev1  = parseFloat(b.querySelector('[data-escala-item="fev1"]')?.value||'');
+  var ratio = parseFloat(b.querySelector('[data-escala-item="fev1fvc"]')?.value||'');
+  if(isNaN(fev1) && isNaN(fvc) && isNaN(ratio) && isNaN(pef)) return null;
+  var interp = 'Sin datos suficientes', color = 'var(--tx3)';
+  if(!isNaN(ratio) && !isNaN(fvc)){
+    if(ratio >= 70 && fvc >= 80){ interp='Normal'; color='var(--green)'; }
+    else if(ratio < 70 && fvc >= 80){ interp='Patrón obstructivo'; color='var(--amber)'; }
+    else if(ratio >= 70 && fvc < 80){ interp='Patrón restrictivo'; color='#ea580c'; }
+    else { interp='Patrón mixto (obstructivo + restrictivo)'; color='var(--red)'; }
+  } else if(!isNaN(ratio)){
+    interp = ratio>=70 ? 'FEV1/FVC normal (≥70%)' : 'FEV1/FVC bajo (<70%) — posible obstrucción';
+    color  = ratio>=70 ? 'var(--green)' : 'var(--amber)';
+  }
+  var resumen = [];
+  if(!isNaN(pef))   resumen.push('PEF: '+pef+' L/min');
+  if(!isNaN(fvc))   resumen.push('FVC: '+fvc+' L');
+  if(!isNaN(fev1))  resumen.push('FEV1: '+fev1+' L');
+  if(!isNaN(ratio)) resumen.push('FEV1/FVC: '+ratio+'%');
+  return {puntaje: resumen.join(' · ') || '—', puntajeRaw: ratio||null, interpretacion: interp, color: color};
+}
+
+// ── ASIA (Lesión medular) ────────────────────────────────────
+function renderEscalaASIA(d){
+  var items_d = d&&d.items ? d.items : {};
+  var miosomas_motor = [
+    {k:'C5',l:'C5 — Flexores codo (biceps)'},
+    {k:'C6',l:'C6 — Extensores muñeca (ECRL)'},
+    {k:'C7',l:'C7 — Extensores codo (tríceps)'},
+    {k:'C8',l:'C8 — Flexores dedo medio (FDP)'},
+    {k:'T1',l:'T1 — Abductor 5° dedo (ADM)'},
+    {k:'L2',l:'L2 — Flexores cadera (iliopsoas)'},
+    {k:'L3',l:'L3 — Extensores rodilla (cuádriceps)'},
+    {k:'L4',l:'L4 — Dorsiflexores tobillo (tibial ant.)'},
+    {k:'L5',l:'L5 — Extensores dedo gordo (EHL)'},
+    {k:'S1',l:'S1 — Flexores plantares (gastrocnemio)'},
+  ];
+  var gradosMRC = [{v:'',l:''},{v:'0',l:'0'},{v:'1',l:'1'},{v:'2',l:'2'},{v:'3',l:'3'},{v:'4',l:'4'},{v:'5',l:'5'}];
+  var html = '<div style="display:grid;gap:14px">';
+
+  // Motor
+  html += '<div style="font-size:11px;font-weight:700;color:var(--n900);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;border-bottom:1px solid var(--bd);padding-bottom:4px">Puntuación motora (0–5 MRC por segmento)</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">';
+  miosomas_motor.forEach(function(m){
+    var vD = items_d['motor_D_'+m.k]||'';
+    var vI = items_d['motor_I_'+m.k]||'';
+    html += '<div style="display:flex;align-items:center;gap:6px;font-size:12px">';
+    html += '<span style="min-width:170px;color:var(--tx2)">'+m.l+'</span>';
+    html += '<span style="font-size:10px;color:var(--tx4)">D:</span>';
+    html += '<select class="sel" data-escala-item="motor_D_'+m.k+'" onchange="recalcularEscala('asia')" style="width:52px;font-size:12px;padding:4px 6px">';
+    gradosMRC.forEach(function(g){ html += '<option value="'+g.v+'"'+(String(vD)===String(g.v)?' selected':'')+'>'+g.l+'</option>'; });
+    html += '</select>';
+    html += '<span style="font-size:10px;color:var(--tx4)">I:</span>';
+    html += '<select class="sel" data-escala-item="motor_I_'+m.k+'" onchange="recalcularEscala('asia')" style="width:52px;font-size:12px;padding:4px 6px">';
+    gradosMRC.forEach(function(g){ html += '<option value="'+g.v+'"'+(String(vI)===String(g.v)?' selected':'')+'>'+g.l+'</option>'; });
+    html += '</select></div>';
+  });
+  html += '</div>';
+
+  // Sensitivo clave
+  html += '<div style="font-size:11px;font-weight:700;color:var(--n900);text-transform:uppercase;letter-spacing:.5px;margin-top:4px;margin-bottom:4px;border-bottom:1px solid var(--bd);padding-bottom:4px">Sensibilidad táctil ligera y puntiforme — puntos clave (0=ausente, 1=alterada, 2=normal, NT=no evaluado)</div>';
+  var dermOfValues = [{v:'',l:''},{v:'0',l:'0'},{v:'1',l:'1'},{v:'2',l:'2'},{v:'NT',l:'NT'}];
+  var dermatomas = ['C2','C3','C4','C5','C6','C7','C8','T1','T2','T3','T4','T5','T6','T7','T8','T9','T10','T11','T12','L1','L2','L3','L4','L5','S1','S2','S3','S4-5'];
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:5px">';
+  dermatomas.forEach(function(dt){
+    var vD = items_d['sens_D_'+dt]||'';
+    var vI = items_d['sens_I_'+dt]||'';
+    html += '<div style="display:flex;align-items:center;gap:5px;font-size:11px">';
+    html += '<span style="min-width:36px;font-weight:600;color:var(--tx2)">'+dt+'</span>';
+    html += '<span style="font-size:10px;color:var(--tx4)">D:</span>';
+    html += '<select class="sel" data-escala-item="sens_D_'+dt+'" onchange="recalcularEscala('asia')" style="width:52px;font-size:11px;padding:3px 5px">';
+    dermOfValues.forEach(function(g){ html += '<option value="'+g.v+'"'+(String(vD)===String(g.v)?' selected':'')+'>'+g.l+'</option>'; });
+    html += '</select>';
+    html += '<span style="font-size:10px;color:var(--tx4)">I:</span>';
+    html += '<select class="sel" data-escala-item="sens_I_'+dt+'" onchange="recalcularEscala('asia')" style="width:52px;font-size:11px;padding:3px 5px">';
+    dermOfValues.forEach(function(g){ html += '<option value="'+g.v+'"'+(String(vI)===String(g.v)?' selected':'')+'>'+g.l+'</option>'; });
+    html += '</select></div>';
+  });
+  html += '</div>';
+
+  // Clasificación ASIA
+  var clases = [
+    {v:'A',l:'A — Completa: sin función motora/sensitiva en S4-5'},
+    {v:'B',l:'B — Incompleta: sensitiva conservada, no motora por debajo del nivel'},
+    {v:'C',l:'C — Incompleta: motora conservada, mayoría < grado 3'},
+    {v:'D',l:'D — Incompleta: motora conservada, mayoría ≥ grado 3'},
+    {v:'E',l:'E — Normal: funciones motoras y sensitivas normales'},
+  ];
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:4px">';
+  html += '<div>'+_selItem('asia_grado', clases, items_d.asia_grado||'', 'Clasificación ASIA (A–E)')+'</div>';
+  html += '<div>'+_numItem('asia','nivel_neuro', items_d.nivel_neuro||'', 'Nivel neurológico (ej: C6, T4, L2)', 0, 0, 'Ej: C6')+'</div>';
+  html += '</div>';
+  html += '<div>'+_selItem('asia_lesion_tipo',
+    [{v:'Completa',l:'Lesión completa'},{v:'Incompleta motora',l:'Incompleta motora'},{v:'Incompleta sensitiva',l:'Incompleta sensitiva'},{v:'Síndrome central',l:'Síndrome medular central'},{v:'Síndrome anterior',l:'Síndrome medular anterior'},{v:'Síndrome Brown-Séquard',l:'Síndrome de Brown-Séquard'}],
+    items_d.lesion_tipo||'', 'Tipo de síndrome medular')+'</div>';
+
+  html += '</div>';
+  return html;
+}
+function calcularASIA(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var grado = (b.querySelector('[data-escala-item="asia_grado"]')||{}).value||'';
+  var nivel = (b.querySelector('[data-escala-item="nivel_neuro"]')||{}).value||'';
+  if(!grado && !nivel) return null;
+  // Motor score
+  var motorKeys=['C5','C6','C7','C8','T1','L2','L3','L4','L5','S1'];
+  var motorD=0, motorI=0;
+  motorKeys.forEach(function(k){
+    var d=parseFloat((b.querySelector('[data-escala-item="motor_D_'+k+'"]')||{}).value||0);
+    var i=parseFloat((b.querySelector('[data-escala-item="motor_I_'+k+'"]')||{}).value||0);
+    if(!isNaN(d)) motorD+=d;
+    if(!isNaN(i)) motorI+=i;
+  });
+  var totalMotor = motorD + motorI;
+  var colorMap = {A:'var(--red)',B:'#ea580c',C:'var(--amber)',D:'var(--green)',E:'var(--green)'};
+  var interpMap = {
+    A:'Lesión completa — sin función bajo el nivel neurológico',
+    B:'Incompleta — solo sensitiva conservada',
+    C:'Incompleta — motora presente, mayoría < grado 3',
+    D:'Incompleta — motora presente, mayoría ≥ grado 3',
+    E:'Función normal'
+  };
+  var resumen = [];
+  if(nivel) resumen.push('Nivel: '+nivel);
+  if(grado) resumen.push('ASIA '+grado);
+  resumen.push('Motor total: '+totalMotor+'/100');
+  return {
+    puntaje: resumen.join(' · '),
+    puntajeRaw: totalMotor,
+    interpretacion: grado ? (interpMap[grado]||'') : '',
+    color: grado ? (colorMap[grado]||'var(--tx3)') : 'var(--tx3)'
+  };
 }
 
 // ── LAWTON-BRODY (8 ítems) ───────────────────────────────────
@@ -5408,7 +5595,7 @@ function secSignosVitales(d){
 
 function secEvalCardioRespiratoria(d){
   return secWrap('cardio_resp','IV. Evaluación cardiorrespiratoria','',`
-    <div style="font-size:12px;font-weight:700;color:var(--n900);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--bd2)">🫁 Evaluación Respiratoria</div>
+    <div style="font-size:12px;font-weight:700;color:var(--n900);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--bd2)">Evaluación Respiratoria</div>
     <div class="form-grid">
       <div class="field"><label>Patrón respiratorio</label>
         <select class="sel" id="patronResp">
@@ -5444,7 +5631,7 @@ function secEvalCardioRespiratoria(d){
         <textarea class="ta" id="auscultacion" rows="3"
           placeholder="Descripción por zonas (apex, medio, base D/I): murmullo vesicular, crepitantes, sibilancias, roncus, frotes...">${e2(d.auscultacion||'')}</textarea></div>
     </div>
-    <div style="font-size:12px;font-weight:700;color:var(--n900);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--bd2)">❤️ Evaluación Cardíaca Funcional</div>
+    <div style="font-size:12px;font-weight:700;color:var(--n900);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--bd2)">Evaluación Cardíaca Funcional</div>
     <div class="form-grid">
       <div class="field"><label>Disnea en reposo</label>
         <select class="sel" id="disneaReposo">
@@ -5483,31 +5670,8 @@ function secEvalCardioRespiratoria(d){
         <textarea class="ta" id="psicosocial" rows="2"
           placeholder="Ansiedad, depresión, tabaquismo activo, red de apoyo, adherencia estimada...">${e2(d.psicosocial||'')}</textarea></div>
     </div>
-    <div style="font-size:12px;font-weight:700;color:var(--n900);text-transform:uppercase;letter-spacing:.5px;margin:16px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--bd2)">📊 Espirometría</div>
-    <div style="background:var(--surf2);border:1px solid var(--bd2);border-radius:12px;padding:16px">
-      <div class="form-grid">
-        <div class="field"><label>PEF — Flujo espiratorio pico (L/min)</label>
-          <input class="inp" id="pef" type="number" min="0" max="900"
-            value="${d.pef||''}" placeholder="L/min"></div>
-        <div class="field"><label>FVC — Capacidad vital forzada (L)</label>
-          <input class="inp" id="fvc" type="number" min="0" max="10" step="0.01"
-            value="${d.fvc||''}" placeholder="L"></div>
-        <div class="field"><label>FEV1 — Volumen espiratorio forzado 1s (L)</label>
-          <input class="inp" id="fev1" type="number" min="0" max="10" step="0.01"
-            value="${d.fev1||''}" placeholder="L"></div>
-        <div class="field"><label>FEV1/FVC — Índice de Tiffeneau (%)</label>
-          <input class="inp" id="fev1fvc" type="number" min="0" max="100" step="0.1"
-            value="${d.fev1fvc||''}" placeholder="%" ></div>
-      </div>
-      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <span style="font-size:11px;color:var(--tx3)">Interpretación orientativa:</span>
-        <span style="font-size:11px;background:var(--green2);color:var(--green);border-radius:6px;padding:2px 8px">FEV1/FVC ≥70% Normal</span>
-        <span style="font-size:11px;background:var(--amber2);color:var(--amber);border-radius:6px;padding:2px 8px">FEV1/FVC &lt;70% Obstructivo</span>
-        <span style="font-size:11px;background:var(--red2);color:var(--red);border-radius:6px;padding:2px 8px">FVC &lt;80% pred. Restrictivo</span>
-      </div>
-    </div>
     <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
-      Cuantifica disnea con <b>escala MRC</b> y clase funcional con <b>NYHA</b> en la sección de Escalas.
+      Cuantifica disnea con <b>escala MRC</b> y clase funcional con <b>NYHA</b> en la sección de Escalas. Utiliza la escala de <b>Espirometría</b> para registrar PEF, FVC, FEV1 y FEV1/FVC.
     </div>`);
 }
 
@@ -5816,12 +5980,6 @@ function secHistoriaNeuro(d){
           </div>
           <div class="eva-val" id="evaNeuDolorD">${d.evaNeuroDolor??0}</div>
         </div></div>
-      <div class="field form-full"><label>Historia de la condición actual</label>
-        <textarea class="ta" id="historiaCondicion" rows="3"
-          placeholder="Descripción del evento, mecanismo de lesión, evolución, tratamientos previos...">${e2(d.historiaCondicion||d.antecedentes||'')}</textarea></div>
-      <div class="field form-full"><label>Antecedentes relevantes</label>
-        <textarea class="ta" id="antecedentesNeuro" rows="2"
-          placeholder="Antecedentes médicos, quirúrgicos, farmacológicos...">${e2(d.antecedentesNeuro||'')}</textarea></div>
     </div>`,true);
 }
 
@@ -6036,6 +6194,232 @@ function secAVDNeuro(d){
 // ══════════════════════════════════════════════════════════════
 // SECCIÓN E: FICHA NEURO PEDIÁTRICA
 // ══════════════════════════════════════════════════════════════
+
+// ── SUNNYBROOK (Parálisis facial) ────────────────────────────
+function renderEscalaSunnybrook(d){
+  var items_d = d&&d.items ? d.items : {};
+  var symRep = [
+    {k:'sb_r_arruga',l:'Arrugas frente'},
+    {k:'sb_r_ojo',l:'Hendidura palpebral'},
+    {k:'sb_r_mejilla',l:'Pliegue nasolabial'},
+    {k:'sb_r_comisura',l:'Comisura bucal'},
+    {k:'sb_r_menton',l:'Mentón'},
+  ];
+  var movVol = [
+    {k:'sb_v_ceja',l:'Elevar ceja'},
+    {k:'sb_v_ojo',l:'Cerrar suavemente el ojo'},
+    {k:'sb_v_sonrisa',l:'Sonrisa abierta'},
+    {k:'sb_v_labio',l:'Fruncir labios'},
+    {k:'sb_v_nariz',l:'Arrugar nariz'},
+  ];
+  var sinc = [
+    {k:'sb_s_ojo_ceja',l:'Contracción frente al cerrar ojo'},
+    {k:'sb_s_ojo_mejilla',l:'Movimiento mejilla al cerrar ojo'},
+    {k:'sb_s_ojo_boca',l:'Movimiento boca al cerrar ojo'},
+    {k:'sb_s_boca_ojo',l:'Cierre ocular al sonreír'},
+    {k:'sb_s_boca_cuello',l:'Contracción cuello al sonreír'},
+  ];
+  var opsR = [{v:'',l:''},{v:'0',l:'0 — Normal'},{v:'1',l:'1 — Diferencia leve'},{v:'2',l:'2 — Diferencia obvia'}];
+  var opsV = [{v:'',l:''},{v:'1',l:'1 — Sin movimiento'},{v:'2',l:'2 — Inicio'},{v:'3',l:'3 — Parcial'},{v:'4',l:'4 — Casi completo'},{v:'5',l:'5 — Completo'}];
+  var opsS = [{v:'',l:''},{v:'0',l:'0 — Sin sincinesia'},{v:'1',l:'1 — Leve'},{v:'2',l:'2 — Moderada'},{v:'3',l:'3 — Grave'}];
+  var html = '<div style="display:grid;gap:12px">';
+  html += '<div style="font-size:11px;font-weight:700;color:var(--n900);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--bd);padding-bottom:4px">A — Simetría en reposo (0-2 por ítem)</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px">';
+  symRep.forEach(function(it){
+    html += _selItem(it.k, opsR, items_d[it.k]||'', it.l);
+  });
+  html += '</div>';
+  html += '<div style="font-size:11px;font-weight:700;color:var(--n900);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--bd);padding-bottom:4px">B — Movimiento voluntario (1-5 por ítem)</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px">';
+  movVol.forEach(function(it){
+    html += _selItem(it.k, opsV, items_d[it.k]||'', it.l);
+  });
+  html += '</div>';
+  html += '<div style="font-size:11px;font-weight:700;color:var(--n900);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--bd);padding-bottom:4px">C — Sincinesias (0-3 por ítem)</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px">';
+  sinc.forEach(function(it){
+    html += _selItem(it.k, opsS, items_d[it.k]||'', it.l);
+  });
+  html += '</div></div>';
+  return html;
+}
+function calcularSunnybrook(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var reposo=['sb_r_arruga','sb_r_ojo','sb_r_mejilla','sb_r_comisura','sb_r_menton'];
+  var movol=['sb_v_ceja','sb_v_ojo','sb_v_sonrisa','sb_v_labio','sb_v_nariz'];
+  var sincs=['sb_s_ojo_ceja','sb_s_ojo_mejilla','sb_s_ojo_boca','sb_s_boca_ojo','sb_s_boca_cuello'];
+  var sumR=0,sumV=0,sumS=0,countR=0,countV=0,countS=0;
+  reposo.forEach(function(k){ var el=b.querySelector('[data-escala-item="'+k+'"]'); if(el&&el.value!==''){sumR+=Number(el.value);countR++;} });
+  movol.forEach(function(k){ var el=b.querySelector('[data-escala-item="'+k+'"]'); if(el&&el.value!==''){sumV+=Number(el.value);countV++;} });
+  sincs.forEach(function(k){ var el=b.querySelector('[data-escala-item="'+k+'"]'); if(el&&el.value!==''){sumS+=Number(el.value);countS++;} });
+  if(!countR&&!countV&&!countS) return null;
+  var scoreR = sumR*5;
+  var scoreV = sumV*4;
+  var scoreS = sumS*5;
+  var composite = scoreV - scoreR - scoreS;
+  if(composite < 0) composite = 0;
+  var color = composite>=75?'var(--green)':composite>=50?'var(--amber)':'var(--red)';
+  var interp = composite>=75?'Disfunción leve':composite>=50?'Disfunción moderada':'Disfunción grave';
+  return {puntaje: composite+'/100', puntajeRaw: composite, interpretacion: interp, color: color};
+}
+
+// ══════════════════════════════════════════════════════════════
+// FICHA PARÁLISIS FACIAL
+// ══════════════════════════════════════════════════════════════
+
+function secParalisisFacial(d){
+  return secHistoriaFacial(d)
+       + secExamenFacial(d)
+       + secMusculaturaFacial(d)
+}
+
+function secHistoriaFacial(d){
+  return secWrap('historia_facial','III. Historia clínica — Parálisis facial','',`
+    <div class="form-grid">
+      <div class="field form-full"><label>Diagnóstico médico (CIE-10)</label>
+        <input class="inp" id="dxFacial" value="${e2(d.dxFacial||'')}"
+          placeholder="Ej: G51.0 Parálisis de Bell, G51.8 Parálisis facial periférica..."></div>
+      <div class="field"><label>Tipo de parálisis</label>
+        <select class="sel" id="tipoParalisis">
+          <option value=""></option>
+          ${['Periférica (PNM)','Central (NMS)','Congénita','Traumática','Post-quirúrgica'].map(v=>`<option ${d.tipoParalisis===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Lado afectado</label>
+        <select class="sel" id="ladoFacial">
+          <option value=""></option>
+          ${['Derecho','Izquierdo','Bilateral'].map(v=>`<option ${d.ladoFacial===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Tiempo de evolución</label>
+        <select class="sel" id="tiempoEvolFacial">
+          <option value=""></option>
+          ${['Agudo (< 1 semana)','Subagudo (1-4 semanas)','Subagudo tardío (1-3 meses)','Crónico (> 3 meses)'].map(v=>`<option ${d.tiempoEvolFacial===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Etiología probable</label>
+        <select class="sel" id="etiologiaFacial">
+          <option value=""></option>
+          ${['Idiopática (Parálisis de Bell)','Viral (herpes zóster — Ramsay Hunt)','Viral (herpes simple)','Otitis media','Parotiditis','Traumatismo','Tumor — compresión','Post-quirúrgica','Lyme','Sarcoidosis','Otra'].map(v=>`<option ${d.etiologiaFacial===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Grado House-Brackmann</label>
+        <select class="sel" id="houseBrackmann">
+          <option value=""></option>
+          ${[
+            'I — Normal: función normal en todos los territorios',
+            'II — Disfunción leve: ligera debilidad al examen detallado',
+            'III — Disfunción moderada: diferencia obvia pero sin desfiguración',
+            'IV — Disfunción moderada-grave: debilidad obvia y asimetría desfigurante',
+            'V — Disfunción grave: movimiento apenas perceptible',
+            'VI — Parálisis total: sin movimiento'
+          ].map(v=>`<option ${d.houseBrackmann===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Lagoftalmos (cierre incompleto del ojo)</label>
+        <select class="sel" id="lagoftalmos">
+          <option value=""></option>
+          ${['Ausente','Leve (< 2 mm)','Moderado (2-5 mm)','Grave (> 5 mm)'].map(v=>`<option ${d.lagoftalmos===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Sincinesias</label>
+        <select class="sel" id="sincinesias">
+          <option value=""></option>
+          ${['Ausentes','Leves','Moderadas','Graves'].map(v=>`<option ${d.sincinesias===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Simetría facial en reposo</label>
+        <select class="sel" id="simetriaReposo">
+          <option value=""></option>
+          ${['Simétrico','Asimetría leve','Asimetría moderada','Asimetría grave'].map(v=>`<option ${d.simetriaReposo===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+    </div>`,true);
+}
+
+function secExamenFacial(d){
+  const gradosFacial = [
+    {v:'',l:''},
+    {v:'0',l:'0 — Sin movimiento'},
+    {v:'1',l:'1 — Inicio de movimiento'},
+    {v:'2',l:'2 — Movimiento parcial'},
+    {v:'3',l:'3 — Movimiento ≥ 50%'},
+    {v:'4',l:'4 — Movimiento casi normal'},
+    {v:'5',l:'5 — Normal'}
+  ];
+  function selGrado(id, val, label){
+    var html = '<div class="field"><label>'+label+'</label><select class="sel" id="'+id+'">';
+    gradosFacial.forEach(function(g){ html += '<option value="'+g.v+'"'+(String(val||'')===String(g.v)?' selected':'')+'>'+g.l+'</option>'; });
+    html += '</select></div>';
+    return html;
+  }
+  return secWrap('examen_facial','IV. Evaluación de la musculatura facial','',`
+    <div style="font-size:11px;color:var(--tx3);margin-bottom:12px;padding:8px;background:var(--surf3);border-radius:8px">
+      Escala 0–5: 0 = sin movimiento · 1 = inicio · 2 = parcial · 3 = ≥50% · 4 = casi normal · 5 = normal
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--n900);margin-bottom:8px">Territorio superior — Nervio facial superior</div>
+    <div class="form-grid">
+      ${selGrado('arrugarFrente', d.arrugarFrente, 'Arrugar la frente')}
+      ${selGrado('elevacionCeja', d.elevacionCeja, 'Elevación de la ceja')}
+      ${selGrado('cierreOcular', d.cierreOcular, 'Cierre ocular completo')}
+      ${selGrado('parpadeoFuerza', d.parpadeoFuerza, 'Parpadeo — fuerza')}
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--n900);margin:12px 0 8px">Territorio inferior — Nervio facial inferior</div>
+    <div class="form-grid">
+      ${selGrado('sonrisa', d.sonrisa, 'Sonrisa (elevación comisura)')}
+      ${selGrado('elevacionComisura', d.elevacionComisura, 'Elevación comisura labial')}
+      ${selGrado('mostrarDientes', d.mostrarDientes, 'Mostrar dientes')}
+      ${selGrado('fruncirLabios', d.fruncirLabios, 'Fruncir labios / beso')}
+      ${selGrado('inflarMejillas', d.inflarMejillas, 'Inflar mejillas')}
+      ${selGrado('deprComisura', d.deprComisura, 'Descender comisura labial')}
+    </div>
+    <div class="form-grid" style="margin-top:12px">
+      <div class="field form-full"><label>Observaciones clínicas</label>
+        <textarea class="ta" id="observacionesFacial" rows="3"
+          placeholder="Sincinesias, espasmos, dolor, sensación subjetiva, lágrimas de cocodrilo, hiperacusia...">${e2(d.observacionesFacial||'')}</textarea></div>
+    </div>`);
+}
+
+function secMusculaturaFacial(d){
+  return secWrap('musculatura_facial','V. Evaluación sensitiva y complementaria','',`
+    <div class="form-grid">
+      <div class="field"><label>Sensibilidad zona auricular / pabellón</label>
+        <select class="sel" id="sensAuricular">
+          <option value=""></option>
+          ${['Normal','Hipoestesia leve','Hipoestesia moderada','Anestesia','Hiperestesia/alodinia'].map(v=>`<option ${d.sensAuricular===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Gusto (2/3 anteriores lengua)</label>
+        <select class="sel" id="gustoLengua">
+          <option value=""></option>
+          ${['Normal','Ageusia parcial','Ageusia completa','No evaluado'].map(v=>`<option ${d.gustoLengua===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Reflejo corneal</label>
+        <select class="sel" id="reflejoCorneal">
+          <option value=""></option>
+          ${['Presente y normal','Disminuido','Ausente'].map(v=>`<option ${d.reflejoCorneal===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Secreción lagrimal (test Schirmer)</label>
+        <select class="sel" id="secLagrimal">
+          <option value=""></option>
+          ${['Normal','Disminuida','Aumentada (lágrimas cocodrilo)','No evaluado'].map(v=>`<option ${d.secLagrimal===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Dolor</label>
+        <select class="sel" id="dolorFacial">
+          <option value=""></option>
+          ${['Ausente','Retroauricular','Facial','Cefálico difuso','Mandibular'].map(v=>`<option ${d.dolorFacial===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Hiperacusia</label>
+        <select class="sel" id="hiperacusia">
+          <option value=""></option>
+          ${['Ausente','Presente leve','Presente moderada-grave'].map(v=>`<option ${d.hiperacusia===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>EMG — electromiografía</label>
+        <select class="sel" id="emgFacial">
+          <option value=""></option>
+          ${['No realizada','Normal','Denervación parcial','Denervación total','Reinervación en curso'].map(v=>`<option ${d.emgFacial===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label>Reflejo de Schirmer</label>
+        <select class="sel" id="schirmer">
+          <option value=""></option>
+          ${['Normal (> 10 mm/5 min)','Reducido (5-10 mm)','Muy reducido (< 5 mm)','No evaluado'].map(v=>`<option ${d.schirmer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+    </div>
+    <div style="font-size:11px;color:var(--tx4);margin-top:8px;padding:8px;background:var(--surf3);border-radius:8px">
+      Registra la escala <b>House-Brackmann</b> en la sección III y las escalas <b>Sunnybrook</b> o <b>eFACE</b> en el módulo de Escalas si están disponibles.
+    </div>`);
+}
 
 function secNeuroPediatrica(d){
   return secAnamnesisPed(d)
@@ -6514,7 +6898,7 @@ async function guardarHC(catId, pacId, modo){
     // Evaluación respiratoria
     patronResp:v('patronResp'),muscAccesoria:v('muscAccesoria'),tiraje:v('tiraje'),tos:v('tos'),
     tipoTorax:v('tipoTorax'),expansionToracica:v('expansionToracica'),
-    auscultacion:v('auscultacion'),pef:v('pef'),fvc:v('fvc'),fev1:v('fev1'),fev1fvc:v('fev1fvc'),
+    auscultacion:v('auscultacion'),
     // Evaluación cardíaca
     disneaReposo:v('disneaReposo'),ortopnea:v('ortopnea'),dolorToracico:v('dolorToracico'),
     palpitaciones:v('palpitaciones'),tosNocturna:v('tosNocturna'),nyha:v('nyha'),edemaMmii:v('edemaMmii'),
@@ -6527,6 +6911,18 @@ async function guardarHC(catId, pacId, modo){
     limitAVD:v('limitAVD'),suenio:v('suenio'),obsFuncCard:v('obsFuncCard'),
   } : {};
 
+
+  // Leer campos específicos de parálisis facial
+  const datosFacial = catId==='paralisis_facial' ? {
+    dxFacial:v('dxFacial'),tipoParalisis:v('tipoParalisis'),ladoFacial:v('ladoFacial'),
+    tiempoEvolFacial:v('tiempoEvolFacial'),etiologiaFacial:v('etiologiaFacial'),
+    houseBrackmann:v('houseBrackmann'),lagoftalmos:v('lagoftalmos'),sincinesias:v('sincinesias'),
+    simetriaReposo:v('simetriaReposo'),
+    elevacionCeja:v('elevacionCeja'),cierreOcular:v('cierreOcular'),sonrisa:v('sonrisa'),
+    elevacionComisura:v('elevacionComisura'),fruncirLabios:v('fruncirLabios'),
+    arrugarFrente:v('arrugarFrente'),mostrarDientes:v('mostrarDientes'),inflarMejillas:v('inflarMejillas'),
+    observacionesFacial:v('observacionesFacial'),
+  } : {};
 
   // Variables dinámicas solo presentes en traumatología
   const regiones = (function(){
@@ -6559,6 +6955,7 @@ async function guardarHC(catId, pacId, modo){
     ...datosNeuro,
     ...datosPed,
     ...datosCardio,
+    ...datosFacial,
     ...datosPostural,
   };
   
