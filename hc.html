@@ -4614,11 +4614,11 @@ function renderEscalaASIA(d){
     html += '<div style="display:flex;align-items:center;gap:6px;font-size:12px">';
     html += '<span style="min-width:170px;color:var(--tx2)">'+m.l+'</span>';
     html += '<span style="font-size:10px;color:var(--tx4)">D:</span>';
-    html += '<select class="sel" data-escala-item="motor_D_'+m.k+'" onchange="recalcularEscala('asia')" style="width:52px;font-size:12px;padding:4px 6px">';
+    html += '<select class="sel" data-escala-item="motor_D_'+m.k+'" onchange="recalcularEscala(\'asia\')" style="width:52px;font-size:12px;padding:4px 6px">';
     gradosMRC.forEach(function(g){ html += '<option value="'+g.v+'"'+(String(vD)===String(g.v)?' selected':'')+'>'+g.l+'</option>'; });
     html += '</select>';
     html += '<span style="font-size:10px;color:var(--tx4)">I:</span>';
-    html += '<select class="sel" data-escala-item="motor_I_'+m.k+'" onchange="recalcularEscala('asia')" style="width:52px;font-size:12px;padding:4px 6px">';
+    html += '<select class="sel" data-escala-item="motor_I_'+m.k+'" onchange="recalcularEscala(\'asia\')" style="width:52px;font-size:12px;padding:4px 6px">';
     gradosMRC.forEach(function(g){ html += '<option value="'+g.v+'"'+(String(vI)===String(g.v)?' selected':'')+'>'+g.l+'</option>'; });
     html += '</select></div>';
   });
@@ -4635,11 +4635,11 @@ function renderEscalaASIA(d){
     html += '<div style="display:flex;align-items:center;gap:5px;font-size:11px">';
     html += '<span style="min-width:36px;font-weight:600;color:var(--tx2)">'+dt+'</span>';
     html += '<span style="font-size:10px;color:var(--tx4)">D:</span>';
-    html += '<select class="sel" data-escala-item="sens_D_'+dt+'" onchange="recalcularEscala('asia')" style="width:52px;font-size:11px;padding:3px 5px">';
+    html += '<select class="sel" data-escala-item="sens_D_'+dt+'" onchange="recalcularEscala(\'asia\')" style="width:52px;font-size:11px;padding:3px 5px">';
     dermOfValues.forEach(function(g){ html += '<option value="'+g.v+'"'+(String(vD)===String(g.v)?' selected':'')+'>'+g.l+'</option>'; });
     html += '</select>';
     html += '<span style="font-size:10px;color:var(--tx4)">I:</span>';
-    html += '<select class="sel" data-escala-item="sens_I_'+dt+'" onchange="recalcularEscala('asia')" style="width:52px;font-size:11px;padding:3px 5px">';
+    html += '<select class="sel" data-escala-item="sens_I_'+dt+'" onchange="recalcularEscala(\'asia\')" style="width:52px;font-size:11px;padding:3px 5px">';
     dermOfValues.forEach(function(g){ html += '<option value="'+g.v+'"'+(String(vI)===String(g.v)?' selected':'')+'>'+g.l+'</option>'; });
     html += '</select></div>';
   });
