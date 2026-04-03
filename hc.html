@@ -3077,16 +3077,23 @@ async function confirmarRev(estado){
   if(!revTarget)return;
   const com=g('modalRevCom')?.value?.trim()||'';
   if(estado==='rechazada'&&!com){toast('Escribe un comentario para el alumno','','warn');return;}
-  cerrarRev();
+
+  // FIX: guardar los datos de revTarget ANTES de cerrar el modal,
+  // porque cerrarRev() pone revTarget=null y luego no se puede acceder.
+  const _tipo  = revTarget.tipo;
+  const _id    = revTarget.id;
+  const _pacId = revTarget.pacId;
+  cerrarRev(); // ahora es seguro cerrar: ya tenemos copias de los datos
+
   showSendOverlay(
     estado==='aprobada' ? '✅ Aprobando...' : '❌ Rechazando...',
     estado==='aprobada' ? 'Notificando al alumno' : 'Enviando comentario al alumno'
   );
   try{
-    const action=revTarget.tipo==='eval'?'revisarEvaluacion':'revisarSesion';
-    const revisadoPor=session?.nombre||session?.codigo||'';
-    const r=await apiPost({action,id:revTarget.id,estado,comentario:com,revisadoPor});
-    if(!r.ok){hideSendOverlay();toast('Error',r.error,'err');return;}
+    const action = _tipo==='eval' ? 'revisarEvaluacion' : 'revisarSesion';
+    const revisadoPor = (session&&session.nombre) ? session.nombre : (session&&session.codigo ? session.codigo : '');
+    const r=await apiPost({action, id:_id, estado, comentario:com, revisadoPor});
+    if(!r.ok){hideSendOverlay();toast('Error',r.error||'Error desconocido','err');return;}
     if(estado==='aprobada'&&session){
       try{
         var rU=await apiGet('listarUsuarios').catch(function(){return {ok:false};});
@@ -3099,11 +3106,11 @@ async function confirmarRev(estado){
             window._firmaRevisorActual=docMe;
           }
         }
-      }catch(e){}
+      }catch(e){ console.warn('No se pudo cargar firma del revisor:',e); }
     }
     hideSendOverlay();
     toast(estado==='aprobada'?'✅ Aprobado':'❌ Rechazado','','ok');
-    if(revTarget?.pacId) abrirPac(revTarget.pacId);
+    if(_pacId) abrirPac(_pacId); // usar la copia local, no revTarget (que ya es null)
     cargarBadge();
   }catch(ex){ hideSendOverlay(); toast('Error inesperado',ex.message,'err'); }
 }
