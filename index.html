@@ -832,6 +832,20 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
               <input class="inp" id="cfgIniciales" placeholder="Ej: FT" maxlength="4" style="text-transform:uppercase">
             </div>
 
+            <div class="slbl">&#127970; Datos institucionales (PDF)</div>
+            <div class="field">
+              <label>Universidad / Institución</label>
+              <input class="inp" id="cfgUniv" placeholder="Ej: Universidad Privada de Tacna">
+            </div>
+            <div class="field">
+              <label>Facultad / Departamento</label>
+              <input class="inp" id="cfgFac" placeholder="Ej: Facultad de Ciencias de la Salud">
+            </div>
+            <div class="field">
+              <label>Escuela / Programa</label>
+              <input class="inp" id="cfgEsc" placeholder="Ej: Escuela Profesional de Tecnología Médica">
+            </div>
+
             <div class="slbl">Logo del sistema</div>
             <div id="cfgLogoPreviewBox" style="display:none;margin-bottom:10px;text-align:center">
               <img id="cfgLogoPreview" src="" alt="Preview" style="max-height:90px;max-width:100%;border-radius:10px;border:1px solid var(--bd2);padding:6px;background:#fff">
@@ -1345,7 +1359,7 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
 // ==========================
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxluSfNEA5FCvm2FBIUh8SWyw6af6bOVUrhdRCsrjgitOzSliZDeQg5ecwddDDJo58vRQ/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz38pcJfNZ1pm3USUacGenZyCg9wn4FhSsOIDWNwY8OjxCNXwfGOljpakNWxYIsbBJhCA/exec';
 // ====================================================
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
@@ -2737,8 +2751,12 @@ function renderResumenPreviewCombinado(){
   tbl.innerHTML=html;
 }
 
-// Convierte el logo guardado a versión negra para PDF
-// Funciona con PNG (transparencia) y JPEG (fondo sólido)
+// Convierte el logo guardado a version negra para PDF.
+// Estrategia:
+//   - Si el PNG tiene fondo transparente (alfa < 255 en algun pixel):
+//       pixels visibles (alfa > 10) → negro puro, mantiene alfa original
+//   - Si la imagen es solida (JPEG o PNG sin transparencia):
+//       usa luminancia invertida como alfa (blanco → invisible, oscuro → opaco negro)
 async function logoParaPDF_(){
   const b64=g('cfgLogoB64')?g('cfgLogoB64').textContent:'';
   if(!b64) return '';
@@ -2751,19 +2769,23 @@ async function logoParaPDF_(){
       ctx.drawImage(img,0,0);
       const imgData=ctx.getImageData(0,0,canvas.width,canvas.height);
       const d=imgData.data;
+
+      // Detectar si tiene fondo transparente
+      let tieneTransp=false;
+      for(let i=3;i<d.length;i+=4){ if(d[i]<255){tieneTransp=true;break;} }
+
       for(let i=0;i<d.length;i+=4){
-        // Convertir a negro: luminancia del pixel → si es claro, hacerlo negro
-        const lum=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
-        const alpha=d[i+3];
-        if(alpha>10){          // pixel visible
-          d[i]=0; d[i+1]=0; d[i+2]=0; // negro puro
-          // Mantener transparencia original si existe, si no usa la luminancia inversa como alfa
-          if(alpha<255){
-            d[i+3]=alpha;      // PNG con transparencia: mantener alfa original
-          } else {
-            // JPEG/PNG sólido: usar luminancia invertida como opacidad (blanco→transparente, negro→opaco)
-            d[i+3]=Math.round(255-lum);
-          }
+        const alfa=d[i+3];
+        if(tieneTransp){
+          // PNG con transparencia: pixels visibles → negro, conservar alfa
+          if(alfa>10){ d[i]=0; d[i+1]=0; d[i+2]=0; }
+          else { d[i+3]=0; } // pixel transparente → dejarlo transparente
+        } else {
+          // Imagen solida (JPEG / PNG sin alpha):
+          // Usar luminancia invertida como canal alfa para que lo blanco desaparezca
+          const lum=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+          d[i]=0; d[i+1]=0; d[i+2]=0;
+          d[i+3]=Math.round(255-lum); // blanco(255)→alfa 0, negro(0)→alfa 255
         }
       }
       ctx.putImageData(imgData,0,0);
@@ -2782,6 +2804,10 @@ async function exportarPDF(){
   const fecha=new Date().toLocaleDateString('es-PE',{year:'numeric',month:'long',day:'numeric'});
   // Obtener logo guardado y convertirlo a negro para el PDF
   const logoUrl=await logoParaPDF_();
+  // Datos institucionales desde el panel de configuración
+  const instUniv=(g('cfgUniv')||{}).value||'';
+  const instFac =(g('cfgFac') ||{}).value||'';
+  const instEsc =(g('cfgEsc') ||{}).value||'';
   // Semestre del primer grupo que lo tenga
   const semestre=(expResumenCombinado.grupos||[]).map(g=>g.cfg&&g.cfg.semestre).find(s=>s)||'';
   const apro=expResumenCombinado.alumnos[0]&&expResumenCombinado.alumnos[0].notaApro||11;
@@ -2842,9 +2868,9 @@ tbody tr:last-child td{border-bottom:2px solid #0a1628}
 <div class="hdr-pdf">
   <div class="logo-box"><img src="${logoUrl}" alt="Logo" onerror="this.style.display='none'"></div>
   <div class="inst-info">
-    <div class="inst-univ">Universidad Privada de Tacna</div>
-    <div class="inst-fac">Facultad de Ciencias de la Salud</div>
-    <div class="inst-esc">Escuela Profesional de Tecnologia Medica</div>
+    ${instUniv?`<div class="inst-univ">${instUniv}</div>`:''}
+    ${instFac?`<div class="inst-fac">${instFac}</div>`:''}
+    ${instEsc?`<div class="inst-esc">${instEsc}</div>`:''}
   </div>
 </div>
 <div class="titulo">
@@ -2898,6 +2924,9 @@ async function cargarConfigSistema(){
     if(r.ok){
       if(n) n.value=r.nombre||'';
       if(ini) ini.value=r.iniciales||'';
+      const univ=g('cfgUniv'); if(univ) univ.value=r.univ||'';
+      const fac =g('cfgFac');  if(fac)  fac.value =r.fac||'';
+      const esc =g('cfgEsc');  if(esc)  esc.value =r.esc||'';
       if(r.logoUrl && r.logoUrl.startsWith('data:')){
         const prev=g('cfgLogoPreview');
         if(prev){prev.src=r.logoUrl;g('cfgLogoPreviewBox').style.display='block';}
@@ -2972,11 +3001,14 @@ async function guardarConfigSistema(){
   const nombre=(g('cfgNombre')||{}).value||'';
   const iniciales=((g('cfgIniciales')||{}).value||'').toUpperCase();
   const logoB64=(g('cfgLogoB64')||{}).textContent||'';
+  const univ=(g('cfgUniv')||{}).value||'';
+  const fac =(g('cfgFac') ||{}).value||'';
+  const esc =(g('cfgEsc') ||{}).value||'';
   const res=g('cfgResult');
   if(!nombre.trim()){res.style.display='block';res.style.color='var(--red)';res.textContent='El nombre es obligatorio.';return;}
   showLoader('Guardando configuración...');
   try{
-    const r=await apiPost({action:'guardarBranding',nombre,iniciales,logoB64});
+    const r=await apiPost({action:'guardarBranding',nombre,iniciales,logoB64,univ,fac,esc});
     hideLoader();
     res.style.display='block';
     if(r.ok){
@@ -3026,6 +3058,10 @@ function applyBranding(cfg){
     ['logoInitials','logoInitialsHdr'].forEach(id=>{const el=g(id);if(el)el.textContent=cfg.iniciales;});
   }
   if(cfg.logoUrl) applyLogo(cfg.logoUrl);
+  // Actualizar campos inst en el panel si están disponibles en DOM
+  if(cfg.univ!==undefined){const e=g('cfgUniv');if(e)e.value=cfg.univ;}
+  if(cfg.fac!==undefined) {const e=g('cfgFac'); if(e)e.value=cfg.fac;}
+  if(cfg.esc!==undefined) {const e=g('cfgEsc'); if(e)e.value=cfg.esc;}
 }
 
 // Cargar branding desde GAS al iniciar la página
