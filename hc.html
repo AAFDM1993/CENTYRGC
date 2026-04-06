@@ -248,17 +248,17 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
 </div>
 
 <!-- App -->
-<div id="hcInitOverlay" style="position:fixed;inset:0;background:#1e3a5f;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><div style="width:48px;height:48px;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:hcSpin .8s linear infinite"></div><div style="color:#fff;font-size:15px;font-weight:600;font-family:'Syne',sans-serif">Cargando Historias Cl&#237;nicas...</div><div id="overlayEmpresa" style="color:rgba(255,255,255,.5);font-size:12px">CENTYR &mdash; UPT</div></div>
+<div id="hcInitOverlay" style="position:fixed;inset:0;background:#1e3a5f;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><div style="width:48px;height:48px;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:hcSpin .8s linear infinite"></div><div style="color:#fff;font-size:15px;font-weight:600;font-family:'Syne',sans-serif">Cargando Historias Cl&#237;nicas...</div><div id="overlayEmpresa" style="color:rgba(255,255,255,.5);font-size:12px">Historias Cl&iacute;nicas</div></div>
 <div id="appPage" style="display:none">
   <header class="hdr">
     <div style="display:flex;align-items:center;gap:10px">
       <div class="hdr-mark" id="hdrLogoWrapHdr" style="background:linear-gradient(135deg,var(--n500),var(--purple))">HC</div>
-      <div><div class="hdr-t1" id="hdrNombreEmpresa">CENTYR · HC</div><div class="hdr-t2">Historias Clínicas</div></div>
+      <div><div class="hdr-t1" id="hdrNombreEmpresa">Historias Clínicas</div><div class="hdr-t2">Historias Clínicas</div></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <span id="hdrNombre" style="font-size:12px;color:var(--tx2);font-weight:600;display:none"></span>
       <span id="hdrRol" class="rol-pill"></span>
-      <a href="index.html" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer;text-decoration:none">← <span id="hdrBtnEmpresa">CENTYR</span></a>
+      <a href="index.html" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer;text-decoration:none">← <span id="hdrBtnEmpresa">Inicio</span></a>
       <button onclick="doLogout()" style="background:var(--red2);border:1px solid rgba(239,68,68,.3);color:var(--red);border-radius:9px;font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer">Salir</button>
     </div>
   </header>
@@ -333,7 +333,7 @@ const SK = 'centyr_hc_s';
 const TTL = 6*60*60*1000;
 
 // ─── Marca dinámica (cargada desde GAS via acción getBrand) ───
-let _brandNombre = 'CENTYR';
+let _brandNombre = '';
 let _brandLogo   = '';   // base64 del logo, vacío = fallback texto
 
 async function cargarBrand(){
@@ -384,13 +384,13 @@ function aplicarBrand(){
   }
   // 2. Header — nombre empresa
   var hdrNom = g('hdrNombreEmpresa');
-  if(hdrNom) hdrNom.textContent = (_brandNombre||'CENTYR') + ' · HC';
+  if(hdrNom) hdrNom.textContent = (_brandNombre||'HC') + ' · HC';
   // 3. Header — botón ← Empresa
   var hdrBtn = g('hdrBtnEmpresa');
-  if(hdrBtn) hdrBtn.textContent = _brandNombre||'CENTYR';
+  if(hdrBtn) hdrBtn.textContent = _brandNombre||'Inicio';
   // 4. Overlay de carga
   var ovEmp = g('overlayEmpresa');
-  if(ovEmp) ovEmp.textContent = _brandNombre||'CENTYR';
+  if(ovEmp) ovEmp.textContent = _brandNombre||'Historias Clínicas';
   // 5. Tarjeta de login — logo
   var lgWrap = g('lgLogoWrap');
   if(lgWrap){
@@ -874,7 +874,7 @@ function exportarDocumento(titulo, bodyHTML){
     +'<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">'
     +'</head><body>'
     +'<div class="doc-header">'
-    +'<div><div class="doc-logo">'+(_brandLogo?'<img src="'+_brandLogo+'" style="height:32px;object-fit:contain;vertical-align:middle;margin-right:6px">':'')+'<span style="vertical-align:middle">'+(_brandNombre||'CENTYR').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span></div><div class="doc-subtitle">Historia Cl&iacute;nica Fisioterapia</div></div>'
+    +'<div><div class="doc-logo">'+(_brandLogo?'<img src="'+_brandLogo+'" style="height:32px;object-fit:contain;vertical-align:middle;margin-right:6px">':'')+'<span style="vertical-align:middle">'+(_brandNombre||'HC').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span></div><div class="doc-subtitle">Historia Cl&iacute;nica Fisioterapia</div></div>'
     +'<div style="text-align:right;font-size:10px;color:#64748b">Generado: '
     +(function(){var n=new Date();var dd=String(n.getDate()).padStart(2,'0');var mm=String(n.getMonth()+1).padStart(2,'0');var yy=n.getFullYear();var h=n.getHours();var mi=String(n.getMinutes()).padStart(2,'0');var ap=h>=12?'PM':'AM';h=h%12||12;return dd+'/'+mm+'/'+yy+' '+h+':'+mi+' '+ap;})()
     +'</div></div>'
@@ -7226,7 +7226,7 @@ function renderConfig(){
     <div class="form-grid" style="grid-template-columns:1fr auto;gap:10px;align-items:end">
       <div class="field">
         <label>Nombre de la empresa o cl&iacute;nica</label>
-        <input class="inp" id="cfgNombre" placeholder="Ej: CENTYR — UPT" value="${e2(_brandNombre||'')}">
+        <input class="inp" id="cfgNombre" placeholder="Ingresa el nombre de tu empresa o clínica" value="${e2(_brandNombre||'')}">
       </div>
       <button class="btn btn-primary" onclick="guardarNombreEmpresa()" style="height:38px;white-space:nowrap">
         &#128190; Guardar nombre
@@ -7263,7 +7263,7 @@ function renderConfig(){
       ondrop="event.preventDefault();this.style.borderColor='var(--bd)';this.style.background='var(--surf2)';cfgHandleFile(event.dataTransfer.files[0])">
       <div style="font-size:28px;margin-bottom:6px">📂</div>
       <div style="font-size:13px;font-weight:600;color:var(--tx2)">Arrastra tu PNG aqu&iacute; o haz clic para seleccionar</div>
-      <div style="font-size:11px;color:var(--tx4);margin-top:4px">PNG con transparencia · Se redimensiona a 200&times;200 px en el navegador</div>
+      <div style="font-size:11px;color:var(--tx4);margin-top:4px" id="cfgDropHint">PNG con transparencia &middot; Se redimensiona autom&aacute;ticamente para caber en la hoja de c&aacute;lculo</div>
     </div>
     <input type="file" id="cfgFileInput" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none" onchange="cfgHandleFile(this.files[0])">
 
@@ -7306,7 +7306,11 @@ function renderConfig(){
 }
 
 // ── Archivo seleccionado: redimensionar en canvas preservando alpha ──
+// Límite de Google Sheets: 50000 chars por celda.
+// Un base64 PNG ocupa ~1.37 bytes por byte → para 50000 chars necesitamos ≤36496 bytes raw.
+// Usamos 33KB como techo seguro con margen. Si PNG puro no alcanza, intentamos WebP→PNG fallback JPEG.
 var _cfgLogoBase64 = null;
+var SHEETS_MAX_CHARS = 49000; // margen de seguridad bajo el límite de 50000
 
 function cfgHandleFile(file){
   if(!file) return;
@@ -7316,37 +7320,84 @@ function cfgHandleFile(file){
   var reader = new FileReader();
   reader.onload = function(ev){
     var originalDataUrl = ev.target.result;
-    // Redimensionar en canvas del navegador — preserva canal alfa (transparencia PNG)
     var img = new Image();
     img.onload = function(){
-      var MAX = 200;
-      var scale = Math.min(MAX / img.width, MAX / img.height, 1); // nunca agranda
-      var w = Math.round(img.width  * scale);
-      var h = Math.round(img.height * scale);
-      var canvas = document.createElement('canvas');
-      canvas.width  = w;
-      canvas.height = h;
-      var ctx = canvas.getContext('2d');
-      // Fondo transparente — no llenamos con color, así se preserva el alfa
-      ctx.clearRect(0, 0, w, h);
-      ctx.drawImage(img, 0, 0, w, h);
-      // Exportar siempre como PNG para conservar transparencia
-      var resizedDataUrl = canvas.toDataURL('image/png');
-      _cfgLogoBase64 = resizedDataUrl;
+      // Intentar tamaños decrecientes hasta caber en el límite de Sheets
+      var sizes = [120, 96, 80, 64, 48];
+      var result = null;
+
+      for(var s = 0; s < sizes.length; s++){
+        var MAX = sizes[s];
+        var scale = Math.min(MAX / img.width, MAX / img.height, 1);
+        var w = Math.round(img.width  * scale);
+        var h = Math.round(img.height * scale);
+        // Mínimo 16×16 para que no quede invisible
+        if(w < 16) w = 16;
+        if(h < 16) h = 16;
+
+        var canvas = document.createElement('canvas');
+        canvas.width  = w;
+        canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, w, h); // fondo transparente — preserva canal alfa
+        ctx.drawImage(img, 0, 0, w, h);
+
+        // Intentar PNG primero (preserva transparencia)
+        var dataUrl = canvas.toDataURL('image/png');
+
+        if(dataUrl.length <= SHEETS_MAX_CHARS){
+          result = {dataUrl:dataUrl, w:w, h:h, fmt:'PNG', size:sizes[s]};
+          break;
+        }
+
+        // PNG demasiado grande en este tamaño → intentar WebP (menor peso, preserva alfa)
+        var webp = canvas.toDataURL('image/webp', 0.85);
+        if(webp && !webp.startsWith('data:image/png') && webp.length <= SHEETS_MAX_CHARS){
+          // Convertir WebP de vuelta a PNG para compatibilidad máxima en el header
+          // (algunos navegadores viejos no muestran WebP en <img> incrustado)
+          // Si el navegador soporta WebP en canvas, ya está; lo usamos directo.
+          result = {dataUrl:webp, w:w, h:h, fmt:'WebP', size:sizes[s]};
+          break;
+        }
+
+        // Fallback JPEG con calidad decreciente (pierde transparencia — fondo blanco)
+        var q = 0.80;
+        while(q >= 0.30){
+          var jpg = canvas.toDataURL('image/jpeg', q);
+          if(jpg.length <= SHEETS_MAX_CHARS){
+            result = {dataUrl:jpg, w:w, h:h, fmt:'JPEG q'+Math.round(q*100), size:sizes[s]};
+            break;
+          }
+          q -= 0.10;
+        }
+        if(result) break;
+      }
+
+      if(!result){
+        toast('La imagen es demasiado grande incluso en el tamaño mínimo. Usa una imagen más simple.','','err');
+        return;
+      }
+
+      _cfgLogoBase64 = result.dataUrl;
 
       // Mostrar previews
       var pw = g('cfgNewPreviewWrap');
       if(pw) pw.style.display='block';
       ['cfgNewPreviewDark','cfgNewPreviewLight','cfgNewPreviewTrans'].forEach(function(id){
-        var el=g(id); if(el) el.src=resizedDataUrl;
+        var el=g(id); if(el) el.src=result.dataUrl;
       });
       var info = g('cfgFileInfo');
       if(info){
-        var kb = Math.round(resizedDataUrl.length * 0.75 / 1024);
+        var kb = Math.round(result.dataUrl.length * 0.75 / 1024);
+        var warn = result.fmt.startsWith('JPEG') ? '<br><span style="color:var(--amber);font-size:10px">⚠ JPEG: transparencia convertida a blanco</span>' : '';
         info.innerHTML = '<b>'+file.name+'</b><br>'
-          + w+'&times;'+h+' px<br>'
-          + '~'+kb+' KB (PNG)';
+          + result.w+'&times;'+result.h+' px · '+result.fmt+'<br>'
+          + '~'+kb+' KB · '+result.dataUrl.length+' chars'
+          + warn;
       }
+      // Actualizar texto de la zona de carga
+      var hint = g('cfgDropHint');
+      if(hint) hint.textContent = 'Redimensionado a '+result.w+'×'+result.h+' px ('+result.fmt+') para caber en la hoja de cálculo';
     };
     img.onerror = function(){ toast('No se pudo leer la imagen','','err'); };
     img.src = originalDataUrl;
@@ -7470,8 +7521,8 @@ async function guardarNombreEmpresa(){
       </div>
       <div class="field form-full">
         <label>Cargo</label>
-        <input class="inp" id="firmaExCargo" placeholder="Ej: Coordinador del Centro Docente..."
-          value="Coordinador del Centro Docente de Terapia Física y Rehabilitación &ldquo;CENTYR-UPT&rdquo;"
+        <input class="inp" id="firmaExCargo" placeholder="Ej: Coordinador del Centro de Rehabilitación..."
+          value=""
           style="font-size:11px">
       </div>
     </div>
