@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
-<title>SISTEMA DE GESTIÓN CLÍNICO ACADÉMIMCA</title>
+<title id="appTitle">Sistema</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -601,7 +601,7 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
   <div class="login-card">
     <div class="login-logo" style="flex-direction:column;gap:16px;text-align:center">
       <img id="logoLogin" src="" alt="SISTEMA DE GESTIÓN CLÍNICA ACADÉMICA" style="width:320px;height:auto;object-fit:contain;display:none;border-radius:10px;margin:0 auto">
-      <div class="lmark" id="logoLoginFallback" style="width:80px;height:80px;font-size:28px;margin:0 auto">FT</div>
+      <div class="lmark" id="logoLoginFallback" style="width:80px;height:80px;font-size:28px;margin:0 auto"><span id="logoInitials">?</span></div>
     </div>
     <div class="login-field"><label>Codigo</label><input class="login-inp" id="lgCode" placeholder="Codigo de usuario" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <div class="login-field"><label>Contrasena</label><input class="login-inp" id="lgPass" type="password" placeholder="**********" onkeydown="if(event.key==='Enter')doLogin()"></div>
@@ -615,7 +615,7 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
     <div class="hdr">
       <div class="logo">
         <img id="logoImg" src="" alt="SISTEMA DE GESTIÓN CLÍNICA ACADÉMICA" style="height:38px;width:auto;object-fit:contain;border-radius:6px;display:none">
-        <div class="lmark" id="logoFallback">FT</div>
+        <div class="lmark" id="logoFallback"><span id="logoInitialsHdr">?</span></div>
       </div>
       <div class="hdr-right">
         <div class="cpill" id="cpill"><div class="dot" id="cdot"></div><span class="clabel" id="clabel">-</span></div>
@@ -2817,15 +2817,9 @@ tbody tr:last-child td{border-bottom:2px solid #0a1628}
     win.document.write(htmlPDF);win.document.close();
   }
 }
-// ── LOGO ─────────────────────────────────────────────────────
-// El logo se carga automáticamente desde logo.png en la misma carpeta
-// que index.html (en el repo de GitHub Pages: /main/logo.png)
-function getLogoUrl(){
-  // Construye la URL de logo.png relativa al index.html actual
-  // Funciona tanto en GitHub Pages (https://user.github.io/repo/) como en local
-  const base = window.location.href.replace(/[^/]*$/, '');
-  return base + 'logo.png';
-}
+// ── BRANDING (logo + nombre del sistema) ──────────────────────
+// Cargado desde GAS via action:'getBranding'
+// GAS debe retornar: { ok:true, nombre:'...', iniciales:'...', logoUrl:'...' }
 
 function applyLogo(url){
   const show = url && url.length > 0;
@@ -2849,9 +2843,24 @@ function applyLogo(url){
   });
 }
 
-// Cargar logo automáticamente al iniciar
-(function(){
-  applyLogo(getLogoUrl());
+function applyBranding(cfg){
+  if(cfg.nombre){
+    document.title=cfg.nombre;
+    const t=g('appTitle');if(t)t.textContent=cfg.nombre;
+    ['logoImg','logoLogin'].forEach(id=>{const el=g(id);if(el)el.alt=cfg.nombre;});
+  }
+  if(cfg.iniciales){
+    ['logoInitials','logoInitialsHdr'].forEach(id=>{const el=g(id);if(el)el.textContent=cfg.iniciales;});
+  }
+  if(cfg.logoUrl) applyLogo(cfg.logoUrl);
+}
+
+// Cargar branding desde GAS al iniciar la página
+(async function initBranding(){
+  try{
+    const r=await fetch(GAS_URL+'?'+new URLSearchParams({action:'getBranding'}));
+    if(r.ok){const data=await r.json();if(data.ok)applyBranding(data);}
+  }catch(e){console.warn('Branding no disponible:',e.message);}
 })();
 
 // ── LOG DE NOTAS ──────────────────────────────────────────────
