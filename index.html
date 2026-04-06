@@ -2737,13 +2737,51 @@ function renderResumenPreviewCombinado(){
   tbl.innerHTML=html;
 }
 
-function exportarPDF(){
+// Convierte el logo guardado a versión negra para PDF
+// Funciona con PNG (transparencia) y JPEG (fondo sólido)
+async function logoParaPDF_(){
+  const b64=g('cfgLogoB64')?g('cfgLogoB64').textContent:'';
+  if(!b64) return '';
+  return new Promise(function(resolve){
+    const img=new Image();
+    img.onload=function(){
+      const canvas=document.createElement('canvas');
+      canvas.width=img.width; canvas.height=img.height;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0);
+      const imgData=ctx.getImageData(0,0,canvas.width,canvas.height);
+      const d=imgData.data;
+      for(let i=0;i<d.length;i+=4){
+        // Convertir a negro: luminancia del pixel → si es claro, hacerlo negro
+        const lum=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+        const alpha=d[i+3];
+        if(alpha>10){          // pixel visible
+          d[i]=0; d[i+1]=0; d[i+2]=0; // negro puro
+          // Mantener transparencia original si existe, si no usa la luminancia inversa como alfa
+          if(alpha<255){
+            d[i+3]=alpha;      // PNG con transparencia: mantener alfa original
+          } else {
+            // JPEG/PNG sólido: usar luminancia invertida como opacidad (blanco→transparente, negro→opaco)
+            d[i+3]=Math.round(255-lum);
+          }
+        }
+      }
+      ctx.putImageData(imgData,0,0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror=function(){ resolve(''); };
+    img.src=b64;
+  });
+}
+
+async function exportarPDF(){
   // Validación corregida — solo necesita curso seleccionado y datos combinados
   if(!expSelCurso||!expResumenCombinado||!expResumenCombinado.alumnos||!expResumenCombinado.alumnos.length){
     toast('Selecciona un curso primero','','warn');return;
   }
   const fecha=new Date().toLocaleDateString('es-PE',{year:'numeric',month:'long',day:'numeric'});
-  const logoUrl=getLogoUrl();
+  // Obtener logo guardado y convertirlo a negro para el PDF
+  const logoUrl=await logoParaPDF_();
   // Semestre del primer grupo que lo tenga
   const semestre=(expResumenCombinado.grupos||[]).map(g=>g.cfg&&g.cfg.semestre).find(s=>s)||'';
   const apro=expResumenCombinado.alumnos[0]&&expResumenCombinado.alumnos[0].notaApro||11;
