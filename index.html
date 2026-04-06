@@ -819,6 +819,36 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
   <button class="btn-ghost" onclick="cargarHojasExport()" style="width:100%;margin-top:10px">&#8635; Recargar cursos</button>
 </div>
 
+          <div class="pane" id="pane-cfg">
+            <div class="slbl">&#127970; Configuración del Sistema</div>
+            <div class="hint-b" style="margin-bottom:12px;font-size:11px"><span>&#9432;</span><span>Los cambios se guardan en la hoja <strong>_config</strong> de Google Sheets y se aplican al instante.</span></div>
+
+            <div class="field">
+              <label>Nombre del sistema</label>
+              <input class="inp" id="cfgNombre" placeholder="Ej: Sistema de Gestión Clínica CENTYR">
+            </div>
+            <div class="field">
+              <label>Iniciales (fallback cuando no hay logo)</label>
+              <input class="inp" id="cfgIniciales" placeholder="Ej: FT" maxlength="4" style="text-transform:uppercase">
+            </div>
+
+            <div class="slbl">Logo del sistema</div>
+            <div id="cfgLogoPreviewBox" style="display:none;margin-bottom:10px;text-align:center">
+              <img id="cfgLogoPreview" src="" alt="Preview" style="max-height:90px;max-width:100%;border-radius:10px;border:1px solid var(--bd2);padding:6px;background:#fff">
+              <div style="font-size:10px;color:var(--tx4);margin-top:4px" id="cfgLogoSize"></div>
+            </div>
+            <div class="upload" id="cfgLogoDropZone" onclick="g('cfgLogoInput').click()" style="margin-bottom:10px">
+              <div class="ico">&#128444;</div>
+              <p>Haz clic para subir el logo</p>
+              <small>PNG, JPG, SVG — se comprime automáticamente a &lt;35KB</small>
+            </div>
+            <input type="file" id="cfgLogoInput" accept="image/*" style="display:none" onchange="cfgHandleLogo(this)">
+            <div id="cfgLogoB64" style="display:none"></div>
+
+            <button class="btn-sm green" onclick="guardarConfigSistema()" style="width:100%;margin-top:4px">&#10003; Guardar configuración</button>
+            <div id="cfgResult" style="margin-top:8px;display:none"></div>
+          </div>
+
     </div><!-- end adminPanesStore -->
 
     <!-- Topbar Admin + Docente (barra unificada) -->
@@ -833,6 +863,7 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
           <button onclick="abrirPanelAdmin('pdf')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128196; PDF</button>
           <button onclick="abrirPanelAdmin('log')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#128202; Log</button>
           <button onclick="abrirPanelAdmin('ho')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#9881; Config Hojas</button>
+          <button onclick="abrirPanelAdmin('cfg')" style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:600;padding:6px 11px;cursor:pointer;white-space:nowrap;transition:background .2s" onmouseover="this.style.background='rgba(255,255,255,.15)'" onmouseout="this.style.background='rgba(255,255,255,.07)'">&#127970; Sistema</button>
         </div>
 
         <!-- Admin+Docente: hojas, casilleros y agenda -->
@@ -1314,7 +1345,7 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
 // ==========================
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwJdcZ-kmX3wfOBHOpXl0cjVWiC3sv8U8o4BCc4gR7gfvovWaxb6e6bdObIEpkOBiUhDA/exec';
+const GAS_URL = https://script.google.com/macros/s/AKfycbxluSfNEA5FCvm2FBIUh8SWyw6af6bOVUrhdRCsrjgitOzSliZDeQg5ecwddDDJo58vRQ/exec';
 // ====================================================
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
@@ -2817,6 +2848,82 @@ tbody tr:last-child td{border-bottom:2px solid #0a1628}
     win.document.write(htmlPDF);win.document.close();
   }
 }
+// ── CONFIGURACIÓN DEL SISTEMA ────────────────────────────────
+async function cargarConfigSistema(){
+  const n=g('cfgNombre'), ini=g('cfgIniciales');
+  if(n) n.value=''; if(ini) ini.value='';
+  g('cfgLogoB64').textContent='';
+  g('cfgLogoPreviewBox').style.display='none';
+  g('cfgResult').style.display='none';
+  try{
+    const r=await apiGet('getBranding');
+    if(r.ok){
+      if(n) n.value=r.nombre||'';
+      if(ini) ini.value=r.iniciales||'';
+      if(r.logoUrl && r.logoUrl.startsWith('data:')){
+        const prev=g('cfgLogoPreview');
+        if(prev){prev.src=r.logoUrl;g('cfgLogoPreviewBox').style.display='block';}
+        g('cfgLogoB64').textContent=r.logoUrl;
+        cfgMostrarTamano(r.logoUrl);
+      }
+    }
+  }catch(e){console.warn('No se pudo cargar config:',e.message);}
+}
+
+function cfgHandleLogo(input){
+  const file=input.files[0]; if(!file)return;
+  const MAX_W=400, MAX_H=200, QUALITY=0.75, MAX_B64=45000;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const img=new Image();
+    img.onload=function(){
+      let w=img.width, h=img.height;
+      const ratio=Math.min(MAX_W/w, MAX_H/h, 1);
+      w=Math.round(w*ratio); h=Math.round(h*ratio);
+      const canvas=document.createElement('canvas');
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      let q=QUALITY, b64='';
+      // Reducir calidad hasta que quepa en Sheets
+      do { b64=canvas.toDataURL('image/jpeg',q); q-=0.05; } while(b64.length>MAX_B64 && q>0.2);
+      g('cfgLogoB64').textContent=b64;
+      const prev=g('cfgLogoPreview');
+      if(prev){prev.src=b64; g('cfgLogoPreviewBox').style.display='block';}
+      cfgMostrarTamano(b64);
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function cfgMostrarTamano(b64){
+  const el=g('cfgLogoSize'); if(!el)return;
+  const kb=Math.round(b64.length*0.75/1024);
+  el.textContent='Tamaño aprox.: '+kb+' KB'+(kb>35?' ⚠️ podría no guardarse en Sheets':'');
+}
+
+async function guardarConfigSistema(){
+  const nombre=(g('cfgNombre')||{}).value||'';
+  const iniciales=((g('cfgIniciales')||{}).value||'').toUpperCase();
+  const logoB64=(g('cfgLogoB64')||{}).textContent||'';
+  const res=g('cfgResult');
+  if(!nombre.trim()){res.style.display='block';res.style.color='var(--red)';res.textContent='El nombre es obligatorio.';return;}
+  showLoader('Guardando configuración...');
+  try{
+    const r=await apiPost({action:'guardarBranding',nombre,iniciales,logoB64});
+    hideLoader();
+    res.style.display='block';
+    if(r.ok){
+      res.style.color='var(--green)';
+      res.textContent='✓ Configuración guardada. Aplicando cambios...';
+      applyBranding({nombre, iniciales, logoUrl: logoB64||undefined});
+    } else {
+      res.style.color='var(--red)';
+      res.textContent='Error: '+(r.error||'No se pudo guardar');
+    }
+  }catch(e){hideLoader();res.style.display='block';res.style.color='var(--red)';res.textContent='Error: '+e.message;}
+}
+
 // ── BRANDING (logo + nombre del sistema) ──────────────────────
 // Cargado desde GAS via action:'getBranding'
 // GAS debe retornar: { ok:true, nombre:'...', iniciales:'...', logoUrl:'...' }
@@ -4123,6 +4230,7 @@ function abrirPanelAdmin(tab){
   else if(tab==='ho') loadHojas();
   else if(tab==='log') cargarLog();
   else if(tab==='cas') cargarCasilleros();
+  else if(tab==='cfg') cargarConfigSistema();
 
   // Mostrar el panelCard
   const pc = g('panelCard');
