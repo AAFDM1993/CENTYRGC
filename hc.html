@@ -235,8 +235,8 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
 <div id="lgPage">
   <div class="lg-card">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px">
-      <div style="width:42px;height:42px;background:linear-gradient(135deg,var(--n500),var(--purple));border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:#fff">HC</div>
-      <div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#fff">HC</div><div style="font-size:11px;color:var(--tx3)">Historias Clínicas Fisioterapéuticas</div></div>
+      <div id="lgLogoWrap" style="width:42px;height:42px;background:linear-gradient(135deg,var(--n500),var(--purple));border-radius:12px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:15px;color:#fff">HC</div>
+      <div><div id="lgNombreEmpresa" style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#fff">HC</div><div style="font-size:11px;color:var(--tx3)">Historias Clínicas Fisioterapéuticas</div></div>
     </div>
     <div class="field" style="margin-bottom:12px"><label>Código</label>
       <input class="inp" id="lgCod" type="text" placeholder="Código de usuario" autocomplete="username"></div>
@@ -248,17 +248,17 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
 </div>
 
 <!-- App -->
-<div id="hcInitOverlay" style="position:fixed;inset:0;background:#1e3a5f;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><div style="width:48px;height:48px;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:hcSpin .8s linear infinite"></div><div style="color:#fff;font-size:15px;font-weight:600;font-family:'Syne',sans-serif">Cargando Historias Cl&#237;nicas...</div><div style="color:rgba(255,255,255,.5);font-size:12px">CENTYR &mdash; UPT</div></div>
+<div id="hcInitOverlay" style="position:fixed;inset:0;background:#1e3a5f;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px"><div style="width:48px;height:48px;border:4px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:hcSpin .8s linear infinite"></div><div style="color:#fff;font-size:15px;font-weight:600;font-family:'Syne',sans-serif">Cargando Historias Cl&#237;nicas...</div><div id="overlayEmpresa" style="color:rgba(255,255,255,.5);font-size:12px">CENTYR &mdash; UPT</div></div>
 <div id="appPage" style="display:none">
   <header class="hdr">
     <div style="display:flex;align-items:center;gap:10px">
-      <div class="hdr-mark" style="background:none;padding:0;overflow:hidden"><img src="logo.png" alt="CENTYR" style="width:34px;height:34px;object-fit:contain;border-radius:10px" onerror="this.style.display='none';this.parentElement.textContent='HC';this.parentElement.style.background='linear-gradient(135deg,var(--n500),var(--purple))'"></div>
-      <div><div class="hdr-t1">CENTYR · HC</div><div class="hdr-t2">Historias Clínicas</div></div>
+      <div class="hdr-mark" style="background:none;padding:0;overflow:hidden"><img id="hdrLogoImg" src="" alt="Logo" style="width:34px;height:34px;object-fit:contain;border-radius:10px;display:none" onerror="this.style.display='none';this.parentElement.innerHTML='HC';this.parentElement.style.background='linear-gradient(135deg,var(--n500),var(--purple))'"></div>
+      <div><div class="hdr-t1" id="hdrNombreEmpresa">CENTYR · HC</div><div class="hdr-t2">Historias Clínicas</div></div>
     </div>
     <div style="display:flex;align-items:center;gap:8px">
       <span id="hdrNombre" style="font-size:12px;color:var(--tx2);font-weight:600;display:none"></span>
       <span id="hdrRol" class="rol-pill"></span>
-      <a href="index.html" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer;text-decoration:none">← CENTYR</a>
+      <a href="index.html" style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);border-radius:9px;color:var(--n200);font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer;text-decoration:none">← <span id="hdrBtnEmpresa">CENTYR</span></a>
       <button onclick="doLogout()" style="background:var(--red2);border:1px solid rgba(239,68,68,.3);color:var(--red);border-radius:9px;font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer">Salir</button>
     </div>
   </header>
@@ -326,9 +326,75 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
 
 <script>
 // ─── Config ───────────────────────────────────────────
-const HC_URL = 'https://script.google.com/macros/s/AKfycbweI3QqCwONsAV4QVPlC1oLO7TqVaDPAU9I_SKWxQjePQn-fd_F3wU39vPjToL06g-6/exec';
+const HC_URL = 'https://script.google.com/macros/s/AKfycby0TNnDsQYsTZPV1_l9_VhtgLehc8G_j-OTZ2C-SlnWPtFZ1BjPFQhaZSsXgZJOFLrp/exec';
 const SK = 'centyr_hc_s';
 const TTL = 6*60*60*1000;
+
+// ─── Marca dinámica (cargada desde GAS via acción getBrand) ───
+let _brandNombre = 'CENTYR';
+let _brandLogo   = '';   // base64 del logo, vacío = fallback texto
+
+async function cargarBrand(){
+  try{
+    const u = new URL(HC_URL);
+    u.searchParams.set('action','getBrand');
+    const r = await fetch(u.toString());
+    const d = await r.json();
+    if(!d.ok) return;
+    if(d.nombre) _brandNombre = d.nombre;
+    if(d.logo)   _brandLogo   = d.logo;
+    aplicarBrand();
+  }catch(e){ console.warn('Brand load failed:',e); }
+}
+
+function aplicarBrand(){
+  // 1. Header principal — logo
+  var hdrImg = g('hdrLogoImg');
+  if(hdrImg){
+    if(_brandLogo){
+      hdrImg.src = _brandLogo;
+      hdrImg.style.display = 'block';
+      var wrap = hdrImg.parentElement;
+      if(wrap){ wrap.style.background='none'; wrap.textContent=''; wrap.appendChild(hdrImg); }
+    } else {
+      hdrImg.style.display = 'none';
+      var wrap2 = hdrImg.parentElement;
+      if(wrap2 && !wrap2.querySelector('img[style*="block"]')){
+        wrap2.innerHTML = '<img id="hdrLogoImg" src="" style="display:none">';
+        wrap2.style.background = 'linear-gradient(135deg,var(--n500),var(--purple))';
+        // Mostrar iniciales
+        var initials = (_brandNombre||'HC').replace(/[^A-Za-záéíóúÁÉÍÓÚ\s]/g,'').split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase()||'HC';
+        var txt = document.createTextNode(initials);
+        wrap2.appendChild(txt);
+      }
+    }
+  }
+  // 2. Header — nombre empresa
+  var hdrNom = g('hdrNombreEmpresa');
+  if(hdrNom) hdrNom.textContent = (_brandNombre||'CENTYR') + ' · HC';
+  // 3. Header — botón ← Empresa
+  var hdrBtn = g('hdrBtnEmpresa');
+  if(hdrBtn) hdrBtn.textContent = _brandNombre||'CENTYR';
+  // 4. Overlay de carga
+  var ovEmp = g('overlayEmpresa');
+  if(ovEmp) ovEmp.textContent = _brandNombre||'CENTYR';
+  // 5. Tarjeta de login — logo
+  var lgWrap = g('lgLogoWrap');
+  if(lgWrap){
+    if(_brandLogo){
+      lgWrap.innerHTML = '<img src="'+_brandLogo+'" style="width:42px;height:42px;object-fit:contain;border-radius:10px">';
+      lgWrap.style.background = 'none';
+      lgWrap.style.padding = '0';
+    } else {
+      var ini = (_brandNombre||'HC').replace(/[^A-Za-záéíóúÁÉÍÓÚ\s]/g,'').split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase()||'HC';
+      lgWrap.textContent = ini;
+      lgWrap.style.background = 'linear-gradient(135deg,var(--n500),var(--purple))';
+    }
+  }
+  // 6. Tarjeta de login — nombre
+  var lgNom = g('lgNombreEmpresa');
+  if(lgNom) lgNom.textContent = _brandNombre||'HC';
+}
 
 let session = null, cats = [], pacActivo = null, revTarget = null;
 const g = id => document.getElementById(id);
@@ -423,6 +489,7 @@ function doLogout(){localStorage.removeItem(SK);session=null;g('appPage').style.
 
 // ─── Init ─────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded',async()=>{
+  cargarBrand(); // Carga logo y nombre desde GAS sin bloquear la UI
   const p=new URLSearchParams(location.search);
   const cred=p.get('cred');       // base64(codigo:pass) desde index
   const rolParam=p.get('rol')||'';
@@ -780,7 +847,7 @@ function exportarDocumento(titulo, bodyHTML){
     +'<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">'
     +'</head><body>'
     +'<div class="doc-header">'
-    +'<div><div class="doc-logo">CEN<span>TYR</span></div><div class="doc-subtitle">Historia Cl&iacute;nica Fisioterapia</div></div>'
+    +'<div><div class="doc-logo">'+(_brandLogo?'<img src="'+_brandLogo+'" style="height:32px;object-fit:contain;vertical-align:middle;margin-right:6px">':'')+'<span style="vertical-align:middle">'+(_brandNombre||'CENTYR').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span></div><div class="doc-subtitle">Historia Cl&iacute;nica Fisioterapia</div></div>'
     +'<div style="text-align:right;font-size:10px;color:#64748b">Generado: '
     +(function(){var n=new Date();var dd=String(n.getDate()).padStart(2,'0');var mm=String(n.getMonth()+1).padStart(2,'0');var yy=n.getFullYear();var h=n.getHours();var mi=String(n.getMinutes()).padStart(2,'0');var ap=h>=12?'PM':'AM';h=h%12||12;return dd+'/'+mm+'/'+yy+' '+h+':'+mi+' '+ap;})()
     +'</div></div>'
