@@ -352,14 +352,28 @@ function aplicarBrand(){
   var hdrWrap = g('hdrLogoWrapHdr');
   if(hdrWrap){
     if(_brandLogo){
-      // Mostrar logo como imagen dentro del contenedor
+      // Crear imagen via DOM (sin onerror inline — evita errores de comillas anidadas)
+      hdrWrap.textContent = '';
       hdrWrap.style.background = 'none';
       hdrWrap.style.padding = '0';
       hdrWrap.style.overflow = 'hidden';
-      hdrWrap.innerHTML = '<img src="'+_brandLogo+'" alt="Logo" style="width:34px;height:34px;object-fit:contain;border-radius:10px;display:block" onerror="this.style.display='none';this.parentElement.textContent=(_brandNombre||'HC').slice(0,2).toUpperCase();this.parentElement.style.background='linear-gradient(135deg,var(--n500),var(--purple))'">';
+      var img = document.createElement('img');
+      img.src = _brandLogo;
+      img.alt = 'Logo';
+      img.style.cssText = 'width:34px;height:34px;object-fit:contain;border-radius:10px;display:block';
+      img.onerror = function(){
+        // Si la imagen falla, volver a mostrar iniciales
+        hdrWrap.textContent = (_brandNombre||'HC').replace(/[^A-Za-z\u00C0-\u024F\s]/g,'')
+          .split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase()||'HC';
+        hdrWrap.style.background = 'linear-gradient(135deg,var(--n500),var(--purple))';
+        hdrWrap.style.padding = '';
+        hdrWrap.style.overflow = '';
+      };
+      hdrWrap.appendChild(img);
     } else {
       // Mostrar iniciales
-      var ini = (_brandNombre||'HC').replace(/[^A-Za-zÀ-ɏ\s]/g,'').split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase()||'HC';
+      var ini = (_brandNombre||'HC').replace(/[^A-Za-z\u00C0-\u024F\s]/g,'')
+        .split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase()||'HC';
       hdrWrap.textContent = ini;
       hdrWrap.style.background = 'linear-gradient(135deg,var(--n500),var(--purple))';
       hdrWrap.style.padding = '';
@@ -379,12 +393,25 @@ function aplicarBrand(){
   var lgWrap = g('lgLogoWrap');
   if(lgWrap){
     if(_brandLogo){
-      lgWrap.innerHTML = '<img src="'+_brandLogo+'" style="width:42px;height:42px;object-fit:contain;border-radius:10px">';
+      lgWrap.textContent = '';
       lgWrap.style.background = 'none';
       lgWrap.style.padding = '0';
+      lgWrap.style.overflow = 'hidden';
+      var lgImg = document.createElement('img');
+      lgImg.src = _brandLogo;
+      lgImg.style.cssText = 'width:42px;height:42px;object-fit:contain;border-radius:10px;display:block';
+      lgImg.onerror = function(){
+        lgWrap.textContent = (_brandNombre||'HC').replace(/[^A-Za-z\u00C0-\u024F\s]/g,'')
+          .split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase()||'HC';
+        lgWrap.style.background = 'linear-gradient(135deg,var(--n500),var(--purple))';
+        lgWrap.style.padding = '';
+        lgWrap.style.overflow = '';
+      };
+      lgWrap.appendChild(lgImg);
     } else {
-      var ini = (_brandNombre||'HC').replace(/[^A-Za-záéíóúÁÉÍÓÚ\s]/g,'').split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase()||'HC';
-      lgWrap.textContent = ini;
+      var ini2 = (_brandNombre||'HC').replace(/[^A-Za-z\u00C0-\u024F\s]/g,'')
+        .split(' ').map(function(w){return w[0]||'';}).slice(0,2).join('').toUpperCase()||'HC';
+      lgWrap.textContent = ini2;
       lgWrap.style.background = 'linear-gradient(135deg,var(--n500),var(--purple))';
     }
   }
