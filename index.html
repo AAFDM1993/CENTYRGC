@@ -2872,7 +2872,7 @@ async function cargarConfigSistema(){
 
 function cfgHandleLogo(input){
   const file=input.files[0]; if(!file)return;
-  const MAX_W=400, MAX_H=200, QUALITY=0.75, MAX_B64=45000;
+  const MAX_W=400, MAX_H=200, QUALITY=0.82, MAX_B64=45000;
   const reader=new FileReader();
   reader.onload=function(ev){
     const img=new Image();
@@ -2882,10 +2882,38 @@ function cfgHandleLogo(input){
       w=Math.round(w*ratio); h=Math.round(h*ratio);
       const canvas=document.createElement('canvas');
       canvas.width=w; canvas.height=h;
-      canvas.getContext('2d').drawImage(img,0,0,w,h);
-      let q=QUALITY, b64='';
-      // Reducir calidad hasta que quepa en Sheets
-      do { b64=canvas.toDataURL('image/jpeg',q); q-=0.05; } while(b64.length>MAX_B64 && q>0.2);
+      const ctx=canvas.getContext('2d');
+      ctx.clearRect(0,0,w,h);
+      ctx.drawImage(img,0,0,w,h);
+
+      // Detectar si la imagen tiene pixeles transparentes
+      function tieneTransparencia(){
+        const data=ctx.getImageData(0,0,w,h).data;
+        for(let i=3;i<data.length;i+=4){ if(data[i]<255) return true; }
+        return false;
+      }
+
+      let b64='';
+      if(tieneTransparencia()){
+        // PNG: mantiene transparencia, no tiene "calidad" ajustable
+        // Si supera el limite, reducir dimensiones progresivamente
+        b64=canvas.toDataURL('image/png');
+        if(b64.length>MAX_B64){
+          let scale=0.9;
+          while(b64.length>MAX_B64 && scale>0.3){
+            const c2=document.createElement('canvas');
+            c2.width=Math.round(w*scale); c2.height=Math.round(h*scale);
+            c2.getContext('2d').drawImage(canvas,0,0,c2.width,c2.height);
+            b64=c2.toDataURL('image/png');
+            scale-=0.1;
+          }
+        }
+      } else {
+        // JPEG: sin transparencia, comprimir por calidad
+        let q=QUALITY;
+        do { b64=canvas.toDataURL('image/jpeg',q); q-=0.05; } while(b64.length>MAX_B64 && q>0.2);
+      }
+
       g('cfgLogoB64').textContent=b64;
       const prev=g('cfgLogoPreview');
       if(prev){prev.src=b64; g('cfgLogoPreviewBox').style.display='block';}
