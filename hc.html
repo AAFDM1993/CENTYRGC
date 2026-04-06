@@ -275,6 +275,7 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
         <div class="sb-divider"></div>
         <div class="sb-sec">Admin</div>
                 <button class="sb-btn" id="sbFirmas" onclick="navTo('firmas')"><span>&#128395;</span> Firmas</button>
+                <button class="sb-btn" id="sbConfig" onclick="navTo('config')"><span>&#9881;&#65039;</span> Sistema</button>
       </div>
     </aside>
 
@@ -288,6 +289,7 @@ input[type=range].eva-sl::-webkit-slider-thumb{-webkit-appearance:none;width:20p
       <div id="vSesForm" style="display:none"></div>
       <div id="vPend" style="display:none"></div>
       <div id="vCats" style="display:none"></div>
+      <div id="vConfig" style="display:none"></div>
     </main>
   </div>
 </div>
@@ -577,8 +579,8 @@ async function iniciarApp(){
 }
 
 // ─── Nav ──────────────────────────────────────────────
-const views=['vPac','vDetalle','vEvalForm','vSesForm','vPend','vBusqHC','vFirmas'];
-const sbs=['sbPac','sbPend','sbBusqHC','sbFirmas'];
+const views=['vPac','vDetalle','vEvalForm','vSesForm','vPend','vBusqHC','vFirmas','vConfig'];
+const sbs=['sbPac','sbPend','sbBusqHC','sbFirmas','sbConfig'];
 
 function setMobileActive(id){
   ['mnPac','mnPend','mnBusq','mnAdmin'].forEach(function(b){
@@ -594,6 +596,7 @@ function navTo(v){
   if(v==='busqhc'){g('vBusqHC').style.display='block';g('sbBusqHC')?.classList.add('active');renderBusqHC();}
   if(v==='firmas'){g('vFirmas').style.display='block';g('sbFirmas')?.classList.add('active');renderFirmas();}
   if(v==='exporthc'){g('vExportHC').style.display='block';g('sbExportHC')?.classList.add('active');renderExportHC();}
+  if(v==='config'){g('vConfig').style.display='block';g('sbConfig')?.classList.add('active');renderConfig();}
 }
 
 // ─── Helpers ──────────────────────────────────────────
@@ -7202,6 +7205,199 @@ function iniciarPollingPendientes(){
       _pendCount=tot;
     }catch(e){}
   },30000);
+}
+
+// ════════════════════════════════════════════════════════════
+// VISTA: Configuración del Sistema (solo admin)
+// ════════════════════════════════════════════════════════════
+function renderConfig(){
+  var v=g('vConfig');
+  v.innerHTML=`
+  <div class="card-hdr" style="margin-bottom:16px">
+    <div class="card-title">&#9881;&#65039; Configuraci&oacute;n del Sistema</div>
+  </div>
+
+  <!-- Nombre de empresa -->
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+      <span style="font-size:18px">🏷️</span>
+      <div class="card-title" style="font-size:14px">Nombre / T&iacute;tulo del Sistema</div>
+    </div>
+    <div class="form-grid" style="grid-template-columns:1fr auto;gap:10px;align-items:end">
+      <div class="field">
+        <label>Nombre de la empresa o cl&iacute;nica</label>
+        <input class="inp" id="cfgNombre" placeholder="Ej: CENTYR — UPT" value="${e2(_brandNombre||'')}">
+      </div>
+      <button class="btn btn-primary" onclick="guardarNombreEmpresa()" style="height:38px;white-space:nowrap">
+        &#128190; Guardar nombre
+      </button>
+    </div>
+    <p id="cfgNombreMsg" style="display:none;margin-top:8px;font-size:12px;border-radius:8px;padding:6px 10px"></p>
+  </div>
+
+  <!-- Logo -->
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+      <span style="font-size:18px">🖼️</span>
+      <div class="card-title" style="font-size:14px">Logo del Sistema</div>
+    </div>
+
+    <!-- Preview actual -->
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Logo actual</div>
+      <div id="cfgLogoPreviewWrap" style="display:inline-flex;align-items:center;justify-content:center;width:80px;height:80px;border-radius:14px;border:2px dashed var(--bd);background:var(--surf2);overflow:hidden">
+        ${_brandLogo
+          ? `<img src="${_brandLogo}" style="width:100%;height:100%;object-fit:contain" id="cfgLogoImgActual">`
+          : `<span style="font-size:11px;color:var(--tx4);text-align:center;padding:6px">Sin logo</span>`
+        }
+      </div>
+    </div>
+
+    <!-- Zona de carga -->
+    <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Subir nuevo logo (PNG recomendado)</div>
+    <div id="cfgDropZone"
+      style="border:2px dashed var(--bd);border-radius:12px;padding:28px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surf2)"
+      onclick="g('cfgFileInput').click()"
+      ondragover="event.preventDefault();this.style.borderColor='var(--n400)';this.style.background='var(--surf3)'"
+      ondragleave="this.style.borderColor='var(--bd)';this.style.background='var(--surf2)'"
+      ondrop="event.preventDefault();this.style.borderColor='var(--bd)';this.style.background='var(--surf2)';cfgHandleFile(event.dataTransfer.files[0])">
+      <div style="font-size:28px;margin-bottom:6px">📂</div>
+      <div style="font-size:13px;font-weight:600;color:var(--tx2)">Arrastra tu PNG aqu&iacute; o haz clic para seleccionar</div>
+      <div style="font-size:11px;color:var(--tx4);margin-top:4px">PNG con transparencia · Se redimensiona a 200&times;200 px en el navegador</div>
+    </div>
+    <input type="file" id="cfgFileInput" accept="image/png,image/jpeg,image/gif,image/webp" style="display:none" onchange="cfgHandleFile(this.files[0])">
+
+    <!-- Preview de imagen seleccionada -->
+    <div id="cfgNewPreviewWrap" style="display:none;margin-top:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Vista previa (nuevo logo)</div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <!-- Cuadrado con fondo oscuro (para ver transparencia) -->
+        <div style="position:relative">
+          <div style="font-size:9px;color:var(--tx4);margin-bottom:3px;text-align:center">Fondo oscuro</div>
+          <div style="width:80px;height:80px;border-radius:14px;border:1px solid var(--bd);background:#1e3a5f;overflow:hidden;display:flex;align-items:center;justify-content:center">
+            <img id="cfgNewPreviewDark" style="width:100%;height:100%;object-fit:contain">
+          </div>
+        </div>
+        <!-- Cuadrado con fondo claro -->
+        <div>
+          <div style="font-size:9px;color:var(--tx4);margin-bottom:3px;text-align:center">Fondo claro</div>
+          <div style="width:80px;height:80px;border-radius:14px;border:1px solid var(--bd);background:#fff;overflow:hidden;display:flex;align-items:center;justify-content:center">
+            <img id="cfgNewPreviewLight" style="width:100%;height:100%;object-fit:contain">
+          </div>
+        </div>
+        <!-- Cuadrado con patrón de transparencia -->
+        <div>
+          <div style="font-size:9px;color:var(--tx4);margin-bottom:3px;text-align:center">Transparencia</div>
+          <div style="width:80px;height:80px;border-radius:14px;border:1px solid var(--bd);background:repeating-conic-gradient(#ccc 0% 25%,#fff 0% 50%) 0 0/16px 16px;overflow:hidden;display:flex;align-items:center;justify-content:center">
+            <img id="cfgNewPreviewTrans" style="width:100%;height:100%;object-fit:contain">
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--tx3)" id="cfgFileInfo"></div>
+          <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="cfgSubirLogo()">&#9650; Subir logo</button>
+          <button class="btn btn-ghost btn-sm" style="margin-top:8px;margin-left:6px" onclick="cfgCancelLogo()">Cancelar</button>
+        </div>
+      </div>
+    </div>
+
+    <p id="cfgLogoMsg" style="display:none;margin-top:10px;font-size:12px;border-radius:8px;padding:6px 10px"></p>
+  </div>
+  `;
+}
+
+// ── Archivo seleccionado: redimensionar en canvas preservando alpha ──
+var _cfgLogoBase64 = null;
+
+function cfgHandleFile(file){
+  if(!file) return;
+  if(!file.type.startsWith('image/')){
+    toast('Solo se aceptan imágenes (PNG, JPG, WebP)','','err'); return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    var originalDataUrl = ev.target.result;
+    // Redimensionar en canvas del navegador — preserva canal alfa (transparencia PNG)
+    var img = new Image();
+    img.onload = function(){
+      var MAX = 200;
+      var scale = Math.min(MAX / img.width, MAX / img.height, 1); // nunca agranda
+      var w = Math.round(img.width  * scale);
+      var h = Math.round(img.height * scale);
+      var canvas = document.createElement('canvas');
+      canvas.width  = w;
+      canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      // Fondo transparente — no llenamos con color, así se preserva el alfa
+      ctx.clearRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      // Exportar siempre como PNG para conservar transparencia
+      var resizedDataUrl = canvas.toDataURL('image/png');
+      _cfgLogoBase64 = resizedDataUrl;
+
+      // Mostrar previews
+      var pw = g('cfgNewPreviewWrap');
+      if(pw) pw.style.display='block';
+      ['cfgNewPreviewDark','cfgNewPreviewLight','cfgNewPreviewTrans'].forEach(function(id){
+        var el=g(id); if(el) el.src=resizedDataUrl;
+      });
+      var info = g('cfgFileInfo');
+      if(info){
+        var kb = Math.round(resizedDataUrl.length * 0.75 / 1024);
+        info.innerHTML = '<b>'+file.name+'</b><br>'
+          + w+'&times;'+h+' px<br>'
+          + '~'+kb+' KB (PNG)';
+      }
+    };
+    img.onerror = function(){ toast('No se pudo leer la imagen','','err'); };
+    img.src = originalDataUrl;
+  };
+  reader.readAsDataURL(file);
+}
+
+function cfgCancelLogo(){
+  _cfgLogoBase64 = null;
+  var pw = g('cfgNewPreviewWrap'); if(pw) pw.style.display='none';
+  var fi = g('cfgFileInput'); if(fi) fi.value='';
+}
+
+async function cfgSubirLogo(){
+  if(!_cfgLogoBase64){ toast('Selecciona una imagen primero','','warn'); return; }
+  var msg = g('cfgLogoMsg');
+  if(msg){ msg.style.display='block'; msg.style.background='var(--surf3)'; msg.style.color='var(--tx3)'; msg.textContent='⏳ Subiendo logo...'; }
+  try{
+    var r = await apiPost({action:'uploadLogo', imageBase64:_cfgLogoBase64});
+    if(!r.ok) throw new Error(r.error||'Error desconocido');
+    _brandLogo = _cfgLogoBase64;
+    aplicarBrand();
+    cfgCancelLogo();
+    if(msg){ msg.style.background='var(--green2)'; msg.style.color='var(--green)'; msg.textContent='✓ Logo actualizado correctamente'; }
+    // Actualizar preview actual
+    var wp = g('cfgLogoPreviewWrap');
+    if(wp) wp.innerHTML='<img src="'+_brandLogo+'" style="width:100%;height:100%;object-fit:contain" id="cfgLogoImgActual">';
+    toast('Logo actualizado','','ok');
+  }catch(ex){
+    if(msg){ msg.style.background='var(--red2)'; msg.style.color='var(--red)'; msg.textContent='✗ '+ex.message; }
+    toast('Error al subir logo: '+ex.message,'','err');
+  }
+}
+
+async function guardarNombreEmpresa(){
+  var inp = g('cfgNombre');
+  var nombre = (inp?.value||'').trim();
+  var msg = g('cfgNombreMsg');
+  if(!nombre){ toast('Escribe un nombre','','warn'); return; }
+  if(msg){ msg.style.display='block'; msg.style.background='var(--surf3)'; msg.style.color='var(--tx3)'; msg.textContent='⏳ Guardando...'; }
+  try{
+    var r = await apiPost({action:'updateEmpresa', nombre:nombre});
+    if(!r.ok) throw new Error(r.error||'Error desconocido');
+    _brandNombre = nombre;
+    aplicarBrand();
+    if(msg){ msg.style.background='var(--green2)'; msg.style.color='var(--green)'; msg.textContent='✓ Nombre actualizado correctamente'; }
+    toast('Nombre actualizado','','ok');
+  }catch(ex){
+    if(msg){ msg.style.background='var(--red2)'; msg.style.color='var(--red)'; msg.textContent='✗ '+ex.message; }
+    toast('Error: '+ex.message,'','err');
+  }
 }
 </script>
   
