@@ -1345,7 +1345,7 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
 // ==========================
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
-const GAS_URL = https://script.google.com/macros/s/AKfycbxluSfNEA5FCvm2FBIUh8SWyw6af6bOVUrhdRCsrjgitOzSliZDeQg5ecwddDDJo58vRQ/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxluSfNEA5FCvm2FBIUh8SWyw6af6bOVUrhdRCsrjgitOzSliZDeQg5ecwddDDJo58vRQ/exec';
 // ====================================================
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
@@ -2833,7 +2833,7 @@ tbody tr:last-child td{border-bottom:2px solid #0a1628}
   <div class="stat-item"><div class="stat-num stat-desapro">${conNota.length-aprobados}</div><div class="stat-lbl">Desaprobados</div></div>
   <div class="stat-item"><div class="stat-num stat-pct">${pct}%</div><div class="stat-lbl">Aprobacion</div></div>
 </div>
-<script>window.onload=function(){window.print()}<\/script>
+<\u0073cript>window.onload=function(){window.print()}<\/script>
 </body></html>`;
  
   try{
@@ -2899,7 +2899,7 @@ function cfgHandleLogo(input){
 function cfgMostrarTamano(b64){
   const el=g('cfgLogoSize'); if(!el)return;
   const kb=Math.round(b64.length*0.75/1024);
-  el.textContent='Tamaño aprox.: '+kb+' KB'+(kb>35?' ⚠️ podría no guardarse en Sheets':'');
+  el.textContent='Tamaño aprox.: '+kb+' KB'+(kb>35?' ⚠ podría no guardarse en Sheets':'');
 }
 
 async function guardarConfigSistema(){
