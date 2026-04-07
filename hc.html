@@ -1847,7 +1847,7 @@ async function _cargarPreviewFirma(doc,idx){
 function subirFirma(input, codigo, idx){
   var file=input.files[0]; if(!file) return;
   // Comprimir/redimensionar antes de enviar a Sheets (límite ~50K chars = ~37KB imagen)
-  var MAX_B64=35000; // ~26KB imagen para dejar margen
+  var MAX_B64=35000; // ~26KB imagen para dejar margen (firmas de docentes)
   var reader=new FileReader();
   reader.onload=function(e){
     var src=e.target.result;
@@ -1893,8 +1893,8 @@ async function guardarB64(codigo, idx){
     else if(b64.startsWith('R0lGOD')) tipo='image/gif';
     b64='data:'+tipo+';base64,'+b64;
   }
-  if(b64.length>45000){
-    toast('Base64 demasiado largo para Google Sheets','M\u00e1x ~35KB. Usa una imagen m\u00e1s peque\u00f1a.','warn');
+  if(b64.length>38000){
+    toast('Base64 demasiado largo para Google Sheets','Usa una imagen más pequeña o simplifica el diseño.','warn');
     return;
   }
   _enviarFirma(codigo,idx,b64);
@@ -7306,77 +7306,101 @@ function renderConfig(){
 }
 
 // ── Archivo seleccionado: redimensionar en canvas preservando alpha ──
-// Migrado desde index.html: soporta MAX_W=400, MAX_H=200, transparencia PNG y fallback JPEG.
+// Límite de Google Sheets: 50000 chars por celda.
+// Un base64 PNG ocupa ~1.37 bytes por byte → para 50000 chars necesitamos ≤36496 bytes raw.
+// Usamos 33KB como techo seguro con margen. Si PNG puro no alcanza, intentamos WebP→PNG fallback JPEG.
 var _cfgLogoBase64 = null;
-var SHEETS_MAX_CHARS = 45000;
+var SHEETS_MAX_CHARS = 38000; // margen amplio bajo el límite real de 50000 chars de Sheets
 
 function cfgHandleFile(file){
   if(!file) return;
   if(!file.type.startsWith('image/')){
-    toast('Solo se aceptan imágenes','','err'); return;
+    toast('Solo se aceptan imágenes (PNG, JPG, WebP)','','err'); return;
   }
-  const MAX_W=400, MAX_H=200, QUALITY=0.82, MAX_B64=SHEETS_MAX_CHARS;
-  const reader = new FileReader();
+  var reader = new FileReader();
   reader.onload = function(ev){
-    const img = new Image();
+    var originalDataUrl = ev.target.result;
+    var img = new Image();
     img.onload = function(){
-      let w = img.width, h = img.height;
-      const ratio = Math.min(MAX_W/w, MAX_H/h, 1);
-      w = Math.round(w*ratio); h = Math.round(h*ratio);
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, w, h);
-      ctx.drawImage(img, 0, 0, w, h);
+      // Intentar tamaños decrecientes hasta caber en el límite de Sheets
+      var sizes = [120, 96, 80, 64, 48];
+      var result = null;
 
-      // Detectar si la imagen tiene píxeles transparentes
-      function tieneTransparencia(){
-        const data = ctx.getImageData(0, 0, w, h).data;
-        for(let i=3; i<data.length; i+=4){ if(data[i]<255) return true; }
-        return false;
-      }
+      for(var s = 0; s < sizes.length; s++){
+        var MAX = sizes[s];
+        var scale = Math.min(MAX / img.width, MAX / img.height, 1);
+        var w = Math.round(img.width  * scale);
+        var h = Math.round(img.height * scale);
+        // Mínimo 16×16 para que no quede invisible
+        if(w < 16) w = 16;
+        if(h < 16) h = 16;
 
-      let b64 = '';
-      if(tieneTransparencia()){
-        // PNG: mantiene transparencia, si supera el límite reducir dimensiones progresivamente
-        b64 = canvas.toDataURL('image/png');
-        if(b64.length > MAX_B64){
-          let scale = 0.9;
-          while(b64.length > MAX_B64 && scale > 0.3){
-            const c2 = document.createElement('canvas');
-            c2.width = Math.round(w*scale); c2.height = Math.round(h*scale);
-            c2.getContext('2d').drawImage(canvas, 0, 0, c2.width, c2.height);
-            b64 = c2.toDataURL('image/png');
-            scale -= 0.1;
-          }
+        var canvas = document.createElement('canvas');
+        canvas.width  = w;
+        canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, w, h); // fondo transparente — preserva canal alfa
+        ctx.drawImage(img, 0, 0, w, h);
+
+        // Intentar PNG primero (preserva transparencia)
+        var dataUrl = canvas.toDataURL('image/png');
+
+        if(dataUrl.length <= SHEETS_MAX_CHARS){
+          result = {dataUrl:dataUrl, w:w, h:h, fmt:'PNG', size:sizes[s]};
+          break;
         }
-      } else {
-        // JPEG: sin transparencia, comprimir por calidad
-        let q = QUALITY;
-        do { b64 = canvas.toDataURL('image/jpeg', q); q -= 0.05; } while(b64.length > MAX_B64 && q > 0.2);
+
+        // PNG demasiado grande en este tamaño → intentar WebP (menor peso, preserva alfa)
+        var webp = canvas.toDataURL('image/webp', 0.85);
+        if(webp && !webp.startsWith('data:image/png') && webp.length <= SHEETS_MAX_CHARS){
+          // Convertir WebP de vuelta a PNG para compatibilidad máxima en el header
+          // (algunos navegadores viejos no muestran WebP en <img> incrustado)
+          // Si el navegador soporta WebP en canvas, ya está; lo usamos directo.
+          result = {dataUrl:webp, w:w, h:h, fmt:'WebP', size:sizes[s]};
+          break;
+        }
+
+        // Fallback JPEG con calidad decreciente (pierde transparencia — fondo blanco)
+        var q = 0.80;
+        while(q >= 0.30){
+          var jpg = canvas.toDataURL('image/jpeg', q);
+          if(jpg.length <= SHEETS_MAX_CHARS){
+            result = {dataUrl:jpg, w:w, h:h, fmt:'JPEG q'+Math.round(q*100), size:sizes[s]};
+            break;
+          }
+          q -= 0.10;
+        }
+        if(result) break;
       }
 
-      _cfgLogoBase64 = b64;
+      if(!result){
+        toast('La imagen es demasiado grande incluso en el tamaño mínimo. Usa una imagen más simple.','','err');
+        return;
+      }
+
+      _cfgLogoBase64 = result.dataUrl;
 
       // Mostrar previews
       var pw = g('cfgNewPreviewWrap');
       if(pw) pw.style.display='block';
       ['cfgNewPreviewDark','cfgNewPreviewLight','cfgNewPreviewTrans'].forEach(function(id){
-        var el=g(id); if(el) el.src=b64;
+        var el=g(id); if(el) el.src=result.dataUrl;
       });
       var info = g('cfgFileInfo');
       if(info){
-        var kb = Math.round(b64.length * 0.75 / 1024);
+        var kb = Math.round(result.dataUrl.length * 0.75 / 1024);
+        var warn = result.fmt.startsWith('JPEG') ? '<br><span style="color:var(--amber);font-size:10px">⚠ JPEG: transparencia convertida a blanco</span>' : '';
         info.innerHTML = '<b>'+file.name+'</b><br>'
-          + w+'&times;'+h+' px<br>'
-          + '~'+kb+' KB · '+b64.length+' chars'
-          + (kb>35 ? '<br><span style="color:var(--amber);font-size:10px">⚠ podría no guardarse en Sheets</span>' : '');
+          + result.w+'&times;'+result.h+' px · '+result.fmt+'<br>'
+          + '~'+kb+' KB · '+result.dataUrl.length+' chars'
+          + warn;
       }
+      // Actualizar texto de la zona de carga
       var hint = g('cfgDropHint');
-      if(hint) hint.textContent = 'Imagen lista: '+w+'×'+h+' px';
+      if(hint) hint.textContent = 'Redimensionado a '+result.w+'×'+result.h+' px ('+result.fmt+') para caber en la hoja de cálculo';
     };
     img.onerror = function(){ toast('No se pudo leer la imagen','','err'); };
-    img.src = ev.target.result;
+    img.src = originalDataUrl;
   };
   reader.readAsDataURL(file);
 }
