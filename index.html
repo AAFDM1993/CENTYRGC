@@ -2105,7 +2105,7 @@ function renderPreview(){
       const sb=c.subgrupos.map(sg=>{
         let thS='',thE='',tdS='',tdE='';
         for(let i=0;i<(sg.notasBase||0);i++){const lbl=i===0?'EV':'S'+i;thS+=`<th class="th-ss">${lbl}</th>`;tdS+='<td style="color:var(--tx4);text-align:center">.</td>'}
-        for(let i=0;i<(sg.notasExtra||0);i++){thE+=`<th class="th-ex">E${i+1}</th>`;tdE+='<td style="color:#93c5fd;text-align:center">.</td>'}
+        for(let i=0;i<(sg.notasExtra||0);i++){thE+=`<th class="th-ex">S${i+1}</th>`;tdE+='<td style="color:#93c5fd;text-align:center">.</td>'}
         let rows='';for(let pi=0;pi<(sg.numPacientes||1);pi++)rows+=`<tr><td class="td-pac">PAC${pi+1}</td><td>-</td>${tdS}${tdE}<td><span class="pc">-</span></td></tr>`;
         return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac" style="display:none"></th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM</th></tr></thead><tbody>${rows}</tbody></table></div>`;
       }).join('');
@@ -2467,7 +2467,7 @@ function renderEstNotas(resultados) {
           const lbl = i === 0 ? 'EV' : 'S' + i;
           thS += `<th class="th-ss">${lbl}</th>`;
         }
-        for (let i = 0; i < extra; i++) thE += `<th class="th-ex">E${i + 1}</th>`;
+        for (let i = 0; i < extra; i++) thE += `<th class="th-ex">S${i + 1}</th>`;
 
         const rows = sg.pacientes.map(pac => {
           const tSS = pac.notas.map((v, ni) => {
