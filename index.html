@@ -4764,8 +4764,18 @@ async function devolverLlave(codigo, alumnoInfo){
     const r=await apiPost({action:'asignarCasillero',codigo,alumnoCodigo:'',alumnoNombre:'',asignadoPor:session.nombre||session.codigo});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Casillero '+codigo+' liberado','Llave devuelta - disponible','ok');
-    invalidateCache('listarCasilleros');
-    cargarCasilleros();
+    // Actualizar en memoria y re-renderizar inmediatamente
+    var idx=casillerosTodos.findIndex(function(x){return x.codigo===codigo;});
+    if(idx>=0){casillerosTodos[idx]=Object.assign({},casillerosTodos[idx],{alumnoCodigo:'',alumnoNombre:'',fechaAsignacion:''});}
+    renderCasilleros(casillerosTodos);
+    var cnt=g('casCount');
+    if(cnt)cnt.textContent='('+casillerosTodos.length+' total, '+(casillerosTodos.filter(function(x){return !x.alumnoCodigo;}).length)+' libres)';
+    // Refrescar vista de estudiante si está visible
+    if(g('casEstGrid')&&g('secEstCasilleros')&&g('secEstCasilleros').style.display!=='none'){
+      invalidateCache('listarCasilleros');cargarCasillerosSoloLectura();
+    } else {
+      invalidateCache('listarCasilleros');
+    }
   }catch(e){hideLoader();toast('Error',e.message,'err');}
 }
 async function confirmarAsignacion(){
@@ -4780,9 +4790,19 @@ async function confirmarAsignacion(){
     const r=await apiPost({action:'asignarCasillero',codigo:_casignandoCodigo,alumnoCodigo:alumnoCod,alumnoNombre:alumnoNom,asignadoPor:session.nombre||session.codigo});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Casillero asignado','','ok');
-    invalidateCache('listarCasilleros');
+    // Actualizar en memoria y re-renderizar inmediatamente
+    var idx=casillerosTodos.findIndex(function(x){return x.codigo===_casignandoCodigo;});
+    if(idx>=0){casillerosTodos[idx]=Object.assign({},casillerosTodos[idx],{alumnoCodigo:alumnoCod,alumnoNombre:alumnoNom,fechaAsignacion:new Date().toLocaleDateString('es-PE')});}
     cerrarModalCasillero();
-    cargarCasilleros();
+    renderCasilleros(casillerosTodos);
+    var cnt=g('casCount');
+    if(cnt)cnt.textContent='('+casillerosTodos.length+' total, '+(casillerosTodos.filter(function(x){return !x.alumnoCodigo;}).length)+' libres)';
+    // Refrescar vista de estudiante si está visible
+    if(g('casEstGrid')&&g('secEstCasilleros')&&g('secEstCasilleros').style.display!=='none'){
+      invalidateCache('listarCasilleros');cargarCasillerosSoloLectura();
+    } else {
+      invalidateCache('listarCasilleros');
+    }
   }catch(e){hideLoader();toast('Error',e.message,'err');}
 }
 
