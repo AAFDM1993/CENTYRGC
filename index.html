@@ -3103,7 +3103,8 @@ function applyBranding(cfg){
   }catch(e){console.warn('Branding no disponible:',e.message);}
 })();
 
-// ── LOG DE NOTAS ──────────────────────────────────────────────async function cargarLog(){
+// ── LOG DE NOTAS ──────────────────────────────────────────────
+async function cargarLog(){
   const box=g('logList');if(!box)return;
   box.innerHTML='<div class="empty">Cargando...</div>';
   const sel=g('logFiltroHoja');
