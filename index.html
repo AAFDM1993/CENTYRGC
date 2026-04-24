@@ -794,19 +794,50 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
 </div>
 
           <div class="pane" id="pane-log">
-            <div class="row-btw" style="margin-bottom:8px">
-              <span style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px">Registro de notas</span>
-              <button class="btn-ghost" onclick="cargarLog()" style="font-size:11px;padding:4px 10px">Recargar</button>
-            </div>
-            <div id="logFiltroBox" style="margin-bottom:8px;display:flex;gap:7px;align-items:center">
-              <select class="sel" id="logFiltroHoja" style="flex:1;font-size:12px" onchange="cargarLog()">
-                <option value="">Todas las planillas</option>
-              </select>
-            </div>
-            <div id="logList" style="max-height:340px;overflow-y:auto;font-size:11px">
-              <div class="empty">Cargando...</div>
-            </div>
-          </div>
+  <!-- Tabs: Notas / Casilleros -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;background:var(--n800);border-radius:10px;overflow:hidden;margin-bottom:10px">
+    <button id="logTabNotas" onclick="logSwitchTab('notas')"
+      style="background:rgba(59,130,246,.15);border:none;border-bottom:2px solid var(--n400);color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:12px;padding:10px 6px;cursor:pointer">
+      &#128203; Notas
+    </button>
+    <button id="logTabCas" onclick="logSwitchTab('cas')"
+      style="background:none;border:none;border-bottom:2px solid transparent;color:var(--n300);font-family:'Syne',sans-serif;font-weight:700;font-size:12px;padding:10px 6px;cursor:pointer">
+      &#128220; Casilleros
+    </button>
+  </div>
+
+  <!-- Panel: Log de Notas -->
+  <div id="logPanelNotas">
+    <div class="row-btw" style="margin-bottom:8px">
+      <span style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px">Registro de notas</span>
+      <button class="btn-ghost" onclick="cargarLog()" style="font-size:11px;padding:4px 10px">Recargar</button>
+    </div>
+    <div style="display:flex;gap:7px;margin-bottom:7px;flex-wrap:wrap">
+      <select class="sel" id="logFiltroHoja" style="flex:1;min-width:120px;font-size:12px" onchange="cargarLog()">
+        <option value="">Todas las planillas</option>
+      </select>
+      <input class="inp" id="logFiltroAlumno" placeholder="Buscar alumno (nombre o código)..."
+        style="flex:2;min-width:160px;font-size:12px" oninput="filtrarLogAlumno()">
+    </div>
+    <div id="logList" style="max-height:340px;overflow-y:auto;font-size:11px">
+      <div class="empty">Cargando...</div>
+    </div>
+  </div>
+
+  <!-- Panel: Log de Casilleros -->
+  <div id="logPanelCas" style="display:none">
+    <div class="row-btw" style="margin-bottom:8px">
+      <span style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px">Registro de casilleros</span>
+      <button class="btn-ghost" onclick="cargarLogCasilleros()" style="font-size:11px;padding:4px 10px">Recargar</button>
+    </div>
+    <input class="inp" id="logCasFiltro" placeholder="Buscar por alumno, código o casillero..."
+      style="width:100%;font-size:12px;margin-bottom:8px" oninput="filtrarLogCas()">
+    <div id="logCasList" style="max-height:340px;overflow-y:auto;font-size:11px">
+      <div class="empty">Cargando...</div>
+    </div>
+  </div>
+</div>
+
           <div class="pane" id="pane-pdf">
   <div class="slbl">1. Selecciona el curso</div>
   <div class="hint-b" style="margin-bottom:10px;font-size:11px"><span>&#128196;</span><span>Se busca el curso en <strong>todas las hojas</strong> y se agrupa por ciclo automaticamente.</span></div>
@@ -3072,11 +3103,9 @@ function applyBranding(cfg){
   }catch(e){console.warn('Branding no disponible:',e.message);}
 })();
 
-// ── LOG DE NOTAS ──────────────────────────────────────────────
-async function cargarLog(){
+// ── LOG DE NOTAS ──────────────────────────────────────────────async function cargarLog(){
   const box=g('logList');if(!box)return;
   box.innerHTML='<div class="empty">Cargando...</div>';
-  // Poblar select de hojas siempre (no depender de hojaData)
   const sel=g('logFiltroHoja');
   if(sel&&sel.options.length<=1){
     try{
@@ -3096,23 +3125,108 @@ async function cargarLog(){
     const r=await apiGet('leerLog',{hoja:hojaFiltro,limite:200});
     if(!r.ok)throw new Error(r.error);
     if(!r.registros||!r.registros.length){box.innerHTML='<div class="empty">Sin registros</div>';return}
-    box.innerHTML=`<div style="background:var(--n900);padding:6px 10px;position:sticky;top:0;display:grid;grid-template-columns:110px 90px 1fr 60px 40px 55px;gap:5px;font-size:10px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.6px">
-      <span>Fecha/Hora</span><span>Docente</span><span>Alumno / Curso / Pac.</span><span>Tipo</span><span>N°</span><span>Valor</span>
-    </div>`+r.registros.map(reg=>{
-      const tipo=reg.tipo==='SS'?'ss':'ex';
-      const antStr=reg.anterior!=null&&reg.anterior!=='-'?reg.anterior:'-';
-      const nuevoStr=reg.nuevo!=null&&reg.nuevo!=='-'?reg.nuevo:'-';
-      return`<div class="log-row">
-        <span class="log-ts">${reg.ts||''}</span>
-        <span class="log-doc" title="${reg.docente||''}">${reg.docente||'—'}</span>
-        <span class="log-info" title="${reg.alumno||''} | ${reg.curso||''} | ${reg.subgrupo||''} | ${reg.paciente||''}">${reg.alumno||''} &rsaquo; ${reg.curso||''} &rsaquo; ${reg.paciente||''}</span>
-        <span class="log-tipo ${tipo}">${reg.tipo||''}</span>
-        <span style="text-align:center;font-family:'DM Mono',monospace;font-weight:700">${reg.nro!=null?reg.nro:''}</span>
-        <span style="font-family:'DM Mono',monospace;font-size:11px;text-align:center;color:var(--n500);font-weight:700">${antStr}&#8594;${nuevoStr}</span>
-      </div>`;
-    }).join('');
+    // Guardar todos los registros para filtrar sin re-fetch
+    box._allRows = r.registros;
+    renderLogRows(r.registros, box);
   }catch(e){box.innerHTML=`<div class="hint" style="padding:12px">Error: ${e.message}</div>`}
 }
+
+function renderLogRows(registros, box){
+  if(!box) box = g('logList');
+  if(!registros||!registros.length){box.innerHTML='<div class="empty">Sin resultados</div>';return;}
+  box.innerHTML=`<div style="background:var(--n900);padding:6px 10px;position:sticky;top:0;display:grid;grid-template-columns:110px 90px 1fr 60px 40px 55px;gap:5px;font-size:10px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.6px">
+    <span>Fecha/Hora</span><span>Docente</span><span>Alumno / Curso / Pac.</span><span>Tipo</span><span>N°</span><span>Valor</span>
+  </div>`+registros.map(reg=>{
+    const tipo=reg.tipo==='SS'?'ss':'ex';
+    const antStr=reg.anterior!=null&&reg.anterior!=='-'?reg.anterior:'-';
+    const nuevoStr=reg.nuevo!=null&&reg.nuevo!=='-'?reg.nuevo:'-';
+    return`<div class="log-row">
+      <span class="log-ts">${reg.ts||''}</span>
+      <span class="log-doc" title="${reg.docente||''}">${reg.docente||'—'}</span>
+      <span class="log-info" title="${reg.alumno||''} | ${reg.curso||''} | ${reg.subgrupo||''} | ${reg.paciente||''}">${reg.alumno||''} &rsaquo; ${reg.curso||''} &rsaquo; ${reg.paciente||''}</span>
+      <span class="log-tipo ${tipo}">${reg.tipo||''}</span>
+      <span style="text-align:center;font-family:'DM Mono',monospace;font-weight:700">${reg.nro!=null?reg.nro:''}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:11px;text-align:center;color:var(--n500);font-weight:700">${antStr}&#8594;${nuevoStr}</span>
+    </div>`;
+  }).join('');
+}
+
+function filtrarLogAlumno(){
+  const box=g('logList');
+  if(!box||!box._allRows)return;
+  const q=(vi('logFiltroAlumno')||'').toLowerCase().trim();
+  if(!q){renderLogRows(box._allRows,box);return;}
+  const filtrados=box._allRows.filter(r=>
+    (r.alumno||'').toLowerCase().indexOf(q)>=0 ||
+    (r.docente||'').toLowerCase().indexOf(q)>=0
+  );
+  renderLogRows(filtrados,box);
+}
+
+// ── LOG DE CASILLEROS ─────────────────────────────────────
+let _logCasData = [];
+
+async function cargarLogCasilleros(){
+  const box=g('logCasList');if(!box)return;
+  box.innerHTML='<div class="empty">Cargando...</div>';
+  try{
+    const r=await apiGet('leerLogCasilleros',{limite:200});
+    if(!r.ok)throw new Error(r.error);
+    _logCasData=r.registros||[];
+    renderLogCasRows(_logCasData);
+  }catch(e){box.innerHTML=`<div class="hint" style="padding:12px">Error: ${e.message}</div>`}
+}
+
+function renderLogCasRows(registros){
+  const box=g('logCasList');if(!box)return;
+  if(!registros||!registros.length){box.innerHTML='<div class="empty">Sin registros de casilleros</div>';return;}
+  box.innerHTML=`<div style="background:var(--n900);padding:6px 10px;position:sticky;top:0;display:grid;grid-template-columns:130px 70px 70px 1fr 110px;gap:5px;font-size:10px;font-weight:700;color:var(--n300);text-transform:uppercase;letter-spacing:.6px">
+    <span>Fecha/Hora</span><span>Acción</span><span>Casillero</span><span>Alumno</span><span>Asignado por</span>
+  </div>`+registros.map(reg=>{
+    const esAsig=reg.accion==='ASIGNAR';
+    const accionColor=esAsig?'var(--green)':'var(--amber)';
+    const accionBg=esAsig?'var(--green2)':'var(--amber2)';
+    return`<div style="display:grid;grid-template-columns:130px 70px 70px 1fr 110px;gap:5px;align-items:center;padding:7px 10px;border-bottom:1px solid var(--bd2);font-size:11px">
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--tx4)">${reg.ts||''}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:${accionBg};color:${accionColor};text-align:center">${reg.accion||''}</span>
+      <span style="font-family:'DM Mono',monospace;font-weight:700;color:var(--n500);text-align:center">${reg.casillero||''}</span>
+      <div>
+        <div style="font-weight:600;color:var(--tx)">${reg.alumnoNombre||'—'}</div>
+        <div style="font-size:10px;color:var(--tx4);font-family:'DM Mono',monospace">${reg.alumnoCodigo||''}</div>
+      </div>
+      <span style="font-size:11px;color:var(--n500);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${reg.asignadoPor||''}">${reg.asignadoPor||'—'}</span>
+    </div>`;
+  }).join('');
+}
+
+function filtrarLogCas(){
+  const q=(vi('logCasFiltro')||'').toLowerCase().trim();
+  if(!q){renderLogCasRows(_logCasData);return;}
+  const f=_logCasData.filter(r=>
+    (r.alumnoNombre||'').toLowerCase().indexOf(q)>=0||
+    (r.alumnoCodigo||'').toLowerCase().indexOf(q)>=0||
+    (r.casillero||'').toLowerCase().indexOf(q)>=0||
+    (r.asignadoPor||'').toLowerCase().indexOf(q)>=0
+  );
+  renderLogCasRows(f);
+}
+
+function logSwitchTab(tab){
+  const tN=g('logTabNotas'),tC=g('logTabCas');
+  const pN=g('logPanelNotas'),pC=g('logPanelCas');
+  if(tab==='notas'){
+    pN.style.display='';pC.style.display='none';
+    tN.style.background='rgba(59,130,246,.15)';tN.style.borderBottomColor='var(--n400)';tN.style.color='#fff';
+    tC.style.background='none';tC.style.borderBottomColor='transparent';tC.style.color='var(--n300)';
+    cargarLog();
+  } else {
+    pN.style.display='none';pC.style.display='';
+    tC.style.background='rgba(5,150,105,.12)';tC.style.borderBottomColor='var(--green)';tC.style.color='#fff';
+    tN.style.background='none';tN.style.borderBottomColor='transparent';tN.style.color='var(--n300)';
+    cargarLogCasilleros();
+  }
+}
+
 
 
 // ── SIDEBAR DESLIZABLE ───────────────────────────────────────
