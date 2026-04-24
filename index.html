@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <title id="appTitle">Sistema</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%231d4ed8'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='800' font-size='18' fill='white'>S</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -1386,12 +1387,42 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
 </div>
 <div id="toast"><div class="tt" id="ttt"></div><div class="tm" id="ttm"></div></div>
 
+<!-- Modal confirm personalizado -->
+<div id="confirmOverlay" style="display:none;position:fixed;inset:0;background:rgba(10,22,40,.6);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+  <div style="background:var(--surf);border-radius:20px;padding:28px 28px 22px;max-width:360px;width:90%;box-shadow:0 24px 60px rgba(0,0,0,.35);border:1px solid var(--bd2)">
+    <p id="confirmMsg" style="font-size:14px;color:var(--tx);line-height:1.6;margin-bottom:20px;white-space:pre-line"></p>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button id="confirmNo" style="background:transparent;border:1px solid var(--bd);border-radius:12px;padding:9px 20px;font-size:13px;font-weight:700;color:var(--tx3);cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">Cancelar</button>
+      <button id="confirmYes" style="background:var(--n500);border:none;border-radius:12px;padding:9px 20px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">Confirmar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ==========================
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbz0lSo7GBvdDMlvKthg0U0D7OLXuj5MFWOhuFauNe_d4kFb2ToarnlUrd4fx3fF8jVsCA/exec';
 // ====================================================
+
+// ── Modal confirm (reemplaza window.confirm para evitar supresión del navegador) ──
+function confirmDialog(msg){
+  return new Promise(function(resolve){
+    var ov=document.getElementById('confirmOverlay');
+    document.getElementById('confirmMsg').textContent=msg;
+    ov.style.display='flex';
+    function cleanup(val){
+      ov.style.display='none';
+      document.getElementById('confirmYes').removeEventListener('click',onYes);
+      document.getElementById('confirmNo').removeEventListener('click',onNo);
+      resolve(val);
+    }
+    function onYes(){cleanup(true);}
+    function onNo(){cleanup(false);}
+    document.getElementById('confirmYes').addEventListener('click',onYes);
+    document.getElementById('confirmNo').addEventListener('click',onNo);
+  });
+}
 
 let session=null,alumnos=[],saveTimers={},drawerIdx=-1,hojaActiva=null,hojaData=null;
 let cursos=JSON.parse(localStorage.getItem('ft_cursos_v6')||'[]');
@@ -1714,7 +1745,7 @@ function importarFilas_(rows){
   renderAlumnos();renderPreview();g('mCode').focus();
 }
 function remAlumno(i){alumnos.splice(i,1);renderAlumnos();renderPreview()}
-function clearAlumnos(){if(!alumnos.length||!confirm('Limpiar lista?'))return;alumnos=[];renderAlumnos();renderPreview()}
+function clearAlumnos(){if(!alumnos.length)return;confirmDialog('Limpiar lista?').then(function(ok){if(!ok)return;alumnos=[];renderAlumnos();renderPreview()})}
 function renderAlumnos(){
   var list=g('slist'), activos=cursos.filter(function(c){return c.on;});
   if(!alumnos.length){list.innerHTML='<div class="empty">Sin alumnos</div>';}
@@ -1812,7 +1843,7 @@ function addCurso(){
   inp.value=''; if(inpCod) inpCod.value='';
   renderCursos();renderAlumnos();renderPreview();
 }
-function delCurso(ci){if(!confirm(`Eliminar "${cursos[ci].label}"?`))return;cursos.splice(ci,1);renderCursos();renderAlumnos();renderPreview()}
+function delCurso(ci){confirmDialog(`Eliminar "${cursos[ci].label}"?`).then(function(ok){if(!ok)return;cursos.splice(ci,1);renderCursos();renderAlumnos();renderPreview()})}
 function addSubgrupo(ci){const n=cursos[ci].subgrupos.length+1;cursos[ci].subgrupos.push({nombre:'Subgrupo '+n,notasBase:15,notasExtra:0,numPacientes:5});renderSgrList(ci);renderPreview()}
 function delSubgrupo(ci,si){cursos[ci].subgrupos.splice(si,1);renderSgrList(ci);renderPreview()}
 function renderSgrList(ci){const el=g('sgrlist_'+ci);if(!el)return;el.innerHTML=cursos[ci].subgrupos.length?cursos[ci].subgrupos.map((sg,si)=>renderSgrCard(ci,si,sg)).join(''):'<div style="font-size:11px;color:var(--tx4)">Sin subgrupos</div>'}
@@ -1850,7 +1881,7 @@ function setSgrValTotal(ci,si,base,total){
   renderPreview();
 }
 function guardarCursos(){localStorage.setItem('ft_cursos_v6',JSON.stringify(cursos));toast('Cursos guardados','','ok')}
-function resetCursos(){if(!confirm('Borrar todos los cursos?'))return;cursos=[];localStorage.removeItem('ft_cursos_v6');renderCursos();renderAlumnos();renderPreview()}
+function resetCursos(){confirmDialog('Borrar todos los cursos?').then(function(ok){if(!ok)return;cursos=[];localStorage.removeItem('ft_cursos_v6');renderCursos();renderAlumnos();renderPreview()})}
 
 async function cargarUsuarios(){
   const box=g('usrList');if(!box)return;box.innerHTML='<div class="empty">Cargando...</div>';
@@ -1887,7 +1918,7 @@ async function guardarUsuarioDB(){
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
 async function eliminarUsuarioDB(codigo){
-  if(!confirm(`Eliminar usuario "${codigo}"?`))return;showLoader('Eliminando...');
+  if(!await confirmDialog(`Eliminar usuario "${codigo}"?`))return;showLoader('Eliminando...');
   try{
     const r=await apiPost({action:'eliminarUsuario',codigo});
     hideLoader();if(!r.ok)throw new Error(r.error);
@@ -2097,7 +2128,7 @@ async function confirmarImportPlanillas(){
   if(!seleccionados.length){ toast('Selecciona al menos un alumno','','warn'); return; }
   const soloNuevos = seleccionados.filter(a => !a.existe);
   if(!soloNuevos.length){ toast('Todos los seleccionados ya existen como usuarios','','warn'); return; }
-  if(!confirm('Crear ' + soloNuevos.length + ' usuario(s)?\nContrasena inicial = codigo.\nNo se sobreescriben los existentes.')) return;
+  if(!await confirmDialog('Crear ' + soloNuevos.length + ' usuario(s)?\nContrasena inicial = codigo.\nNo se sobreescriben los existentes.')) return;
   const usuarios = soloNuevos.map(a => ({codigo:a.codigo, password:a.codigo, rol:'estudiante', nombre:a.nombre}));
   showLoader('Creando usuarios...');
   try{
@@ -2115,7 +2146,7 @@ async function importarDesdeAlumnos(){
   if(!alumnos.length){toast('No hay alumnos cargados','Ve a la pestana Alumnos','warn');return}
   const usuarios=alumnos.filter(a=>a.code).map(a=>({codigo:a.code,password:a.code,rol:'estudiante',nombre:a.name}));
   if(!usuarios.length){toast('Sin codigos','Los alumnos no tienen codigo asignado','warn');return}
-  if(!confirm(`Importar ${usuarios.length} alumnos como estudiantes?\nContrasena inicial = codigo.\nNo sobreescribe existentes.`))return;
+  if(!await confirmDialog(`Importar ${usuarios.length} alumnos como estudiantes?\nContrasena inicial = codigo.\nNo sobreescribe existentes.`))return;
   showLoader('Importando...');
   try{
     const r=await apiPost({action:'importarUsuarios',usuarios});
@@ -2185,7 +2216,7 @@ async function loadHojas(){
   }catch(e){if(box)box.innerHTML=`<div class="hint">Error: ${e.message}</div>`}
 }
 async function delHoja(nombre){
-  if(!confirm(`Eliminar "${nombre}"?`))return;showLoader('Eliminando...');
+  if(!await confirmDialog(`Eliminar "${nombre}"?`))return;showLoader('Eliminando...');
   try{
     const r=await apiPost({action:'eliminarHoja',hoja:nombre});hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Hoja eliminada','','ok');
@@ -3473,7 +3504,7 @@ function cerrarReservasHoy(){
 }
 
 async function eliminarReservaHoy(fecha, hora, area, camilla){
-  if(!confirm('Cancelar esta reserva?')) return;
+  if(!await confirmDialog('Cancelar esta reserva?')) return;
   showLoader('Cancelando...');
   try{
     const r = await apiPost({action:'eliminarReserva', fecha, horaInicio:hora, area, camilla});
@@ -3810,7 +3841,7 @@ async function confirmarReserva(){
 }
 
 async function pedirEliminar(fecha,hora,area,camilla){
-  if(!confirm('Cancelar esta reserva?'))return;
+  if(!await confirmDialog('Cancelar esta reserva?'))return;
   showLoader('Cancelando...');
   try{
     const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
@@ -4183,7 +4214,7 @@ async function crearBloqueoModal(){
   var camilla=vi('mbCamilla')||'*';
   var motivo=vi('mbMotivo')||'Sin motivo';
   if(fecha==='*'&&hora==='*'&&area==='*'){
-    if(!confirm('Esto bloqueará TODOS los horarios de TODAS las áreas. ¿Continuar?'))return;
+    if(!await confirmDialog('Esto bloqueará TODOS los horarios de TODAS las áreas. ¿Continuar?'))return;
   }
   showLoader('Creando bloqueo...');
   try{
@@ -4217,7 +4248,7 @@ function renderListaBloqueosModal(){
 }
 
 async function eliminarBloqueoModal(id){
-  if(!confirm('Eliminar este bloqueo?'))return;
+  if(!await confirmDialog('Eliminar este bloqueo?'))return;
   showLoader('Eliminando...');
   try{
     var r=await apiPost({action:'eliminarBloqueo',id});
@@ -4249,7 +4280,7 @@ function abrirReservaEspModal(fecha,hora,area,espacio,capacidad,fechaLabel){
 }
 
 async function pedirEliminarModal(fecha,hora,area,camilla){
-  if(!confirm('Cancelar esta reserva?'))return;
+  if(!await confirmDialog('Cancelar esta reserva?'))return;
   showLoader('Cancelando...');
   try{
     const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
@@ -4310,7 +4341,7 @@ async function cargarListaReservas(){
 }
 
 async function eliminarReservaLista(fecha,hora,area,camilla){
-  if(!confirm('Cancelar reserva de '+camilla+' el '+fecha+' a las '+hora+'?'))return;
+  if(!await confirmDialog('Cancelar reserva de '+camilla+' el '+fecha+' a las '+hora+'?'))return;
   showLoader('Cancelando...');
   try{
     const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
@@ -4606,7 +4637,7 @@ async function crearCasilleros(){
 }
 
 async function eliminarCasillero(codigo){
-  if(!confirm('¿Eliminar casillero '+codigo+'?'))return;
+  if(!await confirmDialog('¿Eliminar casillero '+codigo+'?'))return;
   showLoader('Eliminando...');
   try{
     const r=await apiPost({action:'eliminarCasillero',codigo});
@@ -4684,7 +4715,7 @@ function cerrarModalCasillero(){
 }
 
 async function devolverLlave(codigo, alumnoInfo){
-  if(!confirm('\u{1F511} Devolver llave del casillero '+codigo+'?\n\nAlumno: '+alumnoInfo+'\n\nEl casillero quedará disponible para otro alumno.'))return;
+  if(!await confirmDialog('🔑 Devolver llave del casillero '+codigo+'?\n\nAlumno: '+alumnoInfo+'\n\nEl casillero quedará disponible para otro alumno.'))return;
   showLoader('Liberando casillero...');
   try{
     const r=await apiPost({action:'asignarCasillero',codigo,alumnoCodigo:'',alumnoNombre:'',asignadoPor:session.nombre||session.codigo});
@@ -4909,7 +4940,7 @@ async function confirmarPacienteExtra(){
 }
 
 async function actualizarTodasPlanillas(){
-  if(!confirm('¿Actualizar las fórmulas y etiquetas de TODAS las planillas existentes?\nEsto no borra notas, solo actualiza la estructura.')) return;
+  if(!await confirmDialog('¿Actualizar las fórmulas y etiquetas de TODAS las planillas existentes?\nEsto no borra notas, solo actualiza la estructura.')) return;
   showLoader('Actualizando todas las planillas...');
   try{
     const r = await apiPost({action:'actualizarPlanillas'});
@@ -5004,7 +5035,7 @@ async function confirmarAgregarAlumno(){
 
 // ── ELIMINAR PACX ─────────────────────────────────────
 async function eliminarPacX(alumno, curso, sgr, pacLabel){
-  if(!confirm('¿Eliminar '+pacLabel+' de '+alumno+'?\nEsto eliminará la fila del paciente extra y no se puede deshacer.')) return;
+  if(!await confirmDialog('¿Eliminar '+pacLabel+' de '+alumno+'?\nEsto eliminará la fila del paciente extra y no se puede deshacer.')) return;
   showLoader('Eliminando...');
   try{
     const r = await apiPost({
@@ -5288,7 +5319,7 @@ async function guardarConfigCurso(ci){
 async function regenerarHoja(){
   const hoja = window._cfgHojaNombre;
   if(!hoja){ toast('Error','No hay hoja cargada','err'); return; }
-  if(!confirm('Regenerar "'+ hoja +'"?\n\nSe ELIMINARÁN todas las notas. ¿Continuar?')) return;
+  if(!await confirmDialog('Regenerar "'+ hoja +'"?\n\nSe ELIMINARÁN todas las notas. ¿Continuar?')) return;
   showLoader('Regenerando hoja...');
   try{
     const r = await apiPost({action:'regenerarHoja', hoja});
