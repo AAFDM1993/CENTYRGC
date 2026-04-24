@@ -4764,6 +4764,7 @@ async function devolverLlave(codigo, alumnoInfo){
     const r=await apiPost({action:'asignarCasillero',codigo,alumnoCodigo:'',alumnoNombre:'',asignadoPor:session.nombre||session.codigo});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Casillero '+codigo+' liberado','Llave devuelta - disponible','ok');
+    invalidateCache('listarCasilleros');
     cargarCasilleros();
   }catch(e){hideLoader();toast('Error',e.message,'err');}
 }
@@ -4779,6 +4780,7 @@ async function confirmarAsignacion(){
     const r=await apiPost({action:'asignarCasillero',codigo:_casignandoCodigo,alumnoCodigo:alumnoCod,alumnoNombre:alumnoNom,asignadoPor:session.nombre||session.codigo});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Casillero asignado','','ok');
+    invalidateCache('listarCasilleros');
     cerrarModalCasillero();
     cargarCasilleros();
   }catch(e){hideLoader();toast('Error',e.message,'err');}
