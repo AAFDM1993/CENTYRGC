@@ -1451,6 +1451,36 @@ async function apiPost(body){
   return r.json();
 }
 
+// ── CACHE DE LECTURAS ─────────────────────────────────────────
+// Evita llamadas repetidas a GAS para datos que no cambian frecuentemente.
+// TTLs: usuarios/hojas/config = 5 min, reservas/casilleros = 1 min
+const _cache = {};
+const _CACHE_TTL = {
+  listarUsuarios: 5*60*1000,
+  listarHojas:    5*60*1000,
+  leerConfig:     10*60*1000,
+  leerBranding:   10*60*1000,
+  leerHoja:       2*60*1000,
+  leerReservas:   60*1000,
+  leerBloqueos:   60*1000,
+  listarCasilleros: 60*1000,
+  leerLogCasilleros: 60*1000,
+  leerLog:        60*1000,
+};
+function _cacheKey(action,params){return action+'|'+JSON.stringify(params||{});}
+async function apiGetCached(action,params){
+  const key=_cacheKey(action,params);
+  const ttl=_CACHE_TTL[action]||0;
+  if(ttl&&_cache[key]&&(Date.now()-_cache[key].ts<ttl))return _cache[key].data;
+  const data=await apiGet(action,params);
+  if(ttl)_cache[key]={data,ts:Date.now()};
+  return data;
+}
+function invalidateCache(action){
+  // Borra todas las entradas de cache que empiecen con esa action
+  Object.keys(_cache).forEach(k=>{if(k.startsWith(action+'|'))delete _cache[k];});
+}
+
 const SESSION_KEY='ft_session_v2';
 const SESSION_TTL=6*60*60*1000; // 6 horas en ms
 
@@ -1886,7 +1916,7 @@ function resetCursos(){confirmDialog('Borrar todos los cursos?').then(function(o
 async function cargarUsuarios(){
   const box=g('usrList');if(!box)return;box.innerHTML='<div class="empty">Cargando...</div>';
   try{
-    const r=await apiGet('listarUsuarios');if(!r.ok)throw new Error(r.error);
+    const r=await apiGetCached('listarUsuarios');if(!r.ok)throw new Error(r.error);
     if(!r.usuarios.length){box.innerHTML='<div class="empty">Sin usuarios registrados</div>';return}
     box.innerHTML=r.usuarios.map(u=>{
       const dots='*'.repeat(Math.min(String(u.password).length,8));
@@ -1914,6 +1944,7 @@ async function guardarUsuarioDB(){
     const r=await apiPost({action:'guardarUsuario',codigo:cod,password:pass,rol,nombre:nom});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast(r.accion==='creado'?'Usuario creado':'Actualizado',cod+' - '+rol,'ok');
+    invalidateCache('listarUsuarios');
     g('usCod').value='';g('usPass').value='';g('usNom').value='';cargarUsuarios();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
@@ -1922,7 +1953,7 @@ async function eliminarUsuarioDB(codigo){
   try{
     const r=await apiPost({action:'eliminarUsuario',codigo});
     hideLoader();if(!r.ok)throw new Error(r.error);
-    toast('Usuario eliminado','','ok');cargarUsuarios();
+    toast('Usuario eliminado','','ok');invalidateCache('listarUsuarios');cargarUsuarios();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
 
@@ -1938,7 +1969,7 @@ async function buscarAlumnoGlobal(){
   box.innerHTML='<div class="empty">Buscando...</div>';
   showLoader('Buscando en todas las hojas...');
   try{
-    const rH = await apiGet('listarHojas');
+    const rH = await apiGetCached('listarHojas');
     if(!rH.ok) throw new Error(rH.error);
     const EXCLUIR = ['Casilleros','_usuarios','Log'];
     const hojas = rH.hojas.filter(h => EXCLUIR.indexOf(h.nombre) < 0);
@@ -1946,7 +1977,7 @@ async function buscarAlumnoGlobal(){
     const resultados = []; // { nombre, codigo, hoja, cursos:[{nombre, promedio}], promGeneral }
     for(let i = 0; i < hojas.length; i++){
       try{
-        const r = await apiGet('leerHoja', {hoja: hojas[i].nombre});
+        const r = await apiGetCached('leerHoja', {hoja: hojas[i].nombre});
         if(!r.ok || !r.alumnos) continue;
         const apro = Number((r.config||{}).notaApro)||11;
         r.alumnos.forEach(al => {
@@ -2056,20 +2087,20 @@ async function importarDesdePlanillas(){
   if(box) box.style.display = 'none';
   showLoader('Escaneando planillas...');
   try{
-    const rH = await apiGet('listarHojas');
+    const rH = await apiGetCached('listarHojas');
     if(!rH.ok) throw new Error(rH.error);
     const EXCLUIR = ['Casilleros','_usuarios','Log'];
     const hojas = rH.hojas.filter(h => EXCLUIR.indexOf(h.nombre) < 0);
     if(!hojas.length){ hideLoader(); toast('Sin planillas creadas','','warn'); return; }
 
-    const rU = await apiGet('listarUsuarios');
+    const rU = await apiGetCached('listarUsuarios');
     const existentes = {};
     if(rU.ok) rU.usuarios.forEach(u => { existentes[String(u.codigo).trim().toLowerCase()] = true; });
 
     const alumnosMap = {};
     for(let i = 0; i < hojas.length; i++){
       try{
-        const r = await apiGet('leerHoja', {hoja: hojas[i].nombre});
+        const r = await apiGetCached('leerHoja', {hoja: hojas[i].nombre});
         if(!r.ok || !r.alumnos) continue;
         r.alumnos.forEach(al => {
           const cod = String(al.codigo||'').trim();
@@ -2153,7 +2184,7 @@ async function importarDesdeAlumnos(){
     hideLoader();if(!r.ok)throw new Error(r.error);
     const res=g('importResult');res.style.display='block';
     res.innerHTML=`<div class="hint-g"><span>OK</span><span><strong>${r.agregados}</strong> creados, <strong>${r.omitidos}</strong> omitidos (ya existian)</span></div>`;
-    toast(`${r.agregados} usuarios creados`,`${r.omitidos} omitidos`,'ok');cargarUsuarios();
+    toast(`${r.agregados} usuarios creados`,`${r.omitidos} omitidos`,'ok');invalidateCache('listarUsuarios');cargarUsuarios();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
 
@@ -2199,7 +2230,7 @@ async function loadHojas(){
   const box=g('hojasBox');
   if(box) box.innerHTML='<div class="empty">Cargando...</div>';
   try{
-    const r=await apiGet('listarHojas');if(!r.ok)throw new Error(r.error);
+    const r=await apiGetCached('listarHojas');if(!r.ok)throw new Error(r.error);
     var hojasFiltradas=r.hojas.filter(function(h){return HOJAS_SIS.indexOf(h.nombre)<0;});
     // Poblar SIEMPRE los botones del topbar
     renderDocenteHojasBtns(hojasFiltradas);
@@ -2220,6 +2251,7 @@ async function delHoja(nombre){
   try{
     const r=await apiPost({action:'eliminarHoja',hoja:nombre});hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Hoja eliminada','','ok');
+    invalidateCache('listarHojas');invalidateCache('leerHoja');
     if(hojaActiva===nombre){hojaActiva=null;hojaData=null;g('prevCard').style.display='';g('edCard').style.display='none'}
     loadHojas();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
@@ -2243,7 +2275,7 @@ async function abrirHoja(nombre){
   if(btn){btn.style.background='var(--n600)';btn.style.borderColor='var(--n500)';}
   showLoader('Cargando hoja...');
   try{
-    const r=await apiGet('leerHoja',{hoja:nombre});
+    const r=await apiGetCached('leerHoja',{hoja:nombre});
     hideLoader();
     if(!r.ok) throw new Error(r.error);
     hojaActiva=nombre; hojaData=r;
@@ -2431,6 +2463,7 @@ async function saveNota(inp){
     try{
       const r=await apiPost({action:'guardarNota',hoja:hojaActiva,alumno,curso,subgrupo:sgr,pacLabel:pac,tipo,idx,valor:valor===''?'':parseFloat(valor),notasBase:base,notasExtra:extra});
       if(!r.ok)throw new Error(r.error);
+      invalidateCache('leerHoja');
       if(r.prom!==undefined&&hojaData){
         const apro=Number((hojaData.config||{}).notaApro)||APRO();
         const ai=hojaData.alumnos.findIndex(a=>a.nombre===alumno);
@@ -2499,7 +2532,7 @@ async function iniciarVistaEstudiante(){
   // Cargar notas
   showLoader('Cargando notas...');
   try{
-    const r=await apiGet('misNotas',{codigo:session.codigo});
+    const r=await apiGetCached('misNotas',{codigo:session.codigo});
     hideLoader();
     if(!r.ok) throw new Error(r.error);
     renderEstNotas(r.resultados);
@@ -2621,7 +2654,7 @@ async function cargarHojasExport(){
   const pb=g('resumenPreviewBox');if(pb)pb.style.display='none';
   showLoader('Escaneando todas las hojas...');
   try{
-    const rHojas=await apiGet('listarHojas');
+    const rHojas=await apiGetCached('listarHojas');
     if(!rHojas.ok)throw new Error(rHojas.error);
     const EXCLUIR=['Casilleros','_usuarios','Log'];
     const hojasFiltradas=rHojas.hojas.filter(h=>EXCLUIR.indexOf(h.nombre)<0);
@@ -2632,7 +2665,7 @@ async function cargarHojasExport(){
     for(let i=0;i<hojasFiltradas.length;i++){
       const hn=hojasFiltradas[i].nombre;
       try{
-        const r=await apiGet('resumenHoja',{hoja:hn});
+        const r=await apiGetCached('resumenHoja',{hoja:hn});
         if(!r.ok)continue;
         const cfg=r.config||{};
         const ciclo=cfg.ciclo||extraerCicloDeNombre(hn)||hn;
@@ -2687,7 +2720,7 @@ async function selExpHoja(nombre){
   const pb=g('resumenPreviewBox');if(pb)pb.style.display='none';
   showLoader('Cargando resumen...');
   try{
-    const r=await apiGet('resumenHoja',{hoja:nombre});
+    const r=await apiGetCached('resumenHoja',{hoja:nombre});
     hideLoader();if(!r.ok)throw new Error(r.error);
     expResumen=r;
     renderExpCursos();
@@ -2745,7 +2778,7 @@ async function cargarResumenCursoCombinado(nombreCurso){
   showLoader('Buscando curso en todas las hojas...');
   try{
     // Cargar todas las hojas
-    const rHojas=await apiGet('listarHojas');
+    const rHojas=await apiGetCached('listarHojas');
     if(!rHojas.ok)throw new Error(rHojas.error);
     const hojasFiltradas=rHojas.hojas.filter(h=>['Casilleros','_usuarios','Log'].indexOf(h.nombre)<0);
 
@@ -2753,7 +2786,7 @@ async function cargarResumenCursoCombinado(nombreCurso){
     for(let i=0;i<hojasFiltradas.length;i++){
       const hn=hojasFiltradas[i].nombre;
       try{
-        const r=await apiGet('resumenHoja',{hoja:hn});
+        const r=await apiGetCached('resumenHoja',{hoja:hn});
         if(!r.ok)continue;
         const curso=r.cursos.find(c=>c.nombre===nombreCurso);
         if(!curso)continue; // esta hoja no tiene ese curso
@@ -2982,7 +3015,7 @@ async function cargarConfigSistema(){
   g('cfgLogoPreviewBox').style.display='none';
   g('cfgResult').style.display='none';
   try{
-    const r=await apiGet('getBranding');
+    const r=await apiGetCached('getBranding');
     if(r.ok){
       if(n) n.value=r.nombre||'';
       if(ini) ini.value=r.iniciales||'';
@@ -3074,6 +3107,7 @@ async function guardarConfigSistema(){
     hideLoader();
     res.style.display='block';
     if(r.ok){
+      invalidateCache('getBranding');
       res.style.color='var(--green)';
       res.textContent='✓ Configuración guardada. Aplicando cambios...';
       applyBranding({nombre, iniciales, logoUrl: logoB64||undefined});
@@ -3141,7 +3175,7 @@ async function cargarLog(){
   const sel=g('logFiltroHoja');
   if(sel&&sel.options.length<=1){
     try{
-      const rh=await apiGet('listarHojas');
+      const rh=await apiGetCached('listarHojas');
       if(rh.ok){
         var SIS=['Casilleros','_usuarios','Log'];
         rh.hojas.filter(h=>SIS.indexOf(h.nombre)<0).forEach(h=>{
@@ -3154,7 +3188,7 @@ async function cargarLog(){
   }
   const hojaFiltro=vi('logFiltroHoja')||'';
   try{
-    const r=await apiGet('leerLog',{hoja:hojaFiltro,limite:200});
+    const r=await apiGetCached('leerLog',{hoja:hojaFiltro,limite:200});
     if(!r.ok)throw new Error(r.error);
     if(!r.registros||!r.registros.length){box.innerHTML='<div class="empty">Sin registros</div>';return}
     // Guardar todos los registros para filtrar sin re-fetch
@@ -3202,7 +3236,7 @@ async function cargarLogCasilleros(){
   const box=g('logCasList');if(!box)return;
   box.innerHTML='<div class="empty">Cargando...</div>';
   try{
-    const r=await apiGet('leerLogCasilleros',{limite:200});
+    const r=await apiGetCached('leerLogCasilleros',{limite:200});
     if(!r.ok)throw new Error(r.error);
     _logCasData=r.registros||[];
     renderLogCasRows(_logCasData);
@@ -3366,7 +3400,7 @@ function generarSlots(franjas, duracionMin){
 // ── Carga inicial ─────────────────────────────────────────
 async function iniciarAgenda(){
   try{
-    const r=await apiGet('leerAgendaConfig');
+    const r=await apiGetCached('leerAgendaConfig');
     if(r.ok) agendaCfg=r.config;
     // Migrar config antigua (camillas → espacios)
     agendaCfg.areas=agendaCfg.areas.map(a=>{
@@ -3420,7 +3454,7 @@ async function cargarReservasSemana(){
   const ini=fmt(calFechaBase);
   const finSem=new Date(calFechaBase); finSem.setDate(finSem.getDate()+4); // viernes
   try{
-    const r=await apiGet('leerReservas',{fechaInicio:ini,fechaFin:fmt(finSem)});
+    const r=await apiGetCached('leerReservas',{fechaInicio:ini,fechaFin:fmt(finSem)});
     if(r.ok) agendaReservas=r.reservas;
   }catch(e){ agendaReservas=[]; }
 }
@@ -3510,6 +3544,7 @@ async function eliminarReservaHoy(fecha, hora, area, camilla){
     const r = await apiPost({action:'eliminarReserva', fecha, horaInicio:hora, area, camilla});
     hideLoader(); if(!r.ok) throw new Error(r.error);
     toast('Reserva cancelada','','ok');
+    invalidateCache('leerReservas');
     await cargarReservasSemana();
     renderCalendario();
     verReservasHoy(); // refrescar el panel
@@ -3823,6 +3858,7 @@ async function confirmarReserva(){
     hideLoader();if(!r.ok)throw new Error(r.error);
     ocultarOverlayReservando();
     toast('Reserva creada','','ok');
+    invalidateCache('leerReservas');
     if(esEst){
       await cargarReservasEst();
       const _finSemC=new Date(calEstFechaBase);_finSemC.setDate(_finSemC.getDate()+4);
@@ -3847,6 +3883,7 @@ async function pedirEliminar(fecha,hora,area,camilla){
     const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Reserva cancelada','','ok');
+    invalidateCache('leerReservas');
     await cargarReservasSemana();renderCalendario();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
@@ -3862,7 +3899,7 @@ let agendaEstReservas = [];
 
 async function iniciarAgendaEstudiante(){
   try{
-    const rc=await apiGet('leerAgendaConfig');
+    const rc=await apiGetCached('leerAgendaConfig');
     if(rc.ok){
       agendaCfg=rc.config;
       // Migrar config antigua
@@ -3903,7 +3940,7 @@ async function cargarReservasEst(){
   const ini=diasHabiles[0];
   const fin=diasHabiles[diasHabiles.length-1];
   try{
-    const r=await apiGet('leerReservas',{fechaInicio:ini,fechaFin:fin});
+    const r=await apiGetCached('leerReservas',{fechaInicio:ini,fechaFin:fin});
     if(r.ok) agendaEstReservas=r.reservas;
   }catch(e){ agendaEstReservas=[]; }
 }
@@ -4121,7 +4158,7 @@ async function mostrarAgenda(){
   // Cargar configuración y datos
   showLoader('Cargando agenda...');
   try{
-    var rc = await apiGet('leerAgendaConfig');
+    var rc = await apiGetCached('leerAgendaConfig');
     if(rc.ok){
       agendaCfg = rc.config;
       agendaCfg.areas = (agendaCfg.areas||[]).map(function(a){
@@ -4221,6 +4258,7 @@ async function crearBloqueoModal(){
     var r=await apiPost({action:'crearBloqueo',fecha,hora,area,camilla,motivo});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Bloqueo creado','','ok');
+    invalidateCache('leerBloqueos');
     var f=g('mbFecha');var h=g('mbHora');var mo=g('mbMotivo');
     if(f)f.value='';if(h)h.value='';if(mo)mo.value='';
     await cargarBloqueos();
@@ -4254,6 +4292,7 @@ async function eliminarBloqueoModal(id){
     var r=await apiPost({action:'eliminarBloqueo',id});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Bloqueo eliminado','','ok');
+    invalidateCache('leerBloqueos');
     await cargarBloqueos();
     renderListaBloqueos();
     renderListaBloqueosModal();
@@ -4286,6 +4325,7 @@ async function pedirEliminarModal(fecha,hora,area,camilla){
     const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Reserva cancelada','','ok');
+    invalidateCache('leerReservas');
     const finSemEM=new Date(calFechaBase);finSemEM.setDate(finSemEM.getDate()+4);
     await cargarReservasSemana();
     await cargarBloqueos(fmt(calFechaBase),fmt(finSemEM));
@@ -4315,7 +4355,7 @@ async function cargarListaReservas(){
       const dom=new Date(lun);dom.setDate(dom.getDate()+6);
       ini=fmt(lun);fin=fmt(dom);
     }
-    const r=await apiGet('leerReservas',{fechaInicio:ini,fechaFin:fin});
+    const r=await apiGetCached('leerReservas',{fechaInicio:ini,fechaFin:fin});
     if(!r.ok)throw new Error(r.error);
     let reservas=r.reservas;
     const areaF=vi('calFiltroAreaRes');
@@ -4347,6 +4387,7 @@ async function eliminarReservaLista(fecha,hora,area,camilla){
     const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Reserva cancelada','','ok');
+    invalidateCache('leerReservas');
     await cargarReservasSemana();renderCalendario();cargarListaReservas();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
@@ -4394,7 +4435,7 @@ let agendaBloqueos = [];
 
 async function cargarBloqueos(fechaInicio, fechaFin){
   try{
-    const r=await apiGet('leerBloqueos',{fechaInicio:fechaInicio||'',fechaFin:fechaFin||''});
+    const r=await apiGetCached('leerBloqueos',{fechaInicio:fechaInicio||'',fechaFin:fechaFin||''});
     if(r.ok) agendaBloqueos=r.bloqueos;
   }catch(e){ agendaBloqueos=[]; }
 }
@@ -4517,7 +4558,7 @@ async function abrirPopupHojas(){
   lista.innerHTML='<div style="color:var(--tx4);font-size:13px;padding:10px 0;text-align:center">Cargando...</div>';
   popup.style.display='block';
   try{
-    var r=await apiGet('listarHojas');
+    var r=await apiGetCached('listarHojas');
     if(!r.ok)throw new Error(r.error);
     var EXCLUIR=['Casilleros','_usuarios','Log'];
     var hojas=(r.hojas||[]).filter(function(h){return EXCLUIR.indexOf(h.nombre)<0;});
@@ -4574,7 +4615,7 @@ async function cargarCasilleros(){
   const box=g('casillerosList');if(!box)return;
   box.innerHTML='<div class="empty">Cargando...</div>';
   try{
-    const r=await apiGet('listarCasilleros');
+    const r=await apiGetCached('listarCasilleros');
     if(!r.ok)throw new Error(r.error);
     casillerosTodos=r.casilleros||[];
     const cnt=g('casCount');
@@ -4632,6 +4673,7 @@ async function crearCasilleros(){
     const r=await apiPost({action:'crearCasilleros',codigos});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast(r.creados+' creados','','ok');
+    invalidateCache('listarCasilleros');
     cargarCasilleros();
   }catch(e){hideLoader();toast('Error',e.message,'err');}
 }
@@ -4643,6 +4685,7 @@ async function eliminarCasillero(codigo){
     const r=await apiPost({action:'eliminarCasillero',codigo});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Casillero eliminado','','ok');
+    invalidateCache('listarCasilleros');
     cargarCasilleros();
   }catch(e){hideLoader();toast('Error',e.message,'err');}
 }
@@ -4674,7 +4717,7 @@ async function abrirAsignarCasillero(codigo){
 var _alumnosModal=[];
 async function cargarAlumnosDatalist(){
   try{
-    var r=await apiGet('listarUsuarios');
+    var r=await apiGetCached('listarUsuarios');
     if(!r.ok||!r.usuarios){ toast('Error al cargar alumnos', r.error||'Sin datos', 'err'); return; }
     _alumnosModal=r.usuarios.filter(function(u){return u.rol==='estudiante';});
   }catch(e){ toast('Error al cargar alumnos', e.message, 'err'); }
@@ -4747,7 +4790,7 @@ async function cargarCasillerosSoloLectura(){
   var box=g('casEstGrid');if(!box)return;
   box.innerHTML='<div style="padding:8px;color:var(--tx4);font-size:12px">Cargando...</div>';
   try{
-    var r=await apiGet('listarCasilleros');
+    var r=await apiGetCached('listarCasilleros');
     if(!r.ok)throw new Error(r.error);
     var lista=r.casilleros||[];
     if(!lista.length){box.innerHTML='<div style="padding:8px;color:var(--tx4);font-size:12px">Sin casilleros</div>';return;}
@@ -5065,7 +5108,7 @@ async function iniciarVistaRecepcion(){
   const rdot=g('rolDot'); if(rdot) rdot.className='rdot recepcion';
   showLoader('Cargando calendario...');
   try{
-    const rc = await apiGet('leerAgendaConfig');
+    const rc = await apiGetCached('leerAgendaConfig');
     if(rc.ok && rc.config){
       agendaCfg = rc.config;
       agendaCfg.areas = (agendaCfg.areas||[]).map(function(a){
@@ -5101,7 +5144,7 @@ async function cargarReservasRec(){
   const ini=fmt(calRecFechaBase);
   const finSem=new Date(calRecFechaBase);finSem.setDate(finSem.getDate()+4);
   try{
-    const r=await apiGet('leerReservas',{fechaInicio:ini,fechaFin:fmt(finSem)});
+    const r=await apiGetCached('leerReservas',{fechaInicio:ini,fechaFin:fmt(finSem)});
     if(r.ok) agendaRecReservas=r.reservas;
   }catch(e){ agendaRecReservas=[]; }
 }
@@ -5219,7 +5262,7 @@ function renderCalendarioRec(){
    async function abrirConfigHoja(nombre){
   showLoader('Cargando estructura...');
   try{
-    const r = await apiGet('leerHoja', {hoja: nombre});
+    const r = await apiGetCached('leerHoja', {hoja: nombre});
     hideLoader();
     if(!r.ok) throw new Error(r.error);
     window._cfgHojaAlumnos = r.alumnos;
