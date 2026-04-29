@@ -3188,7 +3188,7 @@ async function cargarLog(){
   }
   const hojaFiltro=vi('logFiltroHoja')||'';
   try{
-    const r=await apiGetCached('leerLog',{hoja:hojaFiltro,limite:200});
+    const r=await apiGetCached('leerLog',{hoja:hojaFiltro,limite:0});
     if(!r.ok)throw new Error(r.error);
     if(!r.registros||!r.registros.length){box.innerHTML='<div class="empty">Sin registros</div>';return}
     // Guardar todos los registros para filtrar sin re-fetch
