@@ -520,9 +520,8 @@ function hcAplicarPaleta(nombre, custom){
 
 async function cargarBrand(){
   try{
-    // getBranding desde /api (no /api/hc) para obtener la paleta del sistema
-    const apiBase = HC_URL.replace('/hc','');
-    const r = await fetch(apiBase+'/getBranding');
+    // getBrand es un endpoint público (no requiere token)
+    const r = await fetch(HC_URL+'?action=getBrand');
     const d = await r.json();
     if(!d.ok) return;
     if(d.nombre) _brandNombre = d.nombre;
@@ -724,9 +723,10 @@ async function apiGet(action, p={}){
     if(hit&&Date.now()-hit.ts<ttl){ dbg.api(action, p, '(cache hit)'); return hit.data; }
   }
   const params = Object.assign({}, p);
+  params.action = action;
   if(session) params.token = session.token;
   dbg.api('GET', action, p);
-  const r=await fetch(HC_URL+'/'+action+'?'+new URLSearchParams(params));
+  const r=await fetch(HC_URL+'?'+new URLSearchParams(params));
   const data=await r.json();
   if(!data.ok) dbg.err('apiGet', action, data.error||data);
   else dbg.api('GET ✓', action, data);
@@ -737,7 +737,7 @@ async function apiPost(body){
   const action = body.action||'';
   const payload = {...body, token: session?.token||''};
   dbg.api('POST', action, body);
-  const r=await fetch(HC_URL+'/'+action,{method:'POST',headers:{'Content-Type':'application/json'},
+  const r=await fetch(HC_URL,{method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify(payload)});
   const data=await r.json();
   if(!data.ok) dbg.err('apiPost', action, data.error||data);
@@ -789,7 +789,7 @@ window.addEventListener('DOMContentLoaded',async()=>{
         const cod=dec.slice(0,col);
         const pass=dec.slice(col+1);
         g('lgPage').classList.add('on');
-        const r=await fetch(HC_URL+'/login?codigo='+encodeURIComponent(cod)+'&password='+encodeURIComponent(pass)).then(x=>x.json()).catch(()=>({ok:false}));
+        const r=await fetch(HC_URL+'?action=login&codigo='+encodeURIComponent(cod)+'&password='+encodeURIComponent(pass)).then(x=>x.json()).catch(()=>({ok:false}));
         if(r.ok){
           session={token:r.token,rol:r.rol,nombre:r.nombre||nombreParam,codigo:r.codigo||cod};
           saveSess(session);
