@@ -2000,67 +2000,23 @@ function buildHCCompletaHTML(pac, evals, ses, firmasMap, selloFirmante){
     + (pac.asignadoA ? '<div style="font-size:11px;color:#475569">Estudiante: ' + e2(pac.asignadoA) + '</div>' : '')
     + '</div></div></div>';
 
-  // ── EVALUACIONES ──
+  // ── EVALUACIONES — usa buildEvalHTML para render completo y consistente ──
   if(evals.length){
     evals.forEach(function(ev, ei){
-      // Parsear datosEspecificos si viene como string
-      var desp = ev.datosEspecificos || {};
-      if(typeof desp === 'string'){ try{ desp = JSON.parse(desp); }catch(e){ desp = {}; } }
-      var d = Object.assign({}, ev, desp);
-      var catId = ev.categoriaId || pac.categoriaId || '';
-
-      html += '<div style="margin-bottom:20px">';
-      html += '<div style="background:#1e3a5f;color:#fff;font-weight:700;font-size:12px;padding:8px 16px;border-radius:8px 8px 0 0;text-transform:uppercase;letter-spacing:.5px">';
-      html += (ei===0 ? 'Evaluaci&oacute;n Inicial' : 'Reevaluaci&oacute;n #' + ei) + ' &mdash; ' + e2(formatFechaCorta(ev.fecha||'')) + '</div>';
-
-      // Anamnesis
-      var dxMed = d.dxMedico || d.dxNeuroMedico || pac.dxMedico || '';
-      var motivo = d.motivo || pac.motivo || '';
-      var antec  = d.antecedentes || d.antecedentesNeuro || pac.antecedentes || '';
-      html += '<div class="sec"><div class="sec-hdr">Anamnesis</div><div class="sec-body full">'
-        + (dxMed ? '<div><div class="field-lbl">Dx m&eacute;dico</div><div class="field-val">' + e2(dxMed) + '</div></div>' : '')
-        + '<div><div class="field-lbl">Dx fisioterapéutico</div><div class="field-val">' + e2(d.dxFisio||ev.dxFisio||'—') + '</div></div>'
-        + (antec ? '<div><div class="field-lbl">Antecedentes</div><div class="field-val">' + e2(antec) + '</div></div>' : '')
-        + (motivo ? '<div><div class="field-lbl">Motivo</div><div class="field-val">' + e2(motivo) + '</div></div>' : '')
-        + '</div></div>';
-
-      // Examen objetivo por categoría
-      html += _buildExamenObjetivoPorCategoria(d, ev, catId);
-
-      // Plan
-      var meta = d.meta || d.objCorto || '';
-      var objG = d.objGeneral || d.objLargo || '';
-      var objE = d.objEspecificos || d.planGeneral || '';
-      var nSes = d.planSesiones || '';
-      if(meta||objG||objE||nSes){
-        html += '<div class="sec"><div class="sec-hdr">Plan de Tratamiento</div><div class="sec-body full">'
-          + (nSes ? '<div><div class="field-lbl">N&deg; Sesiones</div><div class="field-val">' + e2(nSes) + '</div></div>' : '')
-          + (meta ? '<div><div class="field-lbl">Meta / Objetivo corto plazo</div><div class="field-val">' + e2(meta) + '</div></div>' : '')
-          + (objG ? '<div><div class="field-lbl">Objetivo general</div><div class="field-val">' + e2(objG) + '</div></div>' : '')
-          + (objE ? '<div><div class="field-lbl">Objetivos específicos</div><div class="field-val">' + e2(objE) + '</div></div>' : '')
-          + '</div></div>';
-      }
-
-      // Escalas
-      var escalas = d.escalas;
-      if(escalas && typeof escalas === 'string'){ try{ escalas = JSON.parse(escalas); }catch(e){ escalas = null; } }
-      if(escalas && Object.keys(escalas).length){
-        html += _buildEscalasExport(escalas);
-      }
-
-      // Sello al final de la evaluación — integrado sin cuadro extra
+      // Construir firma HTML del revisor para pasarla a buildEvalHTML
       var docRevisor = _findInMap(firmasMap, ev.revisadoPor) || _findInMap(firmasMap, ev.docente) || null;
-      if(docRevisor){
-        var selloRevisor = mkSelloDocente(docRevisor);
-        html += '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:10px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;margin-top:8px">'
-          + '<div style="flex:1;min-width:0">'
-          + '<div style="font-size:10px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Evaluación aprobada</div>'
-          + (ev.comentarioDocente ? '<div style="font-size:11px;color:#475569">' + e2(ev.comentarioDocente) + '</div>' : '')
-          + '</div>'
-          + '<div style="flex-shrink:0">' + selloRevisor + '</div>'
-          + '</div>';
-      }
-      html += '</div>';
+      var firmaHTMLEval = docRevisor ? mkSelloDocente(docRevisor) : '';
+
+      html += '<div style="margin-bottom:24px;page-break-inside:avoid">';
+      // Cabecera de la evaluación
+      html += '<div style="background:#1e3a5f;color:#fff;font-weight:700;font-size:12px;'
+            + 'padding:8px 16px;border-radius:8px 8px 0 0;text-transform:uppercase;letter-spacing:.5px">';
+      html += (ei===0 ? 'Evaluaci&oacute;n Inicial' : 'Reevaluaci&oacute;n #' + ei)
+            + ' &mdash; ' + e2(formatFechaCorta(ev.fecha||'')) + '</div>';
+      html += '<div style="border:1px solid #e2e8f0;border-top:none;border-radius:0 0 8px 8px;padding:4px">';
+      // Contenido completo usando buildEvalHTML
+      html += buildEvalHTML(ev, pac, firmaHTMLEval);
+      html += '</div></div>';
     });
   } else {
     html += '<div class="sec"><div class="sec-hdr">Evaluaciones</div><div class="sec-body full"><div class="field-val" style="color:#94a3b8">Sin evaluaciones aprobadas.</div></div></div>';
@@ -2626,6 +2582,7 @@ function evalCard(ev, pac, numEval){
       ${puedeRev&&ev.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('eval','${esc(ev.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
       ${ev.estado==='pendiente'&&session.rol==='docente'&&!puedeRev?`<span style="font-size:11px;color:var(--tx4);padding:4px 8px">⏳ Asignado a otro docente</span>`:''}
       ${(ev.estado==='aprobada'||ev.estado==='rechazada')?`<button class="btn btn-ghost btn-sm" onclick="toggleEvalInline('${uid}',null)">👁️ Ver</button>`:''}
+      ${ev.estado==='aprobada'?`<button class="btn btn-ghost btn-sm" onclick="exportarEvalModal('${esc(ev.id)}','${esc(pac.id)}')">📄 PDF</button>`:''}
     </div>
   </div>`;
 }
