@@ -995,115 +995,356 @@ function exportarDocumento(titulo, bodyHTML){
 
 // ─── BUILD HTML EVALUACIÓN ────────────────────────────
 function buildEvalHTML(ev, pac, firmaHTML){
-  // datosEspecificos puede llegar como string JSON — parsear si es necesario
   var desp = ev.datosEspecificos || {};
-  if(typeof desp === 'string'){ try{ desp = JSON.parse(desp); }catch(e){ desp = {}; } }
+  if(typeof desp==='string'){try{desp=JSON.parse(desp);}catch(e){desp={};}}
   var d = Object.assign({}, ev, desp);
   var catId = ev.categoriaId || pac.categoriaId || '';
+
+  // helpers internos
+  function sec(num,titulo,body){ return '<div class="sec"><div class="sec-hdr">'+(num?num+'. ':'')+titulo+'</div><div class="sec-body full">'+body+'</div></div>'; }
+  function secGrid(num,titulo,body){ return '<div class="sec"><div class="sec-hdr">'+(num?num+'. ':'')+titulo+'</div><div class="sec-body">'+body+'</div></div>'; }
+  function row(lbl,val){ if(!val&&val!==0) return ''; return '<div class="fld"><div class="fld-lbl">'+lbl+'</div><div class="fld-val">'+e2(String(val))+'</div></div>'; }
+  function rowFull(lbl,val){ if(!val&&val!==0) return ''; return '<div class="fld full"><div class="fld-lbl">'+lbl+'</div><div class="fld-val long">'+e2(String(val))+'</div></div>'; }
+  function hdr(txt){ return '<div class="sec-sub">'+txt+'</div>'; }
+
   var rows = '';
 
-  // ── I. Filiación ──
-  rows += '<div class="sec"><div class="sec-hdr">I. Filiaci&oacute;n</div><div class="sec-body">'
-    + '<div><div class="field-lbl">Nombres y Apellidos</div><div class="field-val">' + e2(pac.nombre||'') + '</div></div>'
-    + '<div><div class="field-lbl">DNI</div><div class="field-val">' + e2(pac.dni||'') + '</div></div>'
-    + (pac.fechaNac?'<div><div class="field-lbl">Fecha de nacimiento</div><div class="field-val">' + e2(pac.fechaNac) + '</div></div>':'')
-    + (pac.ocupacion||d.ocupacion?'<div><div class="field-lbl">Ocupaci&oacute;n</div><div class="field-val">' + e2(pac.ocupacion||d.ocupacion||'—') + '</div></div>':'')
-    + (pac.telefono?'<div><div class="field-lbl">Tel&eacute;fono</div><div class="field-val">' + e2(pac.telefono) + '</div></div>':'')
-    + (pac.medico?'<div><div class="field-lbl">M&eacute;dico tratante</div><div class="field-val">' + e2(pac.medico) + '</div></div>':'')
-    + '</div></div>';
+  // I. Filiación — común a todas las fichas
+  rows += secGrid('I','Filiaci&oacute;n',
+    row('Nombres y Apellidos', pac.nombre||'—')
+    + row('DNI', pac.dni||'—')
+    + (pac.fechaNac ? row('Fecha de nacimiento', pac.fechaNac) : '')
+    + (pac.sexo     ? row('Sexo', pac.sexo==='M'?'Masculino':'Femenino') : '')
+    + (pac.ocupacion||d.ocupacion ? row('Ocupaci&oacute;n', pac.ocupacion||d.ocupacion) : '')
+    + (pac.telefono ? row('Tel&eacute;fono', pac.telefono) : '')
+    + (pac.responsable ? row('Responsable', pac.responsable) : '')
+    + (pac.telResponsable ? row('Tel. responsable', pac.telResponsable) : '')
+    + (pac.medico   ? row('M&eacute;dico tratante', pac.medico) : '')
+    + row('Estudiante', ev.autor||'—')
+    + row('Docente supervisor', ev.docente||'—')
+    + row('Fecha', ev.fecha ? (function(){var p=ev.fecha.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:ev.fecha;})() : '—')
+  );
 
-  // ── II. Anamnesis ──
-  var dxMed = d.dxMedico || d.dxNeuroMedico || pac.dxMedico || '';
-  var motivo = d.motivo || pac.motivo || '';
-  var antecedentes = d.antecedentes || d.antecedentesNeuro || pac.antecedentes || '';
-  rows += '<div class="sec"><div class="sec-hdr">II. Anamnesis</div><div class="sec-body full">'
-    + (dxMed?'<div><div class="field-lbl">Diagn&oacute;stico M&eacute;dico</div><div class="field-val">' + e2(dxMed) + '</div></div>':'')
-    + '<div><div class="field-lbl">Diagn&oacute;stico Fisioterapéutico</div><div class="field-val">' + e2(d.dxFisio||ev.dxFisio||'—') + '</div></div>'
-    + (motivo?'<div><div class="field-lbl">Motivo de consulta</div><div class="field-val">' + e2(motivo) + '</div></div>':'')
-    + (antecedentes?'<div><div class="field-lbl">Antecedentes</div><div class="field-val">' + e2(antecedentes) + '</div></div>':'')
-    + '</div></div>';
-
-  // ── III. Examen objetivo — según categoría ──
-  rows += _buildExamenObjetivoPorCategoria(d, ev, catId);
-
-
-  // ── Flexibilidad y acortamientos ──
-  (function(){
-    var items={};
-    if(d.escalas&&d.escalas.flex_acort&&d.escalas.flex_acort.items){
-      items=d.escalas.flex_acort.items;
-    } else {
-      var flds=['testDedusSuelo','testSchober','thomasD','thomasI','elyD','elyI',
-        'popliD','popliI','oberD','oberI','dorsiflexD','dorsiflexI','obsFlexPost'];
-      flds.forEach(function(k){ if(d[k]) items[k]=d[k]; });
-    }
-    var LABELS={'testDedusSuelo':'Test dedos-suelo','testSchober':'Test Schober',
-      'thomasD':'Test Thomas D','thomasI':'Test Thomas I','elyD':'Test Ely D',
-      'elyI':'Test Ely I','popliD':'Angulo popliteo D','popliI':'Angulo popliteo I',
-      'oberD':'Test Ober D','oberI':'Test Ober I','dorsiflexD':'Dorsiflexion D',
-      'dorsiflexI':'Dorsiflexion I','obsFlexPost':'Observaciones'};
-    var UNITS={'testDedusSuelo':' cm','testSchober':' cm',
-      'popliD':' grados','popliI':' grados','dorsiflexD':' grados','dorsiflexI':' grados'};
-    var flexFields=[
-      ['testDedusSuelo','Test dedos-suelo','cm'],['testSchober','Test Schober','cm'],
-      ['thomasD','Test Thomas D',''],['thomasI','Test Thomas I',''],
-      ['elyD','Test Ely D',''],['elyI','Test Ely I',''],
-      ['popliD','Angulo popliteo D','&deg;'],['popliI','Angulo popliteo I','&deg;'],
-      ['oberD','Test Ober D',''],['oberI','Test Ober I',''],
-      ['dorsiflexD','Dorsiflexion tobillo D','&deg;'],['dorsiflexI','Dorsiflexion tobillo I','&deg;'],
-      ['obsFlexPost','Observaciones','']
-    ];
-    var hasData=Object.values(items).some(function(v){return !!v;});
-    if(hasData){
-      rows+='<div class="sec"><div class="sec-hdr">Flexibilidad y acortamientos</div><div class="sec-body">';
-      flexFields.forEach(function(f){
-        var v=items[f[0]];
-        if(!v) return;
-        rows+=_fld2(f[1], e2(String(v))+(f[2]?' '+f[2]:''));
+  if(catId === 'traumatologia'){
+    var romData=d.rom||ev.rom||{};var fuerzaData=d.fuerza||ev.fuerza||{};
+    if(typeof romData==='string'){try{romData=JSON.parse(romData);}catch(e){romData={};}}
+    if(typeof fuerzaData==='string'){try{fuerzaData=JSON.parse(fuerzaData);}catch(e){fuerzaData={};}}
+    rows += sec('II','Anamnesis',
+      row('Diagn&oacute;stico m&eacute;dico',d.dxMedico||pac.dxMedico)
+      +row('Diagn&oacute;stico fisioterapéutico',d.dxFisio||ev.dxFisio)
+      +row('Motivo de consulta',d.motivo||pac.motivo)
+      +row('Antecedentes',d.antecedentes||pac.antecedentes)
+      +row('Tiempo de evolución',d.tiempoEvol));
+    var eva=d.evaValor!==undefined&&d.evaValor!==''?d.evaValor:(ev.evaValor!==undefined?ev.evaValor:'');
+    var exBody=(eva!==''?row('EVA — Dolor',String(eva)+'/10'):'')
+      +row('Localización del dolor',d.dolLoc)+row('Tipo de dolor',d.dolTipo)
+      +row('Postura',d.postura)+row('Marcha',d.marcha)+row('Trofismo',d.trofismo)
+      +rowFull('Palpación',d.palpacion)+rowFull('Valoraci&oacute;n neurol&oacute;gica',d.neuro)
+      +rowFull('Tegumentario',d.tegu)+rowFull('Auxiliares diagnóstico',d.aux)
+      +rowFull('Examen objetivo',d.examObjetivo);
+    if(d.pruebasFuncionales&&typeof d.pruebasFuncionales==='object'&&Object.keys(d.pruebasFuncionales).length){
+      exBody+='<div style="grid-column:1/-1;margin-top:8px"><div class="field-lbl">Pruebas funcionales</div>';
+      Object.keys(d.pruebasFuncionales).forEach(function(reg){
+        var ps=d.pruebasFuncionales[reg]; if(!ps||!Object.keys(ps).length) return;
+        exBody+='<div style="font-size:11px;font-weight:700;color:#475569;margin:6px 0 3px">'+e2(reg)+'</div>';
+        exBody+='<table class="tbl-rom"><thead><tr><th style="text-align:left">Prueba</th><th>Resultado</th></tr></thead><tbody>';
+        Object.keys(ps).forEach(function(n){exBody+='<tr><td>'+e2(n)+'</td><td style="text-align:center;font-weight:700">'+e2(String(ps[n]||'—'))+'</td></tr>';});
+        exBody+='</tbody></table>';
       });
-      rows+='</div></div>';
+      exBody+='</div>';
+    } else if(d.pruebas){ exBody+=rowFull('Pruebas funcionales',d.pruebas); }
+    rows+='<div class="sec"><div class="sec-hdr">III. Examen Objetivo</div><div class="sec-body full">'+exBody;
+    var romHTML=buildRomTable(romData); var fuerzaHTML=buildFuerzaTable(fuerzaData);
+    if(romHTML) rows+='<div style="grid-column:1/-1;margin-top:8px"><div class="sec-sub">ROM — Rango de movimiento</div>'+romHTML+'</div>';
+    if(fuerzaHTML) rows+='<div style="grid-column:1/-1;margin-top:8px"><div class="sec-sub">Fuerza muscular</div>'+fuerzaHTML+'</div>';
+    rows+='</div></div>';
+    var flexFields=[['testDedusSuelo','Test dedos-suelo','cm'],['testSchober','Test Schober','cm'],
+      ['thomasD','Test Thomas D',''],['thomasI','Test Thomas I',''],['elyD','Test Ely D',''],['elyI','Test Ely I',''],
+      ['popliD','&Aacute;ngulo popl&iacute;teo D','&deg;'],['popliI','&Aacute;ngulo popl&iacute;teo I','&deg;'],
+      ['oberD','Test Ober D',''],['oberI','Test Ober I',''],
+      ['dorsiflexD','Dorsiflexión tobillo D','&deg;'],['dorsiflexI','Dorsiflexión tobillo I','&deg;'],['obsFlexPost','Observaciones','']];
+    var flexBody=''; flexFields.forEach(function(f){if(d[f[0]])flexBody+=row(f[1],d[f[0]]+(f[2]?' '+f[2]:''));});
+    if(flexBody) rows+=secGrid('','Flexibilidad y acortamientos',flexBody);
+    rows+=_buildPlanHTML(d,ev,'IV'); rows+=_buildEscalasHTML(d);
+
+  } else if(catId === 'postural'){
+    rows+=sec('II','Anamnesis',
+      row('Diagn&oacute;stico fisioterapéutico',d.dxFisio||ev.dxFisio)
+      +row('Motivo de evaluación postural',d.motivo||pac.motivo)
+      +row('Antecedentes posturales',d.antecedentes||pac.antecedentes)
+      +row('Tiempo de evolución',d.tiempoEvolPost)+row('Dolor postural',d.dolorPostural)
+      +row('Actividad física',d.actFisicaPost));
+    var vistasCheck=[
+      ['ant',['cabezaAnt','hombrosAnt','clavicular','triangulTalle','pelvisAnt','rodillasAnt','pieDerAnt','pieIzqAnt'],
+       ['Cabeza','Hombros','Clavicular','Triáng. talle','Pelvis','Rodillas','Pie der.','Pie izq.'],'obsAnt','Vista anterior'],
+      ['post',['occipucio','escapulas','columnaPost','plieguesGluteos','plieguesPopliteos','talones'],
+       ['Occipucio','Escápulas','Columna','Pli. glúteos','Pli. poplíteos','Talones'],'obsPost','Vista posterior'],
+      ['lat',['cabezaLat','curvaCervical','curvaDorsal','curvaLumbar','pelvisLat','rodillasLat'],
+       ['Cabeza','Curva cervical','Curva dorsal','Curva lumbar','Pelvis','Rodillas'],'obsLat','Vista lateral']];
+    // ── Widget postural: imágenes con chips ───────────────────────
+    var _wdata = d.widgetPostural;
+    if(typeof _wdata==='string'){try{_wdata=JSON.parse(_wdata);}catch(e){_wdata=null;}}
+    var _imgs = window.wpostGetIMGS ? window.wpostGetIMGS() : null;
+    var _alts = window.wpostGetALTS ? window.wpostGetALTS() : null;
+    var inspBody='';
+    if(_imgs){
+      var _rendVista = function(vistas){
+        var vh='<div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:10px">';
+        vistas.forEach(function(vp){
+          var v=vp[0], lbl=vp[1];
+          vh+='<div style="text-align:center">';
+          vh+='<div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#64748b;margin-bottom:3px">'+lbl+'</div>';
+          vh+='<div style="position:relative;display:inline-block;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;line-height:0">';
+          if(_imgs[v]) vh+='<img src="'+_imgs[v]+'" style="display:block;height:280px;width:auto">';
+          if(_wdata&&_wdata[v]&&_alts) _wdata[v].forEach(function(chip){
+            var alt=_alts.find(function(a){return a.id===chip.altId;}); if(!alt) return;
+            vh+='<div style="position:absolute;left:'+chip.xp+'%;top:'+chip.yp+'%;transform:translate(-50%,-50%);'
+              +'min-width:22px;height:22px;padding:0 4px;border-radius:11px;background:'+alt.color+';'
+              +'color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;'
+              +'border:1.5px solid rgba(255,255,255,.7);box-shadow:0 1px 3px rgba(0,0,0,.4)">'+alt.char+'</div>';
+          });
+          vh+='</div></div>';
+        });
+        return vh+'</div>';
+      };
+      inspBody += _rendVista([['ant','Vista Anterior'],['post','Vista Posterior']]);
+      inspBody += _rendVista([['latd','Lateral Derecha'],['lati','Lateral Izquierda']]);
     }
-  })();
-  // ── IV. Plan de Tratamiento ──
-  var meta = d.meta || d.objCorto || '';
-  var objG = d.objGeneral || d.objLargo || '';
-  var objE = d.objEspecificos || d.planGeneral || '';
-  var nSes = d.planSesiones || '';
-  var freq = d.planFrecuencia || '';
-  var dur  = d.planDuracion || '';
-  var hasPlan = meta||objG||objE||nSes||freq||dur;
-  if(hasPlan){
-    rows += '<div class="sec"><div class="sec-hdr">IV. Plan de Tratamiento</div><div class="sec-body full">'
-      + (nSes?'<div><div class="field-lbl">N&deg; Sesiones</div><div class="field-val">' + e2(nSes) + (freq?' · '+e2(freq):'') + (dur?' · '+e2(dur)+'</div></div>':'</div></div>'):'')
-      + (meta?'<div><div class="field-lbl">Meta / Objetivo corto plazo</div><div class="field-val">' + e2(meta) + '</div></div>':'')
-      + (objG?'<div><div class="field-lbl">Objetivo General</div><div class="field-val">' + e2(objG) + '</div></div>':'')
-      + (objE?'<div><div class="field-lbl">Objetivos Espec&iacute;ficos / Plan</div><div class="field-val">' + e2(objE) + '</div></div>':'')
-      + '</div></div>';
+    // ── Hallazgos por vista (checkboxes) ─────────────────────────
+    vistasCheck.forEach(function(vista){
+      var fields=vista[1],labels=vista[2],obsKey=vista[3],titulo=vista[4];
+      var vbody=''; fields.forEach(function(f,i){if(d[f])vbody+=row(labels[i],d[f]);});
+      if(d[obsKey])vbody+=rowFull('Observaciones',d[obsKey]);
+      if(vbody)inspBody+='<div style="margin-top:8px"><b style="font-size:11px;color:#1e3a5f">'+titulo+'</b><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;margin-top:4px">'+vbody+'</div></div>';
+    });
+    if(d.obsInspeccionVisual)inspBody+=rowFull('Obs. inspección visual',d.obsInspeccionVisual);
+    if(inspBody)rows+='<div class="sec"><div class="sec-hdr">III. Inspecci&oacute;n Visual</div><div style="padding:12px 14px">'+inspBody+'</div></div>';
+    var medBody=row('Discrepancia MMII real',d.discrepanciaReal?(d.discrepanciaReal+' cm'):'')
+      +row('Discrepancia MMII aparente',d.discrepanciaAparente?(d.discrepanciaAparente+' cm'):'')
+      +row('Flecha cervical',d.flechaCervical?(d.flechaCervical+' cm'):'')
+      +row('Flecha lumbar',d.flechaLumbar?(d.flechaLumbar+' cm'):'')
+      +row('Test Adams',d.testAdams)+row('&Aacute;ngulo rot. tronco',d.anguloRotTronco)
+      +row('Gibosidad',d.gibosidad)+row('Plomada',d.plomada)
+      +row('Desviaci&oacute;n plomada',d.desviacionPlomada?(d.desviacionPlomada+' cm'):'')
+      +rowFull('Obs. mediciones',d.obsMediciones);
+    if(medBody)rows+=secGrid('VI','Mediciones Posturales',medBody);
+    var calzBody=row('Desgaste calzado',d.desgasteCalzado)+row('Apoyo plantar D',d.apoyoD)
+      +row('Apoyo plantar I',d.apoyoI)+row('Plantillas',d.plantillas)+rowFull('Obs. calzado',d.obsCalzado);
+    if(calzBody)rows+=secGrid('VII','Calzado y Apoyo Plantar',calzBody);
+    rows+=_buildPlanHTML(d,ev,'VIII'); rows+=_buildEscalasHTML(d);
+
+  } else if(catId === 'neuro_adultos'){
+    rows+=sec('II','Anamnesis',
+      row('Diagn&oacute;stico m&eacute;dico',d.dxNeuroMedico||d.dxMedico||pac.dxMedico)
+      +row('Diagn&oacute;stico fisioterapéutico',d.dxFisio||ev.dxFisio)
+      +row('Motivo de consulta',d.motivo||pac.motivo)
+      +row('Antecedentes',d.antecedentes||d.antecedentesNeuro||pac.antecedentes));
+    rows+=secGrid('III','Historia Cl&iacute;nica Neurol&oacute;gica',
+      row('Tipo de condición',d.tipoCondicionNeuro)+row('Tiempo de evolución',d.tiempoEvolucionNeuro)
+      +row('Lado afectado',d.ladoAfectadoNeuro)+row('Clasificación funcional',d.clasificacionFuncional)
+      +row('Dolor neurológico',d.dolorNeuro)
+      +row('EVA dolor',d.evaNeuroDolor!==undefined&&d.evaNeuroDolor!==''?d.evaNeuroDolor+'/10':''));
+    rows+=secGrid('IV','Estado Cognitivo y Comunicaci&oacute;n',
+      row('Nivel de conciencia',d.nConciencia)+row('Lateralidad',d.lateralidad)
+      +row('Orientación',d.orientacion)+row('Comunicación',d.comunicacion)
+      +row('Memoria',d.memoria)+row('Atención',d.atencion)+rowFull('Obs. cognitivo',d.obsCognitivo));
+    rows+=secGrid('V','Examen Motor',
+      row('Tono MMSS D',d.tono_MMSS_D)+row('Tono MMSS I',d.tono_MMSS_I)
+      +row('Tono MMII D',d.tono_MMII_D)+row('Tono MMII I',d.tono_MMII_I)
+      +row('Fuerza MMSS D',d.fuerza_MMSS_D)+row('Fuerza MMSS I',d.fuerza_MMSS_I)
+      +row('Fuerza MMII D',d.fuerza_MMII_D)+row('Fuerza MMII I',d.fuerza_MMII_I)
+      +row('Reflejos OT',d.reflejos)+row('Babinski',d.babinski)+row('Clonus',d.clonus)
+      +row('Coordinación',d.coordinacion)+row('Movimientos involuntarios',d.movInvoluntarios)
+      +rowFull('Obs. motor',d.obsMotor));
+    rows+=secGrid('VI','Sensibilidad',
+      row('Sensibilidad táctil',d.sensTactil)+row('Sensibilidad dolorosa',d.sensDolor)
+      +row('Sensibilidad térmica',d.sensTermica)+row('Propiocepción',d.propiocepccion)
+      +row('Zona afectada',d.zonaAfectada)+rowFull('Obs. sensibilidad',d.obsSensibilidad));
+    rows+=secGrid('VII','Control Postural y Equilibrio',
+      row('Control cefálico',d.controlCefal)+row('Control de tronco',d.controlTronco)
+      +row('Equilibrio estático',d.eqEstatico)+row('Equilibrio dinámico',d.eqDinamico)
+      +rowFull('Obs. postural',d.obsPostural));
+    rows+=secGrid('VIII','Marcha y Transferencias',
+      row('Tipo de marcha',d.tipoMarcha)+row('Patrón de marcha',d.patronMarcha)
+      +row('Ayuda técnica',d.ayudaTecnica)+row('Transferencia cama↔silla',d.transferenciaCS)
+      +row('Transferencia sentado↔pie',d.transferenciaSP)
+      +rowFull('Descripción marcha',d.marchaDescripcion)+rowFull('Obs. marcha',d.obsMarcha));
+    rows+=sec('IX','Actividades de la Vida Diaria',
+      row('AVD básicas afectadas',d.avdBasicasAfect)+rowFull('AVD instrumentales afectadas',d.avdInstAfect));
+    rows+=_buildPlanHTML(d,ev,'IX'); rows+=_buildEscalasHTML(d);
+
+  } else if(catId === 'neuro_pediatrica'){
+    rows+=sec('II','Anamnesis',
+      row('Diagnóstico médico',d.dxMedico||pac.dxMedico)
+      +row('Diagnóstico fisioterapéutico',d.dxFisio||ev.dxFisio)
+      +row('Motivo de consulta',d.motivo||pac.motivo)
+      +row('Tiempo de evolución',d.tiempoEvol)+row('Medicación',d.medicacion));
+    var hitosLabels={hitosSostenCef:'Sostén cefálico',hitosSedest:'Sedestación',hitosGateo:'Gateo',
+      hitosBiped:'Bipedestación',hitosMarcha:'Marcha',hitosLenguaje:'Lenguaje'};
+    var hitosBody='';
+    Object.keys(hitosLabels).forEach(function(k){if(d[k])hitosBody+=row(hitosLabels[k],d[k]);});
+    hitosBody+=row('Tipo de parto',d.tipoParto)+row('Semanas de gestación',d.semanasGest)
+      +row('Peso al nacer',d.pesoNacer)+row('APGAR',d.apgar)
+      +rowFull('Antecedentes prenatales',d.antePrenatal)+rowFull('Antecedentes postnatales',d.antePosnatal)
+      +row('Escolarización',d.escolarizacion)+rowFull('Obs. desarrollo',d.obsDesarrollo);
+    rows+=sec('III','Antecedentes del Desarrollo Motor',hitosBody);
+    rows+=secGrid('IV','Estado Cognitivo y Comunicaci&oacute;n',
+      row('Alerta',d.alertaPed)+row('Comprensión',d.comprensionPed)
+      +row('Conducta',d.conductaPed)+row('Comunicación',d.comunicacionPed)
+      +rowFull('Obs. cognitivo',d.obsCognitivoPed));
+    rows+=secGrid('V','Examen Motor Pedi&aacute;trico',
+      row('Tono MMSS D',d.tonoPed_MMSS_D)+row('Tono MMSS I',d.tonoPed_MMSS_I)
+      +row('Tono MMII D',d.tonoPed_MMII_D)+row('Tono MMII I',d.tonoPed_MMII_I)
+      +row('Fuerza MMSS D',d.fuerzaPed_MMSS_D)+row('Fuerza MMSS I',d.fuerzaPed_MMSS_I)
+      +row('Fuerza MMII D',d.fuerzaPed_MMII_D)+row('Fuerza MMII I',d.fuerzaPed_MMII_I)
+      +row('GMFCS',d.gmfcs)+row('MACS',d.macs)
+      +row('Ref. Moro',d.refMoro)+row('Ref. TANC',d.refTANC)
+      +row('Ref. tónico laberíntico',d.refTL)+row('Ref. prensión',d.refPrension)
+      +row('Reacciones de enderezamiento',d.reaccEnderez)+row('Reacciones de equilibrio',d.reaccEquilib)
+      +rowFull('Patrones de movimiento',d.patronesMovPed)+rowFull('Obs. motor',d.obsMotorPed));
+    rows+=secGrid('VI','Control Postural',
+      row('Control cefálico',d.controlCefalPed)+row('Sedestación',d.sedestacionPed)
+      +row('Bipedestación',d.bipedPed)+row('Órtesis',d.ortesisPed)+rowFull('Obs. postural',d.obsPosturalPed));
+    rows+=secGrid('VII','Marcha y Movilidad',
+      row('Tipo de marcha',d.tipoMarchaPed)+row('Patrón de marcha',d.patronMarchaPed)
+      +row('Ayuda técnica',d.ayudaTecPed)+rowFull('Descripción marcha',d.marchaPedDescripcion)
+      +rowFull('Obs. marcha',d.obsMarchaPed));
+    rows+=secGrid('VIII','Funci&oacute;n de Miembro Superior',
+      row('Prensión',d.prensionPed)+row('Lateralidad',d.lateralidadPed)
+      +row('Alcance',d.alcancePed)+rowFull('Obs. MMSS',d.obsMMSSPed));
+    rows+=sec('IX','AVD y Participaci&oacute;n',
+      row('Alimentación',d.alimentPed)+row('Higiene',d.higienePed)
+      +row('Juego / Socialización',d.juegoSoc)+rowFull('Programa domiciliario',d.progDomiciliario));
+    rows+=_buildPlanHTML(d,ev,'X'); rows+=_buildEscalasHTML(d);
+
+  } else if(catId === 'cardiorespiratorio'){
+    rows+=sec('II','Anamnesis',
+      row('Diagnóstico médico',d.dxMedico||pac.dxMedico)+row('Dx secundario',d.dxSecundario)
+      +row('Diagnóstico fisioterapéutico',d.dxFisio||ev.dxFisio)
+      +row('Motivo de consulta',d.motivo||pac.motivo)+row('Tiempo de evolución',d.tiempoEvol)
+      +row('Hospitalizaciones recientes',d.hospitRecientes)+row('Cirugías previas',d.cirugiasPrev)
+      +row('Antecedentes',d.antecedentes||pac.antecedentes)+row('Medicación actual',d.medicacionActual));
+    rows+=secGrid('III','Examen Objetivo',
+      hdr('Signos Vitales')
+      +row('FC reposo',d.fcReposo?d.fcReposo+' lpm':'')
+      +row('FR reposo',d.frReposo?d.frReposo+' rpm':'')
+      +row('TA',(d.taSistolica&&d.taDiastolica)?d.taSistolica+'/'+d.taDiastolica+' mmHg':'')
+      +row('SpO₂ reposo',d.spo2Reposo?d.spo2Reposo+'%':'')
+      +row('Peso',d.peso?d.peso+' kg':'')+row('Talla',d.talla?d.talla+' cm':'')
+      +row('IMC',d.imc?d.imc+' kg/m²':'')
+      +hdr('Evaluación Respiratoria')
+      +row('Patrón respiratorio',d.patronResp)+row('Músculos accesorios',d.muscAccesoria)
+      +row('Tiraje',d.tiraje)+row('Tipo de tórax',d.tipoTorax)
+      +row('Expansión torácica',d.expansionToracica)+row('Tos',d.tos)
+      +rowFull('Auscultación',d.auscultacion)
+      +hdr('Evaluación Cardíaca')
+      +row('Disnea en reposo',d.disneaReposo)+row('Ortopnea',d.ortopnea)
+      +row('Dolor torácico',d.dolorToracico)+row('Palpitaciones',d.palpitaciones)
+      +row('Tos nocturna',d.tosNocturna)+row('NYHA',d.nyha)
+      +row('Edema MMII',d.edemaMmii)+row('Actividad desencadenante',d.activDesencan)
+      +rowFull('Psicosocial',d.psicosocial)
+      +hdr('Fuerza y Resistencia')
+      +row('Fuerza MMSS D',d.fuerzaMmssDCard)+row('Fuerza MMSS I',d.fuerzaMmssICard)
+      +row('Fuerza MMII D',d.fuerzaMmiiDCard)+row('Fuerza MMII I',d.fuerzaMmiiICard)
+      +row('Dinamometría D',d.dinamoD)+row('Dinamometría I',d.dinamoI)
+      +rowFull('Obs. fuerza',d.obsFuerzaCard)
+      +hdr('Capacidad Funcional')
+      +rowFull('Limitación AVD',d.limitAVD)+row('Sueño',d.suenio)+rowFull('Obs. funcional',d.obsFuncCard));
+    rows+=_buildPlanHTML(d,ev,'IV'); rows+=_buildEscalasHTML(d);
+
+  } else if(catId === 'geriatria'){
+    rows+=sec('II','Anamnesis',
+      row('Diagnóstico',d.dxGeriatria)+row('Edad',d.edadGer?d.edadGer+' años':'')
+      +row('Motivo de evaluación',d.motivoGer||d.motivo||pac.motivo)
+      +row('Tiempo de evolución',d.tiempoEvolGer)
+      +rowFull('Antecedentes',d.antecedentesGer||pac.antecedentes)
+      +row('Vivienda',d.tipoViviendaGer)+row('Soporte social',d.soporteSocial)
+      +row('Caídas últimos 6m',d.caidasGer)+row('Miedo a caer',d.miedoCaer)
+      +row('Polifarmacia',d.polifarmaciaGer)+row('Estado nutricional',d.estadoNutricional));
+    rows+=secGrid('III','Examen F&iacute;sico',
+      row('Postura',d.posturaGer)+row('Piel',d.pielGer)
+      +row('EVA dolor',d.evaGer!==undefined&&d.evaGer!==''?d.evaGer+'/10':'')
+      +row('Localización dolor',d.dolLocGer)
+      +row('Movilidad cervical',d.movilCervGer)+row('Movilidad lumbar',d.movilLumGer)
+      +row('Movilidad caderas',d.movilCaderaGer)+row('Movilidad rodillas',d.movilRodGer)
+      +row('Fuerza MMSS',d.fuerzaMMSS_Ger)+row('Fuerza MMII',d.fuerzaMMII_Ger)
+      +row('Dinamometría',d.fuerzaGer)+row('Trofismo',d.trofismoGer)
+      +row('Sensibilidad',d.sensGer)+row('Reflejos OT',d.reflejosGer)
+      +rowFull('Palpación',d.palpacionGer)+rowFull('Exámenes auxiliares',d.auxGer));
+    rows+=secGrid('IV','Valoraci&oacute;n Funcional y Cognitiva',
+      row('Velocidad marcha',d.velocidadMarchaGer)+row('Patrón marcha',d.patronMarchaGer)
+      +row('Equilibrio estático',d.equilibrioEstGer)+row('Equilibrio dinámico',d.equilibrioDinGer)
+      +row('TUG',d.tugGer?d.tugGer+' seg.':'')+row('Chair Stand 30s',d.chairStand?d.chairStand+' rep.':'')
+      +row('MMSE',d.mmseGer)+row('GDS Depresión',d.gdsGer)
+      +row('Fragilidad Fried',d.friedGer)+row('Barthel',d.barthelGer)
+      +rowFull('Observaciones',d.obsGeriatria));
+    rows+=_buildPlanHTML(d,ev,'V'); rows+=_buildEscalasHTML(d);
+
+  } else if(catId === 'paralisis_facial'){
+    rows+=secGrid('II','Anamnesis',
+      row('Diagnóstico',d.dxFacial)+row('Tipo de parálisis',d.tipoParalisis)
+      +row('Lado afectado',d.ladoFacial)+row('Tiempo de evolución',d.tiempoEvolFacial)
+      +row('Motivo de consulta',d.motivo||pac.motivo)+row('Antecedentes',d.antecedentes||pac.antecedentes));
+    rows+=secGrid('III','Examen Objetivo',
+      hdr('Clasificación')+row('Grado House-Brackmann',d.houseBrackmann)
+      +row('Lagoftalmos',d.lagoftalmos)+row('Sincinesias',d.sincinesias)
+      +hdr('Evaluación Funcional')+row('Simetría en reposo',d.simetriaReposo)
+      +row('Elevación ceja',d.elevacionCeja)+row('Cierre ocular',d.cierreOcular)
+      +row('Sonrisa',d.sonrisa)+row('Elevación comisura',d.elevacionComisura)
+      +row('Fruncir labios',d.fruncirLabios)+row('Arrugar frente',d.arrugarFrente)
+      +row('Mostrar dientes',d.mostrarDientes)+row('Inflar mejillas',d.inflarMejillas)
+      +hdr('Evaluación Complementaria')+row('Sensibilidad auricular',d.sensAuricular)
+      +row('Gusto (lengua)',d.gustoLengua)+row('Dolor facial',d.dolorFacial)
+      +row('Hiperacusia',d.hiperacusia)+rowFull('Observaciones',d.observacionesFacial));
+    rows+=_buildPlanHTML(d,ev,'VI'); rows+=_buildEscalasHTML(d);
+
+  } else {
+    rows+=sec('II','Anamnesis',
+      row('Diagnóstico médico',d.dxMedico||pac.dxMedico)
+      +row('Diagnóstico fisioterapéutico',d.dxFisio||ev.dxFisio)
+      +row('Motivo de consulta',d.motivo||pac.motivo)
+      +row('Antecedentes',d.antecedentes||pac.antecedentes));
+    rows+=_buildPlanHTML(d,ev,'IV'); rows+=_buildEscalasHTML(d);
   }
 
-  // ── V. Escalas aplicadas ──
-  var escalas = d.escalas;
-  if(escalas && typeof escalas === 'string'){ try{ escalas = JSON.parse(escalas); }catch(e){ escalas = null; } }
-  if(escalas && Object.keys(escalas).length){
-    rows += _buildEscalasExport(escalas);
-  }
-
-  // ── VI. Estado de aprobación + firma ──
-  if(ev.estado === 'aprobada'){
-    rows += '<div class="sec" style="border-color:#16a34a">'
-      + '<div class="sec-hdr" style="background:#16a34a">Evaluaci&oacute;n Aprobada</div>'
-      + '<div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:12px 14px">'
-      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;flex:1">'
-      + '<div><div class="field-lbl">Revisado por</div><div class="field-val">' + e2(ev.revisadoPor||'—') + '</div></div>'
-      + (ev.comentarioDocente?'<div><div class="field-lbl">Comentario</div><div class="field-val">' + e2(ev.comentarioDocente) + '</div></div>':'')
-      + '</div>'
-      + firmaHTML
-      + '</div></div>';
+  if(ev.estado==='aprobada'){
+    rows+='<div class="sec" style="border-color:#16a34a">'
+      +'<div class="sec-hdr" style="background:#16a34a">Evaluaci&oacute;n Aprobada</div>'
+      +'<div style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:8px;padding:12px 14px">'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px 16px;flex:1">'
+      +'<div class="fld"><div class="fld-lbl">Revisado por</div><div class="fld-val">'+e2(ev.revisadoPor||'—')+'</div></div>'
+      +(ev.comentarioDocente?'<div class="fld"><div class="fld-lbl">Comentario</div><div class="fld-val">'+e2(ev.comentarioDocente)+'</div></div>':'')
+      +'</div>'+firmaHTML+'</div></div>';
   }
   return rows;
 }
 
-// Helper: sección de examen objetivo específica por categoría
+function _buildPlanHTML(d, ev, num){
+  var nSes=d.planSesiones||ev.planSesiones||'', freq=d.planFrecuencia||ev.planFrecuencia||'', dur=d.planDuracion||ev.planDuracion||'';
+  var meta=d.meta||d.objCorto||d.planMeta||ev.objCorto||'';
+  var objG=d.objGeneral||d.objLargo||ev.objLargo||'';
+  var objE=d.objEspecificos||d.planGeneral||ev.planGeneral||'';
+  var areas=d.planAreas||ev.planAreas||'', prec=d.planPrecauciones||ev.planPrecauciones||'', edu=d.planEducacion||ev.planEducacion||'';
+  var body=''
+    +(nSes?'<div class="fld"><div class="fld-lbl">N&deg; Sesiones</div><div class="fld-val">'+e2(nSes)+(freq?' · '+e2(freq):'')+(dur?' · '+e2(dur):'')+'</div></div>':'')
+    +(meta?'<div class="fld full"><div class="fld-lbl">Meta / Objetivo corto plazo</div><div class="fld-val long">'+e2(meta)+'</div></div>':'')
+    +(objG?'<div class="fld full"><div class="fld-lbl">Objetivo general</div><div class="fld-val long">'+e2(objG)+'</div></div>':'')
+    +(objE?'<div class="fld full"><div class="fld-lbl">Objetivos espec&iacute;ficos / Plan</div><div class="fld-val long">'+e2(objE)+'</div></div>':'')
+    +(areas?'<div class="fld full"><div class="fld-lbl">&Aacute;reas de intervenci&oacute;n</div><div class="fld-val long">'+e2(areas)+'</div></div>':'')
+    +(prec?'<div class="fld full"><div class="fld-lbl">Precauciones</div><div class="fld-val long">'+e2(prec)+'</div></div>':'')
+    +(edu?'<div class="fld full"><div class="fld-lbl">Educaci&oacute;n al paciente</div><div class="fld-val long">'+e2(edu)+'</div></div>':'');
+  if(!body) return '';
+  return '<div class="sec"><div class="sec-hdr">'+num+'. Plan de Tratamiento</div><div class="sec-body">'+body+'</div></div>';
+}
+
+function _buildEscalasHTML(d){
+  var escalas=d.escalas;
+  if(escalas&&typeof escalas==='string'){try{escalas=JSON.parse(escalas);}catch(e){escalas=null;}}
+  if(!escalas||!Object.keys(escalas).length) return '';
+  return _buildEscalasExport(escalas);
+}
+
+// Helper: sección de examen objetivo específica por categoría (usada en buildHCCompletaHTML)
 function _buildExamenObjetivoPorCategoria(d, ev, catId){
   var h = '<div class="sec"><div class="sec-hdr">III. Examen Objetivo</div>';
 
@@ -2135,6 +2376,20 @@ async function abrirFrmPac(pac=null, preCatId=null, preCatNombre=null){
     <input type="hidden" id="pC" value="${catId}">
     <input type="hidden" id="hcEvalId" value="${pac?._evalId||''}">
     ${plantillaHTML(catId, pac)}
+    <!-- ── Consentimiento Informado ─────────────────────── -->
+    <div class="card" style="margin:14px 0;padding:14px 18px">
+      <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px">📄 Consentimiento Informado</div>
+      <div id="consentBox" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <input type="file" id="consentFile" accept=".jpg,.jpeg,.png,.webp"
+          style="display:none" onchange="subirConsentimientoUI(this,document.getElementById('hcEvalId')?.value||'')" name="consentFile">
+        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('consentFile').click()">⬆ Subir imagen</button>
+        <span id="consentStatus" style="font-size:12px;color:var(--tx3)">Sin archivo</span>
+        <button id="consentVerBtn" class="btn btn-ghost btn-sm" style="display:none"
+          onclick="verConsentimientoUI(document.getElementById('hcEvalId')?.value||'')">👁 Ver</button>
+        <button id="consentDelBtn" class="btn btn-ghost btn-sm" style="display:none;color:#ef4444"
+          onclick="eliminarConsentimientoUI(document.getElementById('hcEvalId')?.value||'')">🗑 Quitar</button>
+      </div>
+    </div>
     <div class="btn-group" style="margin-top:20px;padding-bottom:40px;position:sticky;bottom:0;background:var(--surf2);padding:14px 0 14px;border-top:1px solid var(--bd);z-index:10">
       <button class="btn btn-ghost" onclick="navTo('pac')">✕ Cancelar</button>
       ${btnsBorrador}
@@ -2619,6 +2874,65 @@ function _buildDetalleExamenPorCategoria(d, ev, catId) {
     h += fld('Test dedos-suelo', d.testDedusSuelo !== '' && d.testDedusSuelo !== undefined ? d.testDedusSuelo + ' cm' : '');
     if (d.cifDeterioro) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">ALTERACIONES POSTURALES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">' + e2(d.cifDeterioro) + '</div></div>';
 
+  } else if (catId === 'paralisis_facial') {
+    h += fld('Diagnóstico', d.dxFacial);
+    h += fld('Tipo de parálisis', d.tipoParalisis);
+    h += fld('Lado afectado', d.ladoFacial);
+    h += fld('Tiempo de evolución', d.tiempoEvolFacial);
+    h += fld('Etiología', d.etiologiaFacial);
+    h += fld('House-Brackmann', d.houseBrackmann);
+    h += fld('Lagoftalmos', d.lagoftalmos);
+    h += fld('Sincinesias', d.sincinesias);
+    h += fld('Simetría en reposo', d.simetriaReposo);
+    h += fld('Arrugar frente', d.arrugarFrente);
+    h += fld('Elevación ceja', d.elevacionCeja);
+    h += fld('Cierre ocular', d.cierreOcular);
+    h += fld('Sonrisa', d.sonrisa);
+    h += fld('Elevación comisura', d.elevacionComisura);
+    h += fld('Mostrar dientes', d.mostrarDientes);
+    h += fld('Fruncir labios', d.fruncirLabios);
+    h += fld('Inflar mejillas', d.inflarMejillas);
+    h += fld('Sensibilidad auricular', d.sensAuricular);
+    h += fld('Gusto', d.gustoLengua);
+    h += fld('Dolor', d.dolorFacial);
+    h += fld('Hiperacusia', d.hiperacusia);
+    if(d.observacionesFacial) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBSERVACIONES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.observacionesFacial)+'</div></div>';
+
+  } else if (catId === 'geriatria') {
+    h += fld('Diagnóstico', d.dxGeriatria);
+    h += fld('Edad', d.edadGer ? d.edadGer+' años' : '');
+    h += fld('Motivo', d.motivoGer);
+    h += fld('Evolución', d.tiempoEvolGer);
+    h += fld('Vivienda', d.tipoViviendaGer);
+    h += fld('Soporte social', d.soporteSocial);
+    h += fld('Caídas 6m', d.caidasGer);
+    h += fld('Miedo a caer', d.miedoCaer);
+    h += fld('Polifarmacia', d.polifarmaciaGer);
+    h += fld('Nutrición', d.estadoNutricional);
+    if(d.antecedentesGer) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">ANTECEDENTES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.antecedentesGer)+'</div></div>';
+    h += fld('Dolor EVA', d.evaGer !== undefined && d.evaGer !== '' ? d.evaGer+'/10' : '');
+    h += fld('Postura', d.posturaGer);
+    h += fld('Piel', d.pielGer);
+    h += fld('Fuerza MMSS', d.fuerzaMMSS_Ger);
+    h += fld('Fuerza MMII', d.fuerzaMMII_Ger);
+    h += fld('Dinamometría', d.fuerzaGer);
+    h += fld('Trofismo', d.trofismoGer);
+    h += fld('Sensibilidad', d.sensGer);
+    h += fld('Reflejos OT', d.reflejosGer);
+    if(d.palpacionGer) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">PALPACIÓN</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.palpacionGer)+'</div></div>';
+    if(d.auxGer) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">EXÁMENES AUXILIARES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.auxGer)+'</div></div>';
+    h += fld('Velocidad marcha', d.velocidadMarchaGer);
+    h += fld('Patrón marcha', d.patronMarchaGer);
+    h += fld('Equilibrio estático', d.equilibrioEstGer);
+    h += fld('Equilibrio dinámico', d.equilibrioDinGer);
+    h += fld('TUG', d.tugGer ? d.tugGer+' seg.' : '');
+    h += fld('Chair Stand', d.chairStand ? d.chairStand+' rep.' : '');
+    h += fld('MMSE', d.mmseGer);
+    h += fld('GDS Depresión', d.gdsGer);
+    h += fld('Fragilidad Fried', d.friedGer);
+    h += fld('Barthel', d.barthelGer);
+    if(d.obsGeriatria) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">OBSERVACIONES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">'+e2(d.obsGeriatria)+'</div></div>';
+
   } else {
     if (d.examObjetivo) h += '<div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">' + e2(d.examObjetivo) + '</div>';
   }
@@ -2855,6 +3169,16 @@ async function editarEvalRechazada(pacId, evalId, catId){
   if(ev.docente){
     var inp = g('hcDocInput'); if(inp) inp.value = ev.docente;
     var hid = g('hcDoc');      if(hid) hid.value = ev.docente;
+  }
+
+  // Mostrar estado del consentimiento si ya existe
+  if(ev.consentimientoPath){
+    setTimeout(function(){
+      var st=g('consentStatus'),vBtn=g('consentVerBtn'),dBtn=g('consentDelBtn');
+      if(st) st.textContent='📎 Consentimiento adjunto';
+      if(vBtn){ vBtn.style.display=''; vBtn.onclick=function(){ verConsentimientoUI(evalId); }; }
+      if(dBtn){ dBtn.style.display=''; dBtn.onclick=function(){ eliminarConsentimientoUI(evalId); }; }
+    },150);
   }
 }
 
@@ -3540,6 +3864,8 @@ function plantillaHTML(catId, pac){
     secciones += secPostural(d);
   } else if(catId === 'paralisis_facial'){
     secciones += secParalisisFacial(d);
+  } else if(catId === 'geriatria'){
+    secciones += secGeriatria(d);
   }
 
   secciones += secPlanTratamiento(d);
@@ -3592,16 +3918,70 @@ function secFiliacion(pac, d){
 }
 
 function secAnamnesis(catId, pac, d){
-  const tienesDxMedico = catId==='traumatologia';
+  var camposDx = '';
+  var camposExtra = '';
+
+  // ── Diagnóstico médico por categoría ───────────────────────
+  if(catId==='traumatologia'||catId==='neuro_adultos'||catId==='cardiorespiratorio'){
+    var placeholderDx = catId==='traumatologia'?'Ej. S83.0 — Esguince rodilla, M54.5 — Lumbalgia...'
+      :catId==='neuro_adultos'?'Ej. I63.9 — ACV isquémico, G35 — EM, G20 — Parkinson...'
+      :'Ej. I50.0 — Insuficiencia cardíaca, J44.1 — EPOC...';
+    camposDx = `<div class="field form-full" style="margin-bottom:12px"><label for="aDxMed">Diagnóstico médico</label>
+      <input class="inp" id="aDxMed" value="${e2(d.dxMedico||pac?.dxMedico||'')}" placeholder="${placeholderDx}" name="aDxMed"></div>`;
+  }
+
+  if(catId==='geriatria'){
+    camposDx = `<div class="field form-full" style="margin-bottom:12px"><label for="dxGeriatria">Diagnóstico médico principal</label>
+      <input class="inp" id="dxGeriatria" value="${e2(d.dxGeriatria||pac?.dxMedico||'')}"
+        placeholder="Ej: M81.0 Osteoporosis, M62.5 Sarcopenia, Z73.0 Sínd. de fragilidad..." name="dxGeriatria"></div>`;
+    camposExtra = `
+    <div class="field" style="margin-bottom:12px"><label for="edadGer">Edad</label>
+      <input class="inp" id="edadGer" type="number" min="60" max="120" value="${e2(d.edadGer||'')}" placeholder="años" name="edadGer"></div>
+    <div class="field" style="margin-bottom:12px"><label for="motivoGer">Motivo de evaluación</label>
+      <input class="inp" id="motivoGer" value="${e2(d.motivoGer||d.motivo||pac?.motivo||'')}"
+        placeholder="Ej: Prevención de caídas, rehabilitación post-fractura..." name="motivoGer"></div>
+    <div class="field" style="margin-bottom:12px"><label for="tiempoEvolGer">Tiempo de evolución del problema principal</label>
+      <input class="inp" id="tiempoEvolGer" value="${e2(d.tiempoEvolGer||'')}" placeholder="Ej: 6 meses, 2 años..." name="tiempoEvolGer"></div>
+    <div class="field form-full" style="margin-bottom:12px"><label for="antecedentesGer">Antecedentes médicos relevantes</label>
+      <textarea class="ta" id="antecedentesGer" rows="3"
+        placeholder="HTA, DM2, EPOC, enfermedades reumáticas, fracturas previas..." name="antecedentesGer">${e2(d.antecedentesGer||pac?.antecedentes||'')}</textarea></div>
+    <div class="field" style="margin-bottom:12px"><label for="tipoViviendaGer">Tipo de vivienda</label>
+      <select class="sel" id="tipoViviendaGer" name="tipoViviendaGer"><option value=""></option>
+        ${['Domicilio propio','Domicilio familiar','Residencia de ancianos','Hospitalizado'].map(v=>`<option ${d.tipoViviendaGer===v?'selected':''}>${v}</option>`).join('')}
+      </select></div>
+    <div class="field" style="margin-bottom:12px"><label for="soporteSocial">Soporte social</label>
+      <select class="sel" id="soporteSocial" name="soporteSocial"><option value=""></option>
+        ${['Vive solo — sin apoyo','Vive solo — con apoyo ocasional','Vive acompañado — independiente','Vive acompañado — con cuidador','Cuidado institucional'].map(v=>`<option ${d.soporteSocial===v?'selected':''}>${v}</option>`).join('')}
+      </select></div>
+    <div class="field" style="margin-bottom:12px"><label for="caidasGer">Caídas últimos 6 meses</label>
+      <select class="sel" id="caidasGer" name="caidasGer"><option value=""></option>
+        ${['Ninguna','1 caída','2 caídas','3 o más caídas'].map(v=>`<option ${d.caidasGer===v?'selected':''}>${v}</option>`).join('')}
+      </select></div>
+    <div class="field" style="margin-bottom:12px"><label for="miedoCaer">Miedo a caer</label>
+      <select class="sel" id="miedoCaer" name="miedoCaer"><option value=""></option>
+        ${['Sin miedo','Leve — no modifica actividad','Moderado — limita algunas actividades','Grave — limita la mayoría de actividades'].map(v=>`<option ${d.miedoCaer===v?'selected':''}>${v}</option>`).join('')}
+      </select></div>
+    <div class="field" style="margin-bottom:12px"><label for="polifarmaciaGer">Polifarmacia</label>
+      <select class="sel" id="polifarmaciaGer" name="polifarmaciaGer"><option value=""></option>
+        ${['Sin medicación','1-4 fármacos','5-9 fármacos (polifarmacia)','10+ fármacos (polifarmacia grave)'].map(v=>`<option ${d.polifarmaciaGer===v?'selected':''}>${v}</option>`).join('')}
+      </select></div>
+    <div class="field" style="margin-bottom:12px"><label for="estadoNutricional">Estado nutricional</label>
+      <select class="sel" id="estadoNutricional" name="estadoNutricional"><option value=""></option>
+        ${['Normal','Riesgo de desnutrición','Desnutrición leve-moderada','Desnutrición grave'].map(v=>`<option ${d.estadoNutricional===v?'selected':''}>${v}</option>`).join('')}
+      </select></div>`;
+  }
+
   return secWrap('anam','II. Anamnesis','',`
-    ${tienesDxMedico?`<div class="field" style="margin-bottom:12px"><label>Diagnóstico médico</label>
-      <input class="inp" id="aDxMed" value="${e2(d.dxMedico||'')}" placeholder="Diagnóstico médico"></div>`:''}
-    <div class="field" style="margin-bottom:12px"><label>Diagnóstico fisioterapéutico</label>
-      <input class="inp" id="aDxFisio" value="${e2(d.dxFisio||'')}" placeholder="Diagnóstico fisioterapéutico"></div>
-    <div class="field" style="margin-bottom:12px"><label>Antecedentes importantes y patológicos</label>
-      <textarea class="ta" id="aAntecedentes" rows="3" placeholder="Antecedentes médicos, quirúrgicos, familiares, farmacológicos...">${e2(d.antecedentes||'')}</textarea></div>
-    <div class="field" style="margin-bottom:12px"><label>Motivo de consulta / Examen subjetivo</label>
-      <textarea class="ta" id="aMotivo" rows="3" placeholder="Sintomatología principal, motivo de consulta, dolor, limitaciones referidas...">${e2(d.motivo||'')}</textarea></div>
+    <div class="form-grid">
+      ${camposDx}
+      <div class="field form-full" style="margin-bottom:12px"><label for="aDxFisio">Diagnóstico fisioterapéutico</label>
+        <input class="inp" id="aDxFisio" value="${e2(d.dxFisio||'')}" placeholder="Diagnóstico fisioterapéutico" name="aDxFisio"></div>
+      <div class="field form-full" style="margin-bottom:12px"><label for="aMotivo">Motivo de consulta / Examen subjetivo</label>
+        <textarea class="ta" id="aMotivo" rows="3" placeholder="Sintomatología principal, motivo de consulta, dolor, limitaciones referidas..." name="aMotivo">${e2(d.motivo||pac?.motivo||'')}</textarea></div>
+      <div class="field form-full" style="margin-bottom:12px"><label for="aAntecedentes">Antecedentes importantes y patológicos</label>
+        <textarea class="ta" id="aAntecedentes" rows="3" placeholder="Antecedentes médicos, quirúrgicos, familiares, farmacológicos..." name="aAntecedentes">${e2(d.antecedentes||pac?.antecedentes||'')}</textarea></div>
+      ${camposExtra}
+    </div>
   `,true);
 }
 
@@ -4159,11 +4539,27 @@ const ESCALAS_CATALOGO = [
     dominio:'Lesión medular', cats:['neuro_adultos'], ped:false,
     render: renderEscalaASIA, calcular: calcularASIA },
 
+  { id:'nihss', nombre:'NIHSS — Escala de Ictus del NIH', desc:'Evalúa déficit neurológico post-ACV en 11 ítems. 0 = sin déficit, >25 = gravísimo.',
+    dominio:'ACV', cats:['neuro_adultos'], ped:false,
+    render: renderEscalaNIHSS, calcular: calcularNIHSS },
+
+  { id:'hoehn_yahr', nombre:'Hoehn & Yahr — Parkinson', desc:'Clasifica la progresión de la enfermedad de Parkinson en 5 estadios.',
+    dominio:'Parkinson', cats:['neuro_adultos'], ped:false,
+    render: renderEscalaHoehnYahr, calcular: calcularHoehnYahr },
+
+  { id:'edss', nombre:'EDSS — Esclerosis Múltiple', desc:'Expanded Disability Status Scale. Cuantifica discapacidad en EM. 0 (normal) a 10 (muerte por EM).',
+    dominio:'Esclerosis múltiple', cats:['neuro_adultos'], ped:false,
+    render: renderEscalaEDSS, calcular: calcularEDSS },
+
   { id:'sunnybrook', nombre:'Sunnybrook — Parálisis facial', desc:'Evalúa simetría en reposo, movimiento voluntario y sincinesias. Puntuación compuesta 0-100 (mayor = mejor función).',
     dominio:'Parálisis facial', cats:['paralisis_facial'], ped:false,
     render: renderEscalaSunnybrook, calcular: calcularSunnybrook },
 
   // ── GERIÁTRICA ───────────────────────────────────────────
+
+  { id:'gds15', nombre:'GDS-15 — Depresión Geriátrica', desc:'15 ítems. 0-4 normal, 5-8 leve, 9-11 moderada, 12-15 grave.',
+    dominio:'Psicológico', cats:['geriatria'], ped:false,
+    render: renderEscalaGDS15, calcular: calcularGDS15 },
 
   { id:'lawton', nombre:'Índice de Lawton-Brody', desc:'Evalúa independencia en AVD instrumentales. 8 ítems, máximo 8 pts.',
     dominio:'AVD Instrumentales', cats:['traumatologia','postural','geriatria'], ped:false,
@@ -4743,6 +5139,176 @@ function calcular6MWT(id){
 }
 
 // ── BARTHEL (10 ítems) ───────────────────────────────────────
+// ── NIHSS ─────────────────────────────────────────────────────
+function renderEscalaNIHSS(d){
+  var items_d = d&&d.items ? d.items : {};
+  var items = [
+    {k:'1a_conciencia', l:'1a. Nivel de conciencia',     ops:[{v:0,l:'0 — Alerta'},{v:1,l:'1 — Somnoliento'},{v:2,l:'2 — Estuporoso'},{v:3,l:'3 — Coma'}]},
+    {k:'1b_preguntas',  l:'1b. Preguntas de orientación', ops:[{v:0,l:'0 — Ambas correctas'},{v:1,l:'1 — Una correcta'},{v:2,l:'2 — Ninguna'}]},
+    {k:'1c_ordenes',    l:'1c. Respuesta a órdenes',      ops:[{v:0,l:'0 — Ambas'},{v:1,l:'1 — Una'},{v:2,l:'2 — Ninguna'}]},
+    {k:'2_mirada',      l:'2. Mirada',                    ops:[{v:0,l:'0 — Normal'},{v:1,l:'1 — Parálisis parcial'},{v:2,l:'2 — Desviación forzada'}]},
+    {k:'3_visual',      l:'3. Campos visuales',           ops:[{v:0,l:'0 — Sin pérdida'},{v:1,l:'1 — Hemianopsia parcial'},{v:2,l:'2 — Hemianopsia completa'},{v:3,l:'3 — Ceguera bilateral'}]},
+    {k:'4_facial',      l:'4. Paresia facial',            ops:[{v:0,l:'0 — Normal'},{v:1,l:'1 — Leve'},{v:2,l:'2 — Parcial'},{v:3,l:'3 — Completa'}]},
+    {k:'5a_motor_mi_d', l:'5a. Motor MMSS D',             ops:[{v:0,l:'0 — Sin caída'},{v:1,l:'1 — Cae antes de 10s'},{v:2,l:'2 — Esfuerzo contra gravedad'},{v:3,l:'3 — Sin esfuerzo'},{v:4,l:'4 — Sin movimiento'}]},
+    {k:'5b_motor_mi_i', l:'5b. Motor MMSS I',             ops:[{v:0,l:'0 — Sin caída'},{v:1,l:'1 — Cae antes de 10s'},{v:2,l:'2 — Esfuerzo contra gravedad'},{v:3,l:'3 — Sin esfuerzo'},{v:4,l:'4 — Sin movimiento'}]},
+    {k:'6a_motor_ii_d', l:'6a. Motor MMII D',             ops:[{v:0,l:'0 — Sin caída'},{v:1,l:'1 — Cae antes de 5s'},{v:2,l:'2 — Esfuerzo contra gravedad'},{v:3,l:'3 — Sin esfuerzo'},{v:4,l:'4 — Sin movimiento'}]},
+    {k:'6b_motor_ii_i', l:'6b. Motor MMII I',             ops:[{v:0,l:'0 — Sin caída'},{v:1,l:'1 — Cae antes de 5s'},{v:2,l:'2 — Esfuerzo contra gravedad'},{v:3,l:'3 — Sin esfuerzo'},{v:4,l:'4 — Sin movimiento'}]},
+    {k:'7_ataxia',      l:'7. Ataxia de extremidades',    ops:[{v:0,l:'0 — Ausente'},{v:1,l:'1 — En 1 extremidad'},{v:2,l:'2 — En 2 extremidades'}]},
+    {k:'8_sensibilidad',l:'8. Sensibilidad',              ops:[{v:0,l:'0 — Normal'},{v:1,l:'1 — Pérdida leve-moderada'},{v:2,l:'2 — Pérdida grave'}]},
+    {k:'9_lenguaje',    l:'9. Mejor lenguaje',            ops:[{v:0,l:'0 — Normal'},{v:1,l:'1 — Afasia leve-moderada'},{v:2,l:'2 — Afasia grave'},{v:3,l:'3 — Mudo/global'}]},
+    {k:'10_disartria',  l:'10. Disartria',                ops:[{v:0,l:'0 — Normal'},{v:1,l:'1 — Leve-moderada'},{v:2,l:'2 — Grave'}]},
+    {k:'11_extincion',  l:'11. Extinción/inatención',     ops:[{v:0,l:'0 — Normal'},{v:1,l:'1 — Inatención en 1 modalidad'},{v:2,l:'2 — Inatención grave'}]},
+  ];
+  var html = '<div style="display:grid;gap:5px">';
+  items.forEach(function(it){
+    var val = items_d[it.k]!==undefined ? String(items_d[it.k]) : '';
+    html += '<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--surf3);border-radius:7px">';
+    html += '<span style="font-size:11px;flex:1;color:var(--tx2)">'+it.l+'</span>';
+    html += '<select class="sel" data-escala-item="'+it.k+'" onchange="recalcularEscala(\'nihss\')" style="font-size:11px;min-width:220px"><option value=""></option>';
+    it.ops.forEach(function(o){ html += '<option value="'+o.v+'"'+(val===String(o.v)?' selected':'')+'>'+o.l+'</option>'; });
+    html += '</select></div>';
+  });
+  return html + '</div>';
+}
+function calcularNIHSS(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var keys=['1a_conciencia','1b_preguntas','1c_ordenes','2_mirada','3_visual','4_facial','5a_motor_mi_d','5b_motor_mi_i','6a_motor_ii_d','6b_motor_ii_i','7_ataxia','8_sensibilidad','9_lenguaje','10_disartria','11_extincion'];
+  var total=0, filled=0;
+  keys.forEach(function(k){
+    var el=b.querySelector('[data-escala-item="'+k+'"]'); if(!el||el.value==='') return;
+    total+=parseFloat(el.value)||0; filled++;
+  });
+  if(!filled) return null;
+  var interp=total===0?'Sin déficit':total<=4?'Déficit leve':total<=15?'Déficit moderado':total<=20?'Déficit moderado-grave':total<=25?'Déficit grave':'Muy grave';
+  var color=total===0?'var(--green)':total<=4?'#16a34a':total<=15?'var(--amber)':total<=20?'#ea580c':'var(--red)';
+  return {puntaje:total+'/42', puntajeRaw:total, interpretacion:interp, color};
+}
+
+// ── HOEHN & YAHR ──────────────────────────────────────────────
+function renderEscalaHoehnYahr(d){
+  var items_d = d&&d.items ? d.items : {};
+  var estadios=[
+    {v:'1',  l:'1 — Unilateral, sin incapacidad funcional'},
+    {v:'1.5',l:'1.5 — Unilateral con afectación axial'},
+    {v:'2',  l:'2 — Bilateral, sin alteración del equilibrio'},
+    {v:'2.5',l:'2.5 — Bilateral leve, recupera en jalón'},
+    {v:'3',  l:'3 — Bilateral, inestabilidad postural, independiente'},
+    {v:'4',  l:'4 — Incapacidad grave, aún puede caminar solo'},
+    {v:'5',  l:'5 — Silla de ruedas o cama sin ayuda'},
+  ];
+  var val=items_d.estadio||'';
+  var html='<div style="display:grid;gap:8px">';
+  html+='<div><label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase">Estadio Hoehn & Yahr</label>';
+  html+='<select class="sel" data-escala-item="estadio" onchange="recalcularEscala(\'hoehn_yahr\')" style="width:100%;margin-top:6px"><option value=""></option>';
+  estadios.forEach(function(e){ html+='<option value="'+e.v+'"'+(val===e.v?' selected':'')+'>'+e.l+'</option>'; });
+  html+='</select></div>';
+  html+='<div><label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase">Observaciones</label>';
+  html+='<textarea class="ta" data-escala-item="obs" rows="2" placeholder="Fluctuaciones, respuesta a medicación..." style="margin-top:6px">'+e2(items_d.obs||'')+'</textarea></div></div>';
+  return html;
+}
+function calcularHoehnYahr(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var est=(b.querySelector('[data-escala-item="estadio"]')||{}).value||'';
+  if(!est) return null;
+  var interpMap={'1':'Afectación unilateral — mínima discapacidad','1.5':'Afectación unilateral con axial — leve','2':'Bilateral sin alteración de equilibrio','2.5':'Bilateral leve — responde al jalón','3':'Bilateral con inestabilidad postural — independiente','4':'Discapacidad grave — aún deambula solo','5':'Dependencia total'};
+  var colorMap={'1':'var(--green)','1.5':'var(--green)','2':'#16a34a','2.5':'var(--amber)','3':'var(--amber)','4':'#ea580c','5':'var(--red)'};
+  return {puntaje:'Estadio '+est, puntajeRaw:parseFloat(est), interpretacion:interpMap[est]||'', color:colorMap[est]||'var(--tx3)'};
+}
+
+// ── EDSS — ESCLEROSIS MÚLTIPLE ────────────────────────────────
+function renderEscalaEDSS(d){
+  var items_d = d&&d.items ? d.items : {};
+  var niveles=[
+    {v:'0',  l:'0.0 — Exploración neurológica normal'},
+    {v:'1',  l:'1.0 — Sin discapacidad, signos mínimos'},
+    {v:'1.5',l:'1.5 — Sin discapacidad, signos mínimos en >1 FS'},
+    {v:'2',  l:'2.0 — Discapacidad mínima en 1 FS'},
+    {v:'2.5',l:'2.5 — Discapacidad mínima en 2 FS'},
+    {v:'3',  l:'3.0 — Discapacidad moderada en 1 FS, deambula sin limitación'},
+    {v:'3.5',l:'3.5 — Deambula sin limitación, discapacidad moderada en 1 FS + leve en otros'},
+    {v:'4',  l:'4.0 — Deambula >500 m sin ayuda'},
+    {v:'4.5',l:'4.5 — Deambula >300 m sin ayuda'},
+    {v:'5',  l:'5.0 — Deambula ~200 m sin ayuda'},
+    {v:'5.5',l:'5.5 — Deambula ~100 m sin ayuda'},
+    {v:'6',  l:'6.0 — Ayuda unilateral para caminar 100 m'},
+    {v:'6.5',l:'6.5 — Ayuda bilateral para caminar 20 m'},
+    {v:'7',  l:'7.0 — Silla de ruedas — traslada solo'},
+    {v:'7.5',l:'7.5 — Silla de ruedas — traslada con ayuda'},
+    {v:'8',  l:'8.0 — Encamado, usa brazos, cuida de sí mismo'},
+    {v:'8.5',l:'8.5 — Encamado, usa brazos parcialmente'},
+    {v:'9',  l:'9.0 — Encamado, se comunica'},
+    {v:'9.5',l:'9.5 — Completamente dependiente'},
+    {v:'10', l:'10.0 — Muerte por EM'},
+  ];
+  var val=items_d.nivel||'';
+  var sistemas=['Piramidal','Cerebeloso','Troncoencefálico','Sensitivo','Vesical/intestinal','Visual','Cerebral/Mental'];
+  var selSis=items_d.sistema_func||'';
+  var html='<div style="display:grid;gap:8px">';
+  html+='<div><label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase">Puntuación EDSS</label>';
+  html+='<select class="sel" data-escala-item="nivel" onchange="recalcularEscala(\'edss\')" style="width:100%;margin-top:6px"><option value=""></option>';
+  niveles.forEach(function(n){ html+='<option value="'+n.v+'"'+(val===n.v?' selected':'')+'>'+n.l+'</option>'; });
+  html+='</select></div>';
+  html+='<div><label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase">Sistema funcional con mayor compromiso</label>';
+  html+='<select class="sel" data-escala-item="sistema_func" style="width:100%;margin-top:6px"><option value=""></option>';
+  sistemas.forEach(function(s){ html+='<option'+(selSis===s?' selected':'')+'>'+s+'</option>'; });
+  html+='</select></div>';
+  html+='<div><label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase">Observaciones</label>';
+  html+='<textarea class="ta" data-escala-item="obs" rows="2" placeholder="Brotes recientes, tratamiento actual..." style="margin-top:6px">'+e2(items_d.obs||'')+'</textarea></div></div>';
+  return html;
+}
+function calcularEDSS(id){
+  var b=g('escala_bloque_'+id); if(!b) return null;
+  var nivel=(b.querySelector('[data-escala-item="nivel"]')||{}).value||'';
+  if(!nivel) return null;
+  var n=parseFloat(nivel);
+  var interp=n<=1.5?'Sin discapacidad':n<=3.5?'Discapacidad leve — deambulación conservada':n<=5.5?'Discapacidad moderada — deambulación limitada':n<=7?'Discapacidad grave — ayuda para caminar':n<=8.5?'Muy grave — encamado':n<10?'Dependencia total':'Muerte por EM';
+  var color=n<=1.5?'var(--green)':n<=3.5?'#16a34a':n<=5.5?'var(--amber)':n<=7?'#ea580c':'var(--red)';
+  return {puntaje:'EDSS '+nivel, puntajeRaw:n, interpretacion:interp, color};
+}
+
+// ── GDS-15 — DEPRESIÓN GERIÁTRICA ─────────────────────────────
+function renderEscalaGDS15(d){
+  var pregs=[
+    '¿Está satisfecho/a con su vida?','¿Ha abandonado actividades que le interesaban?',
+    '¿Siente que su vida está vacía?','¿Se siente aburrido/a?',
+    '¿Tiene esperanza en el futuro?','¿Tiene pensamientos que le molestan?',
+    '¿Está de buen ánimo la mayor parte del tiempo?','¿Tiene miedo de que algo malo le vaya a pasar?',
+    '¿Se siente feliz la mayor parte del tiempo?','¿Se siente a veces desamparado/a?',
+    '¿Se siente a veces inquieto/a o intranquilo/a?','¿Prefiere quedarse en casa en lugar de salir?',
+    '¿Está preocupado/a por el futuro?','¿Cree que tiene más problemas de memoria que la mayoría?',
+    '¿Cree que es maravilloso estar vivo/a?'
+  ];
+  var html='<div class="esc-grid">';
+  pregs.forEach(function(p,i){
+    var val=d&&d['gds'+(i+1)];
+    html+='<div style="padding:8px 0;border-bottom:1px solid var(--bd2)">';
+    html+='<div style="font-size:12px;color:var(--tx2);margin-bottom:5px">'+(i+1)+'. '+p+'</div>';
+    html+='<div style="display:flex;gap:10px">';
+    ['Sí','No'].forEach(function(op){
+      html+='<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;font-weight:600">';
+      html+='<input type="radio" name="gds'+(i+1)+'" value="'+op+'" '+(val===op?'checked':'')+' onchange="calcularGDS15()" style="accent-color:var(--n500)">';
+      html+=op+'</label>';
+    });
+    html+='</div></div>';
+  });
+  html+='</div><div id="gds15Result" style="margin-top:10px;padding:10px;background:var(--surf3);border-radius:8px;font-size:13px;font-weight:700"></div>';
+  return html;
+}
+function calcularGDS15(){
+  var puntaConSi=[1,2,3,4,6,8,10,11,12,13];
+  var puntaConNo=[5,7,9,15];
+  var total=0;
+  for(var i=1;i<=15;i++){
+    var el=document.querySelector('input[name="gds'+i+'"]:checked');
+    if(!el) continue;
+    if(puntaConSi.indexOf(i)>=0 && el.value==='Sí') total++;
+    if(puntaConNo.indexOf(i)>=0 && el.value==='No') total++;
+  }
+  var interp=total<=4?'Normal (sin depresión)':total<=8?'Depresión leve':total<=11?'Depresión moderada':'Depresión grave';
+  var res=document.getElementById('gds15Result');
+  if(res) res.textContent='Puntuación: '+total+'/15 — '+interp;
+}
+
 function renderEscalaBarthel(d){
   var items_d = d&&d.items ? d.items : {};
   var config = [
@@ -6986,6 +7552,151 @@ function secAVDPed(d){
     </div>`);
 }
 
+// ══════════════════════════════════════════════════════════════
+// GERIATRÍA — secciones del formulario de evaluación
+// ══════════════════════════════════════════════════════════════
+function secGeriatria(d){
+  return secExamenGeriatria(d) + secFuncionalGeriatria(d);
+}
+
+function secExamenGeriatria(d){
+  return secWrap('examen_geriatria','III. Examen físico','',`
+    <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px">Inspección general</div>
+    <div class="form-grid" style="margin-bottom:14px">
+      <div class="field"><label for="posturaGer">Postura general</label>
+        <select class="sel" id="posturaGer" name="posturaGer"><option value=""></option>
+          ${['Normal','Cifosis dorsal aumentada','Escoliosis','Hiperlordosis lumbar','Antepulsión de cabeza','Otra alteración'].map(v=>`<option ${d.posturaGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label for="pielGer">Estado de la piel</label>
+        <select class="sel" id="pielGer" name="pielGer"><option value=""></option>
+          ${['Normal','Xerosis / sequedad','Úlcera por presión','Edema','Hematoma / equimosis','Cicatrices relevantes'].map(v=>`<option ${d.pielGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label for="evaGer">Dolor (EVA 0-10)</label>
+        <div class="eva-wrap" style="margin-top:6px">
+          <div class="eva-track" style="position:relative">
+            <input type="range" class="eva-sl" id="evaGer" min="0" max="10" step="1"
+              value="${d.evaGer??0}" oninput="g('evaGerD').textContent=this.value" name="evaGer">
+          </div>
+          <div class="eva-val" id="evaGerD">${d.evaGer??0}</div>
+        </div></div>
+      <div class="field"><label for="dolLocGer">Localización del dolor</label>
+        <input class="inp" id="dolLocGer" value="${e2(d.dolLocGer||'')}"
+          placeholder="Ej. Rodillas, cadera, columna lumbar..." name="dolLocGer"></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px">Palpación y movilidad articular</div>
+    <div class="field" style="margin-bottom:14px"><label for="palpacionGer">Hallazgos a la palpación</label>
+      <textarea class="ta" id="palpacionGer" rows="3"
+        placeholder="Dolor a la palpación, temperatura, edema, puntos gatillo, deformidades..." name="palpacionGer">${e2(d.palpacionGer||'')}</textarea></div>
+    <div class="form-grid" style="margin-bottom:14px">
+      <div class="field"><label for="movilCervGer">Movilidad columna cervical</label>
+        <select class="sel" id="movilCervGer" name="movilCervGer"><option value=""></option>
+          ${['Conservada','Levemente limitada','Moderadamente limitada','Gravemente limitada'].map(v=>`<option ${d.movilCervGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label for="movilLumGer">Movilidad columna lumbar</label>
+        <select class="sel" id="movilLumGer" name="movilLumGer"><option value=""></option>
+          ${['Conservada','Levemente limitada','Moderadamente limitada','Gravemente limitada'].map(v=>`<option ${d.movilLumGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label for="movilCaderaGer">Movilidad caderas</label>
+        <select class="sel" id="movilCaderaGer" name="movilCaderaGer"><option value=""></option>
+          ${['Conservada bilateral','Limitada derecha','Limitada izquierda','Limitada bilateral'].map(v=>`<option ${d.movilCaderaGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label for="movilRodGer">Movilidad rodillas</label>
+        <select class="sel" id="movilRodGer" name="movilRodGer"><option value=""></option>
+          ${['Conservada bilateral','Limitada derecha','Limitada izquierda','Limitada bilateral'].map(v=>`<option ${d.movilRodGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px">Fuerza muscular</div>
+    <div class="form-grid" style="margin-bottom:14px">
+      <div class="field"><label for="fuerzaMMSS_Ger">Fuerza MMSS (Daniels)</label>
+        <select class="sel" id="fuerzaMMSS_Ger" name="fuerzaMMSS_Ger"><option value=""></option>
+          ${['5/5 Normal','4/5 Resistencia disminuida','3/5 Vence gravedad','2/5 Sin vencer gravedad','1/5 Mínima','0/5 Sin contracción'].map(v=>`<option ${d.fuerzaMMSS_Ger===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label for="fuerzaMMII_Ger">Fuerza MMII (Daniels)</label>
+        <select class="sel" id="fuerzaMMII_Ger" name="fuerzaMMII_Ger"><option value=""></option>
+          ${['5/5 Normal','4/5 Resistencia disminuida','3/5 Vence gravedad','2/5 Sin vencer gravedad','1/5 Mínima','0/5 Sin contracción'].map(v=>`<option ${d.fuerzaMMII_Ger===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label for="fuerzaGer">Fuerza prensora (dinamometría)</label>
+        <select class="sel" id="fuerzaGer" name="fuerzaGer"><option value=""></option>
+          ${['Normal (>30 kg H / >20 kg M)','Reducida leve','Reducida moderada (sarcopenia probable)','Muy reducida'].map(v=>`<option ${d.fuerzaGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label for="trofismoGer">Trofismo muscular</label>
+        <select class="sel" id="trofismoGer" name="trofismoGer"><option value=""></option>
+          ${['Normal','Hipotrofia leve','Hipotrofia moderada','Hipotrofia severa (sarcopenia)','Atrofia'].map(v=>`<option ${d.trofismoGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px">Neurológico</div>
+    <div class="form-grid" style="margin-bottom:14px">
+      <div class="field"><label for="sensGer">Sensibilidad</label>
+        <select class="sel" id="sensGer" name="sensGer"><option value=""></option>
+          ${['Normal','Hipoestesia distal MMII','Hipoestesia generalizada','Parestesias','Anestesia'].map(v=>`<option ${d.sensGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label for="reflejosGer">Reflejos osteotendinosos</label>
+        <select class="sel" id="reflejosGer" name="reflejosGer"><option value=""></option>
+          ${['Normales','Hiperreflexia','Hiporreflexia','Arreflexia','Asimétricos'].map(v=>`<option ${d.reflejosGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px">Exámenes auxiliares</div>
+    <div class="field"><label for="auxGer">Exámenes auxiliares relevantes</label>
+      <textarea class="ta" id="auxGer" rows="3"
+        placeholder="Densitometría, radiografías, laboratorio (vitamina D, albumina, hemoglobina...), otros..." name="auxGer">${e2(d.auxGer||'')}</textarea></div>
+  `,true);
+}
+
+function secFuncionalGeriatria(d){
+  return secWrap('funcional_geriatria','IV. Valoración funcional y cognitiva','',`
+    <div style="font-size:11px;color:var(--tx3);margin-bottom:12px;padding:8px;background:var(--surf3);border-radius:8px">
+      Valoración geriátrica integral: función física, cognitiva y social.
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px">Función física</div>
+    <div class="form-grid" style="margin-bottom:14px">
+      <div class="field"><label for="velocidadMarchaGer">Velocidad de marcha</label>
+        <select class="sel" id="velocidadMarchaGer" name="velocidadMarchaGer"><option value=""></option>
+          ${['Normal (≥1 m/s)','Lenta (0.6–0.9 m/s)','Muy lenta (<0.6 m/s)','No deambula'].map(v=>`<option ${d.velocidadMarchaGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label for="patronMarchaGer">Patrón de marcha</label>
+        <select class="sel" id="patronMarchaGer" name="patronMarchaGer"><option value=""></option>
+          ${['Normal','Base ampliada','Pasos cortos','Arrastre de pies','Marcha parkinsónica','Marcha antiálgica','Uso de ayuda técnica'].map(v=>`<option ${d.patronMarchaGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label for="equilibrioEstGer">Equilibrio estático</label>
+        <select class="sel" id="equilibrioEstGer" name="equilibrioEstGer"><option value=""></option>
+          ${['Conservado','Levemente alterado','Moderadamente alterado','Gravemente alterado'].map(v=>`<option ${d.equilibrioEstGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label for="equilibrioDinGer">Equilibrio dinámico</label>
+        <select class="sel" id="equilibrioDinGer" name="equilibrioDinGer"><option value=""></option>
+          ${['Conservado','Levemente alterado','Moderadamente alterado','Gravemente alterado'].map(v=>`<option ${d.equilibrioDinGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label for="tugGer">Test TUG (segundos)</label>
+        <input class="inp" id="tugGer" type="number" min="0" max="300" step="0.1"
+          value="${e2(d.tugGer||'')}" placeholder="seg." name="tugGer"></div>
+      <div class="field"><label for="chairStand">Chair Stand 30s (repeticiones)</label>
+        <input class="inp" id="chairStand" type="number" min="0" max="30"
+          value="${e2(d.chairStand||'')}" placeholder="rep." name="chairStand"></div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:8px;padding:8px 12px;background:var(--surf3);border-radius:8px">Función cognitiva y psicológica</div>
+    <div class="form-grid" style="margin-bottom:14px">
+      <div class="field"><label for="mmseGer">MMSE / MiniMental</label>
+        <select class="sel" id="mmseGer" name="mmseGer"><option value=""></option>
+          ${['Normal (27–30)','Deterioro leve (21–26)','Deterioro moderado (11–20)','Deterioro grave (≤10)','No evaluado'].map(v=>`<option ${d.mmseGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label for="gdsGer">Depresión (GDS)</label>
+        <select class="sel" id="gdsGer" name="gdsGer"><option value=""></option>
+          ${['Sin depresión (0–5)','Depresión leve (6–10)','Depresión establecida (11–15)','No evaluado'].map(v=>`<option ${d.gdsGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label for="friedGer">Nivel de fragilidad (Fried)</label>
+        <select class="sel" id="friedGer" name="friedGer"><option value=""></option>
+          ${['Robusto (0 criterios)','Pre-frágil (1–2 criterios)','Frágil (≥3 criterios)','No evaluado'].map(v=>`<option ${d.friedGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+      <div class="field"><label for="barthelGer">Índice de Barthel</label>
+        <select class="sel" id="barthelGer" name="barthelGer"><option value=""></option>
+          ${['Independiente (100)','Dependencia mínima (91–99)','Dependencia moderada (61–90)','Dependencia grave (21–60)','Dependencia total (0–20)'].map(v=>`<option ${d.barthelGer===v?'selected':''}>${v}</option>`).join('')}
+        </select></div>
+    </div>
+    <div class="field form-full"><label for="obsGeriatria">Observaciones</label>
+      <textarea class="ta" id="obsGeriatria" rows="3"
+        placeholder="Hallazgos relevantes, riesgos identificados, recursos del paciente..." name="obsGeriatria">${e2(d.obsGeriatria||'')}</textarea></div>
+  `,true);
+}
+
 function secPlanTratamiento(d){
   return secWrap('plan','IV. Plan de tratamiento','',`
     <div class="form-grid">
@@ -7226,6 +7937,27 @@ async function guardarHC(catId, pacId, modo){
     observacionesFacial:v('observacionesFacial'),
   } : {};
 
+  // Leer campos específicos de geriatría
+  const datosGeriatria = catId==='geriatria' ? {
+    dxGeriatria:v('dxGeriatria'),
+    tipoViviendaGer:v('tipoViviendaGer'),soporteSocial:v('soporteSocial'),
+    caidasGer:v('caidasGer'),miedoCaer:v('miedoCaer'),
+    polifarmaciaGer:v('polifarmaciaGer'),estadoNutricional:v('estadoNutricional'),
+    posturaGer:v('posturaGer'),pielGer:v('pielGer'),
+    evaGer:g('evaGer')?Number(g('evaGer').value):0,dolLocGer:v('dolLocGer'),
+    palpacionGer:v('palpacionGer'),
+    movilCervGer:v('movilCervGer'),movilLumGer:v('movilLumGer'),
+    movilCaderaGer:v('movilCaderaGer'),movilRodGer:v('movilRodGer'),
+    fuerzaMMSS_Ger:v('fuerzaMMSS_Ger'),fuerzaMMII_Ger:v('fuerzaMMII_Ger'),
+    fuerzaGer:v('fuerzaGer'),trofismoGer:v('trofismoGer'),
+    sensGer:v('sensGer'),reflejosGer:v('reflejosGer'),auxGer:v('auxGer'),
+    velocidadMarchaGer:v('velocidadMarchaGer'),patronMarchaGer:v('patronMarchaGer'),
+    equilibrioEstGer:v('equilibrioEstGer'),equilibrioDinGer:v('equilibrioDinGer'),
+    tugGer:v('tugGer'),chairStand:v('chairStand'),
+    mmseGer:v('mmseGer'),gdsGer:v('gdsGer'),friedGer:v('friedGer'),barthelGer:v('barthelGer'),
+    obsGeriatria:v('obsGeriatria'),
+  } : {};
+
   // Variables dinámicas solo presentes en traumatología
   const regiones = (function(){
     var sel=[];
@@ -7259,6 +7991,7 @@ async function guardarHC(catId, pacId, modo){
     ...datosCardio,
     ...datosFacial,
     ...datosPostural,
+    ...datosGeriatria,
   };
   
   // Guardar paciente
@@ -7284,8 +8017,19 @@ async function guardarHC(catId, pacId, modo){
   if(evalIdExistente) payloadEval.id=evalIdExistente;
   const rEval=await apiPost(payloadEval);
   if(!rEval.ok){hideSendOverlay();toast('Error al guardar evaluación',rEval.error,'err');return;}
-  const msgs={borrador:'💾 Borrador guardado',pendiente:'📤 Enviada al docente',aprobada:'✅ Historia guardada'};
   hideSendOverlay();
+
+  // Actualizar hcEvalId con el ID real (nuevo o existente) para que el consentimiento funcione
+  const nuevoEvalId = rEval.id || evalIdExistente;
+  const hcEvalIdEl = g('hcEvalId');
+  if(hcEvalIdEl && nuevoEvalId) hcEvalIdEl.value = nuevoEvalId;
+
+  if(estado==='borrador'){
+    // En borrador: quedar en el formulario para permitir subir consentimiento
+    toast('💾 Borrador guardado','Ahora puedes subir el consentimiento informado','ok');
+    return;
+  }
+  const msgs={pendiente:'📤 Enviada al docente',aprobada:'✅ Historia guardada'};
   toast(msgs[estado]||'Guardado','','ok');
   if(estado==='pendiente') cargarBadge();
   abrirPac(idPac);
