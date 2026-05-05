@@ -934,22 +934,33 @@ function exportarDocumento(titulo, bodyHTML){
     +'<style>'
     +'*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
     +'body{font-family:"Plus Jakarta Sans",Arial,sans-serif;font-size:12px;color:#0f172a;background:#fff;padding:24px}'
+    +'@media print{body{padding:10px}button{display:none}.sec{page-break-inside:avoid}}'
+    /* Cabecera del documento */
     +'.doc-header{display:flex;align-items:center;justify-content:space-between;border-bottom:2.5px solid #1e3a5f;padding-bottom:12px;margin-bottom:18px}'
     +'.doc-logo{font-family:sans-serif;font-weight:800;font-size:18px;color:#1e3a5f;letter-spacing:-0.5px}'
-    +'.doc-logo span{color:#1d4ed8}'
-    +'.doc-subtitle{font-size:10px;color:#475569;margin-top:2px}'
-    +'.sec{margin-bottom:16px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden}'
-    +'.sec-hdr{background:#1e3a5f;color:#fff;font-weight:700;font-size:11px;padding:7px 14px;text-transform:uppercase;letter-spacing:.5px}'
-    +'.sec-body{padding:12px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}'
+    +'.doc-logo span{color:#1d4ed8}.doc-subtitle{font-size:10px;color:#475569;margin-top:2px}'
+    /* Secciones */
+    +'.sec{margin-bottom:14px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden}'
+    +'.sec-hdr{background:#1e3a5f;color:#fff;font-weight:700;font-size:11px;padding:8px 14px;text-transform:uppercase;letter-spacing:.5px}'
+    +'.sec-body{padding:12px 14px;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px 16px}'
     +'.sec-body.full{grid-template-columns:1fr}'
-    +'.field-lbl{font-size:10px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}'
-    +'.field-val{font-size:12px;color:#0f172a}'
+    +'.sec-body.cols2{grid-template-columns:1fr 1fr}'
+    +'.sec-sub{grid-column:1/-1;font-size:10px;font-weight:700;color:#1e3a5f;text-transform:uppercase;letter-spacing:.4px;margin:8px 0 4px;padding-bottom:4px;border-bottom:2px solid #dbeafe}'
+    /* Campos — usados por row() y rowFull() en buildEvalHTML */
+    +'.fld{display:flex;flex-direction:column;gap:2px}'
+    +'.fld.full{grid-column:1/-1}'
+    +'.fld-lbl,.field-lbl{font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.3px}'
+    +'.fld-val,.field-val{font-size:12px;color:#0f172a;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:5px 9px;min-height:26px;word-break:break-word}'
+    +'.fld-val.long,.field-val.long{white-space:pre-wrap;min-height:38px;color:#334155}'
+    +'.fld-val.mono{font-family:monospace;font-weight:700;font-size:13px;color:#1d4ed8;text-align:center}'
+    /* Tablas ROM / Fuerza */
     +'.tbl-rom{width:100%;border-collapse:collapse;font-size:11px}'
     +'.tbl-rom th{background:#eff6ff;color:#1e3a5f;padding:5px 8px;text-align:center;border:1px solid #e2e8f0;font-weight:700}'
     +'.tbl-rom td{border:1px solid #e2e8f0;padding:4px 8px;text-align:center}'
+    /* Sello docente */
+    +'.sello-doc{text-align:center;min-width:150px;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px}'
+    /* Imágenes */
     +'img{max-width:100%;height:auto;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
-    +'.sello-doc{text-align:center;min-width:170px;padding:10px 14px}'
-    +'@media print{body{padding:14px}button{display:none}}'
     +'</style>'
     +'<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">'
     +'</head><body>'
@@ -1035,13 +1046,17 @@ function buildEvalHTML(ev, pac, firmaHTML){
       +row('Motivo de consulta',d.motivo||pac.motivo)
       +row('Antecedentes',d.antecedentes||pac.antecedentes)
       +row('Tiempo de evolución',d.tiempoEvol));
-    var eva=d.evaValor!==undefined&&d.evaValor!==''?d.evaValor:(ev.evaValor!==undefined?ev.evaValor:'');
-    var exBody=(eva!==''?row('EVA — Dolor',String(eva)+'/10'):'')
-      +row('Localización del dolor',d.dolLoc)+row('Tipo de dolor',d.dolTipo)
+    // EVA: guardarHC guarda como d.eva (number), guardarEval como d.evaValor / ev.evaValor
+    var _evaRaw = (d.evaValor!==undefined&&d.evaValor!=='')?d.evaValor
+                : (d.eva!==undefined&&d.eva!==''&&d.eva!==0)?d.eva
+                : (ev.evaValor!==undefined&&ev.evaValor!=='')?ev.evaValor:'';
+    var exBody=(_evaRaw!==''?row('EVA — Dolor',String(_evaRaw)+'/10'):'')
+      +row('Localización del dolor',d.dolLoc||d.dolLoc)
+      +row('Tipo de dolor',d.dolTipo)
       +row('Postura',d.postura)+row('Marcha',d.marcha)+row('Trofismo',d.trofismo)
       +rowFull('Palpación',d.palpacion)+rowFull('Valoraci&oacute;n neurol&oacute;gica',d.neuro)
       +rowFull('Tegumentario',d.tegu)+rowFull('Auxiliares diagnóstico',d.aux)
-      +rowFull('Examen objetivo',d.examObjetivo);
+      +rowFull('Examen objetivo',d.examObjetivo||d.obsExamen);
     if(d.pruebasFuncionales&&typeof d.pruebasFuncionales==='object'&&Object.keys(d.pruebasFuncionales).length){
       exBody+='<div style="grid-column:1/-1;margin-top:8px"><div class="field-lbl">Pruebas funcionales</div>';
       Object.keys(d.pruebasFuncionales).forEach(function(reg){
@@ -1320,19 +1335,29 @@ function buildEvalHTML(ev, pac, firmaHTML){
 }
 
 function _buildPlanHTML(d, ev, num){
-  var nSes=d.planSesiones||ev.planSesiones||'', freq=d.planFrecuencia||ev.planFrecuencia||'', dur=d.planDuracion||ev.planDuracion||'';
-  var meta=d.meta||d.objCorto||d.planMeta||ev.objCorto||'';
-  var objG=d.objGeneral||d.objLargo||ev.objLargo||'';
-  var objE=d.objEspecificos||d.planGeneral||ev.planGeneral||'';
-  var areas=d.planAreas||ev.planAreas||'', prec=d.planPrecauciones||ev.planPrecauciones||'', edu=d.planEducacion||ev.planEducacion||'';
+  // Compatibilidad con dos formatos de almacenamiento:
+  // guardarHC  → meta, objGeneral, objEspecificos, planGeneral
+  // guardarEval → objCorto, objLargo, planSesiones, planFrecuencia, planDuracion, planAreas, planPrecauciones, planEducacion
+  var nSes  = d.planSesiones||ev.planSesiones||'';
+  var freq  = d.planFrecuencia||ev.planFrecuencia||'';
+  var dur   = d.planDuracion||ev.planDuracion||'';
+  var meta  = d.meta||d.objCorto||ev.objCorto||'';
+  var objG  = d.objGeneral||d.objLargo||ev.objLargo||'';
+  var objE  = d.objEspecificos||ev.objEspecificos||'';
+  var plan  = d.planGeneral||ev.planGeneral||'';      // 4° campo del formulario — separado de objE
+  var areas = d.planAreas||ev.planAreas||'';
+  var prec  = d.planPrecauciones||ev.planPrecauciones||'';
+  var edu   = d.planEducacion||ev.planEducacion||'';
+  var fld = function(lbl, val){ return val ? '<div class="fld full"><div class="fld-lbl">'+lbl+'</div><div class="fld-val long">'+e2(String(val))+'</div></div>' : ''; };
   var body=''
     +(nSes?'<div class="fld"><div class="fld-lbl">N&deg; Sesiones</div><div class="fld-val">'+e2(nSes)+(freq?' · '+e2(freq):'')+(dur?' · '+e2(dur):'')+'</div></div>':'')
-    +(meta?'<div class="fld full"><div class="fld-lbl">Meta / Objetivo corto plazo</div><div class="fld-val long">'+e2(meta)+'</div></div>':'')
-    +(objG?'<div class="fld full"><div class="fld-lbl">Objetivo general</div><div class="fld-val long">'+e2(objG)+'</div></div>':'')
-    +(objE?'<div class="fld full"><div class="fld-lbl">Objetivos espec&iacute;ficos / Plan</div><div class="fld-val long">'+e2(objE)+'</div></div>':'')
-    +(areas?'<div class="fld full"><div class="fld-lbl">&Aacute;reas de intervenci&oacute;n</div><div class="fld-val long">'+e2(areas)+'</div></div>':'')
-    +(prec?'<div class="fld full"><div class="fld-lbl">Precauciones</div><div class="fld-val long">'+e2(prec)+'</div></div>':'')
-    +(edu?'<div class="fld full"><div class="fld-lbl">Educaci&oacute;n al paciente</div><div class="fld-val long">'+e2(edu)+'</div></div>':'');
+    +fld('Meta / Objetivo corto plazo', meta)
+    +fld('Objetivo general', objG)
+    +fld('Objetivos espec&iacute;ficos', objE)
+    +fld('Plan de tratamiento general', plan)
+    +fld('&Aacute;reas de intervenci&oacute;n', areas)
+    +fld('Precauciones / Contraindicaciones', prec)
+    +fld('Educaci&oacute;n al paciente', edu);
   if(!body) return '';
   return '<div class="sec"><div class="sec-hdr">'+num+'. Plan de Tratamiento</div><div class="sec-body">'+body+'</div></div>';
 }
