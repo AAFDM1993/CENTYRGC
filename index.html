@@ -724,11 +724,25 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
               <div style="display:grid;grid-template-columns:1fr 100px;gap:8px;margin-bottom:10px">
                 <div class="field" style="margin:0"><label>Nombre</label><input class="inp" id="usNom" placeholder="Apellidos y Nombres"></div>
                 <div class="field" style="margin:0"><label>Rol</label>
-                  <select class="sel" id="usRol">
+                  <select class="sel" id="usRol" onchange="mostrarGradoAcademico()">
                     <option value="estudiante">Estudiante</option>
                     <option value="docente">Docente</option>
                     <option value="admin">Admin</option>
                      <option value="recepcion">Recepción</option>
+                  </select>
+                </div>
+              </div>
+              <div id="gradoAcademicoContainer" style="display:none;margin-bottom:10px">
+                <div class="field" style="margin:0"><label>Grado Académico</label>
+                  <select class="sel" id="usGrado">
+                    <option value="">-- Seleccionar grado --</option>
+                    <option value="Lic.">Lic. (Licenciado/a)</option>
+                    <option value="Mtro.">Mtro. (Maestro/a)</option>
+                    <option value="Mtra.">Mtra. (Maestra)</option>
+                    <option value="Dr.">Dr. (Doctor)</option>
+                    <option value="Dra.">Dra. (Doctora)</option>
+                    <option value="Ing.">Ing. (Ingeniero/a)</option>
+                    <option value="Prof.">Prof. (Profesor/a)</option>
                   </select>
                 </div>
               </div>
@@ -1926,11 +1940,31 @@ async function cargarUsuarios(){
 }
 
 function editarUsuario(codigo, password, rol, nombre){
-  const c=g('usCod'),p=g('usPass'),n=g('usNom'),r=g('usRol');
+  const c=g('usCod'),p=g('usPass'),n=g('usNom'),r=g('usRol'),gr=g('usGrado');
   if(c)c.value=codigo;
   if(p)p.value=password;
-  if(n)n.value=nombre;
   if(r)r.value=rol;
+  
+  // Si es docente, extraer el grado académico del nombre
+  let nombreSinGrado = nombre;
+  let grado = '';
+  if(rol === 'docente'){
+    const gradosAcademicos = ['Lic.', 'Mtro.', 'Mtra.', 'Dr.', 'Dra.', 'Ing.', 'Prof.'];
+    for(let g of gradosAcademicos){
+      if(nombre.startsWith(g + ' ')){
+        grado = g;
+        nombreSinGrado = nombre.substring(g.length + 1);
+        break;
+      }
+    }
+  }
+  
+  if(n)n.value=nombreSinGrado;
+  if(gr)gr.value=grado;
+  
+  // Mostrar/ocultar selector de grado
+  mostrarGradoAcademico();
+  
   // Scroll al formulario
   const form=g('usCod');if(form)form.scrollIntoView({behavior:'smooth',block:'center'});
   form&&form.focus();
@@ -1939,14 +1973,34 @@ function editarUsuario(codigo, password, rol, nombre){
 async function guardarUsuarioDB(){
   const cod=vi('usCod').trim(),pass=vi('usPass').trim(),nom=vi('usNom').trim(),rol=vi('usRol');
   if(!cod||!pass){toast('Codigo y contrasena requeridos','','warn');return}
+  
+  // Si es docente, agregar grado académico al nombre
+  let nombreFinal = nom;
+  if(rol === 'docente'){
+    const grado = vi('usGrado').trim();
+    if(grado){
+      nombreFinal = grado + ' ' + nom;
+    }
+  }
+  
   showLoader('Guardando...');
   try{
-    const r=await apiPost({action:'guardarUsuario',codigo:cod,password:pass,rol,nombre:nom});
+    const r=await apiPost({action:'guardarUsuario',codigo:cod,password:pass,rol,nombre:nombreFinal});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast(r.accion==='creado'?'Usuario creado':'Actualizado',cod+' - '+rol,'ok');
     invalidateCache('listarUsuarios');
-    g('usCod').value='';g('usPass').value='';g('usNom').value='';cargarUsuarios();
+    g('usCod').value='';g('usPass').value='';g('usNom').value='';g('usGrado').value='';cargarUsuarios();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+function mostrarGradoAcademico(){
+  const rol = vi('usRol');
+  const container = g('gradoAcademicoContainer');
+  if(rol === 'docente'){
+    container.style.display = 'block';
+  } else {
+    container.style.display = 'none';
+    g('usGrado').value = '';
+  }
 }
 async function eliminarUsuarioDB(codigo){
   if(!await confirmDialog(`Eliminar usuario "${codigo}"?`))return;showLoader('Eliminando...');
