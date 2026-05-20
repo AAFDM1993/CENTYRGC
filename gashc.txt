@@ -287,6 +287,7 @@ function doGet(e) {
     if (a === 'pendientesRevision')return json_(pendientesRevision_(p));
     if (a === 'listarUsuarios')     return json_(listarUsuarios_(p));
     if (a === 'getConsentimiento')  return json_(getConsentimiento_(p));
+    if (a === 'getFotoWidget')      return json_(getFotoWidget_(p));
 
     return err_('Acción no reconocida: '+a);
   } catch(ex) {
@@ -1273,6 +1274,21 @@ function subirFotoWidget_(b, tok) {
   var blob     = Utilities.newBlob(bytes, mimeType, fileName);
   var newFile  = folder.createFile(blob);
   return {ok:true, fileId: newFile.getId()};
+}
+
+function getFotoWidget_(p) {
+  auth_(p, ['admin','docente','estudiante']);
+  var fileId = String(p.fileId||'').trim();
+  if (!fileId) return {ok:false, error:'fileId requerido'};
+  try {
+    var file     = DriveApp.getFileById(fileId);
+    var blob     = file.getBlob();
+    var b64      = Utilities.base64Encode(blob.getBytes());
+    var mimeType = blob.getContentType()||'image/jpeg';
+    return {ok:true, data:b64, mimeType:mimeType};
+  } catch(ex) {
+    return {ok:false, error:'Archivo no encontrado: '+ex.message};
+  }
 }
 
 function eliminarConsentimiento_(b, tok) {
