@@ -3249,6 +3249,10 @@ async function toggleEvalInline(uid, headerEl){
       }
       var rP=await apiGet('obtenerPaciente',{id:pacId});
       var pac=rP.ok?rP.paciente:{};
+      // Precargar fotos del widget postural antes de renderizar
+      if(ev.datosEspecificos&&ev.datosEspecificos.widgetPostural&&window._wpostPrecargarFotos){
+        await window._wpostPrecargarFotos(ev.datosEspecificos.widgetPostural);
+      }
       el.innerHTML=buildEvalHTML(ev, pac, '');
       el.dataset.loaded='1';
       // Agregar leyenda flotante a los chips del widget postural
@@ -3357,6 +3361,10 @@ async function verEvalConFirma(evalId, pacId, docFirmanteOverride){
       selloFirmanteHTML = mkSelloDocente(docFirmanteOverride);
     }
 
+    // Precargar fotos del widget postural para PDF
+    if(ev.datosEspecificos&&ev.datosEspecificos.widgetPostural&&window._wpostPrecargarFotos){
+      await window._wpostPrecargarFotos(ev.datosEspecificos.widgetPostural);
+    }
     // Construir cuerpo: evaluación + sello firmante al final
     var bodyHTML = buildEvalHTML(ev, pac, firmaRevisorHTML);
     if(selloFirmanteHTML){
