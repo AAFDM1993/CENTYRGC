@@ -305,11 +305,13 @@ function doPost(e) {
     if (a === 'guardarPaciente')    return json_(guardarPaciente_(b, tok));
     if (a === 'eliminarPaciente')   return json_(eliminarPaciente_(b, tok));
     if (a === 'guardarEvaluacion')  return json_(guardarEvaluacion_(b, tok));
+    if (a === 'cerrarPorTimer')     return json_(cerrarPorTimer_(b, tok));
     if (a === 'revisarEvaluacion')  return json_(revisarEvaluacion_(b, tok));
     if (a === 'guardarSesion')      return json_(guardarSesion_(b, tok));
     if (a === 'revisarSesion')      return json_(revisarSesion_(b, tok));
     if (a === 'guardarCategoria')   return json_(guardarCategoria_(b, tok));
     if (a === 'reasignarPaciente')      return json_(reasignarPaciente_(b, tok));
+    if (a === 'archivarPaciente')       return json_(archivarPaciente_(b, tok));
     if (a === 'guardarFirmaDocente')   return json_(guardarFirmaDocente_(b, tok));
     if (a === 'guardarCtmpDocente')    return json_(guardarCtmpDocente_(b, tok));
     if (a === 'getFirma')              return json_(getFirma_(b));
@@ -319,6 +321,8 @@ function doPost(e) {
     if (a === 'subirConsentimiento')     return json_(subirConsentimiento_(b, tok));
     if (a === 'getConsentimiento')       return json_(getConsentimiento_(b));
     if (a === 'eliminarConsentimiento')  return json_(eliminarConsentimiento_(b, tok));
+    if (a === 'eliminarEvaluacion')      return json_(eliminarEvaluacion_(b, tok));
+    if (a === 'subirFotoWidget')         return json_(subirFotoWidget_(b, tok));
     return err_('Acción POST no reconocida: '+a);
   } catch(ex) {
     return err_(ex.message);
@@ -404,6 +408,9 @@ function listarPacientes_(p) {
   rows.forEach(function(r){
     if (!r[idx['id']]) return;
     var pid = String(r[idx['id']]);
+    var estado = String(r[idx['estado']]||'activo');
+    // No mostrar pacientes archivados en la lista normal
+    if (estado === 'archivado') return;
     // Filtro por rol
     if (u.rol === 'estudiante' && String(r[idx['creadoPor']])!==u.codigo &&
         String(r[idx['asignadoA']])!==u.codigo) return;
@@ -418,7 +425,7 @@ function listarPacientes_(p) {
       categoriaId:       String(r[idx['categoriaId']]||''),
       dxMedico:          String(r[idx['dxMedico']]||''),
       dxFisio:           dxFisioMap[pid]||'',
-      estado:            String(r[idx['estado']]||'activo'),
+      estado:            estado,
       creadoPor:         String(r[idx['creadoPor']]||''),
       asignadoA:         String(r[idx['asignadoA']]||''),
       fechaInicio:       String(r[idx['fechaInicio']]||''),
@@ -501,6 +508,25 @@ function eliminarPaciente_(b, tok) {
   return {ok:false,error:'Paciente no encontrado'};
 }
 
+function eliminarEvaluacion_(b, tok) {
+  authB_(tok, ['admin']);
+  var evalId = String(b.evalId||'').trim();
+  if (!evalId) return {ok:false, error:'evalId requerido'};
+  var h    = hojaSegura_(SHEET_HC_EVALUACIONES);
+  var last = h.getLastRow();
+  if (last < 2) return {ok:false, error:'Evaluación no encontrada'};
+  var rows = h.getRange(2,1,last-1,h.getLastColumn()).getValues();
+  var idx  = getHdrIdx_(h);
+  for (var i=0; i<rows.length; i++) {
+    if (String(rows[i][idx['id']])===evalId) {
+      h.deleteRow(i+2);
+      SpreadsheetApp.flush();
+      return {ok:true};
+    }
+  }
+  return {ok:false, error:'Evaluación no encontrada'};
+}
+
 function reasignarPaciente_(b, tok) {
   authB_(tok, ['admin','docente']);
   var h    = hojaSegura_(SHEET_HC_PACIENTES);
@@ -509,6 +535,24 @@ function reasignarPaciente_(b, tok) {
   for (var i=1; i<rows.length; i++) {
     if (String(rows[i][idx['id']])===String(b.pacienteId)) {
       h.getRange(i+1, idx['asignadoA']+1).setValue(b.nuevoAlumno||'');
+      h.getRange(i+1, idx['ultimaActualizacion']+1).setValue(now_());
+      return {ok:true};
+    }
+  }
+  return {ok:false,error:'Paciente no encontrado'};
+}
+
+function archivarPaciente_(b, tok) {
+  authB_(tok, ['admin','docente']);
+  var h    = hojaSegura_(SHEET_HC_PACIENTES);
+  var rows = h.getDataRange().getValues();
+  var idx  = getHdrIdx_(h);
+  for (var i=1; i<rows.length; i++) {
+    if (String(rows[i][idx['id']])===String(b.pacienteId)) {
+      // Desasignar al alumno
+      h.getRange(i+1, idx['asignadoA']+1).setValue('');
+      // Marcar como archivado (cambiar estado a 'archivado')
+      h.getRange(i+1, idx['estado']+1).setValue('archivado');
       h.getRange(i+1, idx['ultimaActualizacion']+1).setValue(now_());
       return {ok:true};
     }
@@ -530,15 +574,24 @@ function listarEvaluaciones_(p) {
   var idx  = getHdrIdx_(h);
 
   var evals = [];
-  rows.forEach(function(r){
-    if (!r[idx['id']]) return;
-    if (p.pacienteId && String(r[idx['pacienteId']])!==String(p.pacienteId)) return;
+  for (var i=0; i<rows.length; i++) {
+    var r = rows[i];
+    if (!r[idx['id']]) continue;
+    if (p.pacienteId && String(r[idx['pacienteId']])!==String(p.pacienteId)) continue;
+    var estado = String(r[idx['estado']]||'pendiente');
+    var timerIni = idx['timerInicio']!==undefined ? String(r[idx['timerInicio']]||'') : '';
+    if (estado==='borrador' && timerIni && (new Date().getTime() - parseInt(timerIni)) > 30*60*1000) {
+      // Auto-cerrar en Sheets
+      h.getRange(i+2, idx['estado']+1).setValue('vencida');
+      SpreadsheetApp.flush();
+      estado = 'vencida';
+    }
     evals.push({
       id:               String(r[idx['id']]),
       pacienteId:       String(r[idx['pacienteId']]||''),
       categoriaId:      String(r[idx['categoriaId']]||''),
       tipo:             String(r[idx['tipo']]||'inicial'),
-      estado:           String(r[idx['estado']]||'pendiente'),
+      estado:           estado,
       comentarioDocente:String(r[idx['comentarioDocente']]||''),
       revisadoPor:      String(r[idx['revisadoPor']]||''),
       fechaRevision:    String(r[idx['fechaRevision']]||''),
@@ -546,11 +599,14 @@ function listarEvaluaciones_(p) {
       autorCodigo:      String(r[idx['autorCodigo']]||r[idx['autor']]||''),
       docente:          String(r[idx['docente']]||''),
       docenteCodigo:    idx['docenteCodigo']!==undefined ? String(r[idx['docenteCodigo']]||'') : '',
-      fecha:            String(r[idx['fecha']]||''),
+      fecha:            (r[idx['fecha']] instanceof Date)
+                          ? Utilities.formatDate(r[idx['fecha']], 'America/Lima', 'yyyy-MM-dd')
+                          : String(r[idx['fecha']]||''),
       dxFisio:          String(r[idx['dxFisio']]||''),
       aptaPatron:       String(r[idx['aptaPatron']]||''),
+      timerInicio:      timerIni,
     });
-  });
+  }
   // Ordenar por fecha desc
   evals.sort(function(a,b){ return (b.fecha||'').localeCompare(a.fecha||''); });
   return {ok:true, evaluaciones:evals};
@@ -565,11 +621,23 @@ function obtenerEvaluacion_(p) {
   for (var i=1; i<rows.length; i++) {
     if (String(rows[i][idx['id']])===String(p.id)) {
       var ev = {};
-      Object.keys(idx).forEach(function(k){ ev[k]=String(rows[i][idx[k]]||''); });
+      Object.keys(idx).forEach(function(k){
+        var val = rows[i][idx[k]];
+        // Formatear fechas correctamente (evitar "Wed May 13 2026 00:00:00 GMT-0500")
+        if (val instanceof Date) {
+          ev[k] = Utilities.formatDate(val, 'America/Lima', 'yyyy-MM-dd');
+        } else {
+          ev[k] = String(val||'');
+        }
+      });
       // Parsear JSON de rom, fuerza, datosEspecificos
       ['rom','fuerza','datosBase','datosEspecificos'].forEach(function(f){
         try{ if(ev[f]) ev[f]=JSON.parse(ev[f]); } catch(e){ ev[f]={}; }
       });
+      // Si widgetPostural viene como string JSON dentro de datosEspecificos, parsearlo
+      if (ev.datosEspecificos && typeof ev.datosEspecificos.widgetPostural === 'string' && ev.datosEspecificos.widgetPostural) {
+        try { ev.datosEspecificos.widgetPostural = JSON.parse(ev.datosEspecificos.widgetPostural); } catch(e) {}
+      }
       if (ev.evaValor!=='') ev.evaValor=Number(ev.evaValor);
       return {ok:true, evaluacion:ev};
     }
@@ -594,6 +662,7 @@ function guardarEvaluacion_(b, tok) {
   ensureColEval('docente');
   ensureColEval('docenteCodigo');
   ensureColEval('autorCodigo');
+  ensureColEval('timerInicio');
 
   var idx  = getHdrIdx_(h);
   var cols = h.getRange(1,1,1,h.getLastColumn()).getValues()[0];
@@ -607,8 +676,9 @@ function guardarEvaluacion_(b, tok) {
       if (String(rows[i][idx['id']])===String(b.id)) {
         var row  = h.getRange(i+1,1,1,cols.length);
         var vals = row.getValues()[0];
+        var estadoAnterior = String(vals[idx['estado']]||'');
         cols.forEach(function(c,ci){
-          if (c==='id'||c==='autor'||c==='fecha') return;
+          if (c==='id'||c==='autor'||c==='fecha'||c==='timerInicio') return;
           // Respetar el estado que manda el frontend; solo resetear si no viene estado
           if (c==='estado'){
             if (b.estado!==undefined) vals[ci]=b.estado;
@@ -618,6 +688,11 @@ function guardarEvaluacion_(b, tok) {
           if (c==='comentarioDocente'||c==='revisadoPor'||c==='fechaRevision') return;
           if (b[c]!==undefined) vals[ci]= typeof b[c]==='object' ? JSON.stringify(b[c]) : b[c];
         });
+        // Reiniciar timer al volver a borrador desde rechazada/vencida
+        if (b.estado === 'borrador' && estadoAnterior !== 'borrador') {
+          var timerColIdx = cols.indexOf('timerInicio');
+          if (timerColIdx !== -1) vals[timerColIdx] = String(new Date().getTime());
+        }
         row.setValues([vals]);
         return {ok:true,id:b.id};
       }
@@ -630,12 +705,31 @@ function guardarEvaluacion_(b, tok) {
     if (c==='autorCodigo') return u.codigo;
     if (c==='fecha')       return b.fecha||hoy_();
     if (c==='estado')      return b.estado||estadoInicial;
+    if (c==='timerInicio') return (b.estado==='borrador'||estadoInicial==='borrador') ? String(new Date().getTime()) : '';
     if (c==='comentarioDocente'||c==='revisadoPor'||c==='fechaRevision') return '';
     if (b[c]!==undefined) return typeof b[c]==='object' ? JSON.stringify(b[c]) : b[c];
     return '';
   });
   h.appendRow(fila);
   return {ok:true,id:newId};
+}
+
+function cerrarPorTimer_(b, tok) {
+  authB_(tok, ['estudiante','admin']); // el alumno o admin puede cerrar
+  if (!b.id) return {ok:false, error:'id requerido'};
+  var h    = hojaSegura_(SHEET_HC_EVALUACIONES);
+  var rows = h.getDataRange().getValues();
+  var idx  = getHdrIdx_(h);
+  for (var i=1; i<rows.length; i++) {
+    if (String(rows[i][idx['id']])===String(b.id)) {
+      var estadoActual = String(rows[i][idx['estado']]||'');
+      if (estadoActual !== 'borrador') return {ok:true, already:true}; // ya fue procesada
+      h.getRange(i+1, idx['estado']+1).setValue('vencida');
+      SpreadsheetApp.flush();
+      return {ok:true};
+    }
+  }
+  return {ok:false, error:'Evaluación no encontrada'};
 }
 
 function revisarEvaluacion_(b, tok) {
@@ -793,12 +887,13 @@ function pendientesRevision_(p) {
     var rowsE = hE.getRange(2,1,hE.getLastRow()-1,hE.getLastColumn()).getValues();
     var idxE  = getHdrIdx_(hE);
     rowsE.forEach(function(r){
-      if (String(r[idxE['estado']])!=='pendiente') return;
+      if (String(r[idxE['estado']])!=='pendiente' && String(r[idxE['estado']])!=='vencida') return;
       resultado.evaluaciones.push({
         id:            String(r[idxE['id']]),
         pacienteId:    String(r[idxE['pacienteId']]),
         categoriaId:   String(r[idxE['categoriaId']]||''),
         tipo:          String(r[idxE['tipo']]||'inicial'),
+        estado:        String(r[idxE['estado']]||'pendiente'),
         autor:         String(r[idxE['autor']]||''),
         autorCodigo:   String(r[idxE['autor']]||''),
         docente:       String(r[idxE['docente']]||''),
@@ -1149,6 +1244,35 @@ function getConsentimiento_(p) {
     }
   }
   return {ok:false, error:'Evaluación no encontrada'};
+}
+
+function subirFotoWidget_(b, tok) {
+  authB_(tok, ['admin','docente','estudiante']);
+  var b64      = String(b.archivoBase64||'').trim();
+  var vista    = String(b.vista||'').trim();
+  var evalId   = String(b.evalId||'').trim();
+  if (!b64)   return {ok:false, error:'archivoBase64 requerido'};
+  if (!vista) return {ok:false, error:'vista requerida'};
+  if (b64.length > 6000000) return {ok:false, error:'Imagen demasiado grande. Máximo ~4 MB.'};
+
+  var mimeType = 'image/jpeg';
+  var rawB64   = b64;
+  var m = b64.match(/^data:([^;]+);base64,(.+)$/);
+  if (m) { mimeType = m[1]; rawB64 = m[2]; }
+  var ext = mimeType === 'image/png' ? '.png' : mimeType === 'image/webp' ? '.webp' : '.jpg';
+
+  // Borrar archivo previo si se indica
+  var prevFileId = String(b.prevFileId||'').trim();
+  if (prevFileId) {
+    try { DriveApp.getFileById(prevFileId).setTrashed(true); } catch(ex) {}
+  }
+
+  var folder   = getConsentimientosFolder_();
+  var fileName = 'wpost_' + vista + '_' + (evalId||'tmp') + '_' + Date.now() + ext;
+  var bytes    = Utilities.base64Decode(rawB64);
+  var blob     = Utilities.newBlob(bytes, mimeType, fileName);
+  var newFile  = folder.createFile(blob);
+  return {ok:true, fileId: newFile.getId()};
 }
 
 function eliminarConsentimiento_(b, tok) {
