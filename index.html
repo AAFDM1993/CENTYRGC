@@ -139,7 +139,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 .nt tr:last-child td{border-bottom:none}.nt tr:nth-child(even) td{background:var(--bg2)}.nt tr:nth-child(even) td.td-pac{background:var(--bg2)}
 .nc{width:100%;border:1px solid transparent;background:transparent;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;text-align:center;color:var(--tx2);outline:none;padding:5px 2px;cursor:pointer;border-radius:5px;transition:all .15s;-moz-appearance:textfield;min-width:54px}
 .nc::-webkit-inner-spin-button,.nc::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
-.nc:hover{background:var(--n100);border-color:var(--n200);color:var(--n600)}.nc:focus{background:var(--n600);color:#fff;cursor:text;border-color:var(--n500);font-size:13px}.nc.v{color:var(--n600);font-weight:700}.nc.ex{color:#1d4ed8}.nc.ex:focus{background:#1d4ed8;color:#fff}.nc.ex.v{color:#1d4ed8}
+.nc:hover{background:var(--n100);border-color:var(--n200);color:var(--n600)}.nc:focus{background:var(--n600);color:#fff;cursor:text;border-color:var(--n500);font-size:13px}.nc.v{color:var(--n600);font-weight:700}
 .nn{width:100%;border:1px solid transparent;background:transparent;font-size:12px;color:var(--tx);outline:none;padding:5px 6px;border-radius:5px;transition:all .15s;font-family:'Plus Jakarta Sans',sans-serif}
 .nn:hover{border-color:var(--bd);background:var(--surf2)}.nn:focus{border-color:var(--n500);background:#fff}.nn.has-val{font-weight:600}
 .pc{font-family:'DM Mono',monospace;font-size:13px;font-weight:700;display:inline-block;min-width:52px;padding:4px 8px;border-radius:10px;background:var(--n800);color:var(--n300);text-align:center}.pc.ok{background:var(--green2);color:var(--green)}.pc.no{background:var(--red2);color:var(--red)}
@@ -580,6 +580,48 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
 .popup-hoja-ico{font-size:22px;flex-shrink:0}
 .popup-hoja-nombre{font-weight:700;color:#fff;font-size:14px;line-height:1.2}
 .popup-hoja-meta{font-size:11px;color:var(--n300);margin-top:2px}
+
+/* ── MODAL RECORD ── */
+#recordModalOv{position:fixed;inset:0;background:rgba(10,22,40,.72);z-index:450;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
+#recordModalOv.show{display:flex}
+#recordModalBox{background:var(--surf);border-radius:20px;width:100%;max-width:680px;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 28px 70px rgba(10,22,40,.55);overflow:hidden}
+.rec-mhdr{background:var(--n900);padding:14px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.rec-mhdr-title{flex:1}
+.rec-mhdr-title h3{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:#fff;line-height:1.2}
+.rec-mhdr-title p{font-size:11px;color:var(--n300);margin-top:2px}
+.rec-mclose{background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:8px;font-size:15px;cursor:pointer;line-height:1;flex-shrink:0;transition:background .15s}
+.rec-mclose:hover{background:rgba(255,255,255,.22)}
+.rec-tabs{display:flex;background:var(--n800);border-bottom:2px solid var(--n700);flex-shrink:0;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.rec-tab{background:none;border:none;border-bottom:2px solid transparent;color:var(--n300);font-family:'Syne',sans-serif;font-weight:700;font-size:12px;padding:11px 18px;cursor:pointer;white-space:nowrap;transition:all .18s;margin-bottom:-2px}
+.rec-tab:hover{color:#fff}
+.rec-tab.on{color:#fff;border-bottom-color:var(--n400);background:rgba(59,130,246,.08)}
+.rec-mbody{padding:16px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.rec-curso-card{border:1px solid var(--bd2);border-radius:16px;background:var(--surf)}
+.rec-curso-card-hdr{background:var(--n800);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.rec-curso-name{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;color:#fff;flex:1}
+.rec-curso-ciclo-pill{font-family:'DM Mono',monospace;font-size:10px;background:rgba(59,130,246,.2);border:1px solid rgba(59,130,246,.35);color:var(--n300);border-radius:10px;padding:2px 10px;white-space:nowrap;flex-shrink:0}
+.rec-curso-body{padding:14px;display:flex;flex-direction:column;gap:10px}
+.rec-stat-row{display:flex;align-items:center;gap:12px;background:var(--n050);border:1px solid var(--n200);border-radius:12px;padding:12px 16px}
+.rec-stat-ico{font-size:26px;flex-shrink:0}
+.rec-stat-val{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--n600);line-height:1}
+.rec-stat-lbl{font-size:10px;color:var(--tx3);margin-top:3px;text-transform:uppercase;letter-spacing:.6px;font-weight:700}
+.rec-block{background:var(--surf2);border:1px solid var(--bd2);border-radius:12px;padding:12px 14px}
+.rec-block-lbl{font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.rec-block-lbl::after{content:'';flex:1;height:1px;background:var(--bd2)}
+.rec-block-text{font-size:13px;color:var(--tx);line-height:1.7;white-space:pre-wrap}
+.rec-pdf-btn{display:flex;align-items:center;gap:10px;background:var(--n600);border:none;border-radius:12px;padding:12px 16px;color:#fff;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;width:100%;transition:background .18s;text-decoration:none;box-sizing:border-box}
+.rec-pdf-btn:hover{background:var(--n500);color:#fff}
+.rec-pdf-btn.disabled{opacity:.45;cursor:not-allowed;pointer-events:none}
+.rec-pdf-ico{font-size:18px;flex-shrink:0}
+.rec-edit-section{background:var(--surf2);border:1px solid var(--bd);border-radius:12px;padding:14px;margin-top:8px;display:none}
+body.rol-admin .rec-edit-section{display:block}
+.rec-global-admin-edit{display:none}
+body.rol-admin .rec-global-admin-edit{display:block}
+body.rol-recepcion #hdrBtnRecord{display:none}
+@media(max-width:600px){
+  #recordModalBox{max-height:95vh;border-radius:16px}
+  .rec-tab{padding:10px 12px;font-size:11px}
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -621,6 +663,7 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
       <div class="hdr-right">
         <div class="cpill" id="cpill"><div class="dot" id="cdot"></div><span class="clabel" id="clabel">-</span></div>
         <div class="rol-pill"><div class="rdot" id="rolDot"></div><span id="rolLabel">-</span></div>
+        <button id="hdrBtnRecord" class="btn-logout" onclick="abrirRecordPanel()" style="border-color:var(--n600);color:var(--n300)" title="Panel informativo">&#128203; Record</button>
         <button id="hdrBtnPass" class="btn-logout" onclick="mostrarCambioPass()" style="border-color:var(--n600);color:var(--n300)" title="Cambiar contrasena">&#128274;</button>
         <button id="hdrBtnSalir" class="btn-logout" onclick="logout()">Salir</button>
       </div>
@@ -1131,6 +1174,24 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
 </div>
 
 
+<!-- Modal Record centrado -->
+<div id="recordModalOv" onclick="_recCloseOnOv(event)">
+  <div id="recordModalBox">
+    <div class="rec-mhdr">
+      <div class="rec-mhdr-title">
+        <h3>&#128203; Record CENTYR</h3>
+        <p id="recModalSub">Pacientes y consideraciones por curso</p>
+      </div>
+      <button class="rec-mclose" onclick="cerrarRecordPanel()">&#10005;</button>
+    </div>
+    <div id="recGlobalSection" style="padding:12px 16px;border-bottom:1px solid var(--bd2);flex-shrink:0"></div>
+    <div class="rec-tabs" id="recTabs"></div>
+    <div class="rec-mbody" id="recModalBody">
+      <div class="empty">Cargando...</div>
+    </div>
+  </div>
+</div>
+
 <!-- Modal config agenda -->
 <div id="configAgendaModal" style="position:fixed;inset:0;background:rgba(10,22,40,.6);z-index:900;display:none;align-items:flex-start;justify-content:center;padding:60px 16px 16px;overflow-y:auto;backdrop-filter:blur(2px)">
   <div style="background:var(--surf);border-radius:16px;width:100%;max-width:520px;box-shadow:0 20px 50px rgba(10,22,40,.4);overflow:hidden">
@@ -1172,9 +1233,10 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
       <!-- Formulario nuevo bloqueo (modal) -->
       <div style="background:var(--surf2);border:1px solid var(--bd2);border-radius:12px;padding:12px;margin-bottom:10px">
         <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Nuevo bloqueo</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
           <div class="field" style="margin:0"><label>Fecha (o vacio = siempre)</label><input class="inp" id="mbFecha" type="date"></div>
-          <div class="field" style="margin:0"><label>Hora (o vacio = todo el dia)</label><input class="inp" id="mbHora" type="time"></div>
+          <div class="field" style="margin:0"><label>Hora inicio</label><input class="inp" id="mbHora" type="time"></div>
+          <div class="field" style="margin:0"><label>Hora fin (opcional)</label><input class="inp" id="mbHoraFin" type="time"></div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
           <div class="field" style="margin:0"><label>Area</label>
@@ -1416,7 +1478,7 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
 // ==========================
 // ====================================================
 // PEGA AQUI TU URL DE APPS SCRIPT WEB APP
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzkrsv87mqvCcYpmRCXJVgaVT9evW4ekxlI3Uc_zD6lzTAasXV5xSnhScf49BP9dwburw/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbz_5ux4CU4JVIuE24eidR5M3tWOU3veMXlnbi06_hLBVil7DyVYjI5jrazr-NgpxtiKtg/exec';
 // ====================================================
 
 // ── Modal confirm (reemplaza window.confirm para evitar supresión del navegador) ──
@@ -1474,6 +1536,10 @@ const _CACHE_TTL = {
   listarHojas:    5*60*1000,
   leerConfig:     10*60*1000,
   leerBranding:   10*60*1000,
+  leerRecordInfo:    5*60*1000,
+  listarCursosTodos: 5*60*1000,
+  leerRecordsCursos: 5*60*1000,
+  misNotas:          5*60*1000,
   leerHoja:       2*60*1000,
   leerReservas:   60*1000,
   leerBloqueos:   60*1000,
@@ -2360,7 +2426,7 @@ function renderAlBlock(al,ai,apro){
       const base=sg.notasBase||0,extra=sg.notasExtra||0;
       let thS='',thE='';
       for(let i=0;i<base;i++){const lbl=i===0?'EV':'S'+i;thS+=`<th class="th-ss">${lbl}</th>`;}
-      for(let i=0;i<extra;i++)thE+=`<th class="th-ss">S${base+i}</th>`;
+      for(let i=0;i<extra;i++)thE+=`<th class="th-ex">S${base+i}</th>`;
       const rows=sg.pacientes.map((pac,pi)=>{
         const nv=pac.nombre||'';
         let sc='',ec='';
@@ -2392,21 +2458,23 @@ function renderAlBlock(al,ai,apro){
           <td><input class="nn ${nv?'has-val':''}" value="${esc2(nv)}" placeholder="Nombre paciente" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" onchange="saveNombrePac(this)" onfocus="this.select()">${esExtra?`<div style="margin-top:3px;display:flex;align-items:center;gap:4px">${extraBadge}${btnDelPacX}</div>`:''}</td>
           ${sc}${ec}
           <td style="text-align:center"><span class="pc" id="ps_${ai}_${ci}_${si}_${pi}" style="background:var(--n800);color:var(--n300)">${ps!==''&&ps!==undefined?ps:'-'}</span></td>
-          <td></td>
+          <td style="display:none"></td>
         </tr>`;
       }).join('')||'<tr><td colspan="99" class="empty" style="padding:8px">Sin pacientes</td></tr>';
-      return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody>
-      ${(()=>{ const _pf=sg.pacientes.filter(p=>p.prom!==''&&p.prom!==undefined); const _nf=_pf.length?Math.round(_pf.reduce((a,p)=>a+Number(p.prom),0)/_pf.length*100)/100:null; const _col=_nf!==null?(_nf>=apro?'var(--green)':'var(--red)'):'var(--n300)'; const _bg=_nf!==null?(_nf>=apro?'rgba(5,150,105,.15)':'rgba(220,38,38,.12)'):'var(--n800)'; return `<tfoot><tr><td colspan="2" style="padding:6px 12px;font-size:11px;font-weight:700;color:var(--tx3);background:var(--n050);border-top:2px solid var(--bd2)">Nota Final Subgrupo</td><td colspan="${base+extra}" style="border-top:2px solid var(--bd2);background:var(--n050)"></td><td style="text-align:center;border-top:2px solid var(--bd2);background:${_bg}"><span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:800;color:${_col}">${_nf!==null?_nf:'-'}</span></td></tr></tfoot>`; })()}
+      return`<div class="pv-sgr-hdr"><span>${sg.nombre}</span></div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac">ID</th><th class="th-nom">Nombre Paciente</th>${thS}${thE}<th class="th-pr">PROM SS</th><th class="th-nf" style="display:none">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody>
+      ${(()=>{ const _nf=sg.pacientes.length&&sg.pacientes[0].prom!==''&&sg.pacientes[0].prom!==undefined?Number(sg.pacientes[0].prom):null; const _col=_nf!==null?(_nf>=apro?'var(--green)':'var(--red)'):'var(--n300)'; const _bg=_nf!==null?(_nf>=apro?'rgba(5,150,105,.15)':'rgba(220,38,38,.12)'):'var(--n800)'; return `<tfoot><tr><td colspan="2" style="padding:6px 12px;font-size:11px;font-weight:700;color:var(--tx3);background:var(--n050);border-top:2px solid var(--bd2)">Promedio Subgrupo</td><td colspan="${base+extra}" style="border-top:2px solid var(--bd2);background:var(--n050)"></td><td style="text-align:center;border-top:2px solid var(--bd2);background:${_bg}"><span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:800;color:${_col}">${_nf!==null?_nf:'-'}</span></td></tr></tfoot>`; })()}
       </table></div>`;
     }).join('');
-    // Calcular nota final del curso: promedio de todos los PROM de todos los pacientes
+    // Calcular nota final del curso: promedio de los promedios de subgrupos
     let _sumaProms = 0, _cntProms = 0;
     cu.subgrupos.forEach(sg2 => {
-      sg2.pacientes.forEach(pac2 => {
-        if(pac2.prom !== '' && pac2.prom !== undefined && pac2.prom !== null){
-          _sumaProms += Number(pac2.prom); _cntProms++;
+      // El prom del subgrupo es el mismo para todos los pacientes, usar el primero
+      if(sg2.pacientes && sg2.pacientes.length > 0){
+        const _p = sg2.pacientes[0].prom;
+        if(_p !== '' && _p !== undefined && _p !== null){
+          _sumaProms += Number(_p); _cntProms++;
         }
-      });
+      }
     });
     const _notaFinalCurso = _cntProms > 0 ? (_sumaProms / _cntProms).toFixed(2) : null;
     const _nfColor = _notaFinalCurso === null ? 'var(--n300)'
@@ -2460,6 +2528,14 @@ async function saveNota(inp){
   const tipo=inp.dataset.tipo,idx=+inp.dataset.idx,base=+inp.dataset.base,extra=+inp.dataset.extra;
   const valor=inp.value.trim();
   const key=alumno+'|'+curso+'|'+sgr+'|'+pac+'|'+tipo+'|'+idx;
+  
+  // Guardar el valor anterior si no existe
+  if(!inp.dataset.valorAnterior) inp.dataset.valorAnterior = inp.dataset.valorInicial || '';
+  const valorAnterior = inp.dataset.valorAnterior;
+  
+  // Si el valor no cambió, no guardar
+  if(valor === valorAnterior) return;
+  
   valor!==''?inp.classList.add('v'):inp.classList.remove('v');
   clearTimeout(saveTimers[key]);
    
@@ -2468,29 +2544,27 @@ async function saveNota(inp){
   // Checkpoints desde S1 (idx=1), excluyendo EV (idx=0)
   // sesBase = sesiones reales (base - 1, sin contar EV)
   const _sesBase = Math.max(base - 1, 1);
-  // Índices absolutos (0-based): EV=0, S1=1, S2=2...
-  // p25/p50/p75 del total de sesiones S1..SN, desplazados +1 por la EV
-  const _p25 = Math.ceil(_sesBase * 0.25) - 1 + 1; // +1 para saltar EV
+  const _p25 = Math.ceil(_sesBase * 0.25) - 1 + 1;
   const _p50 = Math.ceil(_sesBase * 0.50) - 1 + 1;
   const _p75 = Math.ceil(_sesBase * 0.75) - 1 + 1;
-  const _sesionesMejoria = new Set([_p25, _p50, _p75].filter(x => x >= 1)); // mínimo idx=1 (S1)
-  // Solo en 50% y 75% se ofrece paciente extra
+  const _sesionesMejoria = new Set([_p25, _p50, _p75].filter(x => x >= 1));
   const _checkpointsPacExtra = new Set([_p50, _p75].filter(x => x >= 1));
-  if(tipo==='ss' && _sesionesMejoria.has(idx) && valor!==''){
+
+  // PACX no pregunta mejoría
+  const esPACX = pac.indexOf('PACX') === 0;
+
+  if(tipo==='ss' && !esPACX && _sesionesMejoria.has(idx) && valor!==''){
     const notaActual = parseFloat(valor);
     const inputs = inp.closest('tr').querySelectorAll('input.nc:not(.ex)');
     const inputAnterior = inputs[idx-1];
     const notaAnterior = inputAnterior ? parseFloat(inputAnterior.value) : null;
 
-    // Preguntar siempre desde la 3ra sesión (idx>=2), haya o no nota anterior
     {
-      // Si el docente marcó mejoría manualmente, no preguntar
       const keyMejoria = alumno+'|'+curso+'|'+sgr+'|'+pac;
       const huboMejoria = _mejoriaManual[keyMejoria]
         ? true
         : await preguntarMejoria(pac, curso, sgr, idx+1);
       if(!huboMejoria){
-        // Sin mejoría: la nota debe ser ≤ 10
         if(notaActual > 10){
           inp.value = '';
           inp.classList.remove('v');
@@ -2498,17 +2572,15 @@ async function saveNota(inp){
           return;
         }
       }
-      // Solo en checkpoint 50% y 75% sin mejoría → ofrecer paciente extra
-      // pero solo si ese paciente NO tiene ya un PACX vinculado
       if(!huboMejoria && _checkpointsPacExtra.has(idx)){
-        // Verificar si este pac ya tiene un PACX vinculado
         const yaTienePacX = hojaData && hojaData.alumnos.some(a => a.nombre===alumno &&
           (a.cursos||[]).some(c => c.nombre===curso &&
             (c.subgrupos||[]).some(s => s.nombre===sgr &&
               (s.pacientes||[]).some(p => p.label.indexOf('PACX')===0 &&
                 p.label.indexOf('('+pac+')')>=0))));
         if(!yaTienePacX){
-          setTimeout(()=>ofrecerPacienteExtra(alumno,curso,sgr,base,extra,inp), 800);
+          // Pasar el PAC vinculado automáticamente
+          setTimeout(()=>ofrecerPacienteExtra(alumno,curso,sgr,base,extra,inp,pac), 800);
         }
       }
     }
@@ -2518,6 +2590,8 @@ async function saveNota(inp){
       const r=await apiPost({action:'guardarNota',hoja:hojaActiva,alumno,curso,subgrupo:sgr,pacLabel:pac,tipo,idx,valor:valor===''?'':parseFloat(valor),notasBase:base,notasExtra:extra});
       if(!r.ok)throw new Error(r.error);
       invalidateCache('leerHoja');
+      // Actualizar el valor anterior después de guardar exitosamente
+      inp.dataset.valorAnterior = valor;
       if(r.prom!==undefined&&hojaData){
         const apro=Number((hojaData.config||{}).notaApro)||APRO();
         const ai=hojaData.alumnos.findIndex(a=>a.nombre===alumno);
@@ -2534,12 +2608,13 @@ async function saveNota(inp){
                 // Actualizar hojaData en memoria y recalcular badge del curso
                 hojaData.alumnos[ai].cursos[ci].subgrupos[si].pacientes[pi].prom = r.prom!==undefined?r.prom:'';
                 hojaData.alumnos[ai].cursos[ci].subgrupos[si].pacientes[pi].promSS = r.promSS!==undefined?r.promSS:'';
-                // Recalcular nota final del curso
+                // Recalcular nota final del curso: promedio de los promedios de subgrupos
                 let _s=0,_c=0;
                 hojaData.alumnos[ai].cursos[ci].subgrupos.forEach(sg2=>{
-                  sg2.pacientes.forEach(pac2=>{
-                    if(pac2.prom!==''&&pac2.prom!==undefined&&pac2.prom!==null){_s+=Number(pac2.prom);_c++;}
-                  });
+                  if(sg2.pacientes&&sg2.pacientes.length>0){
+                    const _p=sg2.pacientes[0].prom;
+                    if(_p!==''&&_p!==undefined&&_p!==null){_s+=Number(_p);_c++;}
+                  }
                 });
                 const _nf=_c>0?(_s/_c).toFixed(2):null;
                 const _badgeCurso=g(`nfcurso_${ai}_${ci}`);
@@ -2643,18 +2718,18 @@ function renderEstNotas(resultados) {
             <td style="font-size:12px;font-weight:500;padding:7px 8px;color:var(--tx2)">${pac.nombre || '-'}</td>
             ${tSS}${tEx}
             <td style="text-align:center"><span class="pc" style="background:var(--n800);color:var(--n300)">${ps !== '' && ps !== undefined ? ps : '-'}</span></td>
-            <td></td>
+            <td style="display:none"></td>
           </tr>`;
         }).join('');
 
-        return `<div class="est-sgr-hdr">${sg.nombre}</div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac" style="display:none"></th><th class="th-nom">Paciente</th>${thS}${thE}<th class="th-pr">PROM</th><th class="th-nf">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody>
+        return `<div class="est-sgr-hdr">${sg.nombre}</div><div style="overflow-x:auto"><table class="nt"><thead><tr><th class="th-pac" style="display:none"></th><th class="th-nom">Paciente</th>${thS}${thE}<th class="th-pr">PROM</th><th class="th-nf" style="display:none">NOTA FINAL</th></tr></thead><tbody>${rows}</tbody>
         <tfoot><tr>
-          <td colspan="2" style="padding:7px 12px;font-weight:700;font-size:12px;color:var(--n600);background:var(--n050);border-top:2px solid var(--bd2)">Nota Final del Subgrupo</td>
-          ${(() => { const ps2=sg.pacientes.filter(p=>p.prom!==''&&p.prom!==undefined); const nf=ps2.length?Math.round(ps2.reduce((a,p)=>a+Number(p.prom),0)/ps2.length*100)/100:null; const col=nf!==null?(nf>=11?'var(--green)':'var(--red)'):'var(--tx4)'; const bg=nf!==null?(nf>=11?'rgba(5,150,105,.15)':'rgba(220,38,38,.12)'):'var(--n050)'; return `<td colspan="${base+extra+1}" style="text-align:center;background:${bg};border-top:2px solid var(--bd2)"><span style="font-family:'DM Mono',monospace;font-size:15px;font-weight:800;color:${col}">${nf!==null?nf:'-'}</span></td>`; })()}
+          <td colspan="2" style="padding:7px 12px;font-weight:700;font-size:12px;color:var(--n600);background:var(--n050);border-top:2px solid var(--bd2)">Promedio Subgrupo</td>
+          ${(() => { const nf=sg.pacientes.length&&sg.pacientes[0].prom!==''&&sg.pacientes[0].prom!==undefined?Number(sg.pacientes[0].prom):null; const col=nf!==null?(nf>=11?'var(--green)':'var(--red)'):'var(--tx4)'; const bg=nf!==null?(nf>=11?'rgba(5,150,105,.15)':'rgba(220,38,38,.12)'):'var(--n050)'; return `<td colspan="${base+extra+1}" style="text-align:center;background:${bg};border-top:2px solid var(--bd2)"><span style="font-family:'DM Mono',monospace;font-size:15px;font-weight:800;color:${col}">${nf!==null?nf:'-'}</span></td>`; })()}
         </tr></tfoot>
         </table></div>`;
       }).join('');
-      const _pC=[];cu.subgrupos.forEach(sg=>sg.pacientes.forEach(pac=>{if(pac.prom!==''&&pac.prom!==undefined)_pC.push(Number(pac.prom));}));
+      const _pC=[];cu.subgrupos.forEach(sg=>{if(sg.pacientes&&sg.pacientes.length>0){const _p=sg.pacientes[0].prom;if(_p!==''&&_p!==undefined)_pC.push(Number(_p));}});
       const _aC=_pC.length?Math.round(_pC.reduce((a,b)=>a+b,0)/_pC.length*100)/100:null;
       const _cC=_aC!==null?(_aC>=11?'var(--green)':'var(--red)'):'var(--tx4)';
       const _bgC=_aC!==null?(_aC>=11?'rgba(5,150,105,.15)':'rgba(220,38,38,.12)'):'transparent';
@@ -3203,11 +3278,13 @@ function applyBranding(cfg){
     document.title=cfg.nombre;
     const t=g('appTitle');if(t)t.textContent=cfg.nombre;
     ['logoImg','logoLogin'].forEach(id=>{const el=g(id);if(el)el.alt=cfg.nombre;});
+    window._brandingNombre=cfg.nombre;
   }
   if(cfg.iniciales){
     ['logoInitials','logoInitialsHdr'].forEach(id=>{const el=g(id);if(el)el.textContent=cfg.iniciales;});
+    window._brandingIniciales=cfg.iniciales;
   }
-  if(cfg.logoUrl) applyLogo(cfg.logoUrl);
+  if(cfg.logoUrl){applyLogo(cfg.logoUrl);window._brandingLogoUrl=cfg.logoUrl;}
   // Actualizar campos inst en el panel si están disponibles en DOM
   if(cfg.univ!==undefined){const e=g('cfgUniv');if(e)e.value=cfg.univ;}
   if(cfg.fac!==undefined) {const e=g('cfgFac'); if(e)e.value=cfg.fac;}
@@ -4979,12 +5056,34 @@ function responderMejoria(huboMejoria){
   }
 }
 
-async function ofrecerPacienteExtra(alumno, curso, sgr, notasBase, notasExtra, inp){
+async function ofrecerPacienteExtra(alumno, curso, sgr, notasBase, notasExtra, inp, pacVinculado){
+  // Si ya sabemos el PAC vinculado, crear el PACX automáticamente sin modal
+  if(pacVinculado){
+    showLoader('Agregando paciente extra...');
+    try{
+      const r = await apiPost({
+        action: 'agregarPacienteExtra',
+        hoja: hojaActiva,
+        alumno, curso, subgrupo: sgr,
+        notasBase, notasExtra,
+        pacVinculado
+      });
+      hideLoader();
+      if(!r.ok) throw new Error(r.error);
+      toast('Paciente extra agregado automáticamente','Recargando editor...','ok');
+      setTimeout(()=>abrirHoja(hojaActiva), 600);
+    }catch(e){
+      hideLoader();
+      toast('Error al agregar paciente extra', e.message, 'err');
+    }
+    return;
+  }
+
+  // Si hay múltiples PAC sin PACX, mostrar modal para seleccionar
   const m   = g('pacExtraModal');
   const sub = g('pacExtraModalSub');
   if(sub) sub.textContent = alumno+' · '+curso+' · '+sgr;
 
-  // Construir lista de PAC del subgrupo para seleccionar el vinculado
   const pacientes = [];
   if(hojaData){
     const al = hojaData.alumnos.find(a=>a.nombre===alumno);
@@ -5001,7 +5100,6 @@ async function ofrecerPacienteExtra(alumno, curso, sgr, notasBase, notasExtra, i
     }
   }
 
-  // Inyectar selector de PAC en el modal
   const selectorBox = g('pacExtraModalSelector');
   if(selectorBox){
     if(pacientes.length > 1){
@@ -5448,6 +5546,313 @@ async function regenerarHoja(){
     cerrarPanel();
     loadHojas();
   }catch(e){ hideLoader(); toast('Error', e.message, 'err'); }
+}
+
+// ── MODAL RECORD ─────────────────────────────────────────────
+let _recCursos=null, _recData=null, _recTabActivo='', _recGlobal=null, _recStudentCourses=null, _recCicloMap={};
+const _CICLOS=[
+  {key:'V',   label:'V Ciclo',    re:/TF-?5\d{2}/i},
+  {key:'VI',  label:'VI Ciclo',   re:/TF-?6\d{2}/i},
+  {key:'VII', label:'VII Ciclo',  re:/TF-?7\d{2}/i},
+  {key:'VIII',label:'VIII Ciclo', re:/TF-?8\d{2}/i},
+  {key:'otro',label:'Otros',      re:null}
+];
+
+function _esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// Ciclo: usa _recCicloMap (mapa dedicado, siempre actualizado), luego regex como fallback
+function _recCiclo(nombre){
+  var asignado=_recCicloMap[nombre]||'';
+  if(asignado) return asignado;
+  for(var _i=0;_i<_CICLOS.length;_i++){if(_CICLOS[_i].re&&_CICLOS[_i].re.test(nombre))return _CICLOS[_i].key;}
+  return 'otro';
+}
+
+function _recCloseOnOv(e){if(e.target===g('recordModalOv'))cerrarRecordPanel();}
+
+function abrirRecordPanel(){
+  g('recordModalOv').classList.add('show');
+  var esAlumno=session&&session.rol==='estudiante';
+  if(!_recCursos||!_recData){
+    _recCargar();
+  }else{
+    _recRenderGlobal();
+    if(esAlumno) _recRenderEstudiante(_recStudentCourses||[]);
+    else _recRenderTabs();
+  }
+}
+
+function cerrarRecordPanel(){
+  g('recordModalOv').classList.remove('show');
+}
+
+async function _recCargar(){
+  g('recModalBody').innerHTML='<div class="empty">Cargando...</div>';
+  g('recTabs').innerHTML='';
+  g('recGlobalSection').innerHTML='';
+  var esAlumno=session&&session.rol==='estudiante';
+  try{
+    var promesas=[
+      apiGetCached('listarCursosTodos'),
+      apiGetCached('leerRecordsCursos'),
+      apiGetCached('leerRecordInfo')
+    ];
+    if(esAlumno) promesas.push(apiGetCached('misNotas',{codigo:session.codigo}));
+    var res=await Promise.all(promesas);
+    var rC=res[0],rD=res[1],rG=res[2],rN=res[3];
+    if(!rC.ok) throw new Error(rC.error||'Error al listar cursos');
+    _recCursos=rC.cursos||[];
+    _recData=(rD.ok&&rD.data)||{};
+    _recGlobal=(rG.ok&&rG)||{pdfUrl:''};
+    // Poblar _recCicloMap: 1) desde backend, 2) fusionar con localStorage como respaldo
+    _recCicloMap={};
+    Object.keys(_recData).forEach(function(cu){
+      if(_recData[cu]&&_recData[cu].ciclo) _recCicloMap[cu]=_recData[cu].ciclo;
+    });
+    try{
+      var lsMap=JSON.parse(localStorage.getItem('_centyr_ciclos')||'{}');
+      Object.keys(lsMap).forEach(function(cu){
+        if(lsMap[cu]&&!_recCicloMap[cu]) _recCicloMap[cu]=lsMap[cu];
+      });
+    }catch(e){}
+    _recRenderGlobal();
+    if(esAlumno){
+      _recStudentCourses=[];
+      ((rN&&rN.ok&&rN.resultados)||[]).forEach(function(h){
+        (h.cursos||[]).forEach(function(cu){
+          if(cu.nombre&&_recStudentCourses.indexOf(cu.nombre)===-1)
+            _recStudentCourses.push(cu.nombre);
+        });
+      });
+      _recRenderEstudiante(_recStudentCourses);
+    }else{
+      var ciclosConCursos=_CICLOS.filter(function(c){
+        return _recCursos.some(function(cu){return _recCiclo(cu)===c.key;});
+      });
+      var tabsValidos=ciclosConCursos.map(function(c){return c.key;});
+      if(!_recTabActivo||tabsValidos.indexOf(_recTabActivo)===-1){
+        _recTabActivo=ciclosConCursos.length?ciclosConCursos[0].key:'otro';
+      }
+      _recRenderTabs();
+    }
+  }catch(e){
+    g('recModalBody').innerHTML='<div class="hint"><span>&#9888;</span><span>Error: '+_esc(e.message)+'</span></div>';
+  }
+}
+
+function _recRenderTabs(){
+  const tabsEl=g('recTabs');
+  const ciclosConCursos=_CICLOS.filter(c=>_recCursos.some(cu=>_recCiclo(cu)===c.key));
+  if(!ciclosConCursos.length){
+    tabsEl.innerHTML='';
+    g('recModalBody').innerHTML='<div class="hint-b"><span>&#9432;</span><span>No hay cursos en las planillas todav&iacute;a.</span></div>';
+    return;
+  }
+  tabsEl.innerHTML=ciclosConCursos.map(c=>
+    `<button class="rec-tab${_recTabActivo===c.key?' on':''}" onclick="_recSelTab('${c.key}')">${_esc(c.label)}</button>`
+  ).join('');
+  _recRenderCiclo(_recTabActivo);
+}
+
+function _recSelTab(key){
+  _recTabActivo=key;
+  g('recTabs').querySelectorAll('.rec-tab').forEach(t=>{
+    const c=_CICLOS.find(x=>x.key===key);
+    t.classList.toggle('on',c&&t.textContent.trim()===c.label);
+  });
+  _recRenderCiclo(key);
+}
+
+// Índice global para mapear idx → nombre de curso (evita pasar strings en onclick)
+let _recCursosActivos=[];
+
+function _recRenderEstudiante(studentCourses){
+  g('recTabs').innerHTML=''; // sin tabs para alumnos
+  var body=g('recModalBody');
+
+  // Mostrar todos los cursos del alumno (de misNotas), con o sin record configurado
+  var misCursos=studentCourses||[];
+
+  if(!misCursos.length){
+    body.innerHTML='<div class="hint-b"><span>&#9432;</span><span>A&uacute;n no est&aacute;s inscrito en ninguna planilla. Contacta al administrador.</span></div>';
+    return;
+  }
+
+  var html='';
+  misCursos.forEach(function(cu){
+    var d=_recData[cu]||{};
+    var pac=String(d.pacientes||'');
+    var cons=String(d.consideraciones||'');
+    var cicloKey=_recCiclo(cu);
+    var cicloLabel=(_CICLOS.find(function(c){return c.key===cicloKey;})||{}).label||'';
+
+    var consDisplay=cons
+      ?'<div class="rec-block"><div class="rec-block-lbl">&#128203; Consideraciones</div>'
+        +'<div class="rec-block-text">'+_esc(cons)+'</div></div>'
+      :'';
+
+    html+='<div class="rec-curso-card">';
+    html+='<div class="rec-curso-card-hdr">'
+      +'<div class="rec-curso-name">&#128218; '+_esc(cu)+'</div>'
+      +(cicloLabel?'<div class="rec-curso-ciclo-pill">'+_esc(cicloLabel)+'</div>':'')
+      +'</div>';
+    html+='<div class="rec-curso-body">';
+    html+='<div class="rec-stat-row">'
+      +'<div class="rec-stat-ico">&#128101;</div>'
+      +'<div><div class="rec-stat-val">'+(pac||'&mdash;')+'</div>'
+      +'<div class="rec-stat-lbl">Pacientes requeridos</div></div></div>';
+    html+=consDisplay;
+    html+='</div></div>';
+    // Sin .rec-edit-section — alumno es solo lectura
+  });
+  body.innerHTML=html;
+}
+
+function _recRenderGlobal(){
+  var sec=g('recGlobalSection');
+  if(!sec)return;
+  var pdfUrl=String((_recGlobal&&_recGlobal.pdfUrl)||'');
+
+  // Botón PDF — siempre visible para todos
+  var pdfBtn=pdfUrl
+    ?'<a href="'+_esc(pdfUrl)+'" target="_blank" rel="noopener" class="rec-pdf-btn" style="margin-bottom:10px">'
+        +'<span class="rec-pdf-ico">&#128196;</span><span>Descargar Reglamento CENTYR (PDF)</span></a>'
+    :'<div class="rec-pdf-btn disabled" style="margin-bottom:10px">'
+        +'<span class="rec-pdf-ico">&#128196;</span><span>Reglamento PDF (URL no configurada)</span></div>';
+
+  // Bloque de edición — siempre en HTML, visible solo para admin via CSS
+  var adminEdit='<div class="rec-global-admin-edit">'
+    +'<div style="display:flex;gap:8px;align-items:center">'
+      +'<input class="inp" id="recGlobalPdfInput" type="url" value="'+_esc(pdfUrl)+'" placeholder="URL del Reglamento PDF..." style="flex:1;font-size:13px">'
+      +'<button class="btn-sm green" onclick="_recGuardarGlobal()" style="flex-shrink:0;white-space:nowrap">&#10003; Guardar URL</button>'
+    +'</div>'
+    +'<div id="recGlobalRes" style="font-size:12px;margin-top:4px;display:none"></div>'
+  +'</div>';
+
+  sec.innerHTML=pdfBtn+adminEdit;
+}
+
+async function _recGuardarGlobal(){
+  if(!session||session.rol!=='admin'){toast('Sin permisos','Solo el administrador puede guardar','err');return;}
+  var url=(g('recGlobalPdfInput')||{}).value||'';
+  var res=g('recGlobalRes');
+  if(res)res.style.display='none';
+  showLoader('Guardando URL...');
+  try{
+    var r=await apiPost({action:'guardarRecordInfo',pdfUrl:url});
+    hideLoader();
+    if(r.ok){
+      invalidateCache('leerRecordInfo');
+      if(!_recGlobal)_recGlobal={};
+      _recGlobal.pdfUrl=url;
+      _recRenderGlobal();
+      toast('URL guardada','El reglamento PDF fue actualizado','ok');
+    }else{
+      if(res){res.style.display='block';res.style.color='var(--red)';res.textContent='Error: '+(r.error||'?');}
+    }
+  }catch(e){
+    hideLoader();
+    if(res){res.style.display='block';res.style.color='var(--red)';res.textContent='Error: '+e.message;}
+  }
+}
+
+function _recRenderCiclo(cicloKey){
+  var body=g('recModalBody');
+  var cicloLabel=(_CICLOS.find(function(c){return c.key===cicloKey;})||{}).label||cicloKey;
+  _recCursosActivos=_recCursos.filter(function(cu){return _recCiclo(cu)===cicloKey;});
+
+  if(!_recCursosActivos.length){
+    body.innerHTML='<div class="hint-b"><span>&#9432;</span><span>Sin cursos en este ciclo.</span></div>';
+    return;
+  }
+
+  var html='';
+  for(var i=0;i<_recCursosActivos.length;i++){
+    var cu=_recCursosActivos[i];
+    var d=_recData[cu]||{};
+    var pac=String(d.pacientes||'');
+    var cons=String(d.consideraciones||'');
+    var cicloSaved=String(d.ciclo||'');
+
+    // Opciones del select de ciclo
+    var cicloOpts='';
+    for(var ci=0;ci<_CICLOS.length;ci++){
+      var sel=cicloSaved===_CICLOS[ci].key?' selected':'';
+      cicloOpts+='<option value="'+_CICLOS[ci].key+'"'+sel+'>'+_esc(_CICLOS[ci].label)+'</option>';
+    }
+
+    var consDisplay=cons
+      ?'<div class="rec-block"><div class="rec-block-lbl">&#128203; Consideraciones</div><div class="rec-block-text">'+_esc(cons)+'</div></div>'
+      :'';
+
+    // Tarjeta info (solo lectura)
+    html+='<div class="rec-curso-card">';
+    html+='<div class="rec-curso-card-hdr">'
+      +'<div class="rec-curso-name">&#128218; '+_esc(cu)+'</div>'
+      +'<div class="rec-curso-ciclo-pill">'+_esc(cicloLabel)+'</div>'
+      +'</div>';
+    html+='<div class="rec-curso-body">';
+    html+='<div class="rec-stat-row">'
+      +'<div class="rec-stat-ico">&#128101;</div>'
+      +'<div><div class="rec-stat-val">'+(pac||'&mdash;')+'</div>'
+      +'<div class="rec-stat-lbl">Pacientes requeridos</div></div></div>';
+    html+=consDisplay;
+    html+='</div></div>';// cierra rec-curso-body y rec-curso-card
+
+    // Sección de edición — SIEMPRE visible, fuera de la tarjeta
+    html+='<div class="rec-edit-section">';
+    html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px">&#9998; Configurar: '+_esc(cu)+'</div>';
+    html+='<div class="field" style="margin-bottom:8px"><label>Ciclo</label>'
+      +'<select class="sel" id="rp_ciclo_'+i+'">'+cicloOpts+'</select></div>';
+    html+='<div class="field" style="margin-bottom:8px"><label>Pacientes requeridos</label>'
+      +'<input class="inp" id="rp_pac_'+i+'" type="number" min="0" value="'+_esc(pac)+'" placeholder="Ej: 25"></div>';
+    html+='<div class="field" style="margin-bottom:10px"><label>Consideraciones generales</label>'
+      +'<textarea class="inp" id="rp_cons_'+i+'" rows="3" style="resize:vertical;min-height:72px" placeholder="Ingresa las consideraciones...">'+_esc(cons)+'</textarea></div>';
+    html+='<button class="btn-sm green" data-rec-idx="'+i+'" onclick="_recGuardar(this)" style="width:100%">&#10003; Guardar</button>';
+    html+='<div id="recRes_'+i+'" style="font-size:12px;margin-top:6px;display:none"></div>';
+    html+='</div>';// cierra rec-edit-section
+  }
+  body.innerHTML=html;
+}
+
+async function _recGuardar(btn){
+  if(!session||session.rol!=='admin'){toast('Sin permisos','Solo el administrador puede guardar','err');return;}
+  const idx=parseInt(btn.dataset.recIdx,10);
+  const curso=_recCursosActivos[idx];
+  if(!curso)return;
+  const pac=(g('rp_pac_'+idx)||{}).value||'';
+  const cons=(g('rp_cons_'+idx)||{}).value||'';
+  const ciclo=(g('rp_ciclo_'+idx)||{}).value||'';
+  const res=g('recRes_'+idx);
+  if(res)res.style.display='none';
+  showLoader('Guardando...');
+  try{
+    const r=await apiPost({action:'guardarRecordCurso',curso,pacientes:pac,consideraciones:cons,ciclo});
+    hideLoader();
+    if(r.ok){
+      invalidateCache('leerRecordsCursos');
+      // Actualizar _recData y _recCicloMap en memoria
+      if(!_recData[curso])_recData[curso]={};
+      _recData[curso].pacientes=pac;
+      _recData[curso].consideraciones=cons;
+      _recData[curso].ciclo=ciclo;
+      // Actualizar _recCicloMap en memoria
+      if(ciclo) _recCicloMap[curso]=ciclo; else delete _recCicloMap[curso];
+      // Guardar en localStorage como respaldo persistente
+      try{
+        var lsMap=JSON.parse(localStorage.getItem('_centyr_ciclos')||'{}');
+        if(ciclo) lsMap[curso]=ciclo; else delete lsMap[curso];
+        localStorage.setItem('_centyr_ciclos',JSON.stringify(lsMap));
+      }catch(e){}
+      // Navegar al tab del ciclo guardado
+      if(ciclo) _recTabActivo=ciclo;
+      _recRenderTabs();
+      var cicloLabel=(_CICLOS.find(function(c){return c.key===ciclo;})||{}).label||ciclo;
+      toast('Guardado','Asignado a '+cicloLabel,'ok');
+    }else{
+      if(res){res.style.display='block';res.style.color='var(--red)';res.textContent='Error: '+(r.error||'?');}
+    }
+  }catch(e){hideLoader();if(res){res.style.display='block';res.style.color='var(--red)';res.textContent='Error: '+e.message;}}
 }
 
 function irAHC(){
