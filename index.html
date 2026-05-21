@@ -4377,7 +4377,15 @@ function actualizarCamillasBloqueoModal(){
 
 async function crearBloqueoModal(){
   var fecha=vi('mbFecha')||'*';
-  var hora=vi('mbHora')||'*';
+  var horaIni=vi('mbHora')||'*';
+  var horaFin=vi('mbHoraFin')||'';
+  var hora;
+  if(horaIni!=='*'&&horaFin){
+    if(horaFin<=horaIni){toast('Error','La hora fin debe ser posterior a la hora inicio','err');return;}
+    hora=horaIni+'-'+horaFin;
+  } else {
+    hora=horaIni;
+  }
   var area=vi('mbArea')||'*';
   var camilla=vi('mbCamilla')||'*';
   var motivo=vi('mbMotivo')||'Sin motivo';
@@ -4390,8 +4398,8 @@ async function crearBloqueoModal(){
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Bloqueo creado','','ok');
     invalidateCache('leerBloqueos');
-    var f=g('mbFecha');var h=g('mbHora');var mo=g('mbMotivo');
-    if(f)f.value='';if(h)h.value='';if(mo)mo.value='';
+    var f=g('mbFecha');var h=g('mbHora');var hf=g('mbHoraFin');var mo=g('mbMotivo');
+    if(f)f.value='';if(h)h.value='';if(hf)hf.value='';if(mo)mo.value='';
     await cargarBloqueos();
     renderListaBloqueos();
     renderListaBloqueosModal();
