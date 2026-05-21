@@ -376,7 +376,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 .area-pill.active{background:var(--n500);border-color:var(--n400);color:#fff}
 
 /* ── BLOQUEO CARD ── */
-.bloqueo-row{display:grid;grid-template-columns:80px 65px 1fr 1fr 28px;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--bd2);font-size:12px;background:var(--red2)}
+.bloqueo-row{display:grid;grid-template-columns:80px 90px 1fr 1fr 28px;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--bd2);font-size:12px;background:var(--red2)}
 .bloqueo-row:hover{opacity:.9}
 
 /* ── MODAL RESERVA ALUMNO (fecha/hora libre) ── */
@@ -4412,10 +4412,10 @@ function renderListaBloqueosModal(){
   if(!agendaBloqueos.length){
     box.innerHTML='<div class="empty" style="padding:12px">Sin bloqueos activos</div>';return;
   }
-  box.innerHTML=`<div style="background:var(--n900);padding:6px 12px;display:grid;grid-template-columns:80px 60px 1fr 1fr 28px;gap:6px;font-size:10px;font-weight:700;color:var(--n300);text-transform:uppercase">
+  box.innerHTML=`<div style="background:var(--n900);padding:6px 12px;display:grid;grid-template-columns:80px 90px 1fr 1fr 28px;gap:6px;font-size:10px;font-weight:700;color:var(--n300);text-transform:uppercase">
     <span>Fecha</span><span>Hora</span><span>Area</span><span>Motivo</span><span></span>
   </div>`+agendaBloqueos.map(b=>`
-    <div style="display:grid;grid-template-columns:80px 60px 1fr 1fr 28px;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--bd2);background:var(--red2);font-size:12px">
+    <div style="display:grid;grid-template-columns:80px 90px 1fr 1fr 28px;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--bd2);background:var(--red2);font-size:12px">
       <span style="font-family:'DM Mono',monospace;font-size:10px">${b.fecha}</span>
       <span style="font-family:'DM Mono',monospace;font-size:10px">${b.hora}</span>
       <div><div style="font-weight:600;font-size:11px">${b.area}</div><div style="font-size:10px;color:var(--tx3)">${b.camilla}</div></div>
