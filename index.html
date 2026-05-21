@@ -4582,7 +4582,9 @@ async function cargarBloqueos(fechaInicio, fechaFin){
 function esBloqueado(fecha, hora, area, camilla){
   return agendaBloqueos.some(b=>{
     const fOk = b.fecha==='*' || b.fecha===fecha;
-    const hOk = b.hora==='*'  || b.hora===hora;
+    const hOk = b.hora==='*' || (b.hora.includes('-')
+      ? (()=>{ const [ini,fin]=b.hora.split('-'); return hora>=ini && hora<fin; })()
+      : b.hora===hora);
     const aOk = b.area==='*'  || b.area===area;
     const cOk = b.camilla==='*' || b.camilla===camilla;
     return fOk && hOk && aOk && cOk;
