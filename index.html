@@ -343,7 +343,7 @@ header{background:var(--n900);border-bottom:1px solid var(--n800);position:stick
 
 /* area card en config */
 .area-card{background:var(--surf2);border:1px solid var(--bd2);border-radius:9px;padding:10px 12px;margin-bottom:7px}
-.area-card-top{display:grid;grid-template-columns:1fr 80px auto 28px;gap:7px;align-items:center;margin-bottom:8px}
+.area-card-top{display:grid;grid-template-columns:1fr 80px 90px 28px;gap:7px;align-items:center;margin-bottom:8px}
 .espacio-row{display:grid;grid-template-columns:1fr 70px 28px 28px;gap:6px;align-items:center;margin-bottom:5px;padding-left:8px}
 .espacio-row input{background:#fff;border:1px solid var(--bd);border-radius:6px;padding:4px 8px;font-size:12px;font-family:'Plus Jakarta Sans',sans-serif;outline:none;width:100%}
 .espacio-row input:focus{border-color:var(--n500)}
@@ -4636,7 +4636,6 @@ async function toggleBloqueoArea(areaIdx){
     invalidateCache('leerBloqueos');
     await cargarBloqueos();
     renderAreasConfig();
-    renderListaBloqueos();
     renderListaBloqueosModal();
     renderCalendario();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
@@ -4659,7 +4658,6 @@ async function toggleBloqueoEspacio(areaIdx,espIdx){
     invalidateCache('leerBloqueos');
     await cargarBloqueos();
     renderAreasConfig();
-    renderListaBloqueos();
     renderListaBloqueosModal();
     renderCalendario();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
