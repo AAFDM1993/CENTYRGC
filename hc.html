@@ -9210,9 +9210,10 @@ window.wpostMount=function(){
       var a=getAlt(d.altId); if(!a) return;
       var ch=document.createElement('div');
       ch.className='wpost-chip';
-      ch.style.cssText='position:absolute;display:flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 4px;border-radius:14px;font-size:16px;color:#fff;box-shadow:0 2px 7px rgba(0,0,0,.35);pointer-events:auto;cursor:pointer;transform:translate(-50%,-50%);line-height:1;z-index:10;border:2px solid rgba(255,255,255,.5);background:'+a.color;
+      var _svg=a.char.indexOf('<svg')===0;
+      ch.style.cssText='position:absolute;display:flex;align-items:center;justify-content:center;'+(_svg?'width:28px;height:28px;':'min-width:28px;height:28px;padding:0 4px;')+'border-radius:14px;font-size:16px;color:#fff;box-shadow:0 2px 7px rgba(0,0,0,.35);pointer-events:auto;cursor:pointer;transform:translate(-50%,-50%);line-height:1;z-index:10;border:2px solid rgba(255,255,255,.5);background:'+a.color;
       ch.style.left=d.xp+'%'; ch.style.top=d.yp+'%';
-      ch.title=a.lbl+' - clic para eliminar'; ch.textContent=a.char;
+      ch.title=a.lbl+' - clic para eliminar'; if(_svg){ch.innerHTML=a.char;}else{ch.textContent=a.char;}
       ch.addEventListener('mouseenter',function(e){
         var rect=ch.getBoundingClientRect();
         var tooltip=document.createElement('div');
