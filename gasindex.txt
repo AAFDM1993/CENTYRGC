@@ -33,6 +33,9 @@ function doGet(e) {
     if (a === 'miCasillero')      return json_(requireAuth(p, ['estudiante','admin','docente'], function(u){ return miCasillero_(p.codigo); }));
     if (a === 'leerLogCasilleros') return json_(requireAuth(p, ['admin'], function(u){ return leerLogCasilleros(p.limite); }));
     if (a === 'getBranding')      return json_(getBranding());
+    if (a === 'leerRecordInfo')     return json_(requireAuth(p, ['admin','docente','estudiante','recepcion'], leerRecordInfo_));
+    if (a === 'listarCursosTodos') return json_(requireAuth(p, ['admin','docente','estudiante','recepcion'], listarCursosTodos_));
+    if (a === 'leerRecordsCursos') return json_(requireAuth(p, ['admin','docente','estudiante','recepcion'], leerRecordsCursos_));
     return json_({ error: 'Accion desconocida: ' + a });
   } catch (err) {
     return json_({ error: err.message + ' || ' + err.stack });
@@ -67,8 +70,12 @@ function doPost(e) {
     if (a === 'actualizarSubgrupo')       return json_(requireAuthBody(tok, ['admin'], function(u){ return actualizarSubgrupo_(b); }));
     if (a === 'actualizarCursoCompleto')  return json_(requireAuthBody(tok, ['admin'], function(u){ return actualizarCursoCompleto_(b); }));
     if (a === 'regenerarHoja')            return json_(requireAuthBody(tok, ['admin'], function(u){ return regenerarHoja_(b); }));
+    if (a === 'actualizarFormulasPromedio') return json_(requireAuthBody(tok, ['admin'], function(u){ return actualizarFormulasPromedio_(); }));
+    if (a === 'repararConfigMaxCols')      return json_(requireAuthBody(tok, ['admin'], function(u){ return repararConfigMaxCols_(); }));
     if (a === 'cambiarPassword')          return json_(requireAuthBody(tok, ['admin','docente','estudiante','recepcion'], function(u){ return cambiarPassword_(b, u); }));
     if (a === 'guardarBranding')          return json_(requireAuthBody(tok, ['admin'], function(u){ return guardarBranding_(b); }));
+    if (a === 'guardarRecordInfo')  return json_(requireAuthBody(tok, ['admin'], function(u){ return guardarRecordInfo_(b); }));
+    if (a === 'guardarRecordCurso') return json_(requireAuthBody(tok, ['admin'], function(u){ return guardarRecordCurso_(b); }));
     return json_({ error: 'Accion desconocida: ' + a });
   } catch (err) {
     return json_({ error: err.message + ' || ' + err.stack });
@@ -234,9 +241,10 @@ function misNotas(codigoEstudiante) {
         var lr      = logRows[li];
         var docente = String(lr[1]).trim();
         if (!docente) continue;
-        var key = [String(lr[2]).trim().toLowerCase(), String(lr[4]).trim().toLowerCase(),
-                   String(lr[5]).trim().toLowerCase(), String(lr[6]).trim().toLowerCase(),
-                   String(lr[7]).trim().toLowerCase(), String(lr[8]).trim()].join('||');
+        var key = [String(lr[2]).trim().toLowerCase(), String(lr[3]).trim().toLowerCase(),
+                   String(lr[4]).trim().toLowerCase(), String(lr[5]).trim().toLowerCase(),
+                   String(lr[6]).trim().toLowerCase(), String(lr[7]).trim().toLowerCase(),
+                   String(lr[8]).trim()].join('||');
         if (!docenteMap[key]) docenteMap[key] = docente;
       }
     }
@@ -250,15 +258,17 @@ function misNotas(codigoEstudiante) {
     var rows       = sheet.getRange(3, 1, lastRow - 2, lastCol).getValues();
     var encontrado = false;
     var curAl = null, curCu = null, curSgr = null;
+    var alumnoNombreLow = '';
     var hojaNombreLow = sheet.getName().trim().toLowerCase();
     for (var ri = 0; ri < rows.length; ri++) {
       var c0 = String(rows[ri][0]).trim();
       if (c0.indexOf('ALUMNO:') === 0) {
         if (encontrado && curAl) resultado.push(curAl);
-        encontrado = false; curAl = null; curCu = null; curSgr = null;
+        encontrado = false; curAl = null; curCu = null; curSgr = null; alumnoNombreLow = '';
         var cod = String(rows[ri][1]).trim().toLowerCase();
         if (cod === codNeedle) {
           encontrado = true;
+          alumnoNombreLow = c0.slice(7).trim().toLowerCase();
           curAl = { hoja: sheet.getName(), asignatura: config.asignatura || sheet.getName(), semestre: config.semestre || '', cursos: [] };
         }
       } else if (encontrado) {
@@ -282,12 +292,12 @@ function misNotas(codigoEstudiante) {
           var c0Low     = c0.toLowerCase();
           var notasDoc = notas.map(function(v, ni) {
             if (v === '') return '';
-            var k = [hojaNombreLow, curCuLow, curSgrLow, c0Low, 'ss', String(ni+1)].join('||');
+            var k = [hojaNombreLow, alumnoNombreLow, curCuLow, curSgrLow, c0Low, 'ss', String(ni+1)].join('||');
             return docenteMap[k] || '';
           });
           var xNotasDoc = xNotas.map(function(v, ni) {
             if (v === '') return '';
-            var k = [hojaNombreLow, curCuLow, curSgrLow, c0Low, 'extra', String(ni+1)].join('||');
+            var k = [hojaNombreLow, alumnoNombreLow, curCuLow, curSgrLow, c0Low, 'extra', String(ni+1)].join('||');
             return docenteMap[k] || '';
           });
           var promVal   = rows[ri][lastCol - 2];
@@ -942,13 +952,31 @@ function leerBloqueos(fechaInicio, fechaFin) {
   var rows = sheet.getRange(2,1,last-1,7).getValues();
   var bloqueos = rows.filter(function(r){
     if (!r[0]) return false;
-    if (String(r[0]).trim() === '*') return true;
-    var f = (r[0] instanceof Date) ? Utilities.formatDate(r[0], 'GMT-5', 'yyyy-MM-dd') : String(r[0]).trim().substring(0,10);
-    return (!fechaInicio||f>=fechaInicio)&&(!fechaFin||f<=fechaFin);
+    var fechaStr = String(r[0]).trim();
+    if (fechaStr === '*') return true;
+    var parts = fechaStr.includes('/') ? fechaStr.split('/') : null;
+    var fIni, fFin;
+    if (parts) {
+      fIni = parts[0].substring(0,10);
+      fFin = parts[1].substring(0,10);
+    } else {
+      fIni = (r[0] instanceof Date) ? Utilities.formatDate(r[0],'GMT-5','yyyy-MM-dd') : fechaStr.substring(0,10);
+      fFin = fIni;
+    }
+    return (!fechaInicio||fFin>=fechaInicio)&&(!fechaFin||fIni<=fechaFin);
   }).map(function(r,i){
+    var fechaStr = String(r[0]).trim();
+    var fechaVal;
+    if (fechaStr === '*') {
+      fechaVal = '*';
+    } else if (fechaStr.includes('/')) {
+      fechaVal = fechaStr;
+    } else {
+      fechaVal = (r[0] instanceof Date) ? Utilities.formatDate(r[0],'GMT-5','yyyy-MM-dd') : fechaStr.substring(0,10);
+    }
     return {
       id:        i+2,
-      fecha:     (String(r[0]).trim()==='*')?'*':(r[0] instanceof Date?Utilities.formatDate(r[0],'GMT-5','yyyy-MM-dd'):String(r[0]).trim().substring(0,10)),
+      fecha:     fechaVal,
       hora:      String(r[1]).trim(),
       area:      String(r[2]).trim(),
       camilla:   String(r[3]).trim(),
@@ -1216,23 +1244,28 @@ function agregarPacienteExtra_(body) {
     sheet.getRange(filaNueva, 3, 1, totalSS).setValue('').setHorizontalAlignment('center');
   var sobra = maxCols - totalSS;
   if (sobra > 0) sheet.getRange(filaNueva, 3 + totalSS, 1, sobra).setBackground('#e8edf8');
-  var rngTodo = colLetra_(3) + filaNueva + ':' + colLetra_(2 + totalSS) + filaNueva;
-  var fProm = '=IFERROR(ROUND(AVERAGEIF(' + rngTodo + ',"<>"),2),"")';
-  sheet.getRange(filaNueva, colProm).setFormula(fProm);
+
+  // Fórmula PROM del PACX: divisor dinámico
+  var rngTodoPACX = colLetra_(3) + filaNueva + ':' + colLetra_(2 + totalSS) + filaNueva;
+  var fPromPACX = '=IFERROR(ROUND(IF(COUNTIF(' + rngTodoPACX + ',"<>")>0,SUM(' + rngTodoPACX + ')/COUNTIF(' + rngTodoPACX + ',"<>"),0),2),0)';
+  sheet.getRange(filaNueva, colProm).setFormula(fPromPACX);
+
+  // PAC vinculado: su promSS = 0
   var filaVinculado = filaUltimoPac;
   if (body.pacVinculado) {
     var fv = buscarFila_(sheet, body.alumno, body.curso, body.subgrupo, body.pacVinculado);
     if (fv !== -1) filaVinculado = fv;
   }
-  var celPacOriginal = colLetra_(colProm) + filaVinculado;
-  var celPacX        = colLetra_(colProm) + filaNueva;
-  var fFinalPacX = '=IFERROR(ROUND(AVERAGEIF(' + celPacOriginal + ':' + celPacX + ',"<>"),2),"")';
-  sheet.getRange(filaNueva,     colNotaFinal).setFormula(fFinalPacX);
-  sheet.getRange(filaVinculado, colNotaFinal).setFormula(fFinalPacX);
-  for (var pi = filaPacIni; pi < filaNueva; pi++) {
-    if (pi === filaVinculado) continue;
-    var rngNorm = colLetra_(colProm) + filaPacIni + ':' + colLetra_(colProm) + (filaNueva - 1);
-    sheet.getRange(pi, colNotaFinal).setFormula('=IFERROR(ROUND(AVERAGEIF(' + rngNorm + ',"<>"),2),"")');
+  sheet.getRange(filaVinculado, colProm).setValue(0);
+
+  // NOTA FINAL: SUM(todos) / totalPACs_normales
+  var filaFinNueva = filaNueva; // ahora el último es el PACX recién insertado
+  var rngTodos = colLetra_(colProm) + filaPacIni + ':' + colLetra_(colProm) + filaFinNueva;
+  var fFinal = '=IFERROR(ROUND(SUM(' + rngTodos + ')/' + numPacNormal + ',2),0)';
+
+  // Aplicar NOTA FINAL a todos (PAC normales + PACX)
+  for (var pi = filaPacIni; pi <= filaFinNueva; pi++) {
+    sheet.getRange(pi, colNotaFinal).setFormula(fFinal);
   }
   sheet.getRange(filaNueva, 1, 1, 2).setBackground('#fef3c7').setFontColor('#92400e').setFontSize(10).setFontWeight('bold');
   if (totalSS > 0) sheet.getRange(filaNueva, 3, 1, totalSS).setBackground('#fef3c7').setFontColor('#92400e').setHorizontalAlignment('center');
@@ -1416,8 +1449,85 @@ function eliminarPacX_(body) {
   if (!sheet) return { ok: false, error: 'Hoja no encontrada' };
   var fila = buscarFila_(sheet, body.alumno, body.curso, body.subgrupo, body.pacLabel);
   if (fila === -1) return { ok: false, error: 'PACX no encontrado' };
+
+  // Antes de borrar, encontrar el PAC original que abrió este PACX
+  // El label del PACX es como "PACX1(PAC3)" → el PAC original es "PAC3"
+  var pacLabel = String(body.pacLabel).trim();
+  var pacOrigLabel = '';
+  var match = pacLabel.match(/PACX\d+\((.+)\)/);
+  if (match) pacOrigLabel = match[1];
+
+  // Borrar la fila del PACX
   sheet.deleteRow(fila);
   SpreadsheetApp.flush();
+
+  // Restaurar fórmula del PAC original si existe
+  if (pacOrigLabel) {
+    var filaOrig = buscarFila_(sheet, body.alumno, body.curso, body.subgrupo, pacOrigLabel);
+    if (filaOrig !== -1) {
+      var lastCol  = sheet.getLastColumn();
+      var colProm  = lastCol - 1;
+      var colNotaFinal = lastCol;
+
+      // Leer el SGR para obtener notasBase y notasExtra
+      var lastRow = sheet.getLastRow();
+      var col1 = sheet.getRange(3, 1, lastRow - 2, 1).getValues();
+      var notasBase = 0, notasExtra = 0;
+      var pacFilas = [], filaSgr = -1;
+      var enAl = false, enCu = false, enSgr = false;
+
+      for (var ri = 0; ri < col1.length; ri++) {
+        var c0 = String(col1[ri][0]).trim();
+        var fr = ri + 3;
+        if (c0 === 'ALUMNO:' + body.alumno) { enAl=true; enCu=false; enSgr=false; continue; }
+        if (enAl && c0.indexOf('ALUMNO:') === 0) break;
+        if (enAl && c0 === 'CURSO:' + body.curso) { enCu=true; enSgr=false; continue; }
+        if (enAl && enCu && c0.indexOf('CURSO:') === 0) { enCu=false; enSgr=false; continue; }
+        if (enAl && enCu && c0.indexOf('SGR:') === 0) {
+          var sgrNom = c0.slice(4).split('|')[0].trim().toLowerCase();
+          if (sgrNom === String(body.subgrupo).trim().toLowerCase()) {
+            var pp = c0.slice(4).split('|');
+            notasBase  = Number(pp[1]) || 0;
+            notasExtra = Number(pp[2]) || 0;
+            filaSgr = fr; enSgr = true; pacFilas = []; continue;
+          }
+        }
+        if (enAl && enCu && enSgr) {
+          if (c0.indexOf('SGR:')===0||c0.indexOf('CURSO:')===0||c0.indexOf('ALUMNO:')===0) break;
+          if (c0.indexOf('PAC') === 0) pacFilas.push({ fila: fr, esExtra: c0.indexOf('PACX')===0, label: c0 });
+        }
+      }
+
+      // Restaurar fórmula PROM del PAC original
+      var totalSS  = notasBase + notasExtra;
+      var rngSS    = colLetra_(3) + filaOrig + ':' + colLetra_(2 + notasBase) + filaOrig;
+      var rngExtra = notasExtra > 0 ? colLetra_(3 + notasBase) + filaOrig + ':' + colLetra_(2 + totalSS) + filaOrig : null;
+      var rngTodo  = colLetra_(3) + filaOrig + ':' + colLetra_(2 + totalSS) + filaOrig;
+      var fProm;
+      if (notasExtra > 0) {
+        fProm = '=IFERROR(ROUND(IF(COUNTIF(' + rngExtra + ',"<>")>0,' +
+                'SUM(' + rngTodo + ')/COUNTIF(' + rngTodo + ',"<>"),' +
+                'SUM(' + rngSS + ')/' + notasBase + '),2),0)';
+      } else {
+        fProm = '=IFERROR(ROUND(SUM(' + rngSS + ')/' + notasBase + ',2),0)';
+      }
+      sheet.getRange(filaOrig, colProm).setFormula(fProm);
+
+      // Recalcular NOTA FINAL del subgrupo (ya no hay PACX)
+      if (pacFilas.length > 0) {
+        var pacNorm = pacFilas.filter(function(p){ return !p.esExtra; });
+        if (pacNorm.length > 0) {
+          var rngFinal = colLetra_(colProm) + pacNorm[0].fila + ':' + colLetra_(colProm) + pacNorm[pacNorm.length-1].fila;
+          var fFinal = '=IFERROR(ROUND(AVERAGE(' + rngFinal + '),2),0)';
+          pacNorm.forEach(function(p) {
+            sheet.getRange(p.fila, colNotaFinal).setFormula(fFinal);
+          });
+        }
+      }
+      SpreadsheetApp.flush();
+    }
+  }
+
   return { ok: true };
 }
 
@@ -1793,19 +1903,76 @@ function sincronizarUsuariosADestino_() {
   var lastCol = sheetOrig.getLastColumn();
   if (lastRow < 1) return { ok: true, mensaje: 'Hoja origen vacía' };
   var datos = sheetOrig.getRange(1, 1, lastRow, lastCol).getValues();
+
   var ssDestino;
   try {
     ssDestino = SpreadsheetApp.openById(SHEET_DESTINO_ID);
   } catch (e) {
     throw new Error('No se pudo abrir el Sheet destino (ID: ' + SHEET_DESTINO_ID + '). Detalle: ' + e.message);
   }
+
   var sheetDest = ssDestino.getSheetByName(SHEET_DESTINO_TAB);
   if (!sheetDest) sheetDest = ssDestino.insertSheet(SHEET_DESTINO_TAB);
+
+  // Respaldar columnas extra del destino (más allá de las columnas del origen)
+  // para no destruir ctmp, firma, gradoAcademico, cargo, etc.
+  var extraPorCodigo = {};
+  var extraHeaders   = [];
+  var destLastRow    = sheetDest.getLastRow();
+  var destLastCol    = sheetDest.getLastColumn();
+
+  if (destLastRow >= 1 && destLastCol > lastCol) {
+    var destData = sheetDest.getRange(1, 1, destLastRow, destLastCol).getValues();
+    extraHeaders = destData[0].slice(lastCol);
+    for (var i = 1; i < destData.length; i++) {
+      var cod = String(destData[i][0]).toLowerCase().trim();
+      if (cod) extraPorCodigo[cod] = destData[i].slice(lastCol);
+    }
+  }
+
+  // gasindex concatena el grado al nombre de docentes ("Lic. Juan Pérez").
+  // gashc los guarda por separado, así que separamos el prefijo al sincronizar.
+  var PREFIJOS_GRADO = ['Lic.', 'Mtro.', 'Mtra.', 'Dr.', 'Dra.', 'Ing.', 'Prof.'];
+  var idxGrado = extraHeaders.indexOf('gradoAcademico');
+
+  // Construir datos fusionados: columnas del origen + columnas extra restauradas
+  var mergedData = [];
+  for (var r = 0; r < datos.length; r++) {
+    var row = datos[r].slice();
+    if (r === 0) {
+      for (var h = 0; h < extraHeaders.length; h++) row.push(extraHeaders[h]);
+    } else {
+      var gradoExtraido = '';
+      var rol    = String(row[2] || '').toLowerCase().trim();
+      var nombre = String(row[3] || '').trim();
+      if (rol === 'docente') {
+        for (var p = 0; p < PREFIJOS_GRADO.length; p++) {
+          if (nombre.indexOf(PREFIJOS_GRADO[p] + ' ') === 0) {
+            gradoExtraido = PREFIJOS_GRADO[p];
+            nombre = nombre.substring(PREFIJOS_GRADO[p].length + 1).trim();
+            break;
+          }
+        }
+        row[3] = nombre; // nombre sin prefijo de grado
+      }
+      var key   = String(row[0]).toLowerCase().trim();
+      var extra = (extraPorCodigo[key] || []).slice();
+      while (extra.length < extraHeaders.length) extra.push('');
+      // Si gradoAcademico está vacío en destino, poblarlo con el grado extraído
+      if (idxGrado !== -1 && gradoExtraido && !String(extra[idxGrado] || '').trim()) {
+        extra[idxGrado] = gradoExtraido;
+      }
+      for (var e = 0; e < extraHeaders.length; e++) row.push(extra[e]);
+    }
+    mergedData.push(row);
+  }
+
+  var mergedCols = mergedData[0] ? mergedData[0].length : lastCol;
   sheetDest.clearContents();
-  sheetDest.getRange(1, 1, datos.length, lastCol).setValues(datos);
-  sheetDest.getRange(1, 1, 1, lastCol).setBackground('#0f172a').setFontColor('#ffffff').setFontWeight('bold');
+  sheetDest.getRange(1, 1, mergedData.length, mergedCols).setValues(mergedData);
+  sheetDest.getRange(1, 1, 1, mergedCols).setBackground('#0f172a').setFontColor('#ffffff').setFontWeight('bold');
   SpreadsheetApp.flush();
-  Logger.log('Sincronización OK: ' + (lastRow - 1) + ' usuarios copiados.');
+  Logger.log('Sincronización OK: ' + (lastRow - 1) + ' usuarios copiados, ' + extraHeaders.length + ' cols extra preservadas.');
   return { ok: true, usuariosSincronizados: lastRow - 1 };
 }
 
@@ -1910,4 +2077,236 @@ function guardarBranding_(b) {
   writeConfigKey_('inst_esc',  esc);
   if (logoB64) writeConfigKey_('logo_base64', logoB64);
   return { ok: true, mensaje: 'Configuración guardada en _config' };
+}
+
+// ════════════════════════════════════════════════════════
+// RECORD INFO (pacientes requeridos + consideraciones + PDF)
+// ════════════════════════════════════════════════════════
+function leerRecordInfo_() {
+  var cfg = readConfigMap_();
+  return {
+    ok:              true,
+    pacientes:       cfg['record_pacientes']       || '',
+    consideraciones: cfg['record_consideraciones'] || '',
+    pdfUrl:          cfg['record_pdf_url']         || ''
+  };
+}
+
+function guardarRecordInfo_(b) {
+  if (b.pacientes       !== undefined) writeConfigKey_('record_pacientes',       String(b.pacientes       || ''));
+  if (b.consideraciones !== undefined) writeConfigKey_('record_consideraciones', String(b.consideraciones || ''));
+  if (b.pdfUrl          !== undefined) writeConfigKey_('record_pdf_url',         String(b.pdfUrl          || ''));
+  return { ok: true, mensaje: 'Record guardado' };
+}
+
+function listarCursosTodos_() {
+  var ss     = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets().filter(function(s){ return s.getName().indexOf('_') !== 0; });
+  var seen = {}, ordered = [];
+  sheets.forEach(function(sheet) {
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 3) return;
+    var col1 = sheet.getRange(3, 1, lastRow - 2, 1).getValues();
+    col1.forEach(function(r) {
+      var v = String(r[0]).trim();
+      if (v.indexOf('CURSO:') === 0) {
+        var nombre = v.slice(6).trim();
+        if (nombre && !seen[nombre]) { seen[nombre] = true; ordered.push(nombre); }
+      }
+    });
+  });
+  return { ok: true, cursos: ordered };
+}
+
+function leerRecordsCursos_() {
+  var cfg = readConfigMap_();
+  var raw = cfg['record_cursos_data'] || '{}';
+  var data = {};
+  try { data = JSON.parse(raw); } catch(e) {}
+  return { ok: true, data: data };
+}
+
+function guardarRecordCurso_(b) {
+  var curso = String(b.curso || '').trim();
+  if (!curso) return { error: 'Curso es obligatorio' };
+  var cfg = readConfigMap_();
+  var raw = cfg['record_cursos_data'] || '{}';
+  var data = {};
+  try { data = JSON.parse(raw); } catch(e) {}
+  if (!data[curso]) data[curso] = {};
+  if (b.pacientes       !== undefined) data[curso].pacientes       = String(b.pacientes       || '');
+  if (b.consideraciones !== undefined) data[curso].consideraciones = String(b.consideraciones || '');
+  if (b.pdfUrl          !== undefined) data[curso].pdfUrl          = String(b.pdfUrl          || '');
+  if (b.ciclo           !== undefined) data[curso].ciclo           = String(b.ciclo           || '');
+  writeConfigKey_('record_cursos_data', JSON.stringify(data));
+  return { ok: true, mensaje: 'Record del curso guardado' };
+}
+
+// ════════════════════════════════════════════════════════
+// HASH SHA-256
+// ════════════════════════════════════════════════════════
+function generarHashSHA256(input) {
+  var rawHash = Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, input);
+  var txtHash = "";
+  for (var i = 0; i < rawHash.length; i++) {
+    var hashVal = rawHash[i];
+    if (hashVal < 0) hashVal += 256;
+    if (hashVal.toString(16).length == 1) txtHash += '0';
+    txtHash += hashVal.toString(16);
+  }
+  return txtHash;
+}
+
+// ════════════════════════════════════════════════════════
+// ACTUALIZAR FÓRMULAS DE PROMEDIO (SIN BORRAR DATOS)
+// ════════════════════════════════════════════════════════
+function actualizarFormulasPromedio_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets();
+  var actualizadas = 0;
+  var errores = [];
+
+  sheets.forEach(function(sheet) {
+    var nombre = sheet.getName();
+    if (nombre.indexOf('_') === 0) return;
+
+    try {
+      var lastRow = sheet.getLastRow();
+      var lastCol = sheet.getLastColumn();
+      if (lastRow < 3 || lastCol < 4) return;
+
+      var colProm      = lastCol - 1;
+      var colNotaFinal = lastCol;
+      var col1 = sheet.getRange(3, 1, lastRow - 2, 1).getValues();
+
+      var notasBase = 0, notasExtra = 0;
+      var pacFilas = [];
+      var filaSgr  = -1;
+
+      function flushSgr() {
+        if (pacFilas.length === 0) return;
+        var totalSS = notasBase + notasExtra;
+
+        var pacNorm = pacFilas.filter(function(p){ return !p.esExtra; });
+        var pacX    = pacFilas.filter(function(p){ return p.esExtra; });
+
+        var fFinal;
+        if (pacX.length > 0) {
+          var totalPACs = pacNorm.length;
+          if (totalPACs < 1) totalPACs = 1;
+          var filaIni = pacFilas[0].fila;
+          var filaFin = pacFilas[pacFilas.length-1].fila;
+          var rngTodos = colLetra_(colProm) + filaIni + ':' + colLetra_(colProm) + filaFin;
+          fFinal = '=IFERROR(ROUND(SUM(' + rngTodos + ')/' + totalPACs + ',2),0)';
+        } else if (pacNorm.length > 0) {
+          var rngFinal = colLetra_(colProm) + pacNorm[0].fila + ':' + colLetra_(colProm) + pacNorm[pacNorm.length-1].fila;
+          fFinal = '=IFERROR(ROUND(AVERAGE(' + rngFinal + '),2),0)';
+        } else {
+          return;
+        }
+
+        pacFilas.forEach(function(p) {
+          var rn = p.fila;
+          var rngSS    = colLetra_(3) + rn + ':' + colLetra_(2 + notasBase) + rn;
+          var rngExtra = notasExtra > 0 ? colLetra_(3 + notasBase) + rn + ':' + colLetra_(2 + totalSS) + rn : null;
+          var rngTodo  = colLetra_(3) + rn + ':' + colLetra_(2 + totalSS) + rn;
+
+          var tienePropioPACX = pacX.some(function(px) {
+            return px.label && px.label.indexOf('(' + p.label + ')') !== -1;
+          });
+
+          var fProm;
+          if (p.esExtra) {
+            fProm = '=IFERROR(ROUND(IF(COUNTIF(' + rngTodo + ',"<>")>0,SUM(' + rngTodo + ')/COUNTIF(' + rngTodo + ',"<>"),0),2),0)';
+          } else if (tienePropioPACX) {
+            fProm = '0';
+          } else if (notasExtra > 0) {
+            fProm = '=IFERROR(ROUND(IF(COUNTIF(' + rngExtra + ',"<>")>0,' +
+                    'SUM(' + rngTodo + ')/COUNTIF(' + rngTodo + ',"<>"),' +
+                    'SUM(' + rngSS + ')/' + notasBase + '),2),0)';
+          } else {
+            fProm = '=IFERROR(ROUND(SUM(' + rngSS + ')/' + notasBase + ',2),0)';
+          }
+
+          sheet.getRange(rn, colProm).setFormula(fProm);
+          sheet.getRange(rn, colNotaFinal).setFormula(fFinal);
+          actualizadas++;
+        });
+        pacFilas = [];
+      }
+
+      for (var ri = 0; ri < col1.length; ri++) {
+        var c0 = String(col1[ri][0]).trim();
+        var filaReal = ri + 3;
+
+        if (c0.indexOf('ALUMNO:') === 0 || c0.indexOf('CURSO:') === 0) {
+          flushSgr();
+          notasBase = 0; notasExtra = 0; filaSgr = -1;
+        } else if (c0.indexOf('SGR:') === 0) {
+          flushSgr();
+          var partes = c0.slice(4).split('|');
+          notasBase  = Number(partes[1]) || 0;
+          notasExtra = Number(partes[2]) || 0;
+          filaSgr    = filaReal;
+        } else if (c0.indexOf('PAC') === 0 && filaSgr !== -1) {
+          pacFilas.push({ fila: filaReal, esExtra: c0.indexOf('PACX') === 0, label: c0 });
+        }
+      }
+      flushSgr();
+      SpreadsheetApp.flush();
+
+    } catch(e) {
+      errores.push({ hoja: nombre, error: e.message });
+    }
+  });
+
+  return {
+    ok: true,
+    actualizadas: actualizadas,
+    errores: errores,
+    mensaje: 'Se actualizaron ' + actualizadas + ' fórmulas en ' + sheets.length + ' hojas'
+  };
+}
+
+// ════════════════════════════════════════════════════════
+// REPARAR CONFIG: Agrega maxCols a planillas existentes
+// ════════════════════════════════════════════════════════
+function repararConfigMaxCols_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheets = ss.getSheets();
+  var reparadas = 0;
+  var errores = [];
+
+  sheets.forEach(function(sheet) {
+    var nombre = sheet.getName();
+    if (nombre.indexOf('_') === 0) return;
+
+    try {
+      var lastRow = sheet.getLastRow();
+      var lastCol = sheet.getLastColumn();
+      if (lastRow < 3 || lastCol < 4) return;
+
+      var maxCols = lastCol - 4;
+      if (maxCols < 1) return;
+
+      var config = {};
+      try { config = JSON.parse(sheet.getRange(1, 1).getValue()); } catch(e) {}
+
+      if (config.maxCols !== maxCols) {
+        config.maxCols = maxCols;
+        sheet.getRange(1, 1).setValue(JSON.stringify(config));
+        reparadas++;
+      }
+    } catch(e) {
+      errores.push({ hoja: nombre, error: e.message });
+    }
+  });
+
+  SpreadsheetApp.flush();
+  return {
+    ok: true,
+    reparadas: reparadas,
+    errores: errores,
+    mensaje: 'Se repararon ' + reparadas + ' planillas con maxCols'
+  };
 }
