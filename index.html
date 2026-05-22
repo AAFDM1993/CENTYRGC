@@ -3754,7 +3754,8 @@ const dias = todosLosDias;
           const norm=s=>String(s).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
           const matchEsp=(r,en)=>{const rc=norm(r.camilla),ne=norm(en);return rc===ne||rc.startsWith(ne)||ne.startsWith(rc);};
           const rsvEsp=agendaReservas.filter(r=>norm(r.fecha)===norm(fechaStr)&&norm(r.horaInicio)===norm(hora)&&norm(r.area)===norm(area.nombre)&&matchEsp(r,esp.nombre));
-          const lleno=rsvEsp.length>=cap;
+          const capBloq=typeof capacidadBloqueada==='function'?capacidadBloqueada(fechaStr,hora,area.nombre,esp.nombre):0;
+          const lleno=rsvEsp.length>=(cap-capBloq);
           const bloq=typeof esBloqueado==='function'&&esBloqueado(fechaStr,hora,area.nombre,esp.nombre);
 
           let celda='';
@@ -4200,7 +4201,8 @@ function renderCalendarioEst(){
           const norm=s=>String(s).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
           const matchEsp=(r,en)=>{const rc=norm(r.camilla),ne=norm(en);return rc===ne||rc.startsWith(ne)||ne.startsWith(rc);};
           const rsvEsp=agendaEstReservas.filter(r=>norm(r.fecha)===norm(fechaStr)&&norm(r.horaInicio)===norm(hora)&&norm(r.area)===norm(area.nombre)&&matchEsp(r,esp.nombre));
-          const lleno=rsvEsp.length>=cap;
+          const capBloq=typeof capacidadBloqueada==='function'?capacidadBloqueada(fechaStr,hora,area.nombre,esp.nombre):0;
+          const lleno=rsvEsp.length>=(cap-capBloq);
           const bloq=typeof esBloqueado==='function'&&esBloqueado(fechaStr,hora,area.nombre,esp.nombre);
 
           let celda='';
