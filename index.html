@@ -4686,6 +4686,7 @@ function toggleEspForm(areaIdx,espIdx){
 async function crearBloqueoEspacio(areaIdx,espIdx){
   var areaNombre=agendaCfg.areas[areaIdx].nombre;
   var espNombre=agendaCfg.areas[areaIdx].espacios[espIdx].nombre;
+  var cap=agendaCfg.areas[areaIdx].espacios[espIdx].capacidad||1;
   var k=areaIdx+'-'+espIdx;
   var horaIni=vi('bef-h1-'+k)||'*';
   var horaFin=vi('bef-h2-'+k)||'';
@@ -4707,9 +4708,12 @@ async function crearBloqueoEspacio(areaIdx,espIdx){
   } else {
     fecha='*';
   }
+  var capBloq=cap>1?(parseInt(vi('bef-cap-'+k))||1):1;
+  if(capBloq<1||capBloq>cap)capBloq=1;
+  var motivo='[cap:'+capBloq+']';
   showLoader('Creando bloqueo...');
   try{
-    var r=await apiPost({action:'crearBloqueo',fecha,hora,area:areaNombre,camilla:espNombre,motivo:'Bloqueo por espacio'});
+    var r=await apiPost({action:'crearBloqueo',fecha,hora,area:areaNombre,camilla:espNombre,motivo});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Bloqueo creado','','ok');
     _espFormAbierto=null;
