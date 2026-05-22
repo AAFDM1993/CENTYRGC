@@ -1233,8 +1233,11 @@ body.rol-recepcion #hdrBtnRecord{display:none}
       <!-- Formulario nuevo bloqueo (modal) -->
       <div style="background:var(--surf2);border:1px solid var(--bd2);border-radius:12px;padding:12px;margin-bottom:10px">
         <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Nuevo bloqueo</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
-          <div class="field" style="margin:0"><label>Fecha (o vacio = siempre)</label><input class="inp" id="mbFecha" type="date"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+          <div class="field" style="margin:0"><label>Fecha inicio</label><input class="inp" id="mbFecha" type="date"></div>
+          <div class="field" style="margin:0"><label>Fecha fin (opcional)</label><input class="inp" id="mbFechaFin" type="date"></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
           <div class="field" style="margin:0"><label>Hora inicio</label><input class="inp" id="mbHora" type="time"></div>
           <div class="field" style="margin:0"><label>Hora fin (opcional)</label><input class="inp" id="mbHoraFin" type="time"></div>
         </div>
