@@ -4636,6 +4636,8 @@ async function toggleBloqueoArea(areaIdx){
     invalidateCache('leerBloqueos');
     await cargarBloqueos();
     renderAreasConfig();
+    renderListaBloqueos();
+    renderListaBloqueosModal();
     renderCalendario();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
@@ -4657,6 +4659,8 @@ async function toggleBloqueoEspacio(areaIdx,espIdx){
     invalidateCache('leerBloqueos');
     await cargarBloqueos();
     renderAreasConfig();
+    renderListaBloqueos();
+    renderListaBloqueosModal();
     renderCalendario();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
