@@ -3801,13 +3801,30 @@ function renderAreasConfig(){
 
   const html = agendaCfg.areas.map((a,i)=>{
     const espaciosHtml=(a.espacios||[]).map((esp,ei)=>{
-    const espBloq=esEspacioBloqueado(a.nombre,esp.nombre);
+    const k=i+'-'+ei;
+    const abierto=_espFormAbierto===k;
     return `
-      <div class="espacio-row">
-        <div><label>Nombre del espacio</label><input value="${esc2(esp.nombre)}" placeholder="Ej. Camilla 1" oninput="agendaCfg.areas[${i}].espacios[${ei}].nombre=this.value"></div>
-        <div><label>Capacidad (pac.)</label><input type="number" min="1" max="20" value="${esp.capacidad||1}" oninput="agendaCfg.areas[${i}].espacios[${ei}].capacidad=+this.value||1"></div>
-        <button onclick="toggleBloqueoEspacio(${i},${ei})" style="background:${espBloq?'var(--green2)':'rgba(220,38,38,.1)'};border:1px solid ${espBloq?'var(--green)':'var(--red)'};color:${espBloq?'var(--green)':'var(--red)'};border-radius:6px;padding:0;font-size:14px;cursor:pointer;width:28px;height:28px" title="${espBloq?'Desbloquear espacio':'Bloquear espacio'}">${espBloq?'&#128275;':'&#128274;'}</button>
-        <button class="area-del" onclick="delEspacio(${i},${ei})" title="Eliminar espacio">&#128465;</button>
+      <div>
+        <div class="espacio-row">
+          <div><label>Nombre del espacio</label><input value="${esc2(esp.nombre)}" placeholder="Ej. Camilla 1" oninput="agendaCfg.areas[${i}].espacios[${ei}].nombre=this.value"></div>
+          <div><label>Capacidad (pac.)</label><input type="number" min="1" max="20" value="${esp.capacidad||1}" oninput="agendaCfg.areas[${i}].espacios[${ei}].capacidad=+this.value||1"></div>
+          <button onclick="toggleEspForm(${i},${ei})" style="background:${abierto?'rgba(220,38,38,.15)':'var(--surf2)'};border:1px solid ${abierto?'var(--red)':'var(--bd)'};color:${abierto?'var(--red)':'var(--tx3)'};border-radius:6px;padding:0;font-size:14px;cursor:pointer;width:28px;height:28px" title="${abierto?'Cerrar':'Bloquear por hora'}">${abierto?'&#128275;':'&#128274;'}</button>
+          <button class="area-del" onclick="delEspacio(${i},${ei})" title="Eliminar espacio">&#128465;</button>
+        </div>
+        ${abierto?`<div style="padding:8px 10px;background:var(--red2);border:1px solid var(--red);border-radius:8px;margin-top:4px;margin-left:8px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+            <div class="field" style="margin:0"><label>Hora inicio</label><input type="time" class="inp" id="bef-h1-${i}-${ei}"></div>
+            <div class="field" style="margin:0"><label>Hora fin (opc.)</label><input type="time" class="inp" id="bef-h2-${i}-${ei}"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+            <div class="field" style="margin:0"><label>Fecha inicio</label><input type="date" class="inp" id="bef-f1-${i}-${ei}"></div>
+            <div class="field" style="margin:0"><label>Fecha fin (opc.)</label><input type="date" class="inp" id="bef-f2-${i}-${ei}"></div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button onclick="crearBloqueoEspacio(${i},${ei})" style="flex:1;background:var(--red);color:#fff;border:none;border-radius:7px;padding:7px;font-size:12px;font-weight:700;cursor:pointer">&#128274; Crear bloqueo</button>
+            <button onclick="toggleEspForm(${i},${ei})" style="background:var(--surf2);border:1px solid var(--bd);border-radius:7px;padding:7px 12px;font-size:12px;cursor:pointer">Cancelar</button>
+          </div>
+        </div>`:''}
       </div>`;
   }).join('');
 
