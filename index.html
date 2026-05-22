@@ -4634,9 +4634,7 @@ function esBloqueado(fecha, hora, area, camilla){
 function esAreaBloqueada(nombre){
   return agendaBloqueos.some(b=>b.fecha==='*'&&b.hora==='*'&&b.area===nombre&&b.camilla==='*');
 }
-function esEspacioBloqueado(areaNombre,espNombre){
-  return agendaBloqueos.some(b=>b.fecha==='*'&&b.hora==='*'&&b.area===areaNombre&&b.camilla===espNombre);
-}
+
 async function toggleBloqueoArea(areaIdx){
   const nombre=agendaCfg.areas[areaIdx].nombre;
   showLoader('Actualizando...');
@@ -4650,28 +4648,6 @@ async function toggleBloqueoArea(areaIdx){
       const r=await apiPost({action:'crearBloqueo',fecha:'*',hora:'*',area:nombre,camilla:'*',motivo:'Área bloqueada'});
       hideLoader();if(!r.ok)throw new Error(r.error);
       toast('Área bloqueada','','ok');
-    }
-    invalidateCache('leerBloqueos');
-    await cargarBloqueos();
-    renderAreasConfig();
-    renderListaBloqueosModal();
-    renderCalendario();
-  }catch(e){hideLoader();toast('Error',e.message,'err')}
-}
-async function toggleBloqueoEspacio(areaIdx,espIdx){
-  const areaNombre=agendaCfg.areas[areaIdx].nombre;
-  const espNombre=agendaCfg.areas[areaIdx].espacios[espIdx].nombre;
-  showLoader('Actualizando...');
-  try{
-    const bloq=agendaBloqueos.find(b=>b.fecha==='*'&&b.hora==='*'&&b.area===areaNombre&&b.camilla===espNombre);
-    if(bloq){
-      const r=await apiPost({action:'eliminarBloqueo',id:bloq.id});
-      hideLoader();if(!r.ok)throw new Error(r.error);
-      toast('Espacio desbloqueado','','ok');
-    }else{
-      const r=await apiPost({action:'crearBloqueo',fecha:'*',hora:'*',area:areaNombre,camilla:espNombre,motivo:'Espacio bloqueado'});
-      hideLoader();if(!r.ok)throw new Error(r.error);
-      toast('Espacio bloqueado','','ok');
     }
     invalidateCache('leerBloqueos');
     await cargarBloqueos();
