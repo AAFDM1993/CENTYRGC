@@ -4633,7 +4633,7 @@ function _matchBloqueo(b, fecha, hora, area, camilla){
 }
 
 function esBloqueado(fecha, hora, area, camilla){
-  return agendaBloqueos.some(b=>_matchBloqueo(b,fecha,hora,area,camilla));
+  return agendaBloqueos.some(b=>!(b.motivo&&b.motivo.startsWith('[cap:'))&&_matchBloqueo(b,fecha,hora,area,camilla));
 }
 
 function capacidadBloqueada(fecha,hora,area,camilla){
