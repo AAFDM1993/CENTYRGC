@@ -3821,6 +3821,7 @@ function renderAreasConfig(){
             <div class="field" style="margin:0"><label>Fecha inicio</label><input type="date" class="inp" id="bef-f1-${i}-${ei}"></div>
             <div class="field" style="margin:0"><label>Fecha fin (opc.)</label><input type="date" class="inp" id="bef-f2-${i}-${ei}"></div>
           </div>
+          ${esp.capacidad>1?`<div class="field" style="margin:0 0 8px 0"><label>Puestos a bloquear (de ${esp.capacidad})</label><input type="number" class="inp" id="bef-cap-${i}-${ei}" min="1" max="${esp.capacidad}" value="1" style="width:80px;text-align:center"></div>`:''}
           <div style="display:flex;gap:6px">
             <button onclick="crearBloqueoEspacio(${i},${ei})" style="flex:1;background:var(--red);color:#fff;border:none;border-radius:7px;padding:7px;font-size:12px;font-weight:700;cursor:pointer">&#128274; Crear bloqueo</button>
             <button onclick="toggleEspForm(${i},${ei})" style="background:var(--surf2);border:1px solid var(--bd);border-radius:7px;padding:7px 12px;font-size:12px;cursor:pointer">Cancelar</button>
