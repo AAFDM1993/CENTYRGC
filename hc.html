@@ -1263,10 +1263,13 @@ function buildEvalHTML(ev, pac, firmaHTML){
       var leyendaHTML='<div style="margin-top:12px;padding:12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">';
       leyendaHTML+='<div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:8px">Leyenda de alteraciones</div>';
       leyendaHTML+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-      if(_alts){
-        _alts.forEach(function(alt){
+      if(_alts&&_wdata){
+        var _used=new Set();
+        ['ant','post','latd','lati'].forEach(function(v){(_wdata[v]||[]).forEach(function(c){_used.add(c.altId);});});
+        _alts.filter(function(a){return _used.has(a.id);}).forEach(function(alt){
+          var _sv=alt.char.indexOf('<svg')===0;
           leyendaHTML+='<div style="display:flex;align-items:center;gap:6px;font-size:11px">';
-          leyendaHTML+='<div style="min-width:20px;height:20px;border-radius:10px;background:'+alt.color+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,.5)">'+alt.char+'</div>';
+          leyendaHTML+='<div style="'+(_sv?'width:20px;height:20px;':'min-width:20px;height:20px;')+'border-radius:10px;background:'+alt.color+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,.5)">'+alt.char+'</div>';
           leyendaHTML+='<span style="color:#475569">'+alt.lbl+'</span>';
           leyendaHTML+='</div>';
         });
@@ -1691,10 +1694,13 @@ function _buildExamenObjetivoPorCategoria(d, ev, catId){
         h+='<div style="grid-column:1/-1;margin-top:12px;padding:12px;background:#f8fafc;border-radius:8px;border:1px solid #e2e8f0">';
         h+='<div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;margin-bottom:8px">Leyenda de alteraciones</div>';
         h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-        if(_alts){
-          _alts.forEach(function(alt){
+        if(_alts&&_wdata){
+          var _used2=new Set();
+          ['ant','post','latd','lati'].forEach(function(v){(_wdata[v]||[]).forEach(function(c){_used2.add(c.altId);});});
+          _alts.filter(function(a){return _used2.has(a.id);}).forEach(function(alt){
+            var _sv=alt.char.indexOf('<svg')===0;
             h+='<div style="display:flex;align-items:center;gap:6px;font-size:11px">';
-            h+='<div style="min-width:20px;height:20px;border-radius:10px;background:'+alt.color+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,.5)">'+alt.char+'</div>';
+            h+='<div style="'+(_sv?'width:20px;height:20px;':'min-width:20px;height:20px;')+'border-radius:10px;background:'+alt.color+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,.5)">'+alt.char+'</div>';
             h+='<span style="color:#475569">'+alt.lbl+'</span>';
             h+='</div>';
           });
