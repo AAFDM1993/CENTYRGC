@@ -4620,35 +4620,27 @@ async function cargarBloqueos(fechaInicio, fechaFin){
   }catch(e){ agendaBloqueos=[]; }
 }
 
+function _matchBloqueo(b, fecha, hora, area, camilla){
+  const fOk = b.fecha==='*' || (b.fecha.includes('/')
+    ? (()=>{ const [fi,ff]=b.fecha.split('/'); return fi&&ff&&fecha>=fi&&fecha<=ff; })()
+    : b.fecha===fecha);
+  const hOk = b.hora==='*' || (b.hora.includes('-')
+    ? (()=>{ const [ini,fin]=b.hora.split('-'); return ini&&fin&&hora>=ini&&hora<fin; })()
+    : b.hora===hora);
+  const aOk = b.area==='*' || b.area===area;
+  const cOk = b.camilla==='*' || b.camilla===camilla;
+  return fOk && hOk && aOk && cOk;
+}
+
 function esBloqueado(fecha, hora, area, camilla){
-  return agendaBloqueos.some(b=>{
-    const fOk = b.fecha==='*' || (b.fecha.includes('/')
-      ? (()=>{ const [fi,ff]=b.fecha.split('/'); return fi&&ff&&fecha>=fi&&fecha<=ff; })()
-      : b.fecha===fecha);
-    const hOk = b.hora==='*' || (b.hora.includes('-')
-      ? (()=>{ const [ini,fin]=b.hora.split('-'); return ini&&fin&&hora>=ini&&hora<fin; })()
-      : b.hora===hora);
-    const aOk = b.area==='*'  || b.area===area;
-    const cOk = b.camilla==='*' || b.camilla===camilla;
-    return fOk && hOk && aOk && cOk;
-  });
+  return agendaBloqueos.some(b=>_matchBloqueo(b,fecha,hora,area,camilla));
 }
 
 function capacidadBloqueada(fecha,hora,area,camilla){
   return agendaBloqueos.reduce(function(sum,b){
-    if(!b.motivo||!b.motivo.startsWith('[cap:'))return sum;
-    var m=b.motivo.match(/^\[cap:(\d+)\]/);
+    var m=b.motivo&&b.motivo.match(/^\[cap:(\d+)\]/);
     if(!m)return sum;
-    var n=parseInt(m[1]);
-    var fOk=b.fecha==='*'||(b.fecha.includes('/')
-      ?(function(){var p=b.fecha.split('/');return p[0]&&p[1]&&fecha>=p[0]&&fecha<=p[1];})()
-      :b.fecha===fecha);
-    var hOk=b.hora==='*'||(b.hora.includes('-')
-      ?(function(){var p=b.hora.split('-');return p[0]&&p[1]&&hora>=p[0]&&hora<p[1];})()
-      :b.hora===hora);
-    var aOk=b.area==='*'||b.area===area;
-    var cOk=b.camilla==='*'||b.camilla===camilla;
-    return (fOk&&hOk&&aOk&&cOk)?sum+n:sum;
+    return _matchBloqueo(b,fecha,hora,area,camilla)?sum+parseInt(m[1]):sum;
   },0);
 }
 
