@@ -4591,6 +4591,7 @@ function mostrarSecEst(sec){
 // BLOQUEOS DE AGENDA
 // ════════════════════════════════════════════════════════
 let agendaBloqueos = [];
+var _espFormAbierto = null;
 
 async function cargarBloqueos(fechaInicio, fechaFin){
   try{
@@ -4655,6 +4656,49 @@ async function toggleBloqueoEspacio(areaIdx,espIdx){
       hideLoader();if(!r.ok)throw new Error(r.error);
       toast('Espacio bloqueado','','ok');
     }
+    invalidateCache('leerBloqueos');
+    await cargarBloqueos();
+    renderAreasConfig();
+    renderListaBloqueosModal();
+    renderCalendario();
+  }catch(e){hideLoader();toast('Error',e.message,'err')}
+}
+
+function toggleEspForm(areaIdx,espIdx){
+  var key=areaIdx+'-'+espIdx;
+  _espFormAbierto=(_espFormAbierto===key)?null:key;
+  renderAreasConfig();
+}
+async function crearBloqueoEspacio(areaIdx,espIdx){
+  var areaNombre=agendaCfg.areas[areaIdx].nombre;
+  var espNombre=agendaCfg.areas[areaIdx].espacios[espIdx].nombre;
+  var k=areaIdx+'-'+espIdx;
+  var horaIni=vi('bef-h1-'+k)||'*';
+  var horaFin=vi('bef-h2-'+k)||'';
+  var hora;
+  if(horaIni!=='*'&&horaFin){
+    if(horaFin<=horaIni){toast('Error','La hora fin debe ser posterior a la hora inicio','err');return;}
+    hora=horaIni+'-'+horaFin;
+  } else {
+    hora=horaIni;
+  }
+  var fechaIni=vi('bef-f1-'+k)||'';
+  var fechaFin=vi('bef-f2-'+k)||'';
+  var fecha;
+  if(fechaIni&&fechaFin){
+    if(fechaFin<fechaIni){toast('Error','La fecha fin debe ser igual o posterior a la fecha inicio','err');return;}
+    fecha=fechaIni+'/'+fechaFin;
+  } else if(fechaIni){
+    fecha=fechaIni;
+  } else {
+    fecha='*';
+  }
+  showLoader('Creando bloqueo...');
+  try{
+    var r=await apiPost({action:'crearBloqueo',fecha,hora,area:areaNombre,camilla:espNombre,motivo:'Bloqueo por espacio'});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast('Bloqueo creado','','ok');
+    _espFormAbierto=null;
     invalidateCache('leerBloqueos');
     await cargarBloqueos();
     renderAreasConfig();
