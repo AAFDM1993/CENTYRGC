@@ -1221,6 +1221,9 @@ body.rol-recepcion #hdrBtnRecord{display:none}
         <div class="field" style="margin:0"><label>T2 inicio</label><input class="inp" id="calFranja2IniModal" value="14:00" type="time"></div>
         <div class="field" style="margin:0"><label>T2 fin</label><input class="inp" id="calFranja2FinModal" value="19:00" type="time"></div>
       </div>
+      <div class="slbl" style="margin-top:14px">Aviso ultima hora de turno</div>
+      <textarea class="inp" id="cfgMensajeUltimaHora" rows="2" placeholder="Ej: Ultimo horario del turno — confirmar disponibilidad" style="resize:vertical;min-height:56px;width:100%;box-sizing:border-box"></textarea>
+      <div style="font-size:11px;color:var(--tx4);margin-top:4px;margin-bottom:12px">Aparece al reservar en el ultimo slot de T1 o T2. Dejar vacio para desactivar.</div>
       <button class="btn-sm green" onclick="guardarAgendaConfig();cerrarConfigAgenda();" style="width:100%;min-height:40px">Guardar configuracion</button>
     </div>
 
@@ -1477,6 +1480,20 @@ body.rol-recepcion #hdrBtnRecord{display:none}
   </div>
 </div>
 
+<!-- Overlay aviso informativo (ultima hora de turno) -->
+<div id="infoOverlay" style="display:none;position:fixed;inset:0;background:rgba(10,22,40,.6);z-index:9999;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+  <div style="background:var(--surf);border-radius:20px;padding:28px 28px 22px;max-width:360px;width:90%;box-shadow:0 24px 60px rgba(0,0,0,.35);border:1px solid var(--bd2)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <span style="font-size:22px">&#9888;&#65039;</span>
+      <span style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--amber)">Aviso</span>
+    </div>
+    <p id="infoMsg" style="font-size:14px;color:var(--tx);line-height:1.6;margin-bottom:20px;white-space:pre-line"></p>
+    <div style="display:flex;justify-content:flex-end">
+      <button id="infoOk" style="background:var(--amber);border:none;border-radius:12px;padding:9px 24px;font-size:13px;font-weight:700;color:#fff;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif">Entendido</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ==========================
 // ====================================================
@@ -1500,6 +1517,20 @@ function confirmDialog(msg){
     function onNo(){cleanup(false);}
     document.getElementById('confirmYes').addEventListener('click',onYes);
     document.getElementById('confirmNo').addEventListener('click',onNo);
+  });
+}
+
+function infoDialog(msg){
+  return new Promise(function(resolve){
+    var ov=document.getElementById('infoOverlay');
+    document.getElementById('infoMsg').textContent=msg;
+    ov.style.display='flex';
+    function onOk(){
+      ov.style.display='none';
+      document.getElementById('infoOk').removeEventListener('click',onOk);
+      resolve();
+    }
+    document.getElementById('infoOk').addEventListener('click',onOk);
   });
 }
 
@@ -2717,8 +2748,8 @@ function renderEstNotas(resultados) {
           const pc = 'pc' + (p !== '' && p !== undefined ? (p >= 11 ? ' ok' : ' no') : '');
           
           return `<tr>
-            <td class="td-pac" style="display:none">${pac.label}</td>
-            <td style="font-size:12px;font-weight:500;padding:7px 8px;color:var(--tx2)">${pac.nombre || '-'}</td>
+            <td class="td-pac" style="display:none">${_esc(pac.label)}</td>
+            <td style="font-size:12px;font-weight:500;padding:7px 8px;color:var(--tx2)">${_esc(pac.nombre || '-')}</td>
             ${tSS}${tEx}
             <td style="text-align:center"><span class="pc" style="background:var(--n800);color:var(--n300)">${ps !== '' && ps !== undefined ? ps : '-'}</span></td>
             <td style="display:none"></td>
@@ -2762,7 +2793,7 @@ function mostrarDocenteNota(td){
   popup.style.cssText = 'position:fixed;background:var(--surf);border:1px solid var(--n300);border-radius:12px;padding:10px 14px;box-shadow:0 6px 24px rgba(10,22,40,.2);z-index:9999;min-width:160px;max-width:240px';
   popup.innerHTML = doc
     ? `<div style="font-size:10px;color:var(--tx4);text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:4px">&#128203; Registrado por</div>
-       <div style="font-size:14px;font-weight:700;color:var(--n500)">${doc}</div>`
+       <div style="font-size:14px;font-weight:700;color:var(--n500)">${_esc(doc)}</div>`
     : `<div style="font-size:10px;color:var(--tx4);text-transform:uppercase;letter-spacing:.7px;font-weight:700;margin-bottom:4px">&#128203; Registrado por</div>
        <div style="font-size:12px;color:var(--tx3)">Sin registro disponible</div>`;
   document.body.appendChild(popup);
@@ -3489,7 +3520,7 @@ g('passModal')&&g('passModal').addEventListener('click',function(e){
 // ════════════════════════════════════════════════════════
 // AGENDA / CALENDARIO
 // ════════════════════════════════════════════════════════
-let agendaCfg   = { areas:[], franjas:[{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}] };
+let agendaCfg   = { areas:[], franjas:[{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}], mensajeUltimaHora:'' };
 let agendaReservas = [];
 let calFechaBase   = new Date();
 let rsvPendiente   = null;
@@ -3529,6 +3560,15 @@ function generarSlots(franjas, duracionMin){
     }
   });
   return slots;
+}
+
+function esUltimaHoraFranja(hora, franjas, durMin){
+  const dur=(durMin&&durMin>0)?durMin:60;
+  return (franjas||[]).some(function(fr){
+    const end=timeToMin(fr.fin);
+    const lastStart=end-dur;
+    return lastStart>=timeToMin(fr.inicio)&&timeToMin(hora)===lastStart;
+  });
 }
 
 // ── Carga inicial ─────────────────────────────────────────
@@ -3858,6 +3898,7 @@ function renderAreasConfig(){
     const frIdx=Math.floor(i/2); const tipo=i%2===0?'inicio':'fin';
     if(elModal) elModal.value=(f[frIdx]||{})[tipo]||'';
   });
+  const elMsg=g('cfgMensajeUltimaHora');if(elMsg) elMsg.value=agendaCfg.mensajeUltimaHora||'';
 }
 function addArea(){
   const inputModal = g('newAreaNomModal');
@@ -3926,6 +3967,7 @@ async function guardarAgendaConfig(){
     if(ini&&fin) f.push({inicio:ini,fin:fin});
   });
   if(!f.length) f.push({inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'});
+  agendaCfg.mensajeUltimaHora = (document.getElementById('cfgMensajeUltimaHora')||{}).value||'';
   showLoader('Guardando configuracion...');
   try{
     const r=await apiPost({action:'guardarAgendaConfig',config:agendaCfg});
@@ -3971,7 +4013,13 @@ function ocultarOverlayReservando(){
 }
 
 // ── Reservar slot ─────────────────────────────────────────
-function abrirReservaEspacio(fecha,hora,area,espacio,capacidad,fechaLabel){
+async function abrirReservaEspacio(fecha,hora,area,espacio,capacidad,fechaLabel){
+  const _msg=agendaCfg.mensajeUltimaHora||'';
+  if(_msg){
+    const _aObj=agendaCfg.areas.find(function(a){return a.nombre===area;});
+    const _dur=_aObj?(_aObj.duracion||60):60;
+    if(esUltimaHoraFranja(hora,agendaCfg.franjas,_dur)) await infoDialog(_msg);
+  }
   rsvPendiente={fecha,hora,area,camilla:espacio,capacidad,esEstudiante:false};
   g('reservaModalTitle').textContent='Reservar \xb7 '+area+' \xb7 '+espacio;
   g('reservaModalSub').textContent=fechaLabel+' \xb7 '+hora+' hs';
@@ -4246,7 +4294,13 @@ function renderCalendarioEst(){
 }
 
 
-function abrirReservaEstEsp(fecha,hora,area,espacio,capacidad,fechaLabel){
+async function abrirReservaEstEsp(fecha,hora,area,espacio,capacidad,fechaLabel){
+  const _msg=agendaCfg.mensajeUltimaHora||'';
+  if(_msg){
+    const _aObj=agendaCfg.areas.find(function(a){return a.nombre===area;});
+    const _dur=_aObj?(_aObj.duracion||60):60;
+    if(esUltimaHoraFranja(hora,agendaCfg.franjas,_dur)) await infoDialog(_msg);
+  }
   rsvPendiente={fecha,hora,area,camilla:espacio,capacidad,esEstudiante:true};
   g('reservaModalTitle').textContent='Reservar \xb7 '+area+' \xb7 '+espacio;
   g('reservaModalSub').textContent=fechaLabel+' \xb7 '+hora+' hs';
