@@ -204,10 +204,17 @@ async function eliminarReservaHoy(fecha, hora, area, camilla){
     const r = await apiPost({action:'eliminarReserva', fecha, horaInicio:hora, area, camilla});
     hideLoader(); if(!r.ok) throw new Error(r.error);
     toast('Reserva cancelada','','ok');
-    invalidateCache('leerReservas');
-    await cargarReservasSemana();
+    // Actualización optimista: elimina de memoria y re-renderiza sin esperar re-fetch
+    const _n=s=>String(s).trim().toLowerCase();
+    agendaReservas=agendaReservas.filter(rv=>!(
+      _n(rv.fecha)===_n(fecha)&&_n(rv.horaInicio)===_n(hora)&&
+      _n(rv.area)===_n(area)&&_n(rv.camilla)===_n(camilla)
+    ));
     renderCalendario();
-    verReservasHoy(); // refrescar el panel
+    verReservasHoy();
+    // Sincronizar con el servidor en background
+    invalidateCache('leerReservas');
+    cargarReservasSemana();
   }catch(e){ hideLoader(); toast('Error', e.message, 'err'); }
 }   
 // ── Renderizar calendario (admin + docente) ───────────────
@@ -577,8 +584,16 @@ async function pedirEliminar(fecha,hora,area,camilla){
     const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Reserva cancelada','','ok');
+    // Actualización optimista: elimina de memoria y re-renderiza sin esperar re-fetch
+    const _n=s=>String(s).trim().toLowerCase();
+    agendaReservas=agendaReservas.filter(rv=>!(
+      _n(rv.fecha)===_n(fecha)&&_n(rv.horaInicio)===_n(hora)&&
+      _n(rv.area)===_n(area)&&_n(rv.camilla)===_n(camilla)
+    ));
+    renderCalendario();
+    // Sincronizar con el servidor en background
     invalidateCache('leerReservas');
-    await cargarReservasSemana();renderCalendario();
+    cargarReservasSemana();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
 
@@ -1107,8 +1122,16 @@ async function eliminarReservaLista(fecha,hora,area,camilla){
     const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Reserva cancelada','','ok');
+    // Actualización optimista
+    const _n=s=>String(s).trim().toLowerCase();
+    agendaReservas=agendaReservas.filter(rv=>!(
+      _n(rv.fecha)===_n(fecha)&&_n(rv.horaInicio)===_n(hora)&&
+      _n(rv.area)===_n(area)&&_n(rv.camilla)===_n(camilla)
+    ));
+    renderCalendario();
     invalidateCache('leerReservas');
-    await cargarReservasSemana();renderCalendario();cargarListaReservas();
+    cargarReservasSemana();
+    cargarListaReservas();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
 
