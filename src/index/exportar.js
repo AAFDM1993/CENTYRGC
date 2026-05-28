@@ -1,0 +1,369 @@
+// ── exportar.js: exportación a PDF y Excel ─────────────────────────────────
+// Depende de: core.js (g, vi, esc, toast, showLoader, hideLoader)
+//             session.js (session)
+//             api.js (apiGet, apiGetCached)
+//             config-index.js (logoParaPDF_ usa applyBranding)
+
+// ── EXPORTAR PDF ─────────────────────────────────────────────
+let expSelHoja=null, expResumen=null, expSelCurso=null;
+
+async function cargarHojasExport(){
+  const box=g('expCursosList');if(!box)return;
+  box.innerHTML='<div class="empty">Cargando cursos...</div>';
+  expSelCurso=null;expResumenCombinado=null;
+  const pb=g('resumenPreviewBox');if(pb)pb.style.display='none';
+  showLoader('Escaneando todas las hojas...');
+  try{
+    const rHojas=await apiGetCached('listarHojas');
+    if(!rHojas.ok)throw new Error(rHojas.error);
+    const EXCLUIR=['Casilleros','_usuarios','Log'];
+    const hojasFiltradas=rHojas.hojas.filter(h=>EXCLUIR.indexOf(h.nombre)<0);
+    if(!hojasFiltradas.length){hideLoader();box.innerHTML='<div class="empty">Sin hojas creadas</div>';return;}
+
+    // Escanear todas las hojas para obtener cursos únicos
+    const cursosMap={}; // { nombreCurso: [{hoja, ciclo, cfg}] }
+    for(let i=0;i<hojasFiltradas.length;i++){
+      const hn=hojasFiltradas[i].nombre;
+      try{
+        const r=await apiGetCached('resumenHoja',{hoja:hn});
+        if(!r.ok)continue;
+        const cfg=r.config||{};
+        const ciclo=cfg.ciclo||extraerCicloDeNombre(hn)||hn;
+        (r.cursos||[]).forEach(cu=>{
+          if(!cursosMap[cu.nombre]) cursosMap[cu.nombre]=[];
+          cursosMap[cu.nombre].push({hoja:hn,ciclo,cfg,alumnos:cu.alumnos});
+        });
+      }catch(e){}
+    }
+    hideLoader();
+    const nombresCursos=Object.keys(cursosMap).sort((a,b)=>a.localeCompare(b,'es'));
+    if(!nombresCursos.length){box.innerHTML='<div class="empty">Sin cursos encontrados</div>';return;}
+    // Guardar mapa global para usarlo en selExpCurso sin re-escanear
+    window._expCursosMap=cursosMap;
+    renderExpCursosList(nombresCursos,cursosMap);
+  }catch(e){hideLoader();box.innerHTML=`<div class="hint">Error: ${e.message}</div>`;}
+}
+
+function renderExpCursosList(nombres, cursosMap){
+  const box=g('expCursosList');if(!box)return;
+  box.innerHTML=nombres.map(nombre=>{
+    const grupos=cursosMap[nombre]||[];
+    const ciclos=[...new Set(grupos.map(g=>g.ciclo))].sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
+    const totalAlumnos=grupos.reduce((s,g)=>s+g.alumnos.length,0);
+    const sel=expSelCurso===nombre;
+    return `<div class="exp-hoja-item ${sel?'sel':''}" onclick="selExpCurso('${esc(nombre)}')">
+      <div class="ck">${sel?'&#10003;':' '}</div>
+      <div style="flex:1;min-width:0">
+        <div class="exp-hoja-name">${nombre}</div>
+        <div class="exp-hoja-meta">${ciclos.join(', ')} &middot; ${totalAlumnos} alumnos</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderExpHojas(){
+  const box=g('expHojasList');if(!box)return;
+  box.innerHTML=expHojas.map((h,i)=>{
+    const sel=expSelHoja===h.nombre;
+    return `<div class="exp-hoja-item ${sel?'sel':''}" onclick="selExpHoja('${esc(h.nombre)}')">
+      <div class="ck">${sel?'v':' '}</div>
+      <span class="exp-hoja-name">${h.nombre}</span>
+      <span class="exp-hoja-meta">${h.alumnos} alumnos</span>
+    </div>`;
+  }).join('');
+}
+
+async function selExpHoja(nombre){
+  expSelHoja=nombre;expSelCurso=null;expResumen=null;
+  renderExpHojas();
+  const cb=g('expCursosBox');if(cb)cb.style.display='none';
+  const pb=g('resumenPreviewBox');if(pb)pb.style.display='none';
+  showLoader('Cargando resumen...');
+  try{
+    const r=await apiGetCached('resumenHoja',{hoja:nombre});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    expResumen=r;
+    renderExpCursos();
+    if(cb)cb.style.display='block';
+  }catch(e){hideLoader();toast('Error al cargar resumen',e.message,'err')}
+}
+
+function renderExpCursos(){
+  const box=g('expCursosList');if(!box||!expResumen)return;
+  const cursos=expResumen.cursos||[];
+  if(!cursos.length){box.innerHTML='<div class="empty">Sin cursos en esta hoja</div>';return}
+  box.innerHTML=cursos.map((cu,i)=>{
+    const sel=expSelCurso===cu.nombre;
+    return `<div class="exp-hoja-item ${sel?'sel':''}" onclick="selExpCurso('${esc(cu.nombre)}')">
+      <div class="ck">${sel?'v':' '}</div>
+      <span class="exp-hoja-name">${cu.nombre}</span>
+      <span class="exp-hoja-meta">${cu.alumnos.length} alumnos</span>
+    </div>`;
+  }).join('');
+}
+
+function selExpCurso(nombre){
+  expSelCurso=nombre;
+  const pb=g('resumenPreviewBox');if(pb)pb.style.display='none';
+  if(window._expCursosMap){
+    const nombres=Object.keys(window._expCursosMap).sort((a,b)=>a.localeCompare(b,'es'));
+    renderExpCursosList(nombres,window._expCursosMap);
+  }
+  if(window._expCursosMap&&window._expCursosMap[nombre]){
+    const grupos=window._expCursosMap[nombre];
+    // Combinar todos los alumnos en UNA sola lista sin separar por ciclo/hoja
+    const todosAlumnos=[];
+    grupos.forEach(gr=>{
+      gr.alumnos.forEach(al=>{
+        todosAlumnos.push({
+          nombre:al.nombre,
+          codigo:al.codigo,
+          promFinal:al.promFinal,
+          notaApro:Number((gr.cfg||{}).notaApro)||11
+        });
+      });
+    });
+    todosAlumnos.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
+    expResumenCombinado={curso:nombre,alumnos:todosAlumnos,grupos};
+    renderResumenPreviewCombinado();
+    if(pb)pb.style.display='block';
+  }
+}
+
+// Nuevo: busca el mismo nombre de curso en todas las hojas y los agrupa por ciclo
+let expResumenCombinado = null; // { curso, grupos: [{ciclo, hoja, cfg, alumnos}] }
+
+async function cargarResumenCursoCombinado(nombreCurso){
+  const pb=g('resumenPreviewBox');if(pb)pb.style.display='none';
+  showLoader('Buscando curso en todas las hojas...');
+  try{
+    // Cargar todas las hojas
+    const rHojas=await apiGetCached('listarHojas');
+    if(!rHojas.ok)throw new Error(rHojas.error);
+    const hojasFiltradas=rHojas.hojas.filter(h=>['Casilleros','_usuarios','Log'].indexOf(h.nombre)<0);
+
+    const grupos=[];
+    for(let i=0;i<hojasFiltradas.length;i++){
+      const hn=hojasFiltradas[i].nombre;
+      try{
+        const r=await apiGetCached('resumenHoja',{hoja:hn});
+        if(!r.ok)continue;
+        const curso=r.cursos.find(c=>c.nombre===nombreCurso);
+        if(!curso)continue; // esta hoja no tiene ese curso
+        const cfg=r.config||{};
+        // Determinar ciclo: primero cfg.ciclo, luego intentar extraerlo del nombre de la hoja
+        const ciclo=cfg.ciclo||extraerCicloDeNombre(hn)||hn;
+        grupos.push({ciclo, hoja:hn, cfg, alumnos:curso.alumnos});
+      }catch(e){ /* hoja con error, saltar */ }
+    }
+
+    hideLoader();
+    if(!grupos.length){
+      toast('El curso "'+nombreCurso+'" no existe en ninguna hoja','','warn');
+      return;
+    }
+    // Ordenar grupos por ciclo (numérico si es posible)
+    grupos.sort((a,b)=>a.ciclo.localeCompare(b.ciclo,'es',{numeric:true}));
+    expResumenCombinado={curso:nombreCurso, grupos};
+    renderResumenPreviewCombinado();
+    if(pb)pb.style.display='block';
+  }catch(e){
+    hideLoader();toast('Error al buscar curso',e.message,'err');
+  }
+}
+
+// Extrae el ciclo romano del nombre de la hoja: "V Ciclo 2025-I" → "V Ciclo"
+function extraerCicloDeNombre(nombre){
+  const m=nombre.match(/^((?:I{1,3}|IV|VI{0,3}|IX|X|XI|XII|XIV|XV|XVI|XVII|XVIII|XIX|XX)\s+Ciclo)/i);
+  return m?m[1]:null;
+}
+
+function renderResumenPreviewCombinado(){
+  const tbl=g('resumenTable');if(!tbl||!expResumenCombinado)return;
+  if(!expResumenCombinado.alumnos||!expResumenCombinado.alumnos.length){
+    tbl.innerHTML='<div class="empty">Sin datos</div>';return;
+  }
+  let html='<table>';
+  html+=`<thead><tr>
+    <th style="width:36px">#</th>
+    <th style="width:100px">Codigo</th>
+    <th>Apellidos y Nombres</th>
+    <th style="width:80px;text-align:center">Prom.</th>
+  </tr></thead><tbody>`;
+  expResumenCombinado.alumnos.forEach((al,i)=>{
+    const p=al.promFinal;
+    const apro=al.notaApro||11;
+    const cls=p!==''&&p!==undefined?(p>=apro?'ok':'no'):'';
+    const color=cls==='ok'?'var(--green)':cls==='no'?'var(--red)':'var(--tx3)';
+    html+=`<tr>
+      <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-size:12px;color:var(--tx3);text-align:center">${i+1}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-family:'DM Mono',monospace;font-size:11px;color:var(--n500)">${al.codigo||'-'}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-size:12px;font-weight:600">${al.nombre}</td>
+      <td style="padding:7px 12px;border-bottom:1px solid var(--bd2);font-family:'DM Mono',monospace;font-weight:700;text-align:center;color:${color}">${p!==''&&p!==undefined?p:'-'}</td>
+    </tr>`;
+  });
+  html+='</tbody></table>';
+  tbl.innerHTML=html;
+}
+
+// Convierte el logo guardado a version negra para PDF.
+// Estrategia:
+//   - Si el PNG tiene fondo transparente (alfa < 255 en algun pixel):
+//       pixels visibles (alfa > 10) → negro puro, mantiene alfa original
+//   - Si la imagen es solida (JPEG o PNG sin transparencia):
+//       usa luminancia invertida como alfa (blanco → invisible, oscuro → opaco negro)
+async function logoParaPDF_(){
+  const b64=g('cfgLogoB64')?g('cfgLogoB64').textContent:'';
+  if(!b64) return '';
+  return new Promise(function(resolve){
+    const img=new Image();
+    img.onload=function(){
+      const canvas=document.createElement('canvas');
+      canvas.width=img.width; canvas.height=img.height;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0);
+      const imgData=ctx.getImageData(0,0,canvas.width,canvas.height);
+      const d=imgData.data;
+
+      // Detectar si tiene fondo transparente
+      let tieneTransp=false;
+      for(let i=3;i<d.length;i+=4){ if(d[i]<255){tieneTransp=true;break;} }
+
+      for(let i=0;i<d.length;i+=4){
+        const alfa=d[i+3];
+        if(tieneTransp){
+          // PNG con transparencia: pixels visibles → negro, conservar alfa
+          if(alfa>10){ d[i]=0; d[i+1]=0; d[i+2]=0; }
+          else { d[i+3]=0; } // pixel transparente → dejarlo transparente
+        } else {
+          // Imagen solida (JPEG / PNG sin alpha):
+          // Usar luminancia invertida como canal alfa para que lo blanco desaparezca
+          const lum=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+          d[i]=0; d[i+1]=0; d[i+2]=0;
+          d[i+3]=Math.round(255-lum); // blanco(255)→alfa 0, negro(0)→alfa 255
+        }
+      }
+      ctx.putImageData(imgData,0,0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror=function(){ resolve(''); };
+    img.src=b64;
+  });
+}
+
+async function exportarPDF(){
+  // Validación corregida — solo necesita curso seleccionado y datos combinados
+  if(!expSelCurso||!expResumenCombinado||!expResumenCombinado.alumnos||!expResumenCombinado.alumnos.length){
+    toast('Selecciona un curso primero','','warn');return;
+  }
+  const fecha=new Date().toLocaleDateString('es-PE',{year:'numeric',month:'long',day:'numeric'});
+  // Obtener logo guardado y convertirlo a negro para el PDF
+  const logoUrl=await logoParaPDF_();
+  // Datos institucionales desde el panel de configuración
+  const instUniv=(g('cfgUniv')||{}).value||'';
+  const instFac =(g('cfgFac') ||{}).value||'';
+  const instEsc =(g('cfgEsc') ||{}).value||'';
+  // Semestre del primer grupo que lo tenga
+  const semestre=(expResumenCombinado.grupos||[]).map(g=>g.cfg&&g.cfg.semestre).find(s=>s)||'';
+  const apro=expResumenCombinado.alumnos[0]&&expResumenCombinado.alumnos[0].notaApro||11;
+ 
+  // Filas sin columna de ciclo
+  let filas='';
+  expResumenCombinado.alumnos.forEach((al,i)=>{
+    const p=al.promFinal;
+    const aprobado=p!==''&&p!==undefined&&p>=al.notaApro;
+    const desaprobado=p!==''&&p!==undefined&&p<al.notaApro;
+    const color=aprobado?'#059669':desaprobado?'#dc2626':'#64748b';
+    filas+=`<tr>
+      <td style="text-align:center;color:#64748b;font-size:11px;padding:7px 10px">${i+1}</td>
+      <td style="font-family:monospace;font-size:11px;color:#1d4ed8;padding:7px 10px">${al.codigo||'-'}</td>
+      <td style="font-weight:600;font-size:12px;padding:7px 10px">${al.nombre}</td>
+      <td style="text-align:center;font-family:monospace;font-weight:700;font-size:13px;color:${color};padding:7px 10px">${p!==''&&p!==undefined?p:'-'}</td>
+    </tr>`;
+  });
+ 
+  // Resumen estadístico al pie
+  const conNota=expResumenCombinado.alumnos.filter(a=>a.promFinal!==''&&a.promFinal!==undefined);
+  const aprobados=conNota.filter(a=>a.promFinal>=a.notaApro).length;
+  const pct=conNota.length?Math.round(aprobados/conNota.length*100):0;
+  const total=expResumenCombinado.alumnos.length;
+ 
+  const htmlPDF=`<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<title>Registro de Notas - ${expSelCurso}</title>
+<style>
+@page{size:A4;margin:15mm 14mm 18mm 14mm}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#0f172a}
+.hdr-pdf{display:flex;align-items:center;gap:18px;padding-bottom:14px;border-bottom:2px solid #0a1628;margin-bottom:18px}
+.logo-box{width:80px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.logo-box img{max-width:80px;max-height:70px;object-fit:contain}
+.inst-info{flex:1}
+.inst-univ{font-size:10px;font-weight:700;color:#0a1628;text-transform:uppercase;letter-spacing:.6px;line-height:1.6}
+.inst-fac{font-size:9.5px;color:#334155;text-transform:uppercase;letter-spacing:.5px;line-height:1.6}
+.inst-esc{font-size:9.5px;color:#1d4ed8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;line-height:1.6}
+.titulo{margin-bottom:14px}
+.titulo h1{font-size:15px;font-weight:800;color:#0a1628;margin-bottom:3px}
+.titulo h2{font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:8px}
+.meta{display:flex;gap:18px;font-size:11px;color:#334155;flex-wrap:wrap}
+.meta-item{display:flex;gap:5px}.meta-item strong{color:#0a1628}
+table{width:100%;border-collapse:collapse;margin-top:6px}
+thead th{background:#0a1628;color:#fff;padding:9px 10px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.3px}
+thead th.c{text-align:center}
+tbody tr:nth-child(even){background:#f8faff}tbody tr:nth-child(odd){background:#fff}
+tbody td{border-bottom:1px solid #e2e8f0;vertical-align:middle}
+tbody tr:last-child td{border-bottom:2px solid #0a1628}
+.stats-box{margin-top:20px;padding:12px 16px;background:#f8faff;border:1px solid #e2e8f0;border-radius:8px;display:flex;gap:28px;flex-wrap:wrap;page-break-inside:avoid}
+.stat-item{text-align:center}
+.stat-num{font-size:22px;font-weight:800;line-height:1.1}
+.stat-lbl{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.stat-apro{color:#059669}.stat-desapro{color:#dc2626}.stat-total{color:#0a1628}.stat-pct{color:#1d4ed8}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body>
+<div class="hdr-pdf">
+  <div class="logo-box"><img src="${logoUrl}" alt="Logo" onerror="this.style.display='none'"></div>
+  <div class="inst-info">
+    ${instUniv?`<div class="inst-univ">${instUniv}</div>`:''}
+    ${instFac?`<div class="inst-fac">${instFac}</div>`:''}
+    ${instEsc?`<div class="inst-esc">${instEsc}</div>`:''}
+  </div>
+</div>
+<div class="titulo">
+  <h1>${expSelCurso}</h1>
+  <h2>Registro consolidado de notas</h2>
+  <div class="meta">
+    ${semestre?`<div class="meta-item"><strong>Semestre:</strong><span>${semestre}</span></div>`:''}
+    <div class="meta-item"><strong>Total alumnos:</strong><span>${total}</span></div>
+    <div class="meta-item"><strong>Fecha:</strong><span>${fecha}</span></div>
+  </div>
+</div>
+<table>
+  <thead><tr>
+    <th class="c" style="width:34px">#</th>
+    <th style="width:100px">Codigo</th>
+    <th>Apellidos y Nombres</th>
+    <th class="c" style="width:90px">Prom. Final</th>
+  </tr></thead>
+  <tbody>${filas}</tbody>
+</table>
+<div class="stats-box">
+  <div class="stat-item"><div class="stat-num stat-total">${total}</div><div class="stat-lbl">Total</div></div>
+  <div class="stat-item"><div class="stat-num stat-apro">${aprobados}</div><div class="stat-lbl">Aprobados</div></div>
+  <div class="stat-item"><div class="stat-num stat-desapro">${conNota.length-aprobados}</div><div class="stat-lbl">Desaprobados</div></div>
+  <div class="stat-item"><div class="stat-num stat-pct">${pct}%</div><div class="stat-lbl">Aprobacion</div></div>
+</div>
+<\u0073cript>window.onload=function(){window.print()}<\/script>
+</body></html>`;
+ 
+  try{
+    const blob=new Blob([htmlPDF],{type:'text/html;charset=utf-8'});
+    const burl=URL.createObjectURL(blob);
+    const win=window.open(burl,'_blank');
+    if(!win){toast('Habilita popups en el navegador','','warn');URL.revokeObjectURL(burl);return}
+    setTimeout(()=>URL.revokeObjectURL(burl),60000);
+  }catch(ex){
+    const win=window.open('','_blank');
+    if(!win){toast('Habilita popups','','warn');return}
+    win.document.write(htmlPDF);win.document.close();
+  }
+}
