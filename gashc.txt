@@ -449,7 +449,14 @@ function obtenerPaciente_(p) {
   for (var i=1; i<rows.length; i++) {
     if (String(rows[i][idx['id']])===String(p.id)) {
       var pac = {};
-      Object.keys(idx).forEach(function(k){ pac[k]=String(rows[i][idx[k]]||''); });
+      Object.keys(idx).forEach(function(k){
+        var val = rows[i][idx[k]];
+        if (val instanceof Date) {
+          pac[k] = Utilities.formatDate(val, 'America/Lima', 'yyyy-MM-dd');
+        } else {
+          pac[k] = String(val||'');
+        }
+      });
       return {ok:true, paciente:pac};
     }
   }
