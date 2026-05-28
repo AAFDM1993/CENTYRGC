@@ -874,7 +874,7 @@ function sesCard(s, pac, evalAp){
           <span style="font-size:13px;transition:transform .2s" id="ico_${uid}">▶</span>
           <div style="font-size:12px;color:var(--tx)">
             <b>Sesión #${s.numero}</b> · ${formatFechaCorta(s.fecha)}
-            ${s.estudiante||s.terapeuta?'<br><span style="font-size:11px;color:var(--tx4)">&#127891; '+(s.estudiante||s.terapeuta||'')+'</span>':''}
+            ${s.estudiante||s.terapeuta||s.autor?'<br><span style="font-size:11px;color:var(--tx4)">&#127891; '+(s.estudiante||s.terapeuta||s.autor||'')+'</span>':''}
             ${s.docente?'<span style="font-size:11px;color:var(--tx4);margin-left:8px">&#128203; '+s.docente+'</span>':'' }
           </div>
         </div>
@@ -991,7 +991,6 @@ async function enviarEval(evalId, pacId){
 function filtrarDocentesHC(val){
   var docentes=window._docentesHCList||[];
   var dd=g('hcDocenteDD');
-  var inp=g('hcDocInput');
   if(!dd) return;
   if(!val||!val.trim()){dd.style.display='none';return;}
   var v=val.toLowerCase();
@@ -1006,23 +1005,6 @@ function filtrarDocentesHC(val){
       +'</div>';
   }).join('');
   dd.style.display='block';
-  // En mobile/tablet (position:fixed por CSS): posicionar justo debajo del input
-  if(window.innerWidth<=1024 && inp){
-    var rect=inp.getBoundingClientRect();
-    var spaceBelow=window.innerHeight-rect.bottom-8;
-    var spaceAbove=rect.top-8;
-    if(spaceBelow>=120||spaceBelow>=spaceAbove){
-      // Mostrar debajo
-      dd.style.top=(rect.bottom+4)+'px';
-      dd.style.bottom='auto';
-    } else {
-      // Mostrar arriba si hay más espacio
-      dd.style.bottom=(window.innerHeight-rect.top+4)+'px';
-      dd.style.top='auto';
-    }
-    dd.style.left=rect.left+'px';
-    dd.style.right=(window.innerWidth-rect.right)+'px';
-  }
   dd.querySelectorAll('[data-hnm]').forEach(function(el){
     el.addEventListener('click',function(){ selDocHC(el.getAttribute('data-hnm'), el.getAttribute('data-hcd')); });
   });
@@ -1139,9 +1121,10 @@ async function guardarSes(pacId, evalId, num, sesId, modo){
     modo==='borrador' ? '' : (session.rol==='estudiante' ? 'El docente '+doc+' recibirá la sesión' : '')
   );
   try{
+    const _estNombre=g('sEst')?.value||session.nombre||session.codigo;
     const b={action:'guardarSesion',pacienteId:pacId,evaluacionId:evalId,numero:num,
       fecha:g('sF')?.value||'',
-      estudiante:g('sEst')?.value||session.nombre||session.codigo,
+      estudiante:_estNombre, terapeuta:_estNombre,
       docente:doc, docenteCodigo:docCodigo,
       evaValor:g('sesEva')?.value!==''&&g('sesEva')?.value!==null?Number(g('sesEva').value):null,
       descripcion:des,respuesta:g('sRes')?.value||'',estado};

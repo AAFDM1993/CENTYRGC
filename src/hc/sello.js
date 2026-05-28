@@ -14,7 +14,11 @@ function mkSelloInline(nombreOCodigo, uid){
   if(!doc) doc = (window._listaUsuariosCache||[]).find(function(u){
     return u.nombre===nombreOCodigo || u.codigo===nombreOCodigo;
   });
-  if(!doc) return ''; // docente no encontrado en sistema
+  if(!doc){
+    // Docente no está en caché: mostrar sello básico con el nombre almacenado
+    if(!nombreOCodigo) return '';
+    return _mkSelloHTML('sello_'+uid, nombreOCodigo, '', '', '');
+  }
 
   var grado  = doc.gradoAcademico ? doc.gradoAcademico+' ' : '';
   var nombre = (grado + (doc.nombre||doc.codigo||'')).trim();
