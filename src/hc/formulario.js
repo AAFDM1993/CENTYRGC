@@ -1,5 +1,10 @@
 // Construcción del formulario HC: catálogo de escalas, plantilla por categoría, secciones de anamnesis/trauma, pruebas funcionales
 
+// Elimina la descripción entre paréntesis al final del nombre de una prueba funcional
+// Ej: "Test de valgo stress 0° (LCM completo)" → "Test de valgo stress 0°"
+// El nombre completo se mantiene como clave de datos; solo se limpia para mostrar.
+function _fmtPruebaName(n){ return String(n||'').replace(/\s*\([^)]*\)\s*$/,'').trim(); }
+
 function plantillaHTML(catId, pac){
   const d = pac?.datosEspecificos || {};
   var secciones = secFiliacion(pac, d) + secAnamnesis(catId, pac, d);
@@ -472,7 +477,7 @@ function mkPruebasFuncionales(sel, pruebasGuardadas){
 
 function _mkPruebaFila(region, nombre, savedVal, regionId){
   var html = '<div data-fila-prueba="1" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surf);border-radius:8px;border:1px solid var(--bd)">';
-  html += '<span style="font-size:11px;flex:1;color:var(--tx)">'+e2(nombre)+'</span>';
+  html += '<span style="font-size:11px;flex:1;color:var(--tx)">'+e2(_fmtPruebaName(nombre))+'</span>';
   html += '<select class="sel" data-prueba-region="'+e2(region)+'" data-prueba-nombre="'+e2(nombre)+'" style="font-size:11px;padding:4px 6px;width:140px;flex-shrink:0">';
   html += '<option value="">&#8212;</option>';
   ['+  Positivo','-  Negativo','Dudoso','No realizado'].forEach(function(op){
@@ -528,7 +533,7 @@ function _renderListaPruebas(q){
     var ya = !!yaAgregadas[p.nombre];
     return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:var(--surf2);border:1px solid var(--bd);border-radius:10px;'+(ya?'opacity:.5':'cursor:pointer')+'" '
       +(ya ? '' : 'data-prueba="'+e2(p.nombre)+'" onclick="_seleccionarPrueba(this.getAttribute(\'data-prueba\'))"')+'>'
-      +'<span style="font-size:12px;flex:1;color:var(--tx)">'+e2(p.nombre)+'</span>'
+      +'<span style="font-size:12px;flex:1;color:var(--tx)">'+e2(_fmtPruebaName(p.nombre))+'</span>'
       +(ya
         ? '<span style="font-size:11px;color:var(--green);font-weight:700;flex-shrink:0">&#10003; Agregada</span>'
         : '<button class="btn btn-primary btn-sm" style="flex-shrink:0">+ Agregar</button>')

@@ -439,7 +439,7 @@ function buildDetalleEval(ev, pac){
         filled.forEach(function(nom){
           var res=regPruebas[nom];
           var color=res&&res.startsWith('+')?'var(--red)':res&&res.startsWith('-')?'var(--green)':'var(--amber)';
-          html+='<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 8px;background:var(--surf2);border-radius:5px;margin-bottom:2px"><span>'+e2(nom)+'</span><b style="color:'+color+'">'+e2(res)+'</b></div>';
+          html+='<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 8px;background:var(--surf2);border-radius:5px;margin-bottom:2px"><span>'+e2(_fmtPruebaName(nom))+'</span><b style="color:'+color+'">'+e2(res)+'</b></div>';
         });
       });
       html+='</div>';
@@ -874,7 +874,7 @@ function sesCard(s, pac, evalAp){
           <span style="font-size:13px;transition:transform .2s" id="ico_${uid}">▶</span>
           <div style="font-size:12px;color:var(--tx)">
             <b>Sesión #${s.numero}</b> · ${formatFechaCorta(s.fecha)}
-            ${s.estudiante||s.terapeuta||s.autor?'<br><span style="font-size:11px;color:var(--tx4)">&#127891; '+(s.estudiante||s.terapeuta||s.autor||'')+'</span>':''}
+            ${s.estudiante||s.terapeuta?'<br><span style="font-size:11px;color:var(--tx4)">&#127891; '+(s.estudiante||s.terapeuta||'')+'</span>':''}
             ${s.docente?'<span style="font-size:11px;color:var(--tx4);margin-left:8px">&#128203; '+s.docente+'</span>':'' }
           </div>
         </div>
@@ -1121,10 +1121,9 @@ async function guardarSes(pacId, evalId, num, sesId, modo){
     modo==='borrador' ? '' : (session.rol==='estudiante' ? 'El docente '+doc+' recibirá la sesión' : '')
   );
   try{
-    const _estNombre=g('sEst')?.value||session.nombre||session.codigo;
     const b={action:'guardarSesion',pacienteId:pacId,evaluacionId:evalId,numero:num,
       fecha:g('sF')?.value||'',
-      estudiante:_estNombre, terapeuta:_estNombre,
+      estudiante:g('sEst')?.value||session.nombre||session.codigo,
       docente:doc, docenteCodigo:docCodigo,
       evaValor:g('sesEva')?.value!==''&&g('sesEva')?.value!==null?Number(g('sesEva').value):null,
       descripcion:des,respuesta:g('sRes')?.value||'',estado};
