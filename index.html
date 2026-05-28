@@ -1394,10 +1394,10 @@ body.rol-recepcion #hdrBtnRecord{display:none}
 <!-- Modal editar % extra -->
 <div id="pctExtraModal" style="position:fixed;inset:0;background:rgba(10,22,40,.65);z-index:800;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
   <div style="background:var(--surf);border-radius:16px;padding:24px;width:100%;max-width:360px;box-shadow:0 24px 60px rgba(10,22,40,.4)">
-    <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--n900);margin-bottom:4px">&#9881; Porcentaje extra</h3>
+    <h3 style="font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--n900);margin-bottom:4px">&#9881; Porcentaje de continuación</h3>
     <p id="pctExtraModalSub" style="font-size:12px;color:var(--tx3);margin-bottom:18px"></p>
     <div class="field">
-      <label>Porcentaje de bonificacion extra (%)</label>
+      <label>Porcentaje de continuación (%)</label>
       <div style="display:flex;align-items:center;gap:10px">
         <input type="number" id="pctExtraInput" min="0" max="100" step="1" style="background:var(--surf2);border:1px solid var(--bd);color:var(--tx);font-family:'DM Mono',monospace;font-size:28px;font-weight:800;width:100px;outline:none;text-align:center;border-radius:10px;padding:10px">
         <span style="font-size:20px;font-weight:800;color:var(--tx3)">%</span>
@@ -1443,7 +1443,7 @@ body.rol-recepcion #hdrBtnRecord{display:none}
       Este paciente completó todas sus sesiones <strong>sin mejoría</strong>. Según el reglamento, el alumno debe continuar con este paciente y agregar <strong>uno adicional con la misma patología</strong> para que sea considerado en el RECORD.
     </p>
     <div style="display:flex;gap:8px">
-      <button onclick="confirmarPacienteExtra()" class="btn-sm" style="flex:1;background:var(--amber);border:none;border-radius:10px;color:#fff;font-size:12px;font-weight:700;padding:10px;cursor:pointer">+ Agregar paciente extra</button>
+      <button onclick="confirmarPacienteExtra()" class="btn-sm" style="flex:1;background:var(--amber);border:none;border-radius:10px;color:#fff;font-size:12px;font-weight:700;padding:10px;cursor:pointer">+ Agregar atención de continuación</button>
       <button onclick="cerrarPacExtraModal()" class="btn-ghost">Ahora no</button>
     </div>
   </div>
