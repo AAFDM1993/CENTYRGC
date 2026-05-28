@@ -207,6 +207,18 @@ img{max-width:100%;height:auto;-webkit-print-color-adjust:exact;print-color-adju
   .main{padding:20px;}
   .pac-grid{grid-template-columns:repeat(auto-fill,minmax(240px,1fr));}
   .form-grid{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));}
+  /* Dropdowns: position:fixed escapa el overflow-y:auto de .main en tablet */
+  #hcDocenteDD,#evalDocenteDD,#docenteDD{
+    position:fixed!important;
+    top:auto!important; bottom:20px!important;
+    left:12px!important; right:12px!important;
+    max-height:50vh!important;
+    border-radius:12px!important;
+    background:var(--surf)!important;
+    border:1px solid var(--bd)!important;
+    z-index:500!important;
+    box-shadow:0 4px 24px rgba(0,0,0,.25)!important;
+  }
 }
 @media(max-width:768px){
   .sidebar{display:none!important;}
@@ -246,12 +258,9 @@ img{max-width:100%;height:auto;-webkit-print-color-adjust:exact;print-color-adju
     box-shadow:0 -8px 32px rgba(0,0,0,.3)!important;
   }
   #hcDocenteDD,#evalDocenteDD,#docenteDD{
-    position:fixed!important;
-    top:auto!important; bottom:60px!important;
-    left:12px!important; right:12px!important;
-    max-height:50vh!important;
-    border-radius:12px!important;
-    z-index:500!important;
+    bottom:60px!important;
+    background:var(--surf)!important;
+    border:1px solid var(--bd)!important;
     box-shadow:0 -4px 24px rgba(0,0,0,.25)!important;
   }
 
