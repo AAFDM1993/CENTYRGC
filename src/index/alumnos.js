@@ -354,7 +354,7 @@ function renderSgrCard(ci,si,sg){
           oninput="setSgrValBase(${ci},${si},+this.value,+this.closest('.sgr-card').querySelector('[data-total]').value)">
       </div>
       <div>
-        <label style="${lblStyle}">Atenc. totales</label>
+        <label style="${lblStyle}">Atenc. continuación</label>
         <input type="number" min="1" max="100" value="${total}" data-total
           style="${inpStyle}"
           oninput="setSgrValTotal(${ci},${si},+this.closest('.sgr-card').querySelectorAll('input[type=number]')[1].value||${base},+this.value)">

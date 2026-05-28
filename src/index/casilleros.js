@@ -264,7 +264,7 @@ async function guardarPctExtra(){
     err.textContent='Ingresa un valor entre 0 y 100';
     err.style.display='block'; return;
   }
-  showLoader('Actualizando % extra en toda la hoja...');
+  showLoader('Actualizando % continuación en toda la hoja...');
   try{
     const r = await apiPost({
       action: 'guardarPctExtraGlobal',
@@ -279,12 +279,12 @@ async function guardarPctExtra(){
           (cu.subgrupos||[]).forEach((sg,si)=>{
             sg.pctExtra = val;
             const badge = g('pctBadge_'+ai+'_'+ci+'_'+si);
-            if(badge) badge.textContent = val+'%extra';
+            if(badge) badge.textContent = val+'% cont.';
           });
         });
       });
     }
-    toast('% extra actualizado', val+'% en toda la hoja', 'ok');
+    toast('% continuación actualizado', val+'% en toda la hoja', 'ok');
     cerrarPctExtraModal();
   }catch(e){
     hideLoader();
@@ -324,7 +324,7 @@ function responderMejoria(huboMejoria){
 async function ofrecerPacienteExtra(alumno, curso, sgr, notasBase, notasExtra, inp, pacVinculado){
   // Si ya sabemos el PAC vinculado, crear el PACX automáticamente sin modal
   if(pacVinculado){
-    showLoader('Agregando paciente extra...');
+    showLoader('Agregando atención de continuación...');
     try{
       const r = await apiPost({
         action: 'agregarPacienteExtra',
@@ -335,11 +335,11 @@ async function ofrecerPacienteExtra(alumno, curso, sgr, notasBase, notasExtra, i
       });
       hideLoader();
       if(!r.ok) throw new Error(r.error);
-      toast('Paciente extra agregado automáticamente','Recargando editor...','ok');
+      toast('Atención de continuación agregada automáticamente','Recargando editor...','ok');
       setTimeout(()=>abrirHoja(hojaActiva), 600);
     }catch(e){
       hideLoader();
-      toast('Error al agregar paciente extra', e.message, 'err');
+      toast('Error al agregar atención de continuación', e.message, 'err');
     }
     return;
   }
@@ -371,7 +371,7 @@ async function ofrecerPacienteExtra(alumno, curso, sgr, notasBase, notasExtra, i
       selectorBox.innerHTML = `
         <div style="margin-bottom:12px">
           <label style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;display:block;margin-bottom:6px">
-            ¿A qué paciente está vinculado este extra?
+            ¿A qué paciente está vinculada esta continuación?
           </label>
           <select id="pacExtraSelector" class="sel" style="font-size:13px">
             ${pacientes.map(p=>`<option value="${p}">${p}</option>`).join('')}
@@ -402,22 +402,22 @@ async function confirmarPacienteExtra(){
   const pacVinculado = m._ctx.pacVinculado ||
     (g('pacExtraSelector') ? g('pacExtraSelector').value : null);
   cerrarPacExtraModal();
-  showLoader('Agregando paciente extra...');
+  showLoader('Agregando atención de continuación...');
   try{
     const r = await apiPost({
       action: 'agregarPacienteExtra',
       hoja: hojaActiva,
       alumno, curso, subgrupo: sgr,
       notasBase, notasExtra,
-      pacVinculado: pacVinculado   // ← agregar esta línea
+      pacVinculado: pacVinculado
     });
     hideLoader();
     if(!r.ok) throw new Error(r.error);
-    toast('Paciente extra agregado','Recargando editor...','ok');
+    toast('Atención de continuación agregada','Recargando editor...','ok');
     setTimeout(()=>abrirHoja(hojaActiva), 600);
   }catch(e){
     hideLoader();
-    toast('Error al agregar paciente extra', e.message, 'err');
+    toast('Error al agregar atención de continuación', e.message, 'err');
   }
 }
 
@@ -517,7 +517,7 @@ async function confirmarAgregarAlumno(){
 
 // ── ELIMINAR PACX ─────────────────────────────────────
 async function eliminarPacX(alumno, curso, sgr, pacLabel){
-  if(!await confirmDialog('¿Eliminar '+pacLabel+' de '+alumno+'?\nEsto eliminará la fila del paciente extra y no se puede deshacer.')) return;
+  if(!await confirmDialog('¿Eliminar '+pacLabel+' de '+alumno+'?\nEsto eliminará la fila de atención de continuación y no se puede deshacer.')) return;
   showLoader('Eliminando...');
   try{
     const r = await apiPost({

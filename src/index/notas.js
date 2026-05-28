@@ -102,7 +102,7 @@ function renderAlBlock(al,ai,apro){
           ? `<button onclick="eliminarPacX('${esc(al.nombre)}','${esc(cu.nombre)}','${esc(sg.nombre)}','${esc(pac.label)}')" style="background:none;border:none;color:var(--red);font-size:11px;cursor:pointer;padding:2px 6px;margin-left:6px;border-radius:5px;background:var(--red2);border:1px solid var(--red)" title="Eliminar PACX">&#128465; Eliminar</button>`
           : '';
         const extraBadge = esExtra
-          ? `<span style="background:var(--amber);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-right:4px">+patología</span>`
+          ? `<span style="background:var(--amber);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-right:4px">continuación</span>`
           : '';
         return`<tr style="${rowBg}">
           <td class="td-pac">

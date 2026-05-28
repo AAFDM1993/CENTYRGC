@@ -788,6 +788,27 @@ async function toggleEvalInline(uid, headerEl){
       } else { window._plantigrafiaCache=null; }
       var _firmaVer=(ev.estado==='aprobada'&&(ev.revisadoPor||ev.docente))?mkSelloInline(ev.revisadoPor||ev.docente,uid+'_f'):'';
       el.innerHTML=buildEvalHTML(ev, pac, _firmaVer);
+
+      // Consentimiento informado — siempre intenta cargarlo; se oculta si no existe
+      (function(){
+        var cId='ci_'+uid;
+        var cDiv=document.createElement('div');
+        cDiv.id=cId;
+        cDiv.style.cssText='margin-top:12px;padding:12px 14px;background:var(--surf2);border:1px solid var(--bd);border-radius:10px;display:none';
+        cDiv.innerHTML='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">📄 Consentimiento Informado</div>'
+          +'<div id="ci_img_'+uid+'"></div>';
+        el.appendChild(cDiv);
+        apiPost({action:'getConsentimiento',evaluacionId:ev.id}).then(function(rc){
+          var wrap=document.getElementById(cId);
+          var box=document.getElementById('ci_img_'+uid);
+          if(!wrap||!box) return;
+          if(!rc.ok) return; // sin consentimiento — permanece oculto
+          var dataUrl='data:'+rc.mimeType+';base64,'+rc.data;
+          box.innerHTML='<img src="'+dataUrl+'" style="max-width:100%;max-height:320px;border-radius:8px;border:1px solid var(--bd);display:block;cursor:zoom-in" onclick="window.open(this.src,\'_blank\')" title="Clic para ampliar">';
+          wrap.style.display='block';
+        }).catch(function(){});
+      })();
+
       el.dataset.loaded='1';
       // Agregar leyenda flotante a los chips del widget postural
       setTimeout(function(){
