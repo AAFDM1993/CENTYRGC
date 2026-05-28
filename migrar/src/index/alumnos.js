@@ -354,7 +354,7 @@ function renderSgrCard(ci,si,sg){
           oninput="setSgrValBase(${ci},${si},+this.value,+this.closest('.sgr-card').querySelector('[data-total]').value)">
       </div>
       <div>
-        <label style="${lblStyle}">Atenc. totales</label>
+        <label style="${lblStyle}">Atenc. continuación</label>
         <input type="number" min="1" max="100" value="${total}" data-total
           style="${inpStyle}"
           oninput="setSgrValTotal(${ci},${si},+this.closest('.sgr-card').querySelectorAll('input[type=number]')[1].value||${base},+this.value)">
@@ -412,6 +412,35 @@ function setSgrValTotal(ci,si,base,total){
   renderPreview();
 }
 function guardarCursos(){localStorage.setItem('ft_cursos_v6',JSON.stringify(cursos));toast('Cursos guardados','','ok')}
+
+async function guardarCursosSheets(){
+  if(!cursos.length){toast('No hay cursos para guardar','','warn');return;}
+  showLoader('Guardando cursos en Sheets...');
+  try{
+    const r=await apiPost({action:'guardarConfigCursos',cursos:JSON.stringify(cursos)});
+    hideLoader();
+    if(!r.ok)throw new Error(r.error||'No se pudo guardar');
+    invalidateCache('cargarConfigCursos');
+    toast('Cursos guardados en Sheets','','ok');
+  }catch(e){hideLoader();toast('Error al guardar en Sheets',e.message,'err');}
+}
+
+async function cargarCursosSheets(){
+  showLoader('Cargando cursos desde Sheets...');
+  try{
+    const r=await apiGetCached('cargarConfigCursos');
+    hideLoader();
+    if(!r.ok)throw new Error(r.error||'No disponible');
+    const cargados=typeof r.cursos==='string'?JSON.parse(r.cursos):r.cursos;
+    if(!cargados||!cargados.length){toast('Sin cursos guardados en Sheets','','warn');return;}
+    if(!await confirmDialog('Cargar '+cargados.length+' curso(s) desde Sheets?\n(Reemplaza los cursos actuales)'))return;
+    cursos=cargados;
+    localStorage.setItem('ft_cursos_v6',JSON.stringify(cursos));
+    renderCursos();renderAlumnos();renderPreview();
+    toast('Cursos cargados desde Sheets','','ok');
+  }catch(e){hideLoader();toast('Error al cargar desde Sheets',e.message,'err');}
+}
+
 function resetCursos(){confirmDialog('Borrar todos los cursos?').then(function(ok){if(!ok)return;cursos=[];localStorage.removeItem('ft_cursos_v6');renderCursos();renderAlumnos();renderPreview()})}
 
 async function cargarUsuarios(){

@@ -1,7 +1,22 @@
 // ── Utilidades base de index.html ──────────────────────────────────────────
 // GAS_URL: URL de Google Apps Script para index.html (gestión académica)
 // IMPORTANTE: este archivo es específico de index.html; hc.html usa api.js con HC_URL
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbz_5ux4CU4JVIuE24eidR5M3tWOU3veMXlnbi06_hLBVil7DyVYjI5jrazr-NgpxtiKtg/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxsYFGvXDLei6kcOGsnFWrKOZ4ix8D4vTQ3V1mDGiczHvb8G6sPhKfVArJJPXM4hZZWSg/exec';
+
+// ── Modal info (aviso simple, solo botón "Entendido") ────────────────────────
+function infoDialog(msg){
+  return new Promise(function(resolve){
+    var ov=document.getElementById('infoOverlay');
+    document.getElementById('infoMsg').textContent=msg;
+    ov.style.display='flex';
+    function onOk(){
+      ov.style.display='none';
+      document.getElementById('infoOk').removeEventListener('click',onOk);
+      resolve();
+    }
+    document.getElementById('infoOk').addEventListener('click',onOk);
+  });
+}
 
 // ── Modal confirm (reemplaza window.confirm para evitar supresión del navegador) ──
 function confirmDialog(msg){

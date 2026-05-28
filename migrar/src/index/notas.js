@@ -92,8 +92,8 @@ function renderAlBlock(al,ai,apro){
       const rows=sg.pacientes.map((pac,pi)=>{
         const nv=pac.nombre||'';
         let sc='',ec='';
-        for(let ni=0;ni<base;ni++){const v=pac.notas[ni]!==undefined&&pac.notas[ni]!==''?pac.notas[ni]:'';sc+=`<td><input type="number" class="nc ${v!==''?'v':''}" value="${v}" min="0" max="20" step="0.5" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" data-tipo="ss" data-idx="${ni}" data-base="${base}" data-extra="${extra}" onchange="saveNota(this)" onfocus="this.select()"></td>`}
-        for(let ni=0;ni<extra;ni++){const v=pac.xNotas&&pac.xNotas[ni]!==undefined&&pac.xNotas[ni]!==''?pac.xNotas[ni]:'';ec+=`<td><input type="number" class="nc ex ${v!==''?'v':''}" value="${v}" min="0" max="20" step="0.5" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" data-tipo="extra" data-idx="${ni}" data-base="${base}" data-extra="${extra}" onchange="saveNota(this)" onfocus="this.select()"></td>`}
+        for(let ni=0;ni<base;ni++){const v=pac.notas[ni]!==undefined&&pac.notas[ni]!==''?pac.notas[ni]:'';sc+=`<td><input type="number" class="nc ${v!==''?'v':''}" value="${v}" min="0" max="20" step="0.5" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" data-tipo="ss" data-idx="${ni}" data-base="${base}" data-extra="${extra}" data-valor-anterior="${v}" onchange="saveNota(this)" onfocus="this.select()"></td>`}
+        for(let ni=0;ni<extra;ni++){const v=pac.xNotas&&pac.xNotas[ni]!==undefined&&pac.xNotas[ni]!==''?pac.xNotas[ni]:'';ec+=`<td><input type="number" class="nc ex ${v!==''?'v':''}" value="${v}" min="0" max="20" step="0.5" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" data-tipo="extra" data-idx="${ni}" data-base="${base}" data-extra="${extra}" data-valor-anterior="${v}" onchange="saveNota(this)" onfocus="this.select()"></td>`}
         const ps=pac.promSS;const pe=pac.extraPond;const p=pac.prom;
         const pc='pc'+(p!==''&&p!==undefined?(p>=apro?' ok':' no'):'');
         const esExtra = pac.label.indexOf('PACX')===0;
@@ -102,7 +102,7 @@ function renderAlBlock(al,ai,apro){
           ? `<button onclick="eliminarPacX('${esc(al.nombre)}','${esc(cu.nombre)}','${esc(sg.nombre)}','${esc(pac.label)}')" style="background:none;border:none;color:var(--red);font-size:11px;cursor:pointer;padding:2px 6px;margin-left:6px;border-radius:5px;background:var(--red2);border:1px solid var(--red)" title="Eliminar PACX">&#128465; Eliminar</button>`
           : '';
         const extraBadge = esExtra
-          ? `<span style="background:var(--amber);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-right:4px">+patología</span>`
+          ? `<span style="background:var(--amber);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-right:4px">continuación</span>`
           : '';
         return`<tr style="${rowBg}">
           <td class="td-pac">

@@ -45,7 +45,7 @@ function renderLogRows(registros, box){
       <span class="log-ts">${reg.ts||''}</span>
       <span class="log-doc" title="${reg.docente||''}">${reg.docente||'—'}</span>
       <span class="log-info" title="${reg.alumno||''} | ${reg.curso||''} | ${reg.subgrupo||''} | ${reg.paciente||''}">${reg.alumno||''} &rsaquo; ${reg.curso||''} &rsaquo; ${reg.paciente||''}</span>
-      <span class="log-tipo ${tipo}">${reg.tipo||''}</span>
+      <span class="log-tipo ${tipo}">ss</span>
       <span style="text-align:center;font-family:'DM Mono',monospace;font-weight:700">${reg.nro!=null?reg.nro:''}</span>
       <span style="font-family:'DM Mono',monospace;font-size:11px;text-align:center;color:var(--n500);font-weight:700">${antStr}&#8594;${nuevoStr}</span>
     </div>`;

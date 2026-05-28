@@ -5,7 +5,7 @@
 //             notas.js (abrirHoja)
 //             vistas.js (iniciarVistaEstudiante)
 
-let agendaCfg   = { areas:[], franjas:[{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}] };
+let agendaCfg   = { areas:[], franjas:[{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}], mensajeUltimaHora:'' };
 let agendaReservas = [];
 let calFechaBase   = new Date();
 let rsvPendiente   = null;
@@ -30,6 +30,16 @@ function fmtDia(d){ return String(d.getDate()).padStart(2,'0')+'/'+(d.getMonth()
 function timeToMin(t){ const [h,m]=t.split(':').map(Number); return h*60+(m||0); }
 // Convierte minutos totales a "HH:MM"
 function minToTime(m){ return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0'); }
+
+// Retorna true si `hora` (HH:MM) es el último slot de alguna franja
+function esUltimaHoraFranja(hora, franjas, durMin){
+  const dur=(durMin&&durMin>0)?durMin:60;
+  return (franjas||[]).some(function(fr){
+    const end=timeToMin(fr.fin);
+    const lastStart=end-dur;
+    return lastStart>=timeToMin(fr.inicio)&&timeToMin(hora)===lastStart;
+  });
+}
 
 // Genera slots a partir de las franjas con una duración en minutos.
 // Retorna array de objetos { inicio:"08:00", fin:"08:30" }
@@ -194,10 +204,17 @@ async function eliminarReservaHoy(fecha, hora, area, camilla){
     const r = await apiPost({action:'eliminarReserva', fecha, horaInicio:hora, area, camilla});
     hideLoader(); if(!r.ok) throw new Error(r.error);
     toast('Reserva cancelada','','ok');
-    invalidateCache('leerReservas');
-    await cargarReservasSemana();
+    // Actualización optimista: elimina de memoria y re-renderiza sin esperar re-fetch
+    const _n=s=>String(s).trim().toLowerCase();
+    agendaReservas=agendaReservas.filter(rv=>!(
+      _n(rv.fecha)===_n(fecha)&&_n(rv.horaInicio)===_n(hora)&&
+      _n(rv.area)===_n(area)&&_n(rv.camilla)===_n(camilla)
+    ));
     renderCalendario();
-    verReservasHoy(); // refrescar el panel
+    verReservasHoy();
+    // Sincronizar con el servidor en background
+    invalidateCache('leerReservas');
+    cargarReservasSemana();
   }catch(e){ hideLoader(); toast('Error', e.message, 'err'); }
 }   
 // ── Renderizar calendario (admin + docente) ───────────────
@@ -374,6 +391,8 @@ function renderAreasConfig(){
     const frIdx=Math.floor(i/2); const tipo=i%2===0?'inicio':'fin';
     if(elModal) elModal.value=(f[frIdx]||{})[tipo]||'';
   });
+  const elMsg=g('cfgMensajeUltimaHora');
+  if(elMsg) elMsg.value=agendaCfg.mensajeUltimaHora||'';
 }
 function addArea(){
   const inputModal = g('newAreaNomModal');
@@ -442,6 +461,7 @@ async function guardarAgendaConfig(){
     if(ini&&fin) f.push({inicio:ini,fin:fin});
   });
   if(!f.length) f.push({inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'});
+  agendaCfg.mensajeUltimaHora=(document.getElementById('cfgMensajeUltimaHora')||{}).value||'';
   showLoader('Guardando configuracion...');
   try{
     const r=await apiPost({action:'guardarAgendaConfig',config:agendaCfg});
@@ -487,7 +507,13 @@ function ocultarOverlayReservando(){
 }
 
 // ── Reservar slot ─────────────────────────────────────────
-function abrirReservaEspacio(fecha,hora,area,espacio,capacidad,fechaLabel){
+async function abrirReservaEspacio(fecha,hora,area,espacio,capacidad,fechaLabel){
+  const _msg=agendaCfg.mensajeUltimaHora||'';
+  if(_msg){
+    const _aObj=agendaCfg.areas.find(function(a){return a.nombre===area;});
+    const _dur=_aObj?(_aObj.duracion||60):60;
+    if(esUltimaHoraFranja(hora,agendaCfg.franjas,_dur)) await infoDialog(_msg);
+  }
   rsvPendiente={fecha,hora,area,camilla:espacio,capacidad,esEstudiante:false};
   g('reservaModalTitle').textContent='Reservar \xb7 '+area+' \xb7 '+espacio;
   g('reservaModalSub').textContent=fechaLabel+' \xb7 '+hora+' hs';
@@ -558,8 +584,16 @@ async function pedirEliminar(fecha,hora,area,camilla){
     const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Reserva cancelada','','ok');
+    // Actualización optimista: elimina de memoria y re-renderiza sin esperar re-fetch
+    const _n=s=>String(s).trim().toLowerCase();
+    agendaReservas=agendaReservas.filter(rv=>!(
+      _n(rv.fecha)===_n(fecha)&&_n(rv.horaInicio)===_n(hora)&&
+      _n(rv.area)===_n(area)&&_n(rv.camilla)===_n(camilla)
+    ));
+    renderCalendario();
+    // Sincronizar con el servidor en background
     invalidateCache('leerReservas');
-    await cargarReservasSemana();renderCalendario();
+    cargarReservasSemana();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
 
@@ -762,7 +796,13 @@ function renderCalendarioEst(){
 }
 
 
-function abrirReservaEstEsp(fecha,hora,area,espacio,capacidad,fechaLabel){
+async function abrirReservaEstEsp(fecha,hora,area,espacio,capacidad,fechaLabel){
+  const _msg=agendaCfg.mensajeUltimaHora||'';
+  if(_msg){
+    const _aObj=agendaCfg.areas.find(function(a){return a.nombre===area;});
+    const _dur=_aObj?(_aObj.duracion||60):60;
+    if(esUltimaHoraFranja(hora,agendaCfg.franjas,_dur)) await infoDialog(_msg);
+  }
   rsvPendiente={fecha,hora,area,camilla:espacio,capacidad,esEstudiante:true};
   g('reservaModalTitle').textContent='Reservar \xb7 '+area+' \xb7 '+espacio;
   g('reservaModalSub').textContent=fechaLabel+' \xb7 '+hora+' hs';
@@ -1082,8 +1122,16 @@ async function eliminarReservaLista(fecha,hora,area,camilla){
     const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Reserva cancelada','','ok');
+    // Actualización optimista
+    const _n=s=>String(s).trim().toLowerCase();
+    agendaReservas=agendaReservas.filter(rv=>!(
+      _n(rv.fecha)===_n(fecha)&&_n(rv.horaInicio)===_n(hora)&&
+      _n(rv.area)===_n(area)&&_n(rv.camilla)===_n(camilla)
+    ));
+    renderCalendario();
     invalidateCache('leerReservas');
-    await cargarReservasSemana();renderCalendario();cargarListaReservas();
+    cargarReservasSemana();
+    cargarListaReservas();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
 

@@ -1,6 +1,7 @@
 // Gestión de pacientes: listado, fichas, evaluaciones, sesiones, revisiones, CRUD
 
 async function renderPacs(){
+  if(!window._pacVista) window._pacVista='grid';
   g('vPac').innerHTML=`
     <div class="card-hdr">
       <div><div class="card-title">Pacientes</div></div>
@@ -10,6 +11,12 @@ async function renderPacs(){
           <div id="filtroAlumnoDD" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surf);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:50;max-height:200px;overflow-y:auto;margin-top:4px"></div>
         </div>
         <input class="inp" id="fBusca" placeholder="🔍 Buscar paciente..." oninput="filtrarPacs()" style="width:180px">
+        <div style="display:flex;gap:4px;border:1px solid var(--bd);border-radius:10px;overflow:hidden;flex-shrink:0">
+          <button id="btnVistaGrid" onclick="setPacVista('grid')" title="Vista cuadrícula"
+            style="padding:6px 10px;border:none;cursor:pointer;font-size:14px;background:${window._pacVista==='grid'?'var(--n100)':'transparent'};color:${window._pacVista==='grid'?'var(--n500)':'var(--tx4)'}">⊞</button>
+          <button id="btnVistaLista" onclick="setPacVista('lista')" title="Vista lista"
+            style="padding:6px 10px;border:none;cursor:pointer;font-size:14px;background:${window._pacVista==='lista'?'var(--n100)':'transparent'};color:${window._pacVista==='lista'?'var(--n500)':'var(--tx4)'}">☰</button>
+        </div>
         <button class="btn btn-primary btn-sm" onclick="abrirModalCategoria()">+ Nuevo paciente</button>
       </div>
     </div>
@@ -68,44 +75,82 @@ function seleccionarAlumno(codigo, nombre, codigoDisplay){
   filtrarPacs();
 }
 
+function setPacVista(v){
+  window._pacVista=v;
+  var bg=g('btnVistaGrid'),bl=g('btnVistaLista');
+  if(bg){bg.style.background=v==='grid'?'var(--n100)':'transparent';bg.style.color=v==='grid'?'var(--n500)':'var(--tx4)';}
+  if(bl){bl.style.background=v==='lista'?'var(--n100)':'transparent';bl.style.color=v==='lista'?'var(--n500)':'var(--tx4)';}
+  filtrarPacs();
+}
+
 function filtrarPacs(){
   const q=(g('fBusca')?.value||'').toLowerCase();
   const alumnoCodigoSeleccionado=window._alumnoCodigoSeleccionado||'';
-  
+
   const lista=(window._pacs||[]).filter(p=>{
-    // Filtro por búsqueda
     const mq=!q||(p.nombre||'').toLowerCase().includes(q)||(p.dni||'').includes(q);
-    // Filtro por alumno (usando el campo asignadoA que contiene el código del alumno)
     const ma=!alumnoCodigoSeleccionado||p.asignadoA===alumnoCodigoSeleccionado;
     return mq && ma;
   });
-  
+
   const box=g('pacBox');if(!box)return;
   if(!lista.length){box.innerHTML='<div class="empty">Sin pacientes. Usa "+ Nuevo" para crear el primero.</div>';return;}
-  box.innerHTML=`<div class="pac-grid">${lista.map(p=>{
-    const c=getCat(p.categoriaId);
-    const ini=(p.nombre||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
-    return `<div class="pac-card" onclick="abrirPac('${esc(p.id)}')">
-      <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
-        <div class="pac-avatar" style="background:${c.color}33;color:${c.color};border:1.5px solid ${c.color}55">${ini}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:14px;color:var(--n900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e2(p.nombre)}</div>
-          <div style="font-size:11px;color:var(--tx3);font-family:'DM Mono',monospace;margin-top:1px">${e2(p.dni)} ${p.fechaNac?'· '+edad(p.fechaNac)+' a':''}</div>
-          <div style="margin-top:6px">${catPill(p.categoriaId)}</div>
+
+  const vista=window._pacVista||'grid';
+
+  if(vista==='lista'){
+    box.innerHTML='<div style="display:flex;flex-direction:column;gap:6px">'
+      +lista.map(p=>{
+        const c=getCat(p.categoriaId);
+        const ini=(p.nombre||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+        return `<div style="background:var(--surf);border:1px solid var(--bd2);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s" onclick="abrirPac('${esc(p.id)}')" onmouseover="this.style.borderColor='var(--n300)'" onmouseout="this.style.borderColor='var(--bd2)'">
+          <div class="pac-avatar" style="flex-shrink:0;background:${c.color}33;color:${c.color};border:1.5px solid ${c.color}55">${ini}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:13px;color:var(--n900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e2(p.nombre)}</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:3px;flex-wrap:wrap">
+              <span style="font-size:11px;color:var(--tx4);font-family:'DM Mono',monospace">${e2(p.dni)}</span>
+              ${p.fechaNac?`<span style="font-size:11px;color:var(--tx4)">${edad(p.fechaNac)} a</span>`:''}
+              ${catPill(p.categoriaId)}
+              ${bdg(p.estado||'activo')}
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;font-size:11px;color:var(--tx4);flex-shrink:0">
+            ${p.evalTotal>0?`<span>${p.evalTotal} eval</span>`:''}
+            ${p.evalPendiente>0?`<span style="color:var(--amber)">${p.evalPendiente} pend</span>`:''}
+            ${p.evalAprobada>0?`<span style="color:var(--green)">✓${p.evalAprobada}</span>`:''}
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();abrirPac('${esc(p.id)}')">👁️ Ver</button>
+            ${session.rol==='admin'?`<button class="btn btn-danger btn-sm" title="Eliminar" onclick="event.stopPropagation();eliminarPac('${esc(p.id)}','${esc(p.nombre)}')">🗑️</button>`:''}
+          </div>
+        </div>`;
+      }).join('')+'</div>';
+  } else {
+    box.innerHTML=`<div class="pac-grid">${lista.map(p=>{
+      const c=getCat(p.categoriaId);
+      const ini=(p.nombre||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+      return `<div class="pac-card" onclick="abrirPac('${esc(p.id)}')">
+        <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+          <div class="pac-avatar" style="background:${c.color}33;color:${c.color};border:1.5px solid ${c.color}55">${ini}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:14px;color:var(--n900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e2(p.nombre)}</div>
+            <div style="font-size:11px;color:var(--tx3);font-family:'DM Mono',monospace;margin-top:1px">${e2(p.dni)} ${p.fechaNac?'· '+edad(p.fechaNac)+' a':''}</div>
+            <div style="margin-top:6px">${catPill(p.categoriaId)}</div>
+          </div>
+          ${bdg(p.estado||'activo')}
         </div>
-        ${bdg(p.estado||'activo')}
-      </div>
-      <div style="display:flex;gap:10px;font-size:11px;color:var(--tx3);margin-bottom:8px">
-        <span>${p.evalTotal||0} eval</span>
-        ${p.evalPendiente>0?`<span style="color:var(--amber)">${p.evalPendiente} pend</span>`:''}
-        ${p.evalAprobada>0?`<span style="color:var(--green)">✓ ${p.evalAprobada}</span>`:''}
-      </div>
-      <div style="display:flex;gap:6px">
-        <button class="btn btn-ghost btn-sm" style="flex:1;justify-content:center" onclick="event.stopPropagation();abrirPac('${esc(p.id)}')">👁️ Ver historia clínica</button>
-        ${session.rol==='admin'?`<button class="btn btn-danger btn-sm" title="Eliminar esta atención" onclick="event.stopPropagation();eliminarPac('${esc(p.id)}','${esc(p.nombre)}')">🗑️</button>`:''}
-      </div>
-    </div>`;
-  }).join('')}</div>`;
+        <div style="display:flex;gap:10px;font-size:11px;color:var(--tx3);margin-bottom:8px">
+          <span>${p.evalTotal||0} eval</span>
+          ${p.evalPendiente>0?`<span style="color:var(--amber)">${p.evalPendiente} pend</span>`:''}
+          ${p.evalAprobada>0?`<span style="color:var(--green)">✓ ${p.evalAprobada}</span>`:''}
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" style="flex:1;justify-content:center" onclick="event.stopPropagation();abrirPac('${esc(p.id)}')">👁️ Ver historia clínica</button>
+          ${session.rol==='admin'?`<button class="btn btn-danger btn-sm" title="Eliminar esta atención" onclick="event.stopPropagation();eliminarPac('${esc(p.id)}','${esc(p.nombre)}')">🗑️</button>`:''}
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+  }
 }
 
 // ─── Formulario Paciente ──────────────────────────────
@@ -205,16 +250,19 @@ async function abrirFrmPac(pac=null, preCatId=null, preCatNombre=null){
 async function abrirPac(id){
   views.forEach(v=>g(v).style.display='none');
   const v=g('vDetalle');v.style.display='block';v.innerHTML='<div class="loader">Cargando...</div>';
-  const [rP,rE,rS]=await Promise.all([apiGet('obtenerPaciente',{id}),apiGet('listarEvaluaciones',{pacienteId:id}),apiGet('listarSesiones',{pacienteId:id})]);
+  const [rP,rE,rS,rU0]=await Promise.all([
+    apiGet('obtenerPaciente',{id}),
+    apiGet('listarEvaluaciones',{pacienteId:id}),
+    apiGet('listarSesiones',{pacienteId:id}),
+    window._listaUsuariosCache
+      ? Promise.resolve({ok:true,usuarios:window._listaUsuariosCache})
+      : apiGet('listarUsuarios').catch(()=>({ok:false}))
+  ]);
   if(!rP.ok){v.innerHTML=`<div class="err-box">${e2(rP.error)}</div>`;return;}
   const pac=rP.paciente; pacActivo=pac;
   const evals=rE.evaluaciones||[], ses=rS.sesiones||[];
-  // Pre-cargar usuarios para sellos (no bloqueante)
-  if(!window._listaUsuariosCache){
-    apiGet('listarUsuarios').then(function(rU){
-      if(rU.ok) window._listaUsuariosCache = rU.usuarios||[];
-    }).catch(function(){});
-  }
+  // Cache de usuarios disponible antes del render (necesario para mkSelloInline en sesCard)
+  if(rU0.ok) window._listaUsuariosCache = rU0.usuarios||[];
   const cat=getCat(pac.categoriaId);
   const esPropio=session.rol==='estudiante'&&(pac.creadoPor===session.codigo||pac.asignadoA===session.codigo);
   const puedeEditar=session.rol!=='estudiante'||esPropio;
@@ -274,12 +322,11 @@ async function abrirPac(id){
       ${ses.length?`<div class="timeline">${ses.map(s=>sesCard(s,pac,evalAp)).join('')}</div>`:'<div class="empty">Sin sesiones aún.</div>'}
     </div>`;
 
-  // Cargar alumnos para reasignar
+  // Cargar alumnos para reasignar (reusar cache ya cargado arriba)
   if(session.rol!=='estudiante'){
-    const rU=await apiGet('listarUsuarios').catch(()=>({ok:false}));
     const sel=g('selReasig');
-    if(sel&&rU.ok&&rU.usuarios){
-      rU.usuarios.filter(u=>u.rol==='estudiante').forEach(u=>{
+    if(sel&&window._listaUsuariosCache){
+      window._listaUsuariosCache.filter(u=>u.rol==='estudiante').forEach(u=>{
         const o=document.createElement('option');
         o.value=u.codigo;o.textContent=(u.nombre||u.codigo);
         if(u.codigo===pac.asignadoA)o.selected=true;
@@ -739,7 +786,29 @@ async function toggleEvalInline(uid, headerEl){
       if(ev.datosEspecificos&&ev.datosEspecificos.plantigrafiaFileId){
         await _precargarPlantigrafia(ev.datosEspecificos.plantigrafiaFileId);
       } else { window._plantigrafiaCache=null; }
-      el.innerHTML=buildEvalHTML(ev, pac, '');
+      var _firmaVer=(ev.estado==='aprobada'&&(ev.revisadoPor||ev.docente))?mkSelloInline(ev.revisadoPor||ev.docente,uid+'_f'):'';
+      el.innerHTML=buildEvalHTML(ev, pac, _firmaVer);
+
+      // Consentimiento informado — siempre intenta cargarlo; se oculta si no existe
+      (function(){
+        var cId='ci_'+uid;
+        var cDiv=document.createElement('div');
+        cDiv.id=cId;
+        cDiv.style.cssText='margin-top:12px;padding:12px 14px;background:var(--surf2);border:1px solid var(--bd);border-radius:10px;display:none';
+        cDiv.innerHTML='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">📄 Consentimiento Informado</div>'
+          +'<div id="ci_img_'+uid+'"></div>';
+        el.appendChild(cDiv);
+        apiPost({action:'getConsentimiento',evaluacionId:ev.id}).then(function(rc){
+          var wrap=document.getElementById(cId);
+          var box=document.getElementById('ci_img_'+uid);
+          if(!wrap||!box) return;
+          if(!rc.ok) return; // sin consentimiento — permanece oculto
+          var dataUrl='data:'+rc.mimeType+';base64,'+rc.data;
+          box.innerHTML='<img src="'+dataUrl+'" style="max-width:100%;max-height:320px;border-radius:8px;border:1px solid var(--bd);display:block;cursor:zoom-in" onclick="window.open(this.src,\'_blank\')" title="Clic para ampliar">';
+          wrap.style.display='block';
+        }).catch(function(){});
+      })();
+
       el.dataset.loaded='1';
       // Agregar leyenda flotante a los chips del widget postural
       setTimeout(function(){
@@ -825,7 +894,7 @@ function sesCard(s, pac, evalAp){
             <div style="font-size:12px;font-weight:700;color:${s.estado==='aprobada'?'var(--green)':'var(--red)'}">${s.estado==='aprobada'?'✅ Aprobada':'❌ Rechazada'} — ${e2(s.revisadoPor)}</div>
             ${s.comentarioDocente?`<div style="font-size:12px;color:var(--tx2);margin-top:4px;padding:6px 8px;background:rgba(0,0,0,.06);border-radius:6px">${e2(s.comentarioDocente)}</div>`:''}
           </div>
-          <div style="flex-shrink:0">${mkSelloInline(s.revisadoPor||s.docente||'','sesr_${uid}')}</div>
+          <div style="flex-shrink:0">${mkSelloInline(s.revisadoPor||s.docente||'',uid)}</div>
         </div>` : ''}
       </div>
       <div class="btn-group" style="margin-top:8px">
@@ -1282,7 +1351,7 @@ async function reasignarPac(pacId){
 }
 
 async function archivarAtencion(pacId, pacNombre){
-  const confirmado=await confirmDialog(`¿Archivar la atención de "${pacNombre}"?\n\nEsto desasignará al alumno y archivará el paciente. Solo será accesible desde "Buscar HC".`);
+  const confirmado=confirm(`¿Archivar la atención de "${pacNombre}"?\n\nEsto desasignará al alumno y archivará el paciente. Solo será accesible desde "Buscar HC".`);
   if(!confirmado) return;
   
   try{

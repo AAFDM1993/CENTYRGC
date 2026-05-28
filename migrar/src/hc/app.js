@@ -291,7 +291,7 @@ async function iniciarApp(){
 }
 
 // ─── Nav ──────────────────────────────────────────────
-const views=['vPac','vDetalle','vEvalForm','vSesForm','vPend','vBusqHC','vFirmas','vConfig'];
+const views=['vPac','vDetalle','vEvalForm','vSesForm','vPend','vBusqHC','vFirmas','vConfig','vExportHC'];
 const sbs=['sbPac','sbPend','sbBusqHC','sbFirmas','sbConfig'];
 
 function setMobileActive(id){
