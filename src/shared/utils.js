@@ -36,15 +36,20 @@ function hideSendOverlay(){
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
+function _limpiarFecha(raw){
+  // Elimina sufijos de zona horaria con paréntesis: "GMT-0500 (hora estándar de Perú)"
+  return String(raw).replace(/\s*\([^)]*\)\s*$/,'').trim();
+}
 function formatFecha(raw){
   if(!raw) return '';
+  var s=_limpiarFecha(raw);
   var d;
-  if(/^\d{4}-\d{2}-\d{2}$/.test(String(raw))) d=new Date(raw+'T12:00:00');
-  else d=new Date(raw);
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) d=new Date(s+'T12:00:00');
+  else d=new Date(s);
   if(isNaN(d.getTime())){
-    var m=raw.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    var m=s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
     if(m) d=new Date(m[3].length===2?'20'+m[3]:m[3],m[2]-1,m[1]);
-    else return raw;
+    else return s;
   }
   var dd=String(d.getDate()).padStart(2,'0');
   var mm=String(d.getMonth()+1).padStart(2,'0');
@@ -58,12 +63,14 @@ function formatFecha(raw){
 function formatFechaCorta(raw){
   if(!raw) return '';
   if(/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) return raw;
-  var d=new Date(raw);
-  if(/^\d{4}-\d{2}-\d{2}$/.test(String(raw))) d=new Date(raw+'T12:00:00');
+  var s=_limpiarFecha(raw);
+  var d;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s)) d=new Date(s+'T12:00:00');
+  else d=new Date(s);
   if(isNaN(d.getTime())){
-    var m=raw.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    var m=s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
     if(m) d=new Date((m[3].length===2?'20'+m[3]:m[3])+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0')+'T12:00:00');
-    else return raw;
+    else return s;
   }
   var dd=String(d.getDate()).padStart(2,'0');
   var mm=String(d.getMonth()+1).padStart(2,'0');
