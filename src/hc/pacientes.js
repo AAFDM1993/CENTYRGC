@@ -991,6 +991,7 @@ async function enviarEval(evalId, pacId){
 function filtrarDocentesHC(val){
   var docentes=window._docentesHCList||[];
   var dd=g('hcDocenteDD');
+  var inp=g('hcDocInput');
   if(!dd) return;
   if(!val||!val.trim()){dd.style.display='none';return;}
   var v=val.toLowerCase();
@@ -1005,6 +1006,23 @@ function filtrarDocentesHC(val){
       +'</div>';
   }).join('');
   dd.style.display='block';
+  // En mobile/tablet (position:fixed por CSS): posicionar justo debajo del input
+  if(window.innerWidth<=1024 && inp){
+    var rect=inp.getBoundingClientRect();
+    var spaceBelow=window.innerHeight-rect.bottom-8;
+    var spaceAbove=rect.top-8;
+    if(spaceBelow>=120||spaceBelow>=spaceAbove){
+      // Mostrar debajo
+      dd.style.top=(rect.bottom+4)+'px';
+      dd.style.bottom='auto';
+    } else {
+      // Mostrar arriba si hay más espacio
+      dd.style.bottom=(window.innerHeight-rect.top+4)+'px';
+      dd.style.top='auto';
+    }
+    dd.style.left=rect.left+'px';
+    dd.style.right=(window.innerWidth-rect.right)+'px';
+  }
   dd.querySelectorAll('[data-hnm]').forEach(function(el){
     el.addEventListener('click',function(){ selDocHC(el.getAttribute('data-hnm'), el.getAttribute('data-hcd')); });
   });
