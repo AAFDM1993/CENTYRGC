@@ -82,7 +82,7 @@ function iniciarVistaAdmin(){
   document.body.className=(document.body.className||'').replace(/\brol-\S+/g,'').trim()+' rol-'+session.rol;
   // Ambos roles: ocultar sidebar completamente, mostrar topbar
   hideSidebar();
-  if(g('docenteTopbar'))g('docenteTopbar').style.display='block';
+  if(g('docenteTopbar'))g('docenteTopbar').style.display='none';
 
   if(esA){
     g('btnGen').disabled=false;
