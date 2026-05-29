@@ -1,5 +1,15 @@
 // Construcción del formulario HC: catálogo de escalas, plantilla por categoría, secciones de anamnesis/trauma, pruebas funcionales
 
+// Elimina la descripción entre paréntesis al final del nombre de una prueba funcional
+// Ej: "Test de valgo stress 0° (LCM completo)" → "Test de valgo stress 0°"
+// El nombre completo se mantiene como clave de datos; solo se limpia para mostrar.
+function _fmtPruebaName(n){
+  return String(n||'').replace(/\s*\([^)]*\)\s*$/,'')
+    .replace(/&deg;/g,'°').replace(/&aacute;/g,'á').replace(/&eacute;/g,'é')
+    .replace(/&iacute;/g,'í').replace(/&oacute;/g,'ó').replace(/&uacute;/g,'ú')
+    .replace(/&ntilde;/g,'ñ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').trim();
+}
+
 function plantillaHTML(catId, pac){
   const d = pac?.datosEspecificos || {};
   var secciones = secFiliacion(pac, d) + secAnamnesis(catId, pac, d);
@@ -472,7 +482,7 @@ function mkPruebasFuncionales(sel, pruebasGuardadas){
 
 function _mkPruebaFila(region, nombre, savedVal, regionId){
   var html = '<div data-fila-prueba="1" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 10px;background:var(--surf);border-radius:8px;border:1px solid var(--bd)">';
-  html += '<span style="font-size:11px;flex:1;color:var(--tx)">'+e2(nombre)+'</span>';
+  html += '<span style="font-size:11px;flex:1;color:var(--tx)">'+e2(_fmtPruebaName(nombre))+'</span>';
   html += '<select class="sel" data-prueba-region="'+e2(region)+'" data-prueba-nombre="'+e2(nombre)+'" style="font-size:11px;padding:4px 6px;width:140px;flex-shrink:0">';
   html += '<option value="">&#8212;</option>';
   ['+  Positivo','-  Negativo','Dudoso','No realizado'].forEach(function(op){
@@ -528,7 +538,7 @@ function _renderListaPruebas(q){
     var ya = !!yaAgregadas[p.nombre];
     return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;background:var(--surf2);border:1px solid var(--bd);border-radius:10px;'+(ya?'opacity:.5':'cursor:pointer')+'" '
       +(ya ? '' : 'data-prueba="'+e2(p.nombre)+'" onclick="_seleccionarPrueba(this.getAttribute(\'data-prueba\'))"')+'>'
-      +'<span style="font-size:12px;flex:1;color:var(--tx)">'+e2(p.nombre)+'</span>'
+      +'<span style="font-size:12px;flex:1;color:var(--tx)">'+e2(_fmtPruebaName(p.nombre))+'</span>'
       +(ya
         ? '<span style="font-size:11px;color:var(--green);font-weight:700;flex-shrink:0">&#10003; Agregada</span>'
         : '<button class="btn btn-primary btn-sm" style="flex-shrink:0">+ Agregar</button>')
@@ -828,7 +838,7 @@ const ESCALAS_CATALOGO = [
     render: renderEscalaWeeFIM, calcular: calcularWeeFIM },
 
   { id:'aims', nombre:'Escala de Desarrollo Motor Infantil de Alberta (AIMS)', desc:'Evaluación observacional del desarrollo motor en 4 posiciones: prono, supino, sedestación y bipedestación.',
-    dominio:'Desarrollo Motor', cats:'all', ped:true,
+    dominio:'Desarrollo Motor', cats:['neuro_pediatrica'], ped:true,
     render: renderEscalaAIMS, calcular: calcularAIMS },
 
   // ── FLEXIBILIDAD Y ACORTAMIENTOS ─────────────────────────
@@ -1001,11 +1011,6 @@ function _renderBloqueEscala(def, datosGuardados){
   html += '</div>';
   // Cuerpo colapsable
   html += '<div id="escala_body_'+def.id+'" style="padding:14px">';
-  // Fecha de aplicación
-  html += '<div class="field" style="margin-bottom:14px">';
-  html += '<label style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px">Fecha de aplicación</label>';
-  html += '<input class="inp" type="date" id="escala_fecha_'+def.id+'" value="'+fecha+'" style="max-width:180px">';
-  html += '</div>';
   // Contenido específico de la escala
   html += def.render(datosGuardados);
   // Resultado en tiempo real

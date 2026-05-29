@@ -68,7 +68,7 @@ function buildEvalHTML(ev, pac, firmaHTML){
         var ps=d.pruebasFuncionales[reg]; if(!ps||!Object.keys(ps).length) return;
         exBody+='<div style="font-size:11px;font-weight:700;color:#475569;margin:6px 0 3px">'+e2(reg)+'</div>';
         exBody+='<table class="tbl-rom"><thead><tr><th style="text-align:left">Prueba</th><th>Resultado</th></tr></thead><tbody>';
-        Object.keys(ps).forEach(function(n){exBody+='<tr><td>'+e2(n)+'</td><td style="text-align:center;font-weight:700">'+e2(String(ps[n]||'—'))+'</td></tr>';});
+        Object.keys(ps).forEach(function(n){exBody+='<tr><td>'+e2(_fmtPruebaName(n))+'</td><td style="text-align:center;font-weight:700">'+e2(String(ps[n]||'—'))+'</td></tr>';});
         exBody+='</tbody></table>';
       });
       exBody+='</div>';
@@ -427,7 +427,7 @@ function _buildExamenObjetivoPorCategoria(d, ev, catId){
         h += '<div style="font-size:11px;font-weight:700;color:#475569;margin:6px 0 3px">'+e2(region)+'</div>';
         h += '<table class="tbl-rom"><thead><tr><th style="text-align:left">Prueba</th><th>Resultado</th></tr></thead><tbody>';
         Object.keys(pruebas).forEach(function(nombre){
-          h += '<tr><td>'+e2(nombre)+'</td><td style="text-align:center;font-weight:700">'+e2(String(pruebas[nombre]||'—'))+'</td></tr>';
+          h += '<tr><td>'+e2(_fmtPruebaName(nombre))+'</td><td style="text-align:center;font-weight:700">'+e2(String(pruebas[nombre]||'—'))+'</td></tr>';
         });
         h += '</tbody></table>';
       });

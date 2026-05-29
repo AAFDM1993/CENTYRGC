@@ -960,14 +960,25 @@ function renderEscalaAIMS(d){
     html += '<textarea class="ta" data-escala-item="' + pos.key + '" rows="3" placeholder="' + pos.placeholder + '" style="font-size:12px;min-height:70px" oninput="recalcularEscala(\'aims\')">' + e2(items_d[pos.key]||'') + '</textarea>';
     html += '</div>';
   });
+  html += '<div style="padding:12px;background:var(--surf);border-radius:10px;border:1px solid var(--bd)">';
+  html += '<div style="font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:6px">Percentil AIMS</div>';
+  html += '<div style="display:flex;align-items:center;gap:10px">';
+  html += '<input class="inp" type="number" data-escala-item="percentil" min="1" max="99" placeholder="Ej: 50" value="'+e2(items_d.percentil||'')+'" style="max-width:120px;font-size:14px;font-weight:700" oninput="recalcularEscala(\'aims\')">';
+  html += '<span style="font-size:12px;color:var(--tx3)">Consultar tabla normativa AIMS según edad gestacional corregida</span>';
+  html += '</div></div>';
   return html + '</div>';
 }
 function calcularAIMS(id){
   var b=g('escala_bloque_'+id); if(!b) return null;
-  var count=0;
-  b.querySelectorAll('[data-escala-item]').forEach(function(el){if(el.value&&el.value.trim()!=='') count++;});
-  if(!count) return null;
-  return {puntaje: count + '/4 posiciones evaluadas', puntajeRaw: null, interpretacion: 'Registro observacional por posición. Consultar percentiles AIMS según edad.'};
+  var count=0, percentil='';
+  b.querySelectorAll('[data-escala-item]').forEach(function(el){
+    if(el.dataset.escalaItem==='percentil'){percentil=el.value.trim();return;}
+    if(el.value&&el.value.trim()!=='') count++;
+  });
+  if(!count&&!percentil) return null;
+  var interp='Registro observacional por posición.';
+  if(percentil) interp+=' Percentil: '+percentil+'°';
+  return {puntaje:(count?count+'/4 posiciones':'—')+(percentil?' · P'+percentil:''),puntajeRaw:percentil?Number(percentil):null,interpretacion:interp};
 }
 
 // ── TARDIEU ──────────────────────────────────────────────────
