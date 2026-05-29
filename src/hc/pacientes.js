@@ -1006,6 +1006,24 @@ function filtrarDocentesHC(val){
       +'</div>';
   }).join('');
   dd.style.display='block';
+  // Mobile/tablet: posicionar junto al input usando !important para vencer el CSS
+  if(window.innerWidth<=1024){
+    var inp=g('hcDocInput');
+    if(inp){
+      var rect=inp.getBoundingClientRect();
+      var sb=window.innerHeight-rect.bottom-8;
+      var sa=rect.top-8;
+      if(sb>=100||sb>=sa){
+        dd.style.setProperty('top',(rect.bottom+4)+'px','important');
+        dd.style.setProperty('bottom','auto','important');
+      } else {
+        dd.style.setProperty('bottom',(window.innerHeight-rect.top+4)+'px','important');
+        dd.style.setProperty('top','auto','important');
+      }
+      dd.style.setProperty('left',Math.max(4,rect.left)+'px','important');
+      dd.style.setProperty('right',Math.max(4,window.innerWidth-rect.right)+'px','important');
+    }
+  }
   dd.querySelectorAll('[data-hnm]').forEach(function(el){
     el.addEventListener('click',function(){ selDocHC(el.getAttribute('data-hnm'), el.getAttribute('data-hcd')); });
   });
@@ -1035,14 +1053,31 @@ function filtrarDocentes(val, docentesParam){
       +'</div>';
   }).join('');
   dd.style.display='block';
+<<<<<<< Updated upstream
+=======
+  // Mobile/tablet: posicionar junto al input usando !important para vencer el CSS
+>>>>>>> Stashed changes
   if(window.innerWidth<=1024){
     var inp2=g('sDocInput');
     if(inp2){
       var rect=inp2.getBoundingClientRect();
       var sb=window.innerHeight-rect.bottom-8;
+<<<<<<< Updated upstream
       if(sb>=120||sb>=(rect.top-8)){dd.style.top=(rect.bottom+4)+'px';dd.style.bottom='auto';}
       else{dd.style.bottom=(window.innerHeight-rect.top+4)+'px';dd.style.top='auto';}
       dd.style.left=rect.left+'px';dd.style.right=(window.innerWidth-rect.right)+'px';
+=======
+      var sa=rect.top-8;
+      if(sb>=100||sb>=sa){
+        dd.style.setProperty('top',(rect.bottom+4)+'px','important');
+        dd.style.setProperty('bottom','auto','important');
+      } else {
+        dd.style.setProperty('bottom',(window.innerHeight-rect.top+4)+'px','important');
+        dd.style.setProperty('top','auto','important');
+      }
+      dd.style.setProperty('left',Math.max(4,rect.left)+'px','important');
+      dd.style.setProperty('right',Math.max(4,window.innerWidth-rect.right)+'px','important');
+>>>>>>> Stashed changes
     }
   }
   dd.querySelectorAll('[data-dnm]').forEach(function(el){
