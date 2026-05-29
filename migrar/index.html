@@ -649,6 +649,8 @@ body.rol-recepcion #hdrBtnRecord{display:none}
 
 /* En móvil el sidebar no existe */
 @media(max-width:767px){.app-sidebar{display:none!important}}
+/* Botón de tema en header: solo visible en móvil (en desktop lo tiene el sidebar) */
+@media(min-width:768px){#hdrThemeBtn{display:none!important}}
 
 /* Nav items */
 .sb-nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:8px 0}
