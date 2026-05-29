@@ -1,9 +1,9 @@
-# Solo trackear: migrar/index.html, migrar/hc.html, migrar/src/
-/*
-!/migrar
-!.gitignore
-
-migrar/*
-!migrar/index.html
-!migrar/hc.html
-!migrar/src
+node_modules/
+dist/
+.DS_Store
+backend/
+docs/
+logo.png
+package.json
+package-lock.json
+vite.config.js
