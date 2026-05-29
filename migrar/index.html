@@ -641,10 +641,17 @@ body.rol-recepcion #hdrBtnRecord{display:none}
 }
 .app-sidebar.collapsed{width:60px}
 
-/* Contenido principal se desplaza */
+/* Contenido principal se desplaza al lado del sidebar */
 @media(min-width:768px){
-  #appPage .content-main{margin-left:240px;transition:margin-left .25s ease;padding-top:20px}
-  body.sidebar-collapsed #appPage .content-main{margin-left:60px}
+  #viewAdmin,#viewEstudiante,
+  #secEstNotas,#secEstCasilleros,#secEstAgenda{
+    margin-left:240px;transition:margin-left .25s ease;
+  }
+  body.sidebar-collapsed #viewAdmin,
+  body.sidebar-collapsed #viewEstudiante,
+  body.sidebar-collapsed #secEstNotas,
+  body.sidebar-collapsed #secEstCasilleros,
+  body.sidebar-collapsed #secEstAgenda{margin-left:60px}
 }
 
 /* En móvil el sidebar no existe */
