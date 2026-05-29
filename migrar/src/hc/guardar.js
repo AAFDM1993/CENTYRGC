@@ -222,6 +222,17 @@ async function guardarHC(catId, pacId, modo){
   // Guardar evaluación (actualizar si viene de una eval rechazada/borrador existente)
   const estado=modo==='borrador'?'borrador':(session.rol==='estudiante'?'pendiente':'aprobada');
   const evalIdExistente=g('hcEvalId')?.value||'';
+  // Estudiantes no pueden guardar sobre evaluaciones ya enviadas o aprobadas
+  if(evalIdExistente && session.rol==='estudiante'){
+    const estadoOrig=g('hcEvalEstado')?.value||'';
+    if(estadoOrig && estadoOrig!=='borrador' && estadoOrig!=='rechazada'){
+      hideSendOverlay();_busy=false;
+      toast('No permitido', estadoOrig==='pendiente'
+        ? 'La evaluación está en revisión — espera la respuesta del docente'
+        : 'Esta evaluación ya fue aprobada', 'warn');
+      return;
+    }
+  }
   const payloadEval={action:'guardarEvaluacion',pacienteId:idPac,categoriaId:catId,
     tipo:'inicial',estado,docente:docenteHC,docenteCodigo:docenteHCCodigo,dxFisio:datos.dxFisio,aptaPatron:'',datosEspecificos:datos};
   if(evalIdExistente) payloadEval.id=evalIdExistente;

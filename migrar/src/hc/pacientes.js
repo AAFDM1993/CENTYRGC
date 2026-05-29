@@ -203,6 +203,7 @@ async function abrirFrmPac(pac=null, preCatId=null, preCatNombre=null){
     <input type="hidden" id="pC" value="${catId}">
     <input type="hidden" id="hcPacId" value="${pac?.id||''}">
     <input type="hidden" id="hcEvalId" value="${pac?._evalId||''}">
+    <input type="hidden" id="hcEvalEstado" value="${pac?._evalEstado||''}">
     ${plantillaHTML(catId, pac)}
     <!-- ── Consentimiento Informado ─────────────────────── -->
     <div class="card" style="margin:14px 0;padding:14px 18px">
@@ -930,6 +931,14 @@ async function editarEvalRechazada(pacId, evalId, catId){
   const pac = rP.paciente;
   const ev  = rE.evaluacion;
 
+  // Estudiantes solo pueden editar borradores o rechazadas
+  if(session.rol==='estudiante' && ev.estado!=='borrador' && ev.estado!=='rechazada'){
+    toast('No permitido', ev.estado==='pendiente'
+      ? 'La evaluación está en revisión — espera la respuesta del docente'
+      : 'Esta evaluación ya fue aprobada y no puede editarse', 'warn');
+    return;
+  }
+
   // Fusionar los datosEspecificos de la eval en el objeto pac
   // para que plantillaHTML(catId, pac) precargue todos los campos
   var datosEsp = ev.datosEspecificos || {};
@@ -944,6 +953,7 @@ async function editarEvalRechazada(pacId, evalId, catId){
     categoriaId: catId || pac.categoriaId,
     // Guardar el id de la evaluación para que guardarHC actualice en lugar de crear
     _evalId:     evalId,
+    _evalEstado: ev.estado,
     _docenteEval: ev.docente || '',
     datosEspecificos: datosEsp
   });

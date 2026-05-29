@@ -10,6 +10,22 @@ let agendaReservas = [];
 let calFechaBase   = new Date();
 let rsvPendiente   = null;
 
+// ── Reservas borradas recientemente (filtro anti-cache-GAS) ───────────────
+// Cuando GAS tarda en invalidar su cache, el cliente filtra los borrados
+const _rsvBorradas = new Set();
+function _markRsvDeleted(fecha, hora, area, camilla){
+  const k = [fecha,hora,area,camilla].map(s=>String(s).trim().toLowerCase()).join('|');
+  _rsvBorradas.add(k);
+  setTimeout(()=>_rsvBorradas.delete(k), 2*60*1000); // expira en 2 min
+}
+function _filterRsvBorradas(reservas){
+  if(!_rsvBorradas.size) return reservas;
+  return reservas.filter(rv=>{
+    const k=[rv.fecha,rv.horaInicio,rv.area,rv.camilla].map(s=>String(s).trim().toLowerCase()).join('|');
+    return !_rsvBorradas.has(k);
+  });
+}
+
 const DIAS_NOM = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
 
 function getLunes(d){
@@ -115,7 +131,7 @@ async function cargarReservasSemana(){
   const finSem=new Date(calFechaBase); finSem.setDate(finSem.getDate()+4); // viernes
   try{
     const r=await apiGetCached('leerReservas',{fechaInicio:ini,fechaFin:fmt(finSem)});
-    if(r.ok) agendaReservas=r.reservas;
+    if(r.ok) agendaReservas=_filterRsvBorradas(r.reservas);
   }catch(e){ agendaReservas=[]; }
 }
 // ── RESERVAS DEL DÍA ─────────────────────────────────────
@@ -210,6 +226,7 @@ async function eliminarReservaHoy(fecha, hora, area, camilla){
       _n(rv.fecha)===_n(fecha)&&_n(rv.horaInicio)===_n(hora)&&
       _n(rv.area)===_n(area)&&_n(rv.camilla)===_n(camilla)
     ));
+    _markRsvDeleted(fecha, hora, area, camilla);
     renderCalendario();
     verReservasHoy();
     invalidateCache('leerReservas');
@@ -588,6 +605,7 @@ async function pedirEliminar(fecha,hora,area,camilla){
       _n(rv.fecha)===_n(fecha)&&_n(rv.horaInicio)===_n(hora)&&
       _n(rv.area)===_n(area)&&_n(rv.camilla)===_n(camilla)
     ));
+    _markRsvDeleted(fecha, hora, area, camilla);
     renderCalendario();
     invalidateCache('leerReservas');
   }catch(e){hideLoader();toast('Error',e.message,'err')}
@@ -637,7 +655,7 @@ async function cargarReservasEst(){
   const finSem=new Date(calEstFechaBase); finSem.setDate(finSem.getDate()+4);
   try{
     const r=await apiGetCached('leerReservas',{fechaInicio:ini,fechaFin:fmt(finSem)});
-    if(r.ok) agendaEstReservas=r.reservas;
+    if(r.ok) agendaEstReservas=_filterRsvBorradas(r.reservas);
   }catch(e){ agendaEstReservas=[]; }
 }
 
@@ -1101,6 +1119,7 @@ async function eliminarReservaLista(fecha,hora,area,camilla){
       _n(rv.fecha)===_n(fecha)&&_n(rv.horaInicio)===_n(hora)&&
       _n(rv.area)===_n(area)&&_n(rv.camilla)===_n(camilla)
     ));
+    _markRsvDeleted(fecha, hora, area, camilla);
     renderCalendario();
     invalidateCache('leerReservas');
     cargarListaReservas();
