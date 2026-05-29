@@ -3,7 +3,12 @@
 // Elimina la descripción entre paréntesis al final del nombre de una prueba funcional
 // Ej: "Test de valgo stress 0° (LCM completo)" → "Test de valgo stress 0°"
 // El nombre completo se mantiene como clave de datos; solo se limpia para mostrar.
-function _fmtPruebaName(n){ return String(n||'').replace(/\s*\([^)]*\)\s*$/,'').trim(); }
+function _fmtPruebaName(n){
+  return String(n||'').replace(/\s*\([^)]*\)\s*$/,'')
+    .replace(/&deg;/g,'°').replace(/&aacute;/g,'á').replace(/&eacute;/g,'é')
+    .replace(/&iacute;/g,'í').replace(/&oacute;/g,'ó').replace(/&uacute;/g,'ú')
+    .replace(/&ntilde;/g,'ñ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').trim();
+}
 
 function plantillaHTML(catId, pac){
   const d = pac?.datosEspecificos || {};
@@ -833,7 +838,7 @@ const ESCALAS_CATALOGO = [
     render: renderEscalaWeeFIM, calcular: calcularWeeFIM },
 
   { id:'aims', nombre:'Escala de Desarrollo Motor Infantil de Alberta (AIMS)', desc:'Evaluación observacional del desarrollo motor en 4 posiciones: prono, supino, sedestación y bipedestación.',
-    dominio:'Desarrollo Motor', cats:'all', ped:true,
+    dominio:'Desarrollo Motor', cats:['neuro_pediatrica'], ped:true,
     render: renderEscalaAIMS, calcular: calcularAIMS },
 
   // ── FLEXIBILIDAD Y ACORTAMIENTOS ─────────────────────────
@@ -1006,11 +1011,6 @@ function _renderBloqueEscala(def, datosGuardados){
   html += '</div>';
   // Cuerpo colapsable
   html += '<div id="escala_body_'+def.id+'" style="padding:14px">';
-  // Fecha de aplicación
-  html += '<div class="field" style="margin-bottom:14px">';
-  html += '<label style="font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px">Fecha de aplicación</label>';
-  html += '<input class="inp" type="date" id="escala_fecha_'+def.id+'" value="'+fecha+'" style="max-width:180px">';
-  html += '</div>';
   // Contenido específico de la escala
   html += def.render(datosGuardados);
   // Resultado en tiempo real
