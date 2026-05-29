@@ -261,7 +261,6 @@ async function abrirPac(id){
   if(!rP.ok){v.innerHTML=`<div class="err-box">${e2(rP.error)}</div>`;return;}
   const pac=rP.paciente; pacActivo=pac;
   const evals=rE.evaluaciones||[], ses=rS.sesiones||[];
-  window._sesActualesPac=ses;
   // Cache de usuarios disponible antes del render (necesario para mkSelloInline en sesCard)
   if(rU0.ok) window._listaUsuariosCache = rU0.usuarios||[];
   const cat=getCat(pac.categoriaId);
@@ -317,7 +316,7 @@ async function abrirPac(id){
     <div class="card">
       <div class="card-hdr">
         <div><div class="card-title">Sesiones de tratamiento</div><div style="font-size:12px;color:var(--tx3)">${ses.length} sesión(es)</div></div>
-        ${puedeNuevaSes?`<button class="btn btn-primary btn-sm" onclick="abrirNuevaSes('${esc(pac.id)}','${evalAp?.id||''}',${ses.length+1})">+ Nueva sesión</button>`:''}
+        ${puedeNuevaSes?`<button class="btn btn-primary btn-sm" onclick="abrirFrmSes('${esc(pac.id)}','${evalAp?.id||''}',${ses.length+1})">+ Nueva sesión</button>`:''}
         ${!evalAp?`<span style="font-size:11px;color:var(--tx4)">Requiere evaluación aprobada</span>`:''}
       </div>
       ${ses.length?`<div class="timeline">${ses.map(s=>sesCard(s,pac,evalAp)).join('')}</div>`:'<div class="empty">Sin sesiones aún.</div>'}
@@ -440,7 +439,7 @@ function buildDetalleEval(ev, pac){
         filled.forEach(function(nom){
           var res=regPruebas[nom];
           var color=res&&res.startsWith('+')?'var(--red)':res&&res.startsWith('-')?'var(--green)':'var(--amber)';
-          html+='<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 8px;background:var(--surf2);border-radius:5px;margin-bottom:2px"><span>'+e2(_fmtPruebaName(nom))+'</span><b style="color:'+color+'">'+e2(res)+'</b></div>';
+          html+='<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 8px;background:var(--surf2);border-radius:5px;margin-bottom:2px"><span>'+e2(nom)+'</span><b style="color:'+color+'">'+e2(res)+'</b></div>';
         });
       });
       html+='</div>';
@@ -1006,24 +1005,6 @@ function filtrarDocentesHC(val){
       +'</div>';
   }).join('');
   dd.style.display='block';
-  // Mobile/tablet: posicionar junto al input usando !important para vencer el CSS
-  if(window.innerWidth<=1024){
-    var inp=g('hcDocInput');
-    if(inp){
-      var rect=inp.getBoundingClientRect();
-      var sb=window.innerHeight-rect.bottom-8;
-      var sa=rect.top-8;
-      if(sb>=100||sb>=sa){
-        dd.style.setProperty('top',(rect.bottom+4)+'px','important');
-        dd.style.setProperty('bottom','auto','important');
-      } else {
-        dd.style.setProperty('bottom',(window.innerHeight-rect.top+4)+'px','important');
-        dd.style.setProperty('top','auto','important');
-      }
-      dd.style.setProperty('left',Math.max(4,rect.left)+'px','important');
-      dd.style.setProperty('right',Math.max(4,window.innerWidth-rect.right)+'px','important');
-    }
-  }
   dd.querySelectorAll('[data-hnm]').forEach(function(el){
     el.addEventListener('click',function(){ selDocHC(el.getAttribute('data-hnm'), el.getAttribute('data-hcd')); });
   });
@@ -1053,33 +1034,6 @@ function filtrarDocentes(val, docentesParam){
       +'</div>';
   }).join('');
   dd.style.display='block';
-<<<<<<< Updated upstream
-=======
-  // Mobile/tablet: posicionar junto al input usando !important para vencer el CSS
->>>>>>> Stashed changes
-  if(window.innerWidth<=1024){
-    var inp2=g('sDocInput');
-    if(inp2){
-      var rect=inp2.getBoundingClientRect();
-      var sb=window.innerHeight-rect.bottom-8;
-<<<<<<< Updated upstream
-      if(sb>=120||sb>=(rect.top-8)){dd.style.top=(rect.bottom+4)+'px';dd.style.bottom='auto';}
-      else{dd.style.bottom=(window.innerHeight-rect.top+4)+'px';dd.style.top='auto';}
-      dd.style.left=rect.left+'px';dd.style.right=(window.innerWidth-rect.right)+'px';
-=======
-      var sa=rect.top-8;
-      if(sb>=100||sb>=sa){
-        dd.style.setProperty('top',(rect.bottom+4)+'px','important');
-        dd.style.setProperty('bottom','auto','important');
-      } else {
-        dd.style.setProperty('bottom',(window.innerHeight-rect.top+4)+'px','important');
-        dd.style.setProperty('top','auto','important');
-      }
-      dd.style.setProperty('left',Math.max(4,rect.left)+'px','important');
-      dd.style.setProperty('right',Math.max(4,window.innerWidth-rect.right)+'px','important');
->>>>>>> Stashed changes
-    }
-  }
   dd.querySelectorAll('[data-dnm]').forEach(function(el){
     el.addEventListener('click',function(){ selDoc(el.getAttribute('data-dnm'), el.getAttribute('data-dcd')); });
   });
@@ -1091,25 +1045,6 @@ function selDoc(enc, codEnc){
   var hid=g('sDoc'); if(hid) hid.value=nombre;
   var hidCod=g('sDocCodigo'); if(hidCod) hidCod.value=codigo;
   var dd=g('docenteDD'); if(dd) dd.style.display='none';
-}
-function abrirNuevaSes(pacId,evalId,num){
-  var ses=window._sesActualesPac||[];
-  var hasPend=ses.some(function(s){return s.estado==='pendiente';});
-  if(hasPend&&session.rol==='estudiante'){
-    var ov=document.createElement('div');
-    ov.style.cssText='position:fixed;inset:0;background:rgba(8,15,28,.78);z-index:900;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);padding:16px';
-    ov.innerHTML='<div style="background:var(--surf);border:1px solid var(--bd);border-radius:18px;padding:26px 22px;width:100%;max-width:380px;box-shadow:0 24px 60px rgba(0,0,0,.45)">'
-      +'<div style="font-size:28px;text-align:center;margin-bottom:10px">⏳</div>'
-      +'<div style="font-family:\'Syne\',sans-serif;font-weight:700;font-size:15px;color:var(--tx);text-align:center;margin-bottom:10px">Sesión pendiente de aprobación</div>'
-      +'<div style="font-size:13px;color:var(--tx3);line-height:1.7;margin-bottom:20px;text-align:center">No puedes registrar una nueva sesión hasta que el docente apruebe la sesión anterior. Comunícate con tu docente supervisor.</div>'
-      +'<button id="_sesCancelBtn" class="btn btn-primary" style="width:100%;justify-content:center">Entendido</button>'
-      +'</div>';
-    document.body.appendChild(ov);
-    document.getElementById('_sesCancelBtn').onclick=function(){ov.remove();};
-    ov.addEventListener('click',function(e){if(e.target===ov)ov.remove();});
-    return;
-  }
-  abrirFrmSes(pacId,evalId,num,null);
 }
 async function abrirFrmSes(pacId, evalId, num, sesId=null){
   views.forEach(v=>g(v).style.display='none');

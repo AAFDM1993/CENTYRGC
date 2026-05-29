@@ -665,7 +665,7 @@ body.rol-recepcion #hdrBtnRecord{display:none}
         <div class="rol-pill"><div class="rdot" id="rolDot"></div><span id="rolLabel">-</span></div>
         <button id="hdrBtnRecord" class="btn-logout" onclick="abrirRecordPanel()" style="border-color:var(--n600);color:var(--n300)" title="Panel informativo">&#128203; Record</button>
         <button id="hdrBtnPass" class="btn-logout" onclick="mostrarCambioPass()" style="border-color:var(--n600);color:var(--n300)" title="Cambiar contrasena">&#128274;</button>
-        <button id="btnToggleTema" onclick="toggleTema()" title="Cambiar paleta" class="btn-logout" style="border-color:var(--n600);color:var(--n300)">☀ Claro</button>
+        <button id="btnToggleTema" onclick="toggleTema()" title="Cambiar paleta" class="btn-logout" style="border-color:var(--n600);color:var(--n300)">Claro</button>
         <button id="hdrBtnSalir" class="btn-logout" onclick="logout()">Salir</button>
       </div>
     </div>
@@ -1513,7 +1513,7 @@ body.rol-recepcion #hdrBtnRecord{display:none}
 <script>
 </script>
 <script>
-(function(){var T={azul:{'--bg':'#f0f4ff','--bg2':'#e8edff','--surf2':'#f5f7ff','--surf3':'#eef2ff','--bd':'#dee2ff','--bd2':'#eef2ff','--tx':'#1a1a2e','--tx2':'#25253a','--tx3':'#5c5f77','--tx4':'#909198','--sh':'0 1px 3px rgba(59,91,219,.08),0 4px 16px rgba(59,91,219,.1)','--sh2':'0 8px 28px rgba(59,91,219,.15)'},claro:{'--bg':'#ffffff','--bg2':'#f8fafc','--surf2':'#f8fafc','--surf3':'#f0f9ff','--bd':'#e2e8f0','--bd2':'#f1f5f9','--tx':'#0f172a','--tx2':'#1e293b','--tx3':'#64748b','--tx4':'#94a3b8','--sh':'0 1px 3px rgba(0,0,0,.06),0 4px 12px rgba(0,0,0,.08)','--sh2':'0 8px 24px rgba(0,0,0,.12)'}};var K='centyrgc_tema';function _a(t){var v=T[t]||T.azul;var r=document.documentElement;Object.keys(v).forEach(function(k){r.style.setProperty(k,v[k]);});localStorage.setItem(K,t);var b=document.getElementById('btnToggleTema');if(b)b.textContent=t==='azul'?'☀ Claro':'◉ Azul';}window.toggleTema=function(){_a(localStorage.getItem(K)==='claro'?'azul':'claro');};_a(localStorage.getItem(K)||'azul');})();
+(function(){var T={azul:{'--bg':'#f0f4ff','--bg2':'#e8edff','--surf2':'#f5f7ff','--surf3':'#eef2ff','--bd':'#dee2ff','--bd2':'#eef2ff','--tx':'#1a1a2e','--tx2':'#25253a','--tx3':'#5c5f77','--tx4':'#909198','--sh':'0 1px 3px rgba(59,91,219,.08),0 4px 16px rgba(59,91,219,.1)','--sh2':'0 8px 28px rgba(59,91,219,.15)'},claro:{'--bg':'#e0f2fe','--bg2':'#bae6fd','--surf':'#f0f9ff','--surf2':'#e0f2fe','--surf3':'#bae6fd','--bd':'#7dd3fc','--bd2':'#bae6fd','--tx':'#0c4a6e','--tx2':'#075985','--tx3':'#0369a1','--tx4':'#38bdf8','--sh':'0 1px 3px rgba(14,165,233,.12),0 4px 16px rgba(14,165,233,.16)','--sh2':'0 8px 28px rgba(14,165,233,.2)'}};var K='centyrgc_tema';function _a(t){var v=T[t]||T.azul;var r=document.documentElement;Object.keys(v).forEach(function(k){r.style.setProperty(k,v[k]);});localStorage.setItem(K,t);var b=document.getElementById('btnToggleTema');if(b)b.textContent=t==='azul'?'Claro':'Azul';}window.toggleTema=function(){_a(localStorage.getItem(K)==='claro'?'azul':'claro');};_a(localStorage.getItem(K)||'azul');})();
 </script>
 </body>
 </html>
