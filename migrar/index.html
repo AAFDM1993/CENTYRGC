@@ -472,7 +472,6 @@ input,select,textarea{font-size:16px!important}
   #estTopbarWrap{display:none!important}
 
   /* Bottom nav estudiante */
-  #estBottomNav{display:flex!important}
   .content-main{padding-bottom:78px}
 
   /* Modales: bottom sheet */
@@ -559,12 +558,16 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
 }
 
 /* Admin/Docente bottom nav en móvil */
-@media(max-width:600px){
+@media(max-width:767px){
   body.rol-admin #adminBottomNav,
   body.rol-docente #adminBottomNav { display:flex!important; }
   /* Padding inferior para el contenido */
   body.rol-admin .content-main,
   body.rol-docente .content-main { padding-bottom:80px; }
+}
+@media(max-width:767px){
+  #estBottomNav{display:flex!important}
+  body.rol-estudiante .content-main { padding-bottom:80px; }
 }
 /* Admin/Docente bottom nav: distribución uniforme */
 #adminBottomNav > div { width:100%!important; padding:0!important; gap:0!important; }
@@ -1449,8 +1452,14 @@ body.rol-recepcion #hdrBtnRecord{display:none}
 
 
 
+<!-- Bottom Sheet "Más" (admin/docente móvil) -->
+<div id="masSheet">
+  <div id="masSheetOv" onclick="cerrarMasSheet()"></div>
+  <div id="masSheetPanel"></div>
+</div>
+
 <!-- Bottom Navigation admin/docente (móvil ≤600px) -->
-<div id="adminBottomNav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--n900);border-top:1px solid var(--n700);z-index:200">
+<div id="adminBottomNav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--sidebar-bg);border-top:1px solid var(--bd);z-index:200">
   <div style="display:flex;height:68px;width:100%;padding:0">
     <button id="admBnHojas" onclick="admNavNotas()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:#fff;cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
       <span style="font-size:26px;line-height:1">&#128203;</span><span>Notas</span>
@@ -1462,17 +1471,14 @@ body.rol-recepcion #hdrBtnRecord{display:none}
       <span style="font-size:26px;line-height:1">🏥</span><span>HC</span>
     </button>
 
-    <button onclick="abrirPassModal()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
-      <span style="font-size:26px;line-height:1">&#128274;</span><span>Clave</span>
-    </button>
-    <button onclick="logout()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
-      <span style="font-size:26px;line-height:1">&#128682;</span><span>Salir</span>
+    <button onclick="abrirMasSheet()" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:var(--n400);cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
+      <span style="font-size:26px;line-height:1">⋯</span><span>Más</span>
     </button>
   </div>
 </div>
 
    <!-- Bottom Navigation estudiante (móvil ≤480px) -->
-<div id="estBottomNav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--n900);border-top:1px solid var(--n700);z-index:200">
+<div id="estBottomNav" style="display:none;position:fixed;bottom:0;left:0;right:0;background:var(--sidebar-bg);border-top:1px solid var(--bd);z-index:200">
   <div style="display:flex;height:68px;width:100%;padding:0">
     <button id="estBnNotas" onclick="mostrarSecEst('notas')" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:none;border:none;color:#fff;cursor:pointer;font-size:10px;font-weight:700;-webkit-tap-highlight-color:transparent">
       <span style="font-size:22px;line-height:1">&#128203;</span><span>Notas</span>
