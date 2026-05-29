@@ -212,11 +212,9 @@ async function eliminarReservaHoy(fecha, hora, area, camilla){
     ));
     renderCalendario();
     verReservasHoy();
-    // Sincronizar con el servidor en background
     invalidateCache('leerReservas');
-    cargarReservasSemana();
   }catch(e){ hideLoader(); toast('Error', e.message, 'err'); }
-}   
+}
 // ── Renderizar calendario (admin + docente) ───────────────
 function renderCalendario(){
   const finD=new Date(calFechaBase);finD.setDate(finD.getDate()+4);
@@ -591,9 +589,7 @@ async function pedirEliminar(fecha,hora,area,camilla){
       _n(rv.area)===_n(area)&&_n(rv.camilla)===_n(camilla)
     ));
     renderCalendario();
-    // Sincronizar con el servidor en background
     invalidateCache('leerReservas');
-    cargarReservasSemana();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
 
@@ -637,19 +633,10 @@ function filtrarCalendarioEstPorArea(area){
 }
 
 async function cargarReservasEst(){
-  // Calcular rango de los próximos 5 días hábiles desde hoy
-  const hoy=new Date(); hoy.setHours(0,0,0,0);
-  const cursor=new Date(hoy);
-  const diasHabiles=[];
-  while(diasHabiles.length<5){
-    const dow=cursor.getDay();
-    if(dow>=1&&dow<=5) diasHabiles.push(fmt(new Date(cursor)));
-    cursor.setDate(cursor.getDate()+1);
-  }
-  const ini=diasHabiles[0];
-  const fin=diasHabiles[diasHabiles.length-1];
+  const ini=fmt(calEstFechaBase);
+  const finSem=new Date(calEstFechaBase); finSem.setDate(finSem.getDate()+4);
   try{
-    const r=await apiGetCached('leerReservas',{fechaInicio:ini,fechaFin:fin});
+    const r=await apiGetCached('leerReservas',{fechaInicio:ini,fechaFin:fmt(finSem)});
     if(r.ok) agendaEstReservas=r.reservas;
   }catch(e){ agendaEstReservas=[]; }
 }
@@ -679,22 +666,8 @@ function renderCalendarioEst(){
 
   const slots=generarSlots(agendaCfg.franjas, agendaCfg.areas[0]&&agendaCfg.areas[0].duracion||60);
   const hoy=fmt(new Date());
-  const ahora2=new Date();
-  const todosLosDiasEst=[];
-  for(let i=0;i<5;i++){const d=new Date(calEstFechaBase);d.setDate(d.getDate()+i);todosLosDiasEst.push(d);}
-  const ultimaFranjaGEst = agendaCfg.franjas&&agendaCfg.franjas.length
-    ? agendaCfg.franjas[agendaCfg.franjas.length-1].fin : '19:00';
-  const semanaActualEst = fmt(getLunes(new Date()))===fmt(calEstFechaBase);
-  let dias;
- // Mostrar siempre 5 días hábiles desde hoy (incluyendo hoy si tiene slots)
-  const diasHabilesEst=[];
-  let cursorEst=new Date(); cursorEst.setHours(0,0,0,0);
-  while(diasHabilesEst.length<5){
-    const dow=cursorEst.getDay();
-    if(dow>=1&&dow<=5) diasHabilesEst.push(new Date(cursorEst));
-    cursorEst.setDate(cursorEst.getDate()+1);
-  }
-  dias=diasHabilesEst;
+  const dias=[];
+  for(let i=0;i<5;i++){const d=new Date(calEstFechaBase);d.setDate(d.getDate()+i);dias.push(d);}
 
   // Ancho de columna de días
   const dw=window.innerWidth<=480?110:window.innerWidth<=768?140:200;
@@ -1130,7 +1103,6 @@ async function eliminarReservaLista(fecha,hora,area,camilla){
     ));
     renderCalendario();
     invalidateCache('leerReservas');
-    cargarReservasSemana();
     cargarListaReservas();
   }catch(e){hideLoader();toast('Error',e.message,'err')}
 }
