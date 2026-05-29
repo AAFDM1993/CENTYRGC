@@ -1,5 +1,9 @@
-# Solo trackear la carpeta migrar/
-# Todo lo demás en la raíz se ignora
+# Solo trackear: migrar/index.html, migrar/hc.html, migrar/src/
 /*
 !/migrar
 !.gitignore
+
+migrar/*
+!migrar/index.html
+!migrar/hc.html
+!migrar/src
