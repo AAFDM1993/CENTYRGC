@@ -805,7 +805,12 @@ async function toggleEvalInline(uid, headerEl){
           if(!wrap||!box) return;
           if(!rc.ok) return; // sin consentimiento — permanece oculto
           var dataUrl='data:'+rc.mimeType+';base64,'+rc.data;
-          box.innerHTML='<img src="'+dataUrl+'" style="max-width:100%;max-height:320px;border-radius:8px;border:1px solid var(--bd);display:block;cursor:zoom-in" onclick="window.open(this.src,\'_blank\')" title="Clic para ampliar">';
+          var img=document.createElement('img');
+          img.src=dataUrl;
+          img.style.cssText='max-width:100%;max-height:320px;border-radius:8px;border:1px solid var(--bd);display:block;cursor:zoom-in';
+          img.title='Clic para ampliar';
+          (function(d,m){img.onclick=function(){_abrirImagenBase64(d,m);};})(rc.data,rc.mimeType);
+          box.innerHTML='';box.appendChild(img);
           wrap.style.display='block';
         }).catch(function(){});
       })();

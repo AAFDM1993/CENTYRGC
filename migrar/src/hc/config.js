@@ -1,9 +1,29 @@
 // Consentimiento informado, plantigrafía y panel de configuración del sistema
 
+// Abre una imagen base64 en una nueva pestaña usando Blob URL (evita bloqueo de data URLs)
+function _abrirImagenBase64(b64, mimeType){
+  try{
+    var bytes=atob(b64), arr=new Uint8Array(bytes.length);
+    for(var i=0;i<bytes.length;i++) arr[i]=bytes.charCodeAt(i);
+    var url=URL.createObjectURL(new Blob([arr],{type:mimeType||'image/jpeg'}));
+    var win=window.open(url,'_blank');
+    if(!win) toast('Permite ventanas emergentes para ver la imagen','','warn');
+    setTimeout(function(){URL.revokeObjectURL(url);},60000);
+  }catch(e){ toast('Error al abrir imagen','','err'); }
+}
+
 async function subirConsentimientoUI(input, evalId){
   if(!input.files||!input.files[0]) return;
   if(!evalId) evalId = document.getElementById('hcEvalId')?.value || '';
-  if(!evalId){ toast('Guarda la evaluación primero','','warn'); input.value=''; return; }
+  // Si no hay evalId, auto-guardar como borrador para obtenerlo
+  if(!evalId){
+    var catId=document.getElementById('pC')?.value||'';
+    var hcPacId=document.getElementById('hcPacId')?.value||'';
+    if(!catId){ toast('Guarda la evaluación primero','','warn'); input.value=''; return; }
+    await guardarHC(catId, hcPacId, 'borrador');
+    evalId=document.getElementById('hcEvalId')?.value||'';
+    if(!evalId){ input.value=''; return; }
+  }
   var file = input.files[0];
   if(!file.type.startsWith('image/')){ toast('Solo se aceptan imágenes (JPG, PNG, WebP)','','warn'); input.value=''; return; }
   if(file.size > 4*1024*1024){ toast('La imagen debe ser menor a 4 MB','','warn'); input.value=''; return; }
@@ -36,13 +56,7 @@ async function verConsentimientoUI(evalId){
   try{
     var r = await apiPost({action:'getConsentimiento', evaluacionId:evalId});
     if(!r.ok){ toast('Sin consentimiento', r.error||'', 'err'); return; }
-    // Abrir en nueva pestaña como blob URL
-    var dataUrl = 'data:'+r.mimeType+';base64,'+r.data;
-    var win = window.open('','_blank');
-    if(win){
-      win.document.write('<html><body style="margin:0;background:#000;display:flex;justify-content:center;align-items:center;min-height:100vh">'
-        +'<img src="'+dataUrl+'" style="max-width:100%;height:auto"></body></html>');
-    }
+    _abrirImagenBase64(r.data, r.mimeType);
   }catch(ex){ toast('Error', ex.message, 'err'); }
 }
 
