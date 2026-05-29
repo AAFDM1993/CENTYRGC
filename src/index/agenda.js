@@ -1051,6 +1051,7 @@ async function pedirEliminarModal(fecha,hora,area,camilla){
     const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Reserva cancelada','','ok');
+    _markRsvDeleted(fecha, hora, area, camilla);
     invalidateCache('leerReservas');
     const finSemEM=new Date(calFechaBase);finSemEM.setDate(finSemEM.getDate()+4);
     await cargarReservasSemana();
@@ -1083,7 +1084,7 @@ async function cargarListaReservas(){
     }
     const r=await apiGetCached('leerReservas',{fechaInicio:ini,fechaFin:fin});
     if(!r.ok)throw new Error(r.error);
-    let reservas=r.reservas;
+    let reservas=_filterRsvBorradas(r.reservas);
     const areaF=vi('calFiltroAreaRes');
     if(areaF) reservas=reservas.filter(rv=>rv.area===areaF);
     if(!reservas.length){box.innerHTML='<div class="empty" style="padding:12px">Sin reservas</div>';return;}
