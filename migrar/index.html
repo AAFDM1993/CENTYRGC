@@ -690,6 +690,20 @@ body.rol-recepcion #hdrBtnRecord{display:none}
     </div>
   </header>
 
+  <!-- Sidebar de navegación (desktop ≥768px) -->
+  <nav id="appSidebar" class="app-sidebar" style="display:none">
+    <div class="sb-nav" id="sbNav"></div>
+    <div class="sb-footer">
+      <button class="sb-theme-btn" onclick="toggleTheme()" title="Cambiar tema">
+        <span id="sbThemeIco">🌙</span>
+        <span class="sb-label" id="sbThemeLbl">Tema oscuro</span>
+      </button>
+      <button class="sb-collapse-btn" id="sbCollapseBtn" onclick="toggleSidebarCollapse()" title="Colapsar sidebar">
+        <span id="sbCollapseIco">‹</span>
+      </button>
+    </div>
+  </nav>
+
   <div id="viewAdmin" style="display:none">
     <!-- Panes ocultos: el contenido se mueve dinámicamente al panelCard -->
     <div id="adminPanesStore" style="display:none">
