@@ -3,16 +3,35 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
+<script>
+(function(){
+  var t=localStorage.getItem('centyrgc-theme')||'dark';
+  document.documentElement.setAttribute('data-theme',t);
+})();
+</script>
 <title id="appTitle">Sistema</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%231d4ed8'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='800' font-size='18' fill='white'>S</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f0f4ff;--bg2:#e8edff;--surf:#ffffff;--surf2:#f5f7ff;--surf3:#eef2ff;--n900:#1a1a3e;--n800:#1e2050;--n700:#2d3180;--n600:#364fc7;--n500:#3b5bdb;--n400:#4c6ef5;--n300:#748ffc;--n200:#91a7ff;--n100:#bac8ff;--n050:#dbe4ff;--tx:#1a1a2e;--tx2:#25253a;--tx3:#5c5f77;--tx4:#909198;--bd:#dee2ff;--bd2:#eef2ff;--green:#059669;--green2:#f0fdf4;--red:#dc2626;--red2:#fef2f2;--amber:#d97706;--amber2:#fffbeb;--r:14px;--sh:0 1px 3px rgba(59,91,219,.08),0 4px 16px rgba(59,91,219,.1);--sh2:0 8px 28px rgba(59,91,219,.15)}
+:root{--bg:#f0f4ff;--bg2:#e8edff;--surf:#ffffff;--surf2:#f5f7ff;--surf3:#eef2ff;--n900:#1a1a3e;--n800:#1e2050;--n700:#2d3180;--n600:#364fc7;--n500:#3b5bdb;--n400:#4c6ef5;--n300:#748ffc;--n200:#91a7ff;--n100:#bac8ff;--n050:#dbe4ff;--tx:#1a1a2e;--tx2:#25253a;--tx3:#5c5f77;--tx4:#909198;--bd:#dee2ff;--bd2:#eef2ff;--green:#059669;--green2:#f0fdf4;--red:#dc2626;--red2:#fef2f2;--amber:#d97706;--amber2:#fffbeb;--r:14px;--sh:0 1px 3px rgba(59,91,219,.08),0 4px 16px rgba(59,91,219,.1);--sh2:0 8px 28px rgba(59,91,219,.15);/* Nuevas: sidebar y temas */
+--header-bg:#1a1a3e;--sidebar-bg:#1e2050;
+--nav-tx:#c8d2e8;--nav-hover:rgba(255,255,255,.07);
+--nav-active-bg:#2563eb;--nav-active-tx:#ffffff;
+--header-border:rgba(255,255,255,.08)}
+[data-theme="light"]{
+  --bg:#f8faff;--bg2:#eef2ff;--surf:#ffffff;--surf2:#f5f7ff;--surf3:#f0f4ff;
+  --tx:#1e293b;--tx2:#334155;--tx3:#64748b;--tx4:#94a3b8;
+  --bd:#c7d2fe;--bd2:#e0e7ff;
+  --header-bg:#1d4ed8;--sidebar-bg:#eff6ff;
+  --nav-tx:#1e3a8a;--nav-hover:#dbeafe;
+  --nav-active-bg:#1d4ed8;--nav-active-tx:#ffffff;
+  --header-border:rgba(29,78,216,.15);
+}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;min-height:100vh;-webkit-font-smoothing:antialiased}
 ::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:99px}::-webkit-scrollbar-track{background:transparent}
-header{background:#1a1a3e;border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0;z-index:300;box-shadow:0 1px 0 rgba(0,0,0,.2),0 4px 20px rgba(59,91,219,.25)}
+header{background:var(--header-bg);border-bottom:1px solid var(--header-border);position:sticky;top:0;z-index:300;box-shadow:0 1px 0 rgba(0,0,0,.2),0 4px 20px rgba(59,91,219,.25)}
 .hdr{max-width:1400px;margin:0 auto;padding:0 24px;height:58px;display:flex;align-items:center;gap:14px}
 .logo{display:flex;align-items:center;gap:11px;flex-shrink:0}
 .lmark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--n500),var(--n400));display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.4)}
