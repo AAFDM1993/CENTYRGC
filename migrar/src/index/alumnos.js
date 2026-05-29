@@ -16,16 +16,10 @@ window.onload=function(){
 };
 
 // Adaptación responsive al rotar pantalla
-window.addEventListener('resize',function(){
-  if(!session||session.rol!=='estudiante')return;
-  var bn=g('estBottomNav'),tw=g('estTopbarWrap');
-  if(window.innerWidth<=480){
-    if(bn)bn.style.display='flex';
-    if(tw)tw.style.display='none';
-  } else {
-    if(bn)bn.style.display='none';
-    if(tw)tw.style.display='block';
-  }
+window.addEventListener('resize', function(){
+  if (!session || session.rol !== 'estudiante') return;
+  var bn = g('estBottomNav');
+  if (bn) bn.style.display = window.innerWidth < 768 ? 'flex' : 'none';
 });
 
 async function doLogin(){
@@ -57,13 +51,19 @@ function startApp(){
   g('rolDot').className='rdot '+session.rol;
   pingConn();
   if(session.rol==='estudiante'){
-    g('viewAdmin').style.display='none';g('viewEstudiante').style.display='block';iniciarVistaEstudiante();
+    g('viewAdmin').style.display='none';
+    g('viewEstudiante').style.display='block';
+    iniciarVistaEstudiante();
   } else if(session.rol==='recepcion'){
-    g('viewAdmin').style.display='none';g('viewEstudiante').style.display='none';
+    g('viewAdmin').style.display='none';
+    g('viewEstudiante').style.display='none';
     iniciarVistaRecepcion();
   } else {
-    g('viewAdmin').style.display='block';g('viewEstudiante').style.display='none';iniciarVistaAdmin();
+    g('viewAdmin').style.display='block';
+    g('viewEstudiante').style.display='none';
+    iniciarVistaAdmin();
   }
+  initSidebar(session.rol);
 }
 async function pingConn(){
   try{const r=await apiGet('ping');setConn(r.ok,r.ok?'Conectado':'Sin respuesta')}

@@ -16,6 +16,7 @@ async function loadHojas(){
     var hojasFiltradas=r.hojas.filter(function(h){return HOJAS_SIS.indexOf(h.nombre)<0;});
     // Poblar SIEMPRE los botones del topbar
     renderDocenteHojasBtns(hojasFiltradas);
+    populateSbHojas(hojasFiltradas);
     // Docente: abrir primera hoja automáticamente si no hay hoja activa
     if(session && session.rol==='docente' && !hojaActiva && hojasFiltradas.length>0){
       abrirHoja(hojasFiltradas[0].nombre);
