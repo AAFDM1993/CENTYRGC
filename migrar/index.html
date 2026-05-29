@@ -641,6 +641,114 @@ body.rol-recepcion #hdrBtnRecord{display:none}
   #recordModalBox{max-height:95vh;border-radius:16px}
   .rec-tab{padding:10px 12px;font-size:11px}
 }
+/* ══ APP SIDEBAR ══════════════════════════════════════════════════════════ */
+.app-sidebar{
+  position:fixed;top:58px;left:0;
+  width:240px;height:calc(100vh - 58px);
+  background:var(--sidebar-bg);border-right:1px solid var(--bd);
+  display:flex;flex-direction:column;z-index:150;
+  transition:width .25s ease;overflow:hidden;
+}
+.app-sidebar.collapsed{width:60px}
+
+/* Contenido principal se desplaza */
+@media(min-width:768px){
+  #appPage .content-main{margin-left:240px;transition:margin-left .25s ease}
+  body.sidebar-collapsed #appPage .content-main{margin-left:60px}
+}
+
+/* En móvil el sidebar no existe */
+@media(max-width:767px){.app-sidebar{display:none!important}}
+
+/* Nav items */
+.sb-nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:8px 0}
+.sb-section-lbl{
+  font-size:10px;font-weight:700;color:var(--nav-tx);opacity:.6;
+  text-transform:uppercase;letter-spacing:.8px;
+  padding:14px 16px 4px;white-space:nowrap;overflow:hidden;
+  transition:opacity .2s
+}
+.app-sidebar.collapsed .sb-section-lbl{opacity:0;height:0;padding:0}
+.sb-separator{height:1px;background:var(--bd);margin:8px 12px}
+.sb-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 16px;
+  color:var(--nav-tx);cursor:pointer;
+  border:none;background:none;width:100%;text-align:left;
+  font-size:13px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;
+  white-space:nowrap;transition:background .15s;position:relative
+}
+.sb-item:hover{background:var(--nav-hover)}
+.sb-item.active{background:var(--nav-active-bg);color:var(--nav-active-tx)}
+.sb-ico{font-size:18px;flex-shrink:0;width:22px;text-align:center;line-height:1}
+.sb-lbl{overflow:hidden;transition:opacity .2s,max-width .25s}
+.app-sidebar.collapsed .sb-lbl{opacity:0;max-width:0;pointer-events:none}
+/* Tooltip en collapsed */
+.app-sidebar.collapsed .sb-item:hover::after{
+  content:attr(data-tip);
+  position:absolute;left:68px;top:50%;transform:translateY(-50%);
+  background:#1a1a3e;color:#fff;font-size:11px;font-weight:600;
+  padding:4px 10px;border-radius:6px;white-space:nowrap;z-index:999;pointer-events:none;
+  box-shadow:0 2px 8px rgba(0,0,0,.3)
+}
+/* Sub-items (hojas) */
+.sb-sublist{overflow:hidden}
+.sb-subitem{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 16px 7px 48px;
+  color:var(--nav-tx);opacity:.85;cursor:pointer;
+  border:none;background:none;width:100%;text-align:left;
+  font-size:12px;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  transition:background .15s
+}
+.sb-subitem:hover{background:var(--nav-hover)}
+.sb-subitem.active{color:var(--nav-active-tx);background:var(--nav-active-bg);opacity:1}
+.app-sidebar.collapsed .sb-sublist{display:none}
+/* Footer del sidebar */
+.sb-footer{
+  border-top:1px solid var(--bd);padding:8px;
+  display:flex;align-items:center;gap:6px;flex-shrink:0
+}
+.sb-theme-btn{
+  flex:1;display:flex;align-items:center;gap:8px;
+  padding:8px 10px;border:none;background:none;
+  color:var(--nav-tx);cursor:pointer;border-radius:8px;
+  font-size:12px;white-space:nowrap;overflow:hidden;
+  font-family:'Plus Jakarta Sans',sans-serif;transition:background .15s
+}
+.sb-theme-btn:hover{background:var(--nav-hover)}
+.sb-collapse-btn{
+  width:32px;height:32px;flex-shrink:0;
+  border:1px solid var(--bd);background:none;
+  color:var(--nav-tx);border-radius:8px;cursor:pointer;
+  font-size:16px;display:flex;align-items:center;justify-content:center;
+  transition:background .15s
+}
+.sb-collapse-btn:hover{background:var(--nav-hover)}
+.app-sidebar.collapsed .sb-theme-btn .sb-label{display:none}
+/* ══ BOTTOM SHEET "MÁS" (móvil admin) ═══════════════════════════════════ */
+#masSheet{
+  position:fixed;inset:0;z-index:600;display:none
+}
+#masSheet.show{display:block}
+#masSheetOv{position:absolute;inset:0;background:rgba(10,22,40,.55);backdrop-filter:blur(2px)}
+#masSheetPanel{
+  position:absolute;bottom:0;left:0;right:0;
+  background:var(--surf);border-radius:20px 20px 0 0;
+  padding:16px 16px max(env(safe-area-inset-bottom),16px);
+  box-shadow:0 -8px 32px rgba(10,22,40,.3)
+}
+.mas-item{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;border-radius:12px;
+  border:none;background:none;width:100%;text-align:left;
+  color:var(--tx);font-size:13px;font-weight:600;
+  font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;transition:background .15s
+}
+.mas-item:hover,.mas-item:active{background:var(--nav-hover)}
+.mas-item .mas-ico{font-size:20px;width:26px;text-align:center;flex-shrink:0}
+.mas-separator{height:1px;background:var(--bd);margin:6px 0}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
