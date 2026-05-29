@@ -684,6 +684,7 @@ body.rol-recepcion #hdrBtnRecord{display:none}
         <div class="rol-pill"><div class="rdot" id="rolDot"></div><span id="rolLabel">-</span></div>
         <button id="hdrBtnRecord" class="btn-logout" onclick="abrirRecordPanel()" style="border-color:var(--n600);color:var(--n300)" title="Panel informativo">&#128203; Record</button>
         <button id="hdrBtnPass" class="btn-logout" onclick="mostrarCambioPass()" style="border-color:var(--n600);color:var(--n300)" title="Cambiar contrasena">&#128274;</button>
+        <button id="hdrThemeBtn" class="btn-logout" onclick="toggleTheme()" title="Cambiar tema" style="border-color:var(--nav-active-bg);color:var(--nav-tx);min-width:36px;padding:5px 10px"><span id="hdrThemeIco">🌙</span></button>
         <button id="hdrBtnSalir" class="btn-logout" onclick="logout()">Salir</button>
       </div>
     </div>
@@ -1516,6 +1517,7 @@ body.rol-recepcion #hdrBtnRecord{display:none}
 </div>
 
 <script src="src/index/core.js"></script>
+<script src="src/index/sidebar.js"></script>
 <script src="src/index/session.js"></script>
 <script src="src/index/api.js"></script>
 <script src="src/index/alumnos.js"></script>

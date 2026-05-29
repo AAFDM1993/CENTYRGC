@@ -6,6 +6,7 @@
 // Carga siguiente: notas.js (loadHojas, renderAlBlock, etc.)
 
 window.onload=function(){
+  initTheme();
   // Migrar sesión legacy de sessionStorage si existe
   const legacy=sessionStorage.getItem('ft_session');
   if(legacy){try{const d=JSON.parse(legacy);saveSession(d);sessionStorage.removeItem('ft_session')}catch(e){}}
