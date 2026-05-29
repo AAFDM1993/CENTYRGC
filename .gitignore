@@ -1,0 +1,5 @@
+# Solo trackear la carpeta migrar/
+# Todo lo demás en la raíz se ignora
+/*
+!/migrar
+!.gitignore
