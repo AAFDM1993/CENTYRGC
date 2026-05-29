@@ -910,11 +910,15 @@ function eliminarReserva(body, user) {
   var last  = sheet.getLastRow();
   if (last < 2) return { error: 'Sin reservas' };
   var rows  = sheet.getRange(2,1,last-1,9).getValues();
+  // Normalizar: trim + lowercase + quitar tildes para comparación robusta
+  var nc = function(s){ return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); };
   for (var i = 0; i < rows.length; i++) {
     if (!rows[i][0]) continue;
     var f = (rows[i][0] instanceof Date) ? Utilities.formatDate(rows[i][0], 'GMT-5', 'yyyy-MM-dd') : String(rows[i][0]).trim().substring(0,10);
-    if (f === body.fecha && horaToStr_(rows[i][1]) === body.horaInicio &&
-        String(rows[i][2]) === body.area && String(rows[i][3]) === body.camilla) {
+    if (nc(f) === nc(body.fecha) &&
+        nc(horaToStr_(rows[i][1])) === nc(body.horaInicio) &&
+        nc(rows[i][2]) === nc(body.area) &&
+        nc(rows[i][3]) === nc(body.camilla)) {
       if (user && user.rol === 'estudiante')
         return { error: 'No tienes permiso para eliminar reservas' };
       sheet.deleteRow(i + 2);
@@ -922,7 +926,7 @@ function eliminarReserva(body, user) {
       return { ok: true };
     }
   }
-  return { error: 'Reserva no encontrada' };
+  return { error: 'Reserva no encontrada', debug: { fecha: body.fecha, hora: body.horaInicio, area: body.area, camilla: body.camilla, totalFilas: rows.length } };
 }
 
 // ════════════════════════════════════════════════════════
