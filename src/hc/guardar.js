@@ -254,11 +254,19 @@ async function guardarHC(catId, pacId, modo){
       startTimerBanner(nuevoEvalId, idPac, catId, startTime);
       mostrarTimerModal();
     } else if(!timerCargar()){
-      // El estudiante sigue en borrador pero perdió el timer (otro dispositivo) — reanudar
-      const evalData = await apiGet('listarEvaluaciones', {pacienteId: idPac});
-      const ev = (evalData.evaluaciones||[]).find(function(e){return e.id===nuevoEvalId;});
-      if(ev&&ev.timerInicio){
-        startTimerBanner(nuevoEvalId, idPac, catId, parseInt(ev.timerInicio));
+      const estadoOrig = g('hcEvalEstado')?.value || '';
+      if(estadoOrig === 'rechazada'){
+        // Reinicio tras rechazo: timer fresco desde ahora (el timerInicio del servidor es el original, inútil)
+        const startTime = Date.now();
+        startTimerBanner(nuevoEvalId, idPac, catId, startTime);
+        mostrarTimerModal();
+      } else {
+        // El estudiante sigue en borrador pero perdió el timer (otro dispositivo) — reanudar
+        const evalData = await apiGet('listarEvaluaciones', {pacienteId: idPac});
+        const ev = (evalData.evaluaciones||[]).find(function(e){return e.id===nuevoEvalId;});
+        if(ev&&ev.timerInicio){
+          startTimerBanner(nuevoEvalId, idPac, catId, parseInt(ev.timerInicio));
+        }
       }
     }
     return;
