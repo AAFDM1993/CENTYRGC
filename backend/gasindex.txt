@@ -59,6 +59,7 @@ function doPost(e) {
     if (a === 'guardarAgendaConfig')   return json_(requireAuthBody(tok, ['admin'],                        function(u){ return guardarAgendaConfig(b); }));
     if (a === 'crearReserva')          return json_(requireAuthBody(tok, ['admin','docente','estudiante'], function(u){ return crearReserva(b, u); }));
     if (a === 'eliminarReserva')       return json_(requireAuthBody(tok, ['admin','docente'],              function(u){ return eliminarReserva(b, u); }));
+    if (a === 'cancelarReservaEst')    return json_(requireAuthBody(tok, ['estudiante'],                  function(u){ return cancelarReservaEst(b, u); }));
     if (a === 'crearCasilleros')       return json_(requireAuthBody(tok, ['admin'],                        function(u){ return crearCasilleros_(b.codigos||[]); }));
     if (a === 'asignarCasillero')      return json_(requireAuthBody(tok, ['admin','docente'],              function(u){ return asignarCasillero_(b.codigo,b.alumnoCodigo,b.alumnoNombre,b.asignadoPor); }));
     if (a === 'eliminarCasillero')     return json_(requireAuthBody(tok, ['admin'],                        function(u){ return eliminarCasillero_(b.codigo); }));
@@ -928,6 +929,42 @@ function eliminarReserva(body, user) {
     }
   }
   return { error: 'Reserva no encontrada', debug: { fecha: body.fecha, hora: body.horaInicio, area: body.area, camilla: body.camilla, filas: last-1 } };
+}
+
+function cancelarReservaEst(body, user) {
+  if (!user || user.rol !== 'estudiante')
+    return { error: 'Solo estudiantes pueden usar esta accion' };
+  var sheet = getAgendaSheet();
+  var last  = sheet.getLastRow();
+  if (last < 2) return { error: 'Sin reservas' };
+  var rows = sheet.getRange(2,1,last-1,9).getValues();
+  var nc   = function(s){ return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); };
+  var quien = user.codigo || user.nombre || '';
+  for (var i = 0; i < rows.length; i++) {
+    if (!rows[i][0]) continue;
+    var f = (rows[i][0] instanceof Date) ? Utilities.formatDate(rows[i][0],'GMT-5','yyyy-MM-dd') : String(rows[i][0]).trim().substring(0,10);
+    if (nc(f)                       === nc(body.fecha)      &&
+        nc(horaToStr_(rows[i][1]))  === nc(body.horaInicio) &&
+        nc(rows[i][2])              === nc(body.area)        &&
+        nc(rows[i][3])              === nc(body.camilla)) {
+      if (nc(rows[i][7]) !== nc(quien))
+        return { error: 'No puedes cancelar una reserva de otro alumno' };
+      // Verificar ventana de 15 minutos usando el campo ts (columna 9, índice 8)
+      var ts = rows[i][8];
+      var tsDate = (ts instanceof Date) ? ts : (function(){
+        var m = String(ts).trim().match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/);
+        return m ? new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]) : null;
+      })();
+      if (!tsDate || isNaN(tsDate.getTime()))
+        return { error: 'No se puede verificar el tiempo de creacion de la reserva' };
+      if ((new Date() - tsDate) > 15 * 60 * 1000)
+        return { error: 'El plazo de 15 minutos para cancelar ha expirado' };
+      sheet.deleteRow(i + 2);
+      SpreadsheetApp.flush();
+      return { ok: true };
+    }
+  }
+  return { error: 'Reserva no encontrada' };
 }
 
 // ════════════════════════════════════════════════════════════════════════════
