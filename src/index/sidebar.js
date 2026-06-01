@@ -194,13 +194,17 @@ function abrirMasSheet() {
   const panel = g('masSheetPanel');
   if (!panel) return;
   const esAdmin = session && session.rol === 'admin';
+  const esDocente = session && session.rol === 'docente';
   let html = '';
-  if (esAdmin) {
+  if (esAdmin || esDocente) {
     html += `
       <div class="mas-item" onclick="abrirPanelAdmin('cas');cerrarMasSheet()">
         <span class="mas-ico">🗄️</span>Casilleros
       </div>
-      <div class="mas-separator"></div>
+      <div class="mas-separator"></div>`;
+  }
+  if (esAdmin) {
+    html += `
       <div class="mas-item" onclick="abrirPanelAdmin('al');cerrarMasSheet()">
         <span class="mas-ico">👤</span>Alumnos
       </div>
