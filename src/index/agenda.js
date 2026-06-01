@@ -31,9 +31,7 @@ const DIAS_NOM = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
 function getLunes(d){
   const dt=new Date(d); dt.setHours(0,0,0,0);
   const dia=dt.getDay();
-  // Si es sábado (6) ir al lunes siguiente (+2), si es domingo (0) ir al lunes (+1)
-  if(dia===6) dt.setDate(dt.getDate()+2);
-  else if(dia===0) dt.setDate(dt.getDate()+1);
+  if(dia===0) dt.setDate(dt.getDate()+1);
   else { const diff=1-dia; dt.setDate(dt.getDate()+diff); }
   return dt;
 }
@@ -92,7 +90,7 @@ async function iniciarAgenda(){
     calFechaBase=getLunes(new Date());
     await cargarReservasSemana();
     // Cargar bloqueos de la semana
-    const finSemB=new Date(calFechaBase);finSemB.setDate(finSemB.getDate()+4);
+    const finSemB=new Date(calFechaBase);finSemB.setDate(finSemB.getDate()+5);
     await cargarBloqueos(fmt(calFechaBase),fmt(finSemB));
     renderCalendario();
     // También cargar lista de reservas y bloqueos
@@ -104,14 +102,14 @@ function _recargarCalendarios(){
   // 1. Render inmediato con datos actuales (sin esperar red)
   agendaReservas=[];
   renderCalendario();
-  const v=new Date(calFechaBase);v.setDate(v.getDate()+4);
+  const v=new Date(calFechaBase);v.setDate(v.getDate()+5);
   const lbl=g('calSemanaLabel');
   if(lbl)lbl.textContent=fmtDia(calFechaBase)+' \u2013 '+fmtDia(v)+' / '+v.getFullYear();
   // Poner el grid en estado cargando de forma sutil
   const grid=g('calGrid');
   if(grid)grid.style.opacity='0.45';
   // 2. Cargar datos en paralelo y actualizar
-  const finSem=new Date(calFechaBase);finSem.setDate(finSem.getDate()+4);
+  const finSem=new Date(calFechaBase);finSem.setDate(finSem.getDate()+5);
   Promise.all([
     cargarReservasSemana(),
     cargarBloqueos(fmt(calFechaBase),fmt(finSem))
@@ -128,7 +126,7 @@ function irHoy(){ calFechaBase=getLunes(new Date()); _recargarCalendarios(); }
 
 async function cargarReservasSemana(){
   const ini=fmt(calFechaBase);
-  const finSem=new Date(calFechaBase); finSem.setDate(finSem.getDate()+4); // viernes
+  const finSem=new Date(calFechaBase); finSem.setDate(finSem.getDate()+5); // sábado
   try{
     const r=await apiGetCached('leerReservas',{fechaInicio:ini,fechaFin:fmt(finSem)});
     if(r.ok) agendaReservas=_filterRsvBorradas(r.reservas);
@@ -234,8 +232,8 @@ async function eliminarReservaHoy(fecha, hora, area, camilla){
 }
 // ── Renderizar calendario (admin + docente) ───────────────
 function renderCalendario(){
-  const finD=new Date(calFechaBase);finD.setDate(finD.getDate()+4);
-  const vier=new Date(calFechaBase);vier.setDate(vier.getDate()+4);
+  const finD=new Date(calFechaBase);finD.setDate(finD.getDate()+5);
+  const vier=new Date(calFechaBase);vier.setDate(vier.getDate()+5);
   g('calSemanaLabel').textContent=fmtDia(calFechaBase)+' \u2013 '+fmtDia(vier)+' / '+vier.getFullYear();
 
   const areaFiltro=getAreaFiltro('calAreaFiltro');
@@ -245,7 +243,7 @@ function renderCalendario(){
   const hoy=fmt(new Date());
   const ahora=new Date();
   const todosLosDias=[];
-  for(let i=0;i<5;i++){const d=new Date(calFechaBase);d.setDate(d.getDate()+i);todosLosDias.push(d);}
+  for(let i=0;i<6;i++){const d=new Date(calFechaBase);d.setDate(d.getDate()+i);todosLosDias.push(d);}
 // Mostrar siempre lunes a viernes de la semana base
 // Los slots pasados se muestran en gris (manejado por la variable `pasado` más abajo)
 const dias = todosLosDias;
@@ -577,11 +575,11 @@ async function confirmarReserva(){
     invalidateCache('leerReservas');
     if(esEst){
       await cargarReservasEst();
-      const _finSemC=new Date(calEstFechaBase);_finSemC.setDate(_finSemC.getDate()+4);
+      const _finSemC=new Date(calEstFechaBase);_finSemC.setDate(_finSemC.getDate()+5);
       await cargarBloqueos(fmt(calEstFechaBase),fmt(_finSemC));
       renderCalendarioEst();
     }
-    else if(fromModal){ const finM=new Date(calFechaBase);finM.setDate(finM.getDate()+4); await cargarReservasSemana(); await cargarBloqueos(fmt(calFechaBase),fmt(finM)); renderCalendarioModal(); }
+    else if(fromModal){ const finM=new Date(calFechaBase);finM.setDate(finM.getDate()+5); await cargarReservasSemana(); await cargarBloqueos(fmt(calFechaBase),fmt(finM)); renderCalendarioModal(); }
     else { await cargarReservasSemana();renderCalendario(); }
   }catch(e){
     ocultarOverlayReservando();
@@ -616,6 +614,30 @@ g('configAgendaModal')&&g('configAgendaModal').addEventListener('click',function
 g('reservaModal')&&g('reservaModal').addEventListener('click',function(e){if(e.target===this)cerrarReservaModal();});
 
 
+// Parsea timestamp GAS formato "dd/MM/yyyy HH:mm:ss" a Date
+function _parseTsGAS(ts){
+  const m=String(ts||'').trim().match(/^(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})$/);
+  return m?new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5],+m[6]):null;
+}
+
+async function cancelarReservaEst(fecha,hora,area,camilla){
+  if(!confirm('¿Cancelar esta reserva?'))return;
+  showLoader('Cancelando...');
+  try{
+    const r=await apiPost({action:'cancelarReservaEst',fecha,horaInicio:hora,area,camilla});
+    hideLoader();if(!r.ok)throw new Error(r.error);
+    toast('Reserva cancelada','','ok');
+    const _n=s=>String(s).trim().toLowerCase();
+    agendaEstReservas=agendaEstReservas.filter(rv=>!(
+      _n(rv.fecha)===_n(fecha)&&_n(rv.horaInicio)===_n(hora)&&
+      _n(rv.area)===_n(area)&&_n(rv.camilla)===_n(camilla)
+    ));
+    _markRsvDeleted(fecha,hora,area,camilla);
+    renderCalendarioEst();
+    invalidateCache('leerReservas');
+  }catch(e){hideLoader();toast('Error',e.message,'err');}
+}
+
 // ── AGENDA DEL ESTUDIANTE ────────────────────────────────────
 let calEstFechaBase = getLunes ? getLunes(new Date()) : new Date();
 let agendaEstReservas = [];
@@ -636,7 +658,7 @@ async function iniciarAgendaEstudiante(){
     }
     calEstFechaBase=getLunes(new Date());
     await cargarReservasEst();
-    const finSemEst2=new Date(calEstFechaBase);finSemEst2.setDate(finSemEst2.getDate()+4);
+    const finSemEst2=new Date(calEstFechaBase);finSemEst2.setDate(finSemEst2.getDate()+5);
     await cargarBloqueos(fmt(calEstFechaBase),fmt(finSemEst2));
     renderCalendarioEst();
   }catch(e){ console.warn('Agenda no disponible:',e.message); }
@@ -652,7 +674,7 @@ function filtrarCalendarioEstPorArea(area){
 
 async function cargarReservasEst(){
   const ini=fmt(calEstFechaBase);
-  const finSem=new Date(calEstFechaBase); finSem.setDate(finSem.getDate()+4);
+  const finSem=new Date(calEstFechaBase); finSem.setDate(finSem.getDate()+5);
   try{
     const r=await apiGetCached('leerReservas',{fechaInicio:ini,fechaFin:fmt(finSem)});
     if(r.ok) agendaEstReservas=_filterRsvBorradas(r.reservas);
@@ -664,9 +686,9 @@ function semanaSiguienteEst(){ calEstFechaBase.setDate(calEstFechaBase.getDate()
 function irHoyEst(){ calEstFechaBase=getLunes(new Date()); cargarReservasEst().then(renderCalendarioEst); }
 
 function renderCalendarioEst(){
-  const finD=new Date(calEstFechaBase);finD.setDate(finD.getDate()+4); // viernes
+  const finD=new Date(calEstFechaBase);finD.setDate(finD.getDate()+5); // sábado
   const lbl=g('calEstLabel');
-  const vier3=new Date(calEstFechaBase);vier3.setDate(vier3.getDate()+4);
+  const vier3=new Date(calEstFechaBase);vier3.setDate(vier3.getDate()+5);
   if(lbl) lbl.textContent=fmtDia(calEstFechaBase)+' \u2013 '+fmtDia(vier3);
 
   const areaFiltro=getAreaFiltro('calEstAreaFiltro');
@@ -685,7 +707,7 @@ function renderCalendarioEst(){
   const slots=generarSlots(agendaCfg.franjas, agendaCfg.areas[0]&&agendaCfg.areas[0].duracion||60);
   const hoy=fmt(new Date());
   const dias=[];
-  for(let i=0;i<5;i++){const d=new Date(calEstFechaBase);d.setDate(d.getDate()+i);dias.push(d);}
+  for(let i=0;i<6;i++){const d=new Date(calEstFechaBase);d.setDate(d.getDate()+i);dias.push(d);}
 
   // Ancho de columna de días
   const dw=window.innerWidth<=480?110:window.innerWidth<=768?140:200;
@@ -754,9 +776,12 @@ function renderCalendarioEst(){
             // Mostrar reservas existentes
             rsvEsp.forEach(rsv=>{
               const esMia=rsv.reservadoPor===miNombre||rsv.reservadoPor===miCodigo;
-              celda+=`<div style="background:${esMia?'var(--green)':'var(--n600)'};border-radius:6px;padding:3px 6px;margin-bottom:2px">
-                <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rsv.paciente||'\u2014'}</div>
+              const tsDate=esMia?_parseTsGAS(rsv.ts):null;
+              const puedeCancelar=tsDate&&(new Date()-tsDate)<15*60*1000;
+              celda+=`<div style="background:${esMia?'var(--green)':'var(--n600)'};border-radius:6px;padding:3px 6px;margin-bottom:2px;position:relative">
+                <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis${puedeCancelar?';padding-right:60px':''}">${rsv.paciente||'\u2014'}</div>
                 <div style="font-size:9px;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rsv.docente||rsv.reservadoPor||''}</div>
+                ${puedeCancelar?`<button onclick="event.stopPropagation();cancelarReservaEst('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}')" style="position:absolute;top:50%;right:3px;transform:translateY(-50%);background:rgba(0,0,0,.3);border:none;color:#fff;font-size:9px;cursor:pointer;padding:2px 5px;border-radius:3px;white-space:nowrap" title="Cancelar reserva">\u2715 Cancelar</button>`:''}
               </div>`;
             });
             // Botón de reservar si hay capacidad y no está en el pasado
@@ -883,7 +908,7 @@ async function mostrarAgenda(){
     // Poblar filtro de área
     renderAreaBtns('calAreaFiltro', 'filtrarCalendarioPorArea');
     calFechaBase = getLunes(calFechaBase || new Date());
-    var finSem = new Date(calFechaBase); finSem.setDate(finSem.getDate()+4);
+    var finSem = new Date(calFechaBase); finSem.setDate(finSem.getDate()+5);
     await cargarReservasSemana();
     await cargarBloqueos(fmt(calFechaBase), fmt(finSem));
   } catch(ex){ console.warn('Error agenda:', ex); }
@@ -1053,7 +1078,7 @@ async function pedirEliminarModal(fecha,hora,area,camilla){
     toast('Reserva cancelada','','ok');
     _markRsvDeleted(fecha, hora, area, camilla);
     invalidateCache('leerReservas');
-    const finSemEM=new Date(calFechaBase);finSemEM.setDate(finSemEM.getDate()+4);
+    const finSemEM=new Date(calFechaBase);finSemEM.setDate(finSemEM.getDate()+5);
     await cargarReservasSemana();
     await cargarBloqueos(fmt(calFechaBase),fmt(finSemEM));
     renderCalendarioModal();
@@ -1148,9 +1173,9 @@ function mostrarSecEst(sec){
       const hoy2=new Date(); hoy2.setHours(0,0,0,0);
       const cursor2=new Date(hoy2);
       const dias5=[];
-      while(dias5.length<5){
+      while(dias5.length<6){
         const dow=cursor2.getDay();
-        if(dow>=1&&dow<=5) dias5.push(fmt(new Date(cursor2)));
+        if(dow>=1&&dow<=6) dias5.push(fmt(new Date(cursor2)));
         cursor2.setDate(cursor2.getDate()+1);
       }
       cargarBloqueos(dias5[0],dias5[dias5.length-1]).then(renderCalendarioEst);
