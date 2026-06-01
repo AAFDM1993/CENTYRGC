@@ -5,7 +5,7 @@
 //             notas.js (abrirHoja)
 //             vistas.js (iniciarVistaEstudiante)
 
-let agendaCfg   = { areas:[], franjas:[{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}], mensajeUltimaHora:'' };
+let agendaCfg   = { areas:[], franjas:[{inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'}], mensajeUltimaHora:'', mensajeUltimaHoraArea:'*' };
 let agendaReservas = [];
 let calFechaBase   = new Date();
 let rsvPendiente   = null;
@@ -411,6 +411,11 @@ function renderAreasConfig(){
   });
   const elMsg=g('cfgMensajeUltimaHora');
   if(elMsg) elMsg.value=agendaCfg.mensajeUltimaHora||'';
+  const elAreaSel=g('cfgMensajeUltimaHoraArea');
+  if(elAreaSel){
+    elAreaSel.innerHTML='<option value="*">Todas las áreas</option>'+(agendaCfg.areas||[]).map(a=>`<option value="${esc2(a.nombre)}">${esc2(a.nombre)}</option>`).join('');
+    elAreaSel.value=agendaCfg.mensajeUltimaHoraArea||'*';
+  }
 }
 function addArea(){
   const inputModal = g('newAreaNomModal');
@@ -480,6 +485,7 @@ async function guardarAgendaConfig(){
   });
   if(!f.length) f.push({inicio:'08:00',fin:'13:00'},{inicio:'14:00',fin:'19:00'});
   agendaCfg.mensajeUltimaHora=(document.getElementById('cfgMensajeUltimaHora')||{}).value||'';
+  agendaCfg.mensajeUltimaHoraArea=(g('cfgMensajeUltimaHoraArea')||{}).value||'*';
   showLoader('Guardando configuracion...');
   try{
     const r=await apiPost({action:'guardarAgendaConfig',config:agendaCfg});
@@ -543,9 +549,10 @@ async function liberarLock(){
 async function abrirReservaEspacio(fecha,hora,area,espacio,capacidad,fechaLabel){
   const _msg=agendaCfg.mensajeUltimaHora||'';
   if(_msg){
+    const _areaFiltro=agendaCfg.mensajeUltimaHoraArea||'*';
     const _aObj=agendaCfg.areas.find(function(a){return a.nombre===area;});
     const _dur=_aObj?(_aObj.duracion||60):60;
-    if(esUltimaHoraFranja(hora,agendaCfg.franjas,_dur)) await infoDialog(_msg);
+    if((_areaFiltro==='*'||_areaFiltro===area)&&esUltimaHoraFranja(hora,agendaCfg.franjas,_dur)) await infoDialog(_msg);
   }
   rsvPendiente={fecha,hora,area,camilla:espacio,capacidad,esEstudiante:false};
   g('reservaModalTitle').textContent='Reservar \xb7 '+area+' \xb7 '+espacio;
@@ -863,9 +870,10 @@ async function abrirReservaEstEsp(fecha,hora,area,espacio,capacidad,fechaLabel){
   if(!ok){ toast('Espacio ocupado','Este espacio está siendo seleccionado por otro estudiante, intenta en un momento','warn'); return; }
   const _msg=agendaCfg.mensajeUltimaHora||'';
   if(_msg){
+    const _areaFiltro=agendaCfg.mensajeUltimaHoraArea||'*';
     const _aObj=agendaCfg.areas.find(function(a){return a.nombre===area;});
     const _dur=_aObj?(_aObj.duracion||60):60;
-    if(esUltimaHoraFranja(hora,agendaCfg.franjas,_dur)) await infoDialog(_msg);
+    if((_areaFiltro==='*'||_areaFiltro===area)&&esUltimaHoraFranja(hora,agendaCfg.franjas,_dur)) await infoDialog(_msg);
   }
   rsvPendiente={fecha,hora,area,camilla:espacio,capacidad,esEstudiante:true};
   g('reservaModalTitle').textContent='Reservar \xb7 '+area+' \xb7 '+espacio;
