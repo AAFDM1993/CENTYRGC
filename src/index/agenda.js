@@ -1252,9 +1252,16 @@ async function cargarBloqueos(fechaInicio, fechaFin){
 }
 
 function _matchBloqueo(b, fecha, hora, area, camilla){
-  const fOk = b.fecha==='*' || (b.fecha.includes('/')
-    ? (()=>{ const [fi,ff]=b.fecha.split('/'); return fi&&ff&&fecha>=fi&&fecha<=ff; })()
-    : b.fecha===fecha);
+  let fOk;
+  if(b.fecha&&b.fecha.startsWith('DOW:')){
+    const dow=parseInt(b.fecha.split(':')[1]);
+    const d=new Date(fecha+'T12:00:00');
+    fOk=d.getDay()===dow;
+  } else {
+    fOk = b.fecha==='*' || (b.fecha.includes('/')
+      ? (()=>{ const [fi,ff]=b.fecha.split('/'); return fi&&ff&&fecha>=fi&&fecha<=ff; })()
+      : b.fecha===fecha);
+  }
   const hOk = b.hora==='*' || (b.hora.includes('-')
     ? (()=>{ const [ini,fin]=b.hora.split('-'); return ini&&fin&&hora>=ini&&hora<fin; })()
     : b.hora===hora);
