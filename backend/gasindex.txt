@@ -843,13 +843,14 @@ function leerReservas(fechaInicio, fechaFin) {
   var last  = sheet.getLastRow();
   if (last < 2) return { ok: true, reservas: [], locks: _getActiveLocks(fechaInicio, fechaFin) };
   var rows  = sheet.getRange(2,1,last-1,10).getValues();
-  var reservas = rows.filter(function(r){
-    if (!r[0]) return false;
-    var f = (r[0] instanceof Date) ? Utilities.formatDate(r[0], 'GMT-5', 'yyyy-MM-dd') : String(r[0]).trim().substring(0,10);
-    return (!fechaInicio || f >= fechaInicio) && (!fechaFin || f <= fechaFin);
-  }).map(function(r, i){
+  var reservas = [];
+  for (var i = 0; i < rows.length; i++) {
+    var r = rows[i];
+    if (!r[0]) continue;
     var fechaStr = (r[0] instanceof Date) ? Utilities.formatDate(r[0], 'GMT-5', 'yyyy-MM-dd') : String(r[0]).trim().substring(0,10);
-    return {
+    if (fechaInicio && fechaStr < fechaInicio) continue;
+    if (fechaFin   && fechaStr > fechaFin)    continue;
+    reservas.push({
       id:           i + 2,
       fecha:        fechaStr,
       horaInicio:   horaToStr_(r[1]),
@@ -861,8 +862,8 @@ function leerReservas(fechaInicio, fechaFin) {
       reservadoPor: String(r[7]).trim(),
       ts:           r[8] instanceof Date ? Utilities.formatDate(r[8],'GMT-5','dd/MM/yyyy HH:mm:ss') : String(r[8]).trim(),
       asistencia:   String(r[9]||'').trim()
-    };
-  });
+    });
+  }
   return { ok: true, reservas: reservas, locks: _getActiveLocks(fechaInicio, fechaFin) };
 }
 
