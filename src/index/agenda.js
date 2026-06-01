@@ -1027,17 +1027,30 @@ function actualizarCamillasBloqueoModal(){
   }
 }
 
+function _toggleDowMode(){
+  const esDow=g('mbEsDow')&&g('mbEsDow').checked;
+  const fWrap=g('mbFechaWrap');
+  const dWrap=g('mbDiaSemanaWrap');
+  if(fWrap)fWrap.style.display=esDow?'none':'';
+  if(dWrap)dWrap.style.display=esDow?'':'none';
+}
+
 async function crearBloqueoModal(){
-  var fechaIni=vi('mbFecha')||'';
-  var fechaFin=vi('mbFechaFin')||'';
+  const esDow=g('mbEsDow')&&g('mbEsDow').checked;
   var fecha;
-  if(fechaIni&&fechaFin){
-    if(fechaFin<fechaIni){toast('Error','La fecha fin debe ser igual o posterior a la fecha inicio','err');return;}
-    fecha=fechaIni+'/'+fechaFin;
-  } else if(fechaIni){
-    fecha=fechaIni;
+  if(esDow){
+    fecha='DOW:'+(vi('mbDiaSemana')||'1');
   } else {
-    fecha='*';
+    var fechaIni=vi('mbFecha')||'';
+    var fechaFin=vi('mbFechaFin')||'';
+    if(fechaIni&&fechaFin){
+      if(fechaFin<fechaIni){toast('Error','La fecha fin debe ser igual o posterior a la fecha inicio','err');return;}
+      fecha=fechaIni+'/'+fechaFin;
+    } else if(fechaIni){
+      fecha=fechaIni;
+    } else {
+      fecha='*';
+    }
   }
   var horaIni=vi('mbHora')||'*';
   var horaFin=vi('mbHoraFin')||'';
@@ -1062,6 +1075,7 @@ async function crearBloqueoModal(){
     invalidateCache('leerBloqueos');
     var f=g('mbFecha');var ff=g('mbFechaFin');var h=g('mbHora');var hf=g('mbHoraFin');var mo=g('mbMotivo');
     if(f)f.value='';if(ff)ff.value='';if(h)h.value='';if(hf)hf.value='';if(mo)mo.value='';
+    const dowEl=g('mbEsDow');if(dowEl){dowEl.checked=false;_toggleDowMode();}
     await cargarBloqueos();
     renderListaBloqueos();
     renderListaBloqueosModal();
@@ -1078,7 +1092,7 @@ function renderListaBloqueosModal(){
     <span>Fecha</span><span>Hora</span><span>Area</span><span>Motivo</span><span></span>
   </div>`+agendaBloqueos.map(b=>`
     <div style="display:grid;grid-template-columns:80px 90px 1fr 1fr 28px;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--bd2);background:var(--red2);font-size:12px">
-      <span style="font-family:'DM Mono',monospace;font-size:10px">${b.fecha}</span>
+      <span style="font-family:'DM Mono',monospace;font-size:10px">${(function(){const _D=['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];return b.fecha&&b.fecha.startsWith('DOW:')?'Todos los '+(_D[parseInt(b.fecha.split(':')[1])]||b.fecha):b.fecha;})()}</span>
       <span style="font-family:'DM Mono',monospace;font-size:10px">${b.hora}</span>
       <div><div style="font-weight:600;font-size:11px">${b.area}</div><div style="font-size:10px;color:var(--tx3)">${b.camilla}</div></div>
       <span style="color:var(--red);font-weight:600;font-size:11px">${b.motivo}</span>
