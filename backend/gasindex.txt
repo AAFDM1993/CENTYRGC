@@ -60,6 +60,7 @@ function doPost(e) {
     if (a === 'crearReserva')          return json_(requireAuthBody(tok, ['admin','docente','estudiante'], function(u){ return crearReserva(b, u); }));
     if (a === 'eliminarReserva')       return json_(requireAuthBody(tok, ['admin','docente'],              function(u){ return eliminarReserva(b, u); }));
     if (a === 'cancelarReservaEst')    return json_(requireAuthBody(tok, ['estudiante'],                  function(u){ return cancelarReservaEst(b, u); }));
+    if (a === 'marcarAsistencia')      return json_(requireAuthBody(tok, ['admin','docente'],              function(u){ return marcarAsistencia(b, u); }));
     if (a === 'crearCasilleros')       return json_(requireAuthBody(tok, ['admin'],                        function(u){ return crearCasilleros_(b.codigos||[]); }));
     if (a === 'asignarCasillero')      return json_(requireAuthBody(tok, ['admin','docente'],              function(u){ return asignarCasillero_(b.codigo,b.alumnoCodigo,b.alumnoNombre,b.asignadoPor); }));
     if (a === 'eliminarCasillero')     return json_(requireAuthBody(tok, ['admin'],                        function(u){ return eliminarCasillero_(b.codigo); }));
@@ -960,6 +961,33 @@ function cancelarReservaEst(body, user) {
       if ((new Date() - tsDate) > 15 * 60 * 1000)
         return { error: 'El plazo de 15 minutos para cancelar ha expirado' };
       sheet.deleteRow(i + 2);
+      SpreadsheetApp.flush();
+      return { ok: true };
+    }
+  }
+  return { error: 'Reserva no encontrada' };
+}
+
+function marcarAsistencia(body, user) {
+  if (!user || (user.rol !== 'docente' && user.rol !== 'admin'))
+    return { error: 'Solo docentes o admin pueden marcar asistencia' };
+  var hoy = Utilities.formatDate(new Date(), 'GMT-5', 'yyyy-MM-dd');
+  if (body.fecha !== hoy)
+    return { error: 'La asistencia solo puede marcarse el dia de la cita' };
+  var sheet = getAgendaSheet();
+  var last  = sheet.getLastRow();
+  if (last < 2) return { error: 'Sin reservas' };
+  var rows = sheet.getRange(2,1,last-1,9).getValues();
+  var nc   = function(s){ return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); };
+  for (var i = 0; i < rows.length; i++) {
+    if (!rows[i][0]) continue;
+    var f = (rows[i][0] instanceof Date) ? Utilities.formatDate(rows[i][0],'GMT-5','yyyy-MM-dd') : String(rows[i][0]).trim().substring(0,10);
+    if (nc(f)                       === nc(body.fecha)      &&
+        nc(horaToStr_(rows[i][1]))  === nc(body.horaInicio) &&
+        nc(rows[i][2])              === nc(body.area)        &&
+        nc(rows[i][3])              === nc(body.camilla)) {
+      var valor = body.asistencia || '';
+      sheet.getRange(i + 2, 10).setValue(valor);
       SpreadsheetApp.flush();
       return { ok: true };
     }
