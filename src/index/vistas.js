@@ -14,10 +14,11 @@ async function iniciarVistaEstudiante(){
   var bn=g('estBottomNav'), tw=g('estTopbarWrap');
   if(window.innerWidth<768){
     if(bn) bn.style.display='flex';
+    if(tw) tw.style.display='none';
   } else {
     if(bn) bn.style.display='none';
+    if(tw) tw.style.display='block';
   }
-  if(tw) tw.style.display='none';
   // Actualizar info del usuario
   var nomEl=g('estNombre'), codEl=g('estCodigo');
   if(nomEl) nomEl.textContent=session.nombre||'Estudiante';
