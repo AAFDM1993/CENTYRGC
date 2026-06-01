@@ -30,7 +30,7 @@ async function iniciarVistaRecepcion(){
     renderAreaBtns('calRecAreaFiltro','filtrarCalendarioRecPorArea');
     calRecFechaBase = getLunes(new Date());
     await cargarReservasRec();
-    const finSem=new Date(calRecFechaBase);finSem.setDate(finSem.getDate()+4);
+    const finSem=new Date(calRecFechaBase);finSem.setDate(finSem.getDate()+5);
     await cargarBloqueos(fmt(calRecFechaBase),fmt(finSem));
   }catch(e){
     hideLoader();
@@ -47,7 +47,7 @@ async function iniciarVistaRecepcion(){
 
 async function cargarReservasRec(){
   const ini=fmt(calRecFechaBase);
-  const finSem=new Date(calRecFechaBase);finSem.setDate(finSem.getDate()+4);
+  const finSem=new Date(calRecFechaBase);finSem.setDate(finSem.getDate()+5);
   try{
     const r=await apiGetCached('leerReservas',{fechaInicio:ini,fechaFin:fmt(finSem)});
     if(r.ok) agendaRecReservas=r.reservas;
@@ -59,7 +59,7 @@ function semanaSiguienteRec(){ calRecFechaBase.setDate(calRecFechaBase.getDate()
 function irHoyRec(){ calRecFechaBase=getLunes(new Date()); _recargarRec(); }
 
 function _recargarRec(){
-  const finSem=new Date(calRecFechaBase);finSem.setDate(finSem.getDate()+4);
+  const finSem=new Date(calRecFechaBase);finSem.setDate(finSem.getDate()+5);
   cargarReservasRec().then(()=>{
     cargarBloqueos(fmt(calRecFechaBase),fmt(finSem)).then(renderCalendarioRec);
   });
@@ -73,7 +73,7 @@ function filtrarCalendarioRecPorArea(area){
 function renderCalendarioRec(){
   const grid=g('calRecGrid'); if(!grid) return;
   const lbl=g('calRecLabel');
-  const vier=new Date(calRecFechaBase);vier.setDate(vier.getDate()+4);
+  const vier=new Date(calRecFechaBase);vier.setDate(vier.getDate()+5);
   if(lbl) lbl.textContent=fmtDia(calRecFechaBase)+' – '+fmtDia(vier)+' / '+vier.getFullYear();
   // (el label se actualiza después de calcular dias si es semana actual)
   const areaFiltro=getAreaFiltro('calRecAreaFiltro');
@@ -83,7 +83,7 @@ function renderCalendarioRec(){
   const hoy=fmt(new Date());
   const ahora=new Date();
   const todosLosDias=[];
-  for(let i=0;i<5;i++){const d=new Date(calRecFechaBase);d.setDate(d.getDate()+i);todosLosDias.push(d);}
+  for(let i=0;i<6;i++){const d=new Date(calRecFechaBase);d.setDate(d.getDate()+i);todosLosDias.push(d);}
   const ultimaFranjaG=agendaCfg.franjas&&agendaCfg.franjas.length
     ?agendaCfg.franjas[agendaCfg.franjas.length-1].fin:'19:00';
   const semanaActual=fmt(getLunes(new Date()))===fmt(calRecFechaBase);
@@ -93,7 +93,7 @@ function renderCalendarioRec(){
     let cursor=new Date();cursor.setHours(0,0,0,0);
     while(diasHabiles.length<7){
       const dow=cursor.getDay();
-      if(dow>=1&&dow<=5){
+      if(dow>=1&&dow<=6){
         const fd=fmt(cursor);
         const finDia=new Date(fd+'T'+ultimaFranjaG+':00');
         if(finDia>ahora) diasHabiles.push(new Date(cursor));
