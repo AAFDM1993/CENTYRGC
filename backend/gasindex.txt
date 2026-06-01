@@ -61,6 +61,8 @@ function doPost(e) {
     if (a === 'eliminarReserva')       return json_(requireAuthBody(tok, ['admin','docente'],              function(u){ return eliminarReserva(b, u); }));
     if (a === 'cancelarReservaEst')    return json_(requireAuthBody(tok, ['estudiante'],                  function(u){ return cancelarReservaEst(b, u); }));
     if (a === 'marcarAsistencia')      return json_(requireAuthBody(tok, ['admin','docente'],              function(u){ return marcarAsistencia(b, u); }));
+    if (a === 'adquirirLock')          return json_(requireAuthBody(tok, ['estudiante'],                  function(u){ return adquirirLock(b, u); }));
+    if (a === 'liberarLock')           return json_(requireAuthBody(tok, ['estudiante'],                  function(u){ return liberarLock(b, u); }));
     if (a === 'crearCasilleros')       return json_(requireAuthBody(tok, ['admin'],                        function(u){ return crearCasilleros_(b.codigos||[]); }));
     if (a === 'asignarCasillero')      return json_(requireAuthBody(tok, ['admin','docente'],              function(u){ return asignarCasillero_(b.codigo,b.alumnoCodigo,b.alumnoNombre,b.asignadoPor); }));
     if (a === 'eliminarCasillero')     return json_(requireAuthBody(tok, ['admin'],                        function(u){ return eliminarCasillero_(b.codigo); }));
@@ -887,6 +889,28 @@ function crearReserva(body, user) {
         return { error: 'Este espacio está bloqueado: ' + (bRows[bi][4]||'sin motivo') };
     }
   }
+  // Verificar lock activo de otro usuario
+  var lkSheet = getLockSheet();
+  var lkLast  = lkSheet.getLastRow();
+  if (lkLast >= 2) {
+    var lkRows   = lkSheet.getRange(2,1,lkLast-1,6).getValues();
+    var lkNow    = new Date();
+    var TWO_MIN  = 2 * 60 * 1000;
+    var quienCrea = user ? (user.codigo || user.nombre || '') : '';
+    var nc3 = function(s){ return String(s||'').trim().toLowerCase(); };
+    for (var li = 0; li < lkRows.length; li++) {
+      if (!lkRows[li][0]) continue;
+      var lkAt = new Date(lkRows[li][5]);
+      if (isNaN(lkAt.getTime()) || (lkNow - lkAt) > TWO_MIN) continue;
+      if (nc3(lkRows[li][0])             === nc3(body.fecha)      &&
+          nc3(horaToStr_(lkRows[li][1])) === nc3(body.horaInicio) &&
+          nc3(lkRows[li][2])             === nc3(body.area)        &&
+          nc3(lkRows[li][3])             === nc3(body.camilla)     &&
+          nc3(lkRows[li][4])             !== nc3(quienCrea)) {
+        return { error: 'El espacio fue tomado por otro estudiante en este momento' };
+      }
+    }
+  }
   if (last >= 2) {
     var rows      = sheet.getRange(2,1,last-1,9).getValues();
     var ocupados  = 0;
@@ -1051,6 +1075,59 @@ function _getActiveLocks(fechaInicio, fechaFin) {
     }
   });
   return active;
+}
+
+function adquirirLock(body, user) {
+  if (!user || user.rol !== 'estudiante')
+    return { error: 'Solo estudiantes pueden adquirir locks' };
+  var sheet = getLockSheet();
+  var quien = user.codigo || user.nombre || '';
+  var now   = new Date();
+  var TWO_MIN = 2 * 60 * 1000;
+  var nc    = function(s){ return String(s||'').trim().toLowerCase(); };
+  _limpiarLocksExpirados(sheet, now, TWO_MIN);
+  var last  = sheet.getLastRow();
+  if (last >= 2) {
+    var rows = sheet.getRange(2,1,last-1,6).getValues();
+    for (var i = 0; i < rows.length; i++) {
+      if (!rows[i][0]) continue;
+      if (nc(rows[i][0])              === nc(body.fecha)      &&
+          nc(horaToStr_(rows[i][1]))  === nc(body.horaInicio) &&
+          nc(rows[i][2])              === nc(body.area)        &&
+          nc(rows[i][3])              === nc(body.camilla)) {
+        if (nc(rows[i][4]) !== nc(quien))
+          return { ok: false, error: 'ocupado' };
+        sheet.getRange(i + 2, 6).setValue(now.toISOString());
+        SpreadsheetApp.flush();
+        return { ok: true };
+      }
+    }
+  }
+  sheet.appendRow([body.fecha, body.horaInicio, body.area, body.camilla, quien, now.toISOString()]);
+  SpreadsheetApp.flush();
+  return { ok: true };
+}
+
+function liberarLock(body, user) {
+  var sheet = getLockSheet();
+  var last  = sheet.getLastRow();
+  if (last < 2) return { ok: true };
+  var quien = user ? (user.codigo || user.nombre || '') : '';
+  var nc    = function(s){ return String(s||'').trim().toLowerCase(); };
+  var rows  = sheet.getRange(2,1,last-1,6).getValues();
+  for (var i = rows.length - 1; i >= 0; i--) {
+    if (!rows[i][0]) continue;
+    if (nc(rows[i][0])             === nc(body.fecha)      &&
+        nc(horaToStr_(rows[i][1])) === nc(body.horaInicio) &&
+        nc(rows[i][2])             === nc(body.area)        &&
+        nc(rows[i][3])             === nc(body.camilla)     &&
+        nc(rows[i][4])             === nc(quien)) {
+      sheet.deleteRow(i + 2);
+      SpreadsheetApp.flush();
+      return { ok: true };
+    }
+  }
+  return { ok: true };
 }
 
 // ════════════════════════════════════════════════════════
