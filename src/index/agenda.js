@@ -525,6 +525,21 @@ function ocultarOverlayReservando(){
   setTimeout(()=>{ ov.style.display='none'; },200);
 }
 
+async function adquirirLock(fecha,hora,area,camilla){
+  try{
+    const r=await apiPost({action:'adquirirLock',fecha,horaInicio:hora,area,camilla});
+    if(r.ok){ _lockActivo={fecha,hora,area,camilla}; return true; }
+    return false;
+  }catch(e){ return false; }
+}
+
+async function liberarLock(){
+  if(!_lockActivo)return;
+  const{fecha,hora,area,camilla}=_lockActivo;
+  _lockActivo=null;
+  try{ await apiPost({action:'liberarLock',fecha,horaInicio:hora,area,camilla}); }catch(e){}
+}
+
 // ── Reservar slot ─────────────────────────────────────────
 async function abrirReservaEspacio(fecha,hora,area,espacio,capacidad,fechaLabel){
   const _msg=agendaCfg.mensajeUltimaHora||'';
@@ -552,7 +567,7 @@ function abrirReserva(fecha,hora,area,camilla,fechaLabel){
   abrirReservaEspacio(fecha,hora,area,camilla,cap,fechaLabel);
 }
 
-function cerrarReservaModal(){ g('reservaModal').style.display='none'; rsvPendiente=null; }
+function cerrarReservaModal(){ g('reservaModal').style.display='none'; if(rsvPendiente&&rsvPendiente.esEstudiante)liberarLock(); rsvPendiente=null; }
 
 async function confirmarReserva(){
   if(!rsvPendiente)return;
@@ -580,6 +595,7 @@ async function confirmarReserva(){
     toast('Reserva creada','','ok');
     invalidateCache('leerReservas');
     if(esEst){
+      liberarLock();
       await cargarReservasEst();
       const _finSemC=new Date(calEstFechaBase);_finSemC.setDate(_finSemC.getDate()+5);
       await cargarBloqueos(fmt(calEstFechaBase),fmt(_finSemC));
@@ -666,6 +682,8 @@ async function cancelarReservaEst(fecha,hora,area,camilla){
 // ── AGENDA DEL ESTUDIANTE ────────────────────────────────────
 let calEstFechaBase = getLunes ? getLunes(new Date()) : new Date();
 let agendaEstReservas = [];
+let agendaLocks = [];
+let _lockActivo = null;
 
 async function iniciarAgendaEstudiante(){
   try{
@@ -702,12 +720,12 @@ async function cargarReservasEst(){
   const finSem=new Date(calEstFechaBase); finSem.setDate(finSem.getDate()+5);
   try{
     const r=await apiGetCached('leerReservas',{fechaInicio:ini,fechaFin:fmt(finSem)});
-    if(r.ok) agendaEstReservas=_filterRsvBorradas(r.reservas);
-  }catch(e){ agendaEstReservas=[]; }
+    if(r.ok){ agendaEstReservas=_filterRsvBorradas(r.reservas); agendaLocks=r.locks||[]; }
+  }catch(e){ agendaEstReservas=[]; agendaLocks=[]; }
 }
 
-function semanaAnteriorEst(){ calEstFechaBase.setDate(calEstFechaBase.getDate()-7); cargarReservasEst().then(renderCalendarioEst); }
-function semanaSiguienteEst(){ calEstFechaBase.setDate(calEstFechaBase.getDate()+7); cargarReservasEst().then(renderCalendarioEst); }
+function semanaAnteriorEst(){ liberarLock(); calEstFechaBase.setDate(calEstFechaBase.getDate()-7); cargarReservasEst().then(renderCalendarioEst); }
+function semanaSiguienteEst(){ liberarLock(); calEstFechaBase.setDate(calEstFechaBase.getDate()+7); cargarReservasEst().then(renderCalendarioEst); }
 function irHoyEst(){ calEstFechaBase=getLunes(new Date()); cargarReservasEst().then(renderCalendarioEst); }
 
 function renderCalendarioEst(){
@@ -809,8 +827,10 @@ function renderCalendarioEst(){
                 ${puedeCancelar?`<button onclick="event.stopPropagation();cancelarReservaEst('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}')" style="position:absolute;top:50%;right:3px;transform:translateY(-50%);background:rgba(0,0,0,.3);border:none;color:#fff;font-size:9px;cursor:pointer;padding:2px 5px;border-radius:3px;white-space:nowrap" title="Cancelar reserva">\u2715 Cancelar</button>`:''}
               </div>`;
             });
-            // Botón de reservar si hay capacidad y no está en el pasado
-            if(!pasado&&!lleno){
+            // Botón de reservar si hay capacidad, no está en el pasado y no hay lock ajeno
+            const _nLk=s=>String(s||'').trim().toLowerCase();
+            const isLocked=agendaLocks.some(lk=>_nLk(lk.fecha)===_nLk(fechaStr)&&_nLk(lk.horaInicio)===_nLk(hora)&&_nLk(lk.area)===_nLk(area.nombre)&&_nLk(lk.camilla)===_nLk(esp.nombre)&&_nLk(lk.lockedBy)!==_nLk(miCodigo)&&_nLk(lk.lockedBy)!==_nLk(miNombre));
+            if(!pasado&&!lleno&&!isLocked){
               const fl=d.toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'long'});
               celda+=`<button onclick="abrirReservaEstEsp('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}',${cap},'${esc(fl)}')"
                 style="width:100%;background:transparent;border:1px dashed transparent;border-radius:6px;color:var(--tx4);font-size:10px;padding:4px 2px;cursor:pointer;transition:all .15s;min-height:32px;display:flex;align-items:center;justify-content:center;gap:3px"
@@ -838,6 +858,8 @@ function renderCalendarioEst(){
 
 
 async function abrirReservaEstEsp(fecha,hora,area,espacio,capacidad,fechaLabel){
+  const ok=await adquirirLock(fecha,hora,area,espacio);
+  if(!ok){ toast('Espacio ocupado','Este espacio está siendo seleccionado por otro estudiante, intenta en un momento','warn'); return; }
   const _msg=agendaCfg.mensajeUltimaHora||'';
   if(_msg){
     const _aObj=agendaCfg.areas.find(function(a){return a.nombre===area;});
