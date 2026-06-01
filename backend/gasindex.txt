@@ -1005,6 +1005,7 @@ function marcarAsistencia(body, user) {
   var nc   = function(s){ return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); };
   for (var i = 0; i < rows.length; i++) {
     if (!rows[i][0]) continue;
+    if (body.id && (i + 2) !== Number(body.id)) continue;
     var f = (rows[i][0] instanceof Date) ? Utilities.formatDate(rows[i][0],'GMT-5','yyyy-MM-dd') : String(rows[i][0]).trim().substring(0,10);
     if (nc(f)                       === nc(body.fecha)      &&
         nc(horaToStr_(rows[i][1]))  === nc(body.horaInicio) &&
