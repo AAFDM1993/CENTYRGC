@@ -657,7 +657,7 @@ body.rol-recepcion #hdrBtnRecord{display:none}
 /* En móvil el sidebar no existe */
 @media(max-width:767px){.app-sidebar{display:none!important}}
 /* Botón de tema en header: solo visible en móvil (en desktop lo tiene el sidebar) */
-@media(min-width:768px){#hdrThemeBtn{display:none!important}}
+@media(min-width:768px){#hdrThemeBtn{display:none!important}body.sidebar-collapsed #hdrThemeBtn{display:flex!important}}
 
 /* Nav items */
 .sb-nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:8px 0}
@@ -680,7 +680,7 @@ body.rol-recepcion #hdrBtnRecord{display:none}
 .sb-item:hover{background:var(--nav-hover)}
 .sb-item.active{background:var(--nav-active-bg);color:var(--nav-active-tx)}
 .sb-ico{font-size:18px;flex-shrink:0;width:22px;text-align:center;line-height:1}
-.sb-lbl{overflow:hidden;transition:opacity .2s,max-width .25s}
+.sb-lbl{overflow:hidden;min-width:0;transition:opacity .2s,max-width .25s}
 .app-sidebar.collapsed .sb-lbl{opacity:0;max-width:0;pointer-events:none}
 /* Tooltip en collapsed */
 .app-sidebar.collapsed .sb-item:hover::after{
@@ -703,7 +703,7 @@ body.rol-recepcion #hdrBtnRecord{display:none}
 }
 .sb-subitem:hover{background:var(--nav-hover)}
 .sb-subitem.active{color:var(--nav-active-tx);background:var(--nav-active-bg);opacity:1}
-.app-sidebar.collapsed .sb-sublist{display:none}
+.app-sidebar.collapsed .sb-sublist{display:none!important}
 /* Footer del sidebar */
 .sb-footer{
   border-top:1px solid var(--bd);padding:8px;
@@ -726,6 +726,8 @@ body.rol-recepcion #hdrBtnRecord{display:none}
 }
 .sb-collapse-btn:hover{background:var(--nav-hover)}
 .app-sidebar.collapsed .sb-theme-btn .sb-label{display:none}
+.app-sidebar.collapsed .sb-theme-btn{display:none}
+.app-sidebar.collapsed .sb-footer{justify-content:center}
 /* ══ BOTTOM SHEET "MÁS" (móvil admin) ═══════════════════════════════════ */
 #masSheet{
   position:fixed;inset:0;z-index:600;display:none
