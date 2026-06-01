@@ -1326,9 +1326,26 @@ body.rol-recepcion #hdrBtnRecord{display:none}
       <!-- Formulario nuevo bloqueo (modal) -->
       <div style="background:var(--surf2);border:1px solid var(--bd2);border-radius:12px;padding:12px;margin-bottom:10px">
         <div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Nuevo bloqueo</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <input type="checkbox" id="mbEsDow" onchange="_toggleDowMode()" style="cursor:pointer;width:14px;height:14px">
+          <label for="mbEsDow" style="font-size:12px;color:var(--tx2);cursor:pointer;margin:0">Día de semana recurrente</label>
+        </div>
+        <div id="mbFechaWrap" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
           <div class="field" style="margin:0"><label>Fecha inicio</label><input class="inp" id="mbFecha" type="date"></div>
           <div class="field" style="margin:0"><label>Fecha fin (opcional)</label><input class="inp" id="mbFechaFin" type="date"></div>
+        </div>
+        <div id="mbDiaSemanaWrap" style="display:none;margin-bottom:8px">
+          <div class="field" style="margin:0"><label>Día de la semana</label>
+            <select class="sel" id="mbDiaSemana" style="font-size:12px">
+              <option value="1">Lunes</option>
+              <option value="2">Martes</option>
+              <option value="3">Miércoles</option>
+              <option value="4">Jueves</option>
+              <option value="5">Viernes</option>
+              <option value="6">Sábado</option>
+              <option value="0">Domingo</option>
+            </select>
+          </div>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
           <div class="field" style="margin:0"><label>Hora inicio</label><input class="inp" id="mbHora" type="time"></div>
