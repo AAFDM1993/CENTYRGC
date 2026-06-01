@@ -309,9 +309,15 @@ const dias = todosLosDias;
             celda=`<div style="height:100%;background:repeating-linear-gradient(45deg,#fee2e2,#fee2e2 3px,#fff5f5 3px,#fff5f5 8px);display:flex;align-items:center;justify-content:center;font-size:9px;color:#dc2626;font-weight:600">&#128274; Bloqueado</div>`;
           } else {
             rsvEsp.forEach(rsv=>{
-              celda+=`<div style="background:var(--n600);border-radius:6px;padding:3px 6px;margin-bottom:2px;position:relative">
+              const asis=rsv.asistencia||'';
+              const esHoyRsv=fechaStr===hoy;
+              const bgCard=asis==='Asisti\u00f3'?'#15803d':asis==='No asisti\u00f3'?'#991b1b':'var(--n600)';
+              const btnAsistio=esHoyRsv&&puedeElim?`<button onclick="event.stopPropagation();marcarAsistencia('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}','${asis==='Asisti\u00f3'?'':'Asisti\u00f3'}')" style="background:${asis==='Asisti\u00f3'?'rgba(255,255,255,.3)':'rgba(255,255,255,.15)'};border:none;color:#fff;font-size:10px;font-weight:700;cursor:pointer;padding:1px 5px;border-radius:3px;line-height:1.4" title="${asis==='Asisti\u00f3'?'Desmarcar':'Marcar como Asisti\u00f3'}">\u2713</button>`:'';
+              const btnNoAsistio=esHoyRsv&&puedeElim?`<button onclick="event.stopPropagation();marcarAsistencia('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}','${asis==='No asisti\u00f3'?'':'No asisti\u00f3'}')" style="background:${asis==='No asisti\u00f3'?'rgba(255,255,255,.3)':'rgba(255,255,255,.15)'};border:none;color:#fff;font-size:10px;font-weight:700;cursor:pointer;padding:1px 5px;border-radius:3px;line-height:1.4" title="${asis==='No asisti\u00f3'?'Desmarcar':'Marcar como No asisti\u00f3'}">\u2717</button>`:'';
+              celda+=`<div style="background:${bgCard};border-radius:6px;padding:3px 6px;margin-bottom:2px;position:relative">
                 <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:14px">${rsv.paciente||'\u2014'}</div>
                 <div style="font-size:9px;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rsv.docente||rsv.reservadoPor||''}</div>
+                ${esHoyRsv&&puedeElim?`<div style="display:flex;gap:2px;margin-top:3px">${btnAsistio}${btnNoAsistio}</div>`:''}
                 ${puedeElim?`<button onclick="event.stopPropagation();pedirEliminar('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}')" style="position:absolute;top:2px;right:3px;background:none;border:none;color:rgba(255,255,255,.6);font-size:11px;cursor:pointer;line-height:1;padding:2px" title="Cancelar">&#10005;</button>`:''}
               </div>`;
             });
@@ -587,6 +593,25 @@ async function confirmarReserva(){
     // Reabrir modal con el error visible
     g('reservaModal').style.display='flex';
     const er=g('rsvErr');er.textContent=e.message;er.style.display='block';
+  }
+}
+
+async function marcarAsistencia(fecha,hora,area,camilla,valor){
+  const _n=s=>String(s).trim().toLowerCase();
+  const rsv=agendaReservas.find(r=>
+    _n(r.fecha)===_n(fecha)&&_n(r.horaInicio)===_n(hora)&&
+    _n(r.area)===_n(area)&&_n(r.camilla)===_n(camilla)
+  );
+  const prevValor=rsv?rsv.asistencia:'';
+  if(rsv)rsv.asistencia=valor;
+  renderCalendario();
+  try{
+    const r=await apiPost({action:'marcarAsistencia',fecha,horaInicio:hora,area,camilla,asistencia:valor});
+    if(!r.ok)throw new Error(r.error);
+  }catch(e){
+    if(rsv)rsv.asistencia=prevValor;
+    renderCalendario();
+    toast('Error',e.message,'err');
   }
 }
 
