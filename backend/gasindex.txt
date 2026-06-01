@@ -1165,6 +1165,7 @@ function leerBloqueos(fechaInicio, fechaFin) {
     if (!r[0]) return false;
     var fechaStr = String(r[0]).trim();
     if (fechaStr === '*') return true;
+    if (fechaStr.startsWith('DOW:')) return true;
     var parts = fechaStr.includes('/') ? fechaStr.split('/') : null;
     var fIni, fFin;
     if (parts) {
@@ -1180,6 +1181,8 @@ function leerBloqueos(fechaInicio, fechaFin) {
     var fechaVal;
     if (fechaStr === '*') {
       fechaVal = '*';
+    } else if (fechaStr.startsWith('DOW:')) {
+      fechaVal = fechaStr;
     } else if (fechaStr.includes('/')) {
       fechaVal = fechaStr;
     } else {
