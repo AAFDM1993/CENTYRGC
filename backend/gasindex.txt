@@ -996,8 +996,8 @@ function marcarAsistencia(body, user) {
   if (!user || (user.rol !== 'docente' && user.rol !== 'admin'))
     return { error: 'Solo docentes o admin pueden marcar asistencia' };
   var hoy = Utilities.formatDate(new Date(), 'GMT-5', 'yyyy-MM-dd');
-  if (body.fecha !== hoy)
-    return { error: 'La asistencia solo puede marcarse el dia de la cita' };
+  if (!body.fecha || body.fecha > hoy)
+    return { error: 'No se puede marcar asistencia para citas futuras' };
   var sheet = getAgendaSheet();
   var last  = sheet.getLastRow();
   if (last < 2) return { error: 'Sin reservas' };
