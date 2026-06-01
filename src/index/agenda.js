@@ -567,7 +567,7 @@ function abrirReserva(fecha,hora,area,camilla,fechaLabel){
   abrirReservaEspacio(fecha,hora,area,camilla,cap,fechaLabel);
 }
 
-function cerrarReservaModal(){ g('reservaModal').style.display='none'; if(rsvPendiente&&rsvPendiente.esEstudiante)liberarLock(); rsvPendiente=null; }
+function cerrarReservaModal(){ g('reservaModal').style.display='none'; if(rsvPendiente&&rsvPendiente.esEstudiante&&!_confirmandoReserva)liberarLock(); rsvPendiente=null; }
 
 async function confirmarReserva(){
   if(!rsvPendiente)return;
@@ -580,7 +580,9 @@ async function confirmarReserva(){
   const _area=rsvPendiente.area, _camilla=rsvPendiente.camilla;
   const _cap=rsvPendiente.capacidad||1;
   const _doc=vi('rsvDocente'), _obs=vi('rsvObs');
+  _confirmandoReserva=true;
   cerrarReservaModal();
+  _confirmandoReserva=false;
   mostrarOverlayReservando(pac);
   try{
     const r=await apiPost({
@@ -684,6 +686,7 @@ let calEstFechaBase = getLunes ? getLunes(new Date()) : new Date();
 let agendaEstReservas = [];
 let agendaLocks = [];
 let _lockActivo = null;
+let _confirmandoReserva = false;
 
 async function iniciarAgendaEstudiante(){
   try{

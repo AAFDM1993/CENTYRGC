@@ -964,7 +964,7 @@ function cancelarReservaEst(body, user) {
   if (last < 2) return { error: 'Sin reservas' };
   var rows = sheet.getRange(2,1,last-1,9).getValues();
   var nc   = function(s){ return String(s||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''); };
-  var quien = user.codigo || user.nombre || '';
+  var quien = user.nombre || user.codigo || '';
   for (var i = 0; i < rows.length; i++) {
     if (!rows[i][0]) continue;
     var f = (rows[i][0] instanceof Date) ? Utilities.formatDate(rows[i][0],'GMT-5','yyyy-MM-dd') : String(rows[i][0]).trim().substring(0,10);
@@ -1080,6 +1080,9 @@ function _getActiveLocks(fechaInicio, fechaFin) {
 function adquirirLock(body, user) {
   if (!user || user.rol !== 'estudiante')
     return { error: 'Solo estudiantes pueden adquirir locks' };
+  var scriptLock = LockService.getScriptLock();
+  if (!scriptLock.tryLock(5000)) return { ok: false, error: 'ocupado' };
+  try {
   var sheet = getLockSheet();
   var quien = user.codigo || user.nombre || '';
   var now   = new Date();
@@ -1106,6 +1109,9 @@ function adquirirLock(body, user) {
   sheet.appendRow([body.fecha, body.horaInicio, body.area, body.camilla, quien, now.toISOString()]);
   SpreadsheetApp.flush();
   return { ok: true };
+  } finally {
+    scriptLock.releaseLock();
+  }
 }
 
 function liberarLock(body, user) {
