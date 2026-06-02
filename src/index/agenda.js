@@ -841,12 +841,17 @@ function renderCalendarioEst(){
             // Mostrar reservas existentes
             rsvEsp.forEach(rsv=>{
               const esMia=rsv.reservadoPor===miNombre||rsv.reservadoPor===miCodigo;
-              const tsDate=esMia?_parseTsGAS(rsv.ts):null;
-              const puedeCancelar=tsDate&&(new Date()-tsDate)<15*60*1000;
+              const puedeCancelar=(()=>{
+                if(!esMia)return false;
+                const cutoff=new Date(fechaStr+'T00:00:00');
+                cutoff.setDate(cutoff.getDate()-1);
+                cutoff.setHours(20,0,0,0);
+                return new Date()<cutoff;
+              })();
               celda+=`<div style="background:${esMia?'var(--green)':'var(--n600)'};border-radius:6px;padding:3px 6px;margin-bottom:2px;position:relative">
                 <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis${puedeCancelar?';padding-right:60px':''}">${rsv.paciente||'\u2014'}</div>
                 <div style="font-size:9px;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rsv.docente||rsv.reservadoPor||''}</div>
-                ${puedeCancelar?`<button onclick="event.stopPropagation();cancelarReservaEst('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}')" style="position:absolute;top:50%;right:3px;transform:translateY(-50%);background:rgba(0,0,0,.3);border:none;color:#fff;font-size:9px;cursor:pointer;padding:2px 5px;border-radius:3px;white-space:nowrap" title="Cancelar reserva">\u2715 Cancelar</button>`:''}
+                ${puedeCancelar?`<button onclick="event.stopPropagation();cancelarReservaEst('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}')" style="position:absolute;top:50%;right:3px;transform:translateY(-50%);background:rgba(0,0,0,.3);border:none;color:#fff;font-size:9px;cursor:pointer;padding:2px 5px;border-radius:3px;white-space:nowrap" title="Cancelar reserva (hasta las 20:00 del d\xeda anterior)">\u2715 Cancelar</button>`:''}
               </div>`;
             });
             // Botón de reservar si hay capacidad, no está en el pasado y no hay lock ajeno
