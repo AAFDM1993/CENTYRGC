@@ -2,7 +2,7 @@
 // Depende de: GAS_URL (core.js), session y saveSession (session.js)
 
 async function apiGet(action,params){
-  const p=Object.assign({action},params||{});
+  const p=Object.assign({action},params||{},{_t:Date.now()});
   if(session&&session.token)p.token=session.token;
   const r=await fetch(GAS_URL+'?'+new URLSearchParams(p));
   if(!r.ok)throw new Error('HTTP '+r.status);

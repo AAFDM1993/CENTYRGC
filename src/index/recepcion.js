@@ -50,7 +50,7 @@ async function cargarReservasRec(){
   const finSem=new Date(calRecFechaBase);finSem.setDate(finSem.getDate()+5);
   try{
     const r=await apiGetCached('leerReservas',{fechaInicio:ini,fechaFin:fmt(finSem)});
-    if(r.ok) agendaRecReservas=r.reservas;
+    if(r.ok) agendaRecReservas=_filterRsvBorradas(r.reservas);
   }catch(e){ agendaRecReservas=[]; }
 }
 

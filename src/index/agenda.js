@@ -11,18 +11,32 @@ let calFechaBase   = new Date();
 let rsvPendiente   = null;
 
 // ── Reservas borradas recientemente (filtro anti-cache-GAS) ───────────────
-// Cuando GAS tarda en invalidar su cache, el cliente filtra los borrados
-const _rsvBorradas = new Set();
+// Cuando GAS tarda en invalidar su cache, el cliente filtra los borrados.
+// Se persiste en sessionStorage para sobrevivir recargas de página.
+const _RSV_BORRADAS_TTL = 10 * 60 * 1000; // 10 min — cubre el cache server-side de GAS
+const _rsvBorradas = {}; // { key: expiryTimestamp }
+(function _loadRsvBorradas(){
+  try{
+    const stored = JSON.parse(sessionStorage.getItem('_rsvBorradas') || '{}');
+    const now = Date.now();
+    Object.entries(stored).forEach(([k, exp]) => { if(exp > now) _rsvBorradas[k] = exp; });
+  }catch(e){}
+})();
 function _markRsvDeleted(fecha, hora, area, camilla){
   const k = [fecha,hora,area,camilla].map(s=>String(s).trim().toLowerCase()).join('|');
-  _rsvBorradas.add(k);
-  setTimeout(()=>_rsvBorradas.delete(k), 2*60*1000); // expira en 2 min
+  _rsvBorradas[k] = Date.now() + _RSV_BORRADAS_TTL;
+  try{ sessionStorage.setItem('_rsvBorradas', JSON.stringify(_rsvBorradas)); }catch(e){}
 }
 function _filterRsvBorradas(reservas){
-  if(!_rsvBorradas.size) return reservas;
+  const now = Date.now();
+  // Limpiar entradas expiradas de memoria y storage
+  let changed = false;
+  Object.keys(_rsvBorradas).forEach(k=>{ if(_rsvBorradas[k] <= now){ delete _rsvBorradas[k]; changed = true; } });
+  if(changed) try{ sessionStorage.setItem('_rsvBorradas', JSON.stringify(_rsvBorradas)); }catch(e){}
+  if(!Object.keys(_rsvBorradas).length) return reservas;
   return reservas.filter(rv=>{
     const k=[rv.fecha,rv.horaInicio,rv.area,rv.camilla].map(s=>String(s).trim().toLowerCase()).join('|');
-    return !_rsvBorradas.has(k);
+    return !_rsvBorradas[k];
   });
 }
 
