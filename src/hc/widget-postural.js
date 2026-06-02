@@ -204,6 +204,7 @@ window.wpostMount=function(){
   };
   renderPaleta('ant');
   renderDrops=function(vista){
+    document.querySelectorAll('.wpost-tooltip').forEach(function(t){t.remove();});
     var layer=document.getElementById('wpost_dl_'+vista);
     if(!layer) return;
     layer.innerHTML='';
