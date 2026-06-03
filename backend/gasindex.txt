@@ -1055,6 +1055,13 @@ function _limpiarLocksExpirados(sheet, now, twoMinMs) {
     var lockedAt = new Date(rows[i][5]);
     if (isNaN(lockedAt.getTime()) || (now - lockedAt) > twoMinMs) toDelete.push(i+2);
   }
+  if (!toDelete.length) return;
+  // Si todas las filas de datos deben eliminarse, usar clearContent para evitar
+  // el error "No puedes borrar todas las filas móviles" de Google Sheets.
+  if (toDelete.length >= last - 1) {
+    sheet.getRange(2, 1, last - 1, 6).clearContent();
+    return;
+  }
   toDelete.reverse().forEach(function(rowIdx){ sheet.deleteRow(rowIdx); });
 }
 
