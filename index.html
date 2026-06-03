@@ -3,12 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
-<script>
-(function(){
-  var t=localStorage.getItem('centyrgc-theme')||'dark';
-  document.documentElement.setAttribute('data-theme',t);
-})();
-</script>
 <title id="appTitle">Sistema</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%231d4ed8'/><text x='50%25' y='54%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='800' font-size='18' fill='white'>S</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,15 +16,6 @@
 body,header,.app-sidebar,.card,input,select,.btn,
 #adminBottomNav,#estBottomNav{
   transition:background-color .2s,color .2s,border-color .2s
-}
-[data-theme="light"]{
-  --bg:#f8faff;--bg2:#eef2ff;--surf:#ffffff;--surf2:#f5f7ff;--surf3:#f0f4ff;
-  --tx:#1e293b;--tx2:#334155;--tx3:#64748b;--tx4:#94a3b8;
-  --bd:#c7d2fe;--bd2:#e0e7ff;
-  --header-bg:#1d4ed8;--sidebar-bg:#eff6ff;
-  --nav-tx:#1e3a8a;--nav-hover:#dbeafe;
-  --nav-active-bg:#1d4ed8;--nav-active-tx:#ffffff;
-  --header-border:rgba(29,78,216,.15);
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;min-height:100vh;-webkit-font-smoothing:antialiased}
@@ -559,7 +544,6 @@ body.rol-recepcion #adminBottomNav { display:none!important; }
   body.rol-docente .content-main { padding-bottom:80px; }
 }
 @media(max-width:767px){
-  #estBottomNav{display:flex!important}
   body.rol-estudiante .content-main { padding-bottom:80px; }
 }
 /* Admin/Docente bottom nav: distribución uniforme */
@@ -661,8 +645,6 @@ body.rol-recepcion #hdrBtnRecord{display:none}
 
 /* En móvil el sidebar no existe */
 @media(max-width:767px){.app-sidebar{display:none!important}}
-/* Botón de tema en header: solo visible en móvil (en desktop lo tiene el sidebar) */
-@media(min-width:768px){#hdrThemeBtn{display:none!important}body.sidebar-collapsed #hdrThemeBtn{display:flex!important}}
 
 /* Nav items */
 .sb-nav{flex:1;overflow-y:auto;overflow-x:hidden;padding:8px 0}
@@ -714,14 +696,6 @@ body.rol-recepcion #hdrBtnRecord{display:none}
   border-top:1px solid var(--bd);padding:8px;
   display:flex;align-items:center;gap:6px;flex-shrink:0
 }
-.sb-theme-btn{
-  flex:1;display:flex;align-items:center;gap:8px;
-  padding:8px 10px;border:none;background:none;
-  color:var(--nav-tx);cursor:pointer;border-radius:8px;
-  font-size:12px;white-space:nowrap;overflow:hidden;
-  font-family:'Plus Jakarta Sans',sans-serif;transition:background .15s
-}
-.sb-theme-btn:hover{background:var(--nav-hover)}
 .sb-collapse-btn{
   width:32px;height:32px;flex-shrink:0;
   border:1px solid var(--bd);background:none;
@@ -730,8 +704,6 @@ body.rol-recepcion #hdrBtnRecord{display:none}
   transition:background .15s
 }
 .sb-collapse-btn:hover{background:var(--nav-hover)}
-.app-sidebar.collapsed .sb-theme-btn .sb-label{display:none}
-.app-sidebar.collapsed .sb-theme-btn{display:none}
 .app-sidebar.collapsed .sb-footer{justify-content:center}
 /* ══ BOTTOM SHEET "MÁS" (móvil admin) ═══════════════════════════════════ */
 #masSheet{
@@ -798,7 +770,6 @@ body.rol-recepcion #hdrBtnRecord{display:none}
         <div class="rol-pill"><div class="rdot" id="rolDot"></div><span id="rolLabel">-</span></div>
         <button id="hdrBtnRecord" class="btn-logout" onclick="abrirRecordPanel()" style="border-color:var(--n600);color:var(--n300)" title="Panel informativo">&#128203; Record</button>
         <button id="hdrBtnPass" class="btn-logout" onclick="mostrarCambioPass()" style="border-color:var(--n600);color:var(--n300)" title="Cambiar contrasena">&#128274;</button>
-        <button id="hdrThemeBtn" class="btn-logout" onclick="toggleTheme()" title="Cambiar tema" style="border-color:var(--nav-active-bg);color:var(--nav-tx);min-width:36px;padding:5px 10px"><span id="hdrThemeIco">🌙</span></button>
         <button id="hdrBtnSalir" class="btn-logout" onclick="logout()">Salir</button>
       </div>
     </div>
@@ -808,10 +779,6 @@ body.rol-recepcion #hdrBtnRecord{display:none}
   <nav id="appSidebar" class="app-sidebar" style="display:none">
     <div class="sb-nav" id="sbNav"></div>
     <div class="sb-footer">
-      <button class="sb-theme-btn" onclick="toggleTheme()" title="Cambiar tema">
-        <span id="sbThemeIco">🌙</span>
-        <span class="sb-label" id="sbThemeLbl">Tema oscuro</span>
-      </button>
       <button class="sb-collapse-btn" id="sbCollapseBtn" onclick="toggleSidebarCollapse()" title="Colapsar sidebar">
         <span id="sbCollapseIco">‹</span>
       </button>

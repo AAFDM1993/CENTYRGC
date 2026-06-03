@@ -6,7 +6,6 @@
 // Carga siguiente: notas.js (loadHojas, renderAlBlock, etc.)
 
 window.onload=function(){
-  initTheme();
   // Migrar sesión legacy de sessionStorage si existe
   const legacy=sessionStorage.getItem('ft_session');
   if(legacy){try{const d=JSON.parse(legacy);saveSession(d);sessionStorage.removeItem('ft_session')}catch(e){}}
@@ -18,8 +17,10 @@ window.onload=function(){
 // Adaptación responsive al rotar pantalla
 window.addEventListener('resize', function(){
   if (!session || session.rol !== 'estudiante') return;
-  var bn = g('estBottomNav');
-  if (bn) bn.style.display = window.innerWidth < 768 ? 'flex' : 'none';
+  var bn = g('estBottomNav'), tw = g('estTopbarWrap');
+  var isMobile = window.innerWidth < 768;
+  if (bn) bn.style.display = isMobile ? 'flex' : 'none';
+  if (tw) tw.style.display = isMobile ? 'none' : 'block';
 });
 
 async function doLogin(){
