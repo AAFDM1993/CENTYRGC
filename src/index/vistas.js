@@ -10,15 +10,10 @@ async function iniciarVistaEstudiante(){
   // Ocultar topbars que no aplican al estudiante
   var dt=g('docenteTopbar'); if(dt) dt.style.display='none';
   var ab=g('adminBottomNav'); if(ab) ab.style.display='none';
-  // Decidir entre topbar o bottom nav según ancho de pantalla
+  // Sidebar maneja navegación en PC; en móvil usa bottom nav
   var bn=g('estBottomNav'), tw=g('estTopbarWrap');
-  if(window.innerWidth<768){
-    if(bn) bn.style.display='flex';
-    if(tw) tw.style.display='none';
-  } else {
-    if(bn) bn.style.display='none';
-    if(tw) tw.style.display='block';
-  }
+  if(tw) tw.style.display='none';
+  if(bn) bn.style.display=window.innerWidth<768?'flex':'none';
   // Actualizar info del usuario
   var nomEl=g('estNombre'), codEl=g('estCodigo');
   if(nomEl) nomEl.textContent=session.nombre||'Estudiante';

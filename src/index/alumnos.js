@@ -17,10 +17,8 @@ window.onload=function(){
 // Adaptación responsive al rotar pantalla
 window.addEventListener('resize', function(){
   if (!session || session.rol !== 'estudiante') return;
-  var bn = g('estBottomNav'), tw = g('estTopbarWrap');
-  var isMobile = window.innerWidth < 768;
-  if (bn) bn.style.display = isMobile ? 'flex' : 'none';
-  if (tw) tw.style.display = isMobile ? 'none' : 'block';
+  var bn = g('estBottomNav');
+  if (bn) bn.style.display = window.innerWidth < 768 ? 'flex' : 'none';
 });
 
 async function doLogin(){
