@@ -843,10 +843,14 @@ function renderCalendarioEst(){
               const esMia=rsv.reservadoPor===miNombre||rsv.reservadoPor===miCodigo;
               const puedeCancelar=(()=>{
                 if(!esMia)return false;
+                // Permitir cancelación hasta las 20:00 del día anterior a la cita
                 const cutoff=new Date(fechaStr+'T00:00:00');
                 cutoff.setDate(cutoff.getDate()-1);
                 cutoff.setHours(20,0,0,0);
-                return new Date()<cutoff;
+                if(new Date()<cutoff)return true;
+                // Fallback: ventana de 15 min post-creación (cubre citas del mismo día)
+                const tsDate=_parseTsGAS(rsv.ts);
+                return tsDate&&(new Date()-tsDate)<15*60*1000;
               })();
               celda+=`<div style="background:${esMia?'var(--green)':'var(--n600)'};border-radius:6px;padding:3px 6px;margin-bottom:2px;position:relative">
                 <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis${puedeCancelar?';padding-right:60px':''}">${rsv.paciente||'\u2014'}</div>
