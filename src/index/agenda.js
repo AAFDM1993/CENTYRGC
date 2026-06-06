@@ -746,7 +746,11 @@ async function cargarReservasEst(){
   }catch(e){ agendaEstReservas=[]; agendaLocks=[]; }
 }
 
-function semanaAnteriorEst(){ liberarLock(); calEstFechaBase.setDate(calEstFechaBase.getDate()-7); cargarReservasEst().then(renderCalendarioEst); }
+function semanaAnteriorEst(){
+  const lunes=getLunes(new Date());
+  if(calEstFechaBase<=lunes)return; // no permitir ir a semanas pasadas
+  liberarLock(); calEstFechaBase.setDate(calEstFechaBase.getDate()-7); cargarReservasEst().then(renderCalendarioEst);
+}
 function semanaSiguienteEst(){ liberarLock(); calEstFechaBase.setDate(calEstFechaBase.getDate()+7); cargarReservasEst().then(renderCalendarioEst); }
 function irHoyEst(){ calEstFechaBase=getLunes(new Date()); cargarReservasEst().then(renderCalendarioEst); }
 
@@ -772,7 +776,7 @@ function renderCalendarioEst(){
   const slots=generarSlots(agendaCfg.franjas, agendaCfg.areas[0]&&agendaCfg.areas[0].duracion||60);
   const hoy=fmt(new Date());
   const dias=[];
-  for(let i=0;i<6;i++){const d=new Date(calEstFechaBase);d.setDate(d.getDate()+i);dias.push(d);}
+  for(let i=0;i<6;i++){const d=new Date(calEstFechaBase);d.setDate(d.getDate()+i);if(fmt(d)>=hoy)dias.push(d);}
 
   // Ancho de columna de días
   const dw=window.innerWidth<=480?110:window.innerWidth<=768?140:200;
