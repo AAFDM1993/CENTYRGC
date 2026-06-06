@@ -134,7 +134,10 @@ function _recargarCalendarios(){
     if(grid)grid.style.opacity='';
   });
 }
-function semanaAnterior(){ calFechaBase.setDate(calFechaBase.getDate()-7); _recargarCalendarios(); }
+function semanaAnterior(){
+  if(session&&session.rol==='docente'){const lunes=getLunes(new Date());if(calFechaBase<=lunes)return;}
+  calFechaBase.setDate(calFechaBase.getDate()-7); _recargarCalendarios();
+}
 function semanaSiguiente(){ calFechaBase.setDate(calFechaBase.getDate()+7); _recargarCalendarios(); }
 function irHoy(){ calFechaBase=getLunes(new Date()); _recargarCalendarios(); }
 
@@ -260,9 +263,9 @@ function renderCalendario(){
   for(let i=0;i<6;i++){const d=new Date(calFechaBase);d.setDate(d.getDate()+i);todosLosDias.push(d);}
 // Mostrar siempre lunes a viernes de la semana base
 // Los slots pasados se muestran en gris (manejado por la variable `pasado` más abajo)
-const dias = todosLosDias;
   const esAdmin=session&&session.rol==='admin';
   const esDocente=session&&session.rol==='docente';
+  const dias = esAdmin ? todosLosDias : todosLosDias.filter(d=>fmt(d)>=hoy);
   const puedeElim=esAdmin||esDocente;
   const dw=window.innerWidth<=480?110:window.innerWidth<=768?140:200;
 
