@@ -9,7 +9,7 @@ async function guardarHC(catId, pacId, modo){
   const dni=g('pD')?.value?.trim()||'';
   if(!nombre||!dni){_busy=false;toast('Nombre y DNI son requeridos','','warn');return;}
   // Validar docente si es estudiante
-  const docenteHC=g('hcDoc')?.value||g('hcDocInput')?.value||'';
+  const docenteHC=g('hcDoc')?.value||'';
   const docenteHCCodigo=g('hcDocCodigo')?.value||'';
   if(session.rol==='estudiante'&&!docenteHC){_busy=false;toast('⚠️ Debes seleccionar un docente supervisor','Es obligatorio para guardar la evaluación','warn');return;}
 

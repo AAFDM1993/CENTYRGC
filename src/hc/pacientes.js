@@ -176,7 +176,7 @@ async function abrirFrmPac(pac=null, preCatId=null, preCatNombre=null){
           <input class="inp" id="hcEst" value="${e2(session.nombre||session.codigo)}" readonly style="background:var(--surf2);cursor:default"></div>
         <div class="field"><label>Docente supervisor${esEstudiante?' *':''}</label>
           <div style="position:relative">
-            <input class="inp" id="hcDocInput" placeholder="Buscar docente..." value="${e2(docenteHCActual)}" oninput="filtrarDocentesHC(this.value)" autocomplete="off">
+            <input class="inp" id="hcDocInput" placeholder="Buscar docente..." value="${e2(docenteHCActual)}" oninput="filtrarDocentesHC(this.value)" onblur="setTimeout(()=>{if(!g('hcDoc').value){this.value='';var dd=g('hcDocenteDD');if(dd)dd.style.display='none';}},200)" autocomplete="off">
             <div id="hcDocenteDD" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surf);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:50;max-height:180px;overflow-y:auto;margin-top:4px"></div>
           </div>
           <input type="hidden" id="hcDoc" value="${e2(docenteHCActual)}">
@@ -1007,6 +1007,9 @@ function filtrarDocentesHC(val){
   var docentes=window._docentesHCList||[];
   var dd=g('hcDocenteDD');
   if(!dd) return;
+  // Al escribir, invalidar selección previa (solo vale lo que venga del dropdown)
+  var hid=g('hcDoc'); if(hid) hid.value='';
+  var hidCod=g('hcDocCodigo'); if(hidCod) hidCod.value='';
   if(!val||!val.trim()){dd.style.display='none';return;}
   var v=val.toLowerCase();
   var matches=docentes.filter(function(d){
@@ -1036,6 +1039,9 @@ function selDocHC(enc, codEnc){
 function filtrarDocentes(val, docentesParam){
   var docentes=docentesParam||window._docentesList||[];
   var dd=g('docenteDD');
+  // Al escribir, invalidar selección previa (solo vale lo que venga del dropdown)
+  var hid=g('sDoc'); if(hid) hid.value='';
+  var hidCod=g('sDocCodigo'); if(hidCod) hidCod.value='';
   if(!val||!val.trim()){dd.style.display='none';return;}
   var v=val.toLowerCase();
   var matches=docentes.filter(function(d){
@@ -1088,7 +1094,7 @@ async function abrirFrmSes(pacId, evalId, num, sesId=null){
           <input class="inp" id="sEst" value="${e2(ses?.estudiante||session.nombre||session.codigo)}" placeholder="Nombre del estudiante" ${session.rol==='estudiante'?'readonly style="background:var(--surf2);cursor:default"':''}></div>
         <div class="field"><label>Docente</label>
           <div style="position:relative">
-            <input class="inp" id="sDocInput" placeholder="Buscar docente..." value="${e2(docenteActual)}" oninput="filtrarDocentes(this.value)" autocomplete="off">
+            <input class="inp" id="sDocInput" placeholder="Buscar docente..." value="${e2(docenteActual)}" oninput="filtrarDocentes(this.value)" onblur="setTimeout(()=>{if(!g('sDoc').value){this.value='';var dd=g('docenteDD');if(dd)dd.style.display='none';}},200)" autocomplete="off">
             <div id="docenteDD" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surf);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:50;max-height:180px;overflow-y:auto;margin-top:4px"></div>
           </div>
           <input type="hidden" id="sDoc" value="${e2(docenteActual)}">
@@ -1126,7 +1132,7 @@ async function abrirFrmSes(pacId, evalId, num, sesId=null){
 async function guardarSes(pacId, evalId, num, sesId, modo){
   if(!tryLock()) return;
   const des=g('sDes')?.value?.trim()||'';
-  const doc=g('sDoc')?.value||g('sDocInput')?.value||'';
+  const doc=g('sDoc')?.value||'';
   const docCodigo=g('sDocCodigo')?.value||'';
   if(!doc){_busy=false;toast('⚠️ Debes seleccionar un docente supervisor','Es obligatorio para guardar la sesión','warn');return;}
   if(modo==='enviar'&&!des){_busy=false;toast('Completa la descripción de la sesión','','warn');return;}
