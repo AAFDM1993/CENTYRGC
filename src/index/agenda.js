@@ -22,8 +22,8 @@ const _rsvBorradas = {}; // { key: expiryTimestamp }
     Object.entries(stored).forEach(([k, exp]) => { if(exp > now) _rsvBorradas[k] = exp; });
   }catch(e){}
 })();
-function _markRsvDeleted(fecha, hora, area, camilla){
-  const k = [fecha,hora,area,camilla].map(s=>String(s).trim().toLowerCase()).join('|');
+function _markRsvDeleted(fecha, hora, area, camilla, id){
+  const k = [fecha,hora,area,camilla,id].map(s=>String(s??'').trim().toLowerCase()).join('|');
   _rsvBorradas[k] = Date.now() + _RSV_BORRADAS_TTL;
   try{ sessionStorage.setItem('_rsvBorradas', JSON.stringify(_rsvBorradas)); }catch(e){}
 }
@@ -35,7 +35,7 @@ function _filterRsvBorradas(reservas){
   if(changed) try{ sessionStorage.setItem('_rsvBorradas', JSON.stringify(_rsvBorradas)); }catch(e){}
   if(!Object.keys(_rsvBorradas).length) return reservas;
   return reservas.filter(rv=>{
-    const k=[rv.fecha,rv.horaInicio,rv.area,rv.camilla].map(s=>String(s).trim().toLowerCase()).join('|');
+    const k=[rv.fecha,rv.horaInicio,rv.area,rv.camilla,rv.id].map(s=>String(s??'').trim().toLowerCase()).join('|');
     return !_rsvBorradas[k];
   });
 }
@@ -203,7 +203,7 @@ function verReservasHoy(){
           ${r.observacion?`<div style="font-size:10px;color:var(--tx4)">${r.observacion}</div>`:''}
         </div>
         <div style="font-size:11px;color:var(--n500)">${r.docente||r.reservadoPor||'—'}</div>
-        ${puedeElim?`<button onclick="eliminarReservaHoy('${nomEscFecha}','${nomEscHora}','${nomEscArea}','${nomEscCam}')" style="background:none;border:none;color:var(--tx4);cursor:pointer;font-size:13px;padding:0;transition:color .15s" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--tx4)'" title="Cancelar">&#128465;</button>`:''}
+        ${puedeElim?`<button onclick="eliminarReservaHoy('${nomEscFecha}','${nomEscHora}','${nomEscArea}','${nomEscCam}',${r.id})" style="background:none;border:none;color:var(--tx4);cursor:pointer;font-size:13px;padding:0;transition:color .15s" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--tx4)'" title="Cancelar">&#128465;</button>`:''}
       </div>`;
     }).join('');
 
@@ -228,20 +228,16 @@ function cerrarReservasHoy(){
   if(panel) panel.style.display = 'none';
 }
 
-async function eliminarReservaHoy(fecha, hora, area, camilla){
+async function eliminarReservaHoy(fecha, hora, area, camilla, id){
   if(!await confirmDialog('Cancelar esta reserva?')) return;
   showLoader('Cancelando...');
   try{
-    const r = await apiPost({action:'eliminarReserva', fecha, horaInicio:hora, area, camilla});
+    const r = await apiPost({action:'eliminarReserva', fecha, horaInicio:hora, area, camilla, id});
     hideLoader(); if(!r.ok) throw new Error(r.error);
     toast('Reserva cancelada','','ok');
     // Actualización optimista: elimina de memoria y re-renderiza sin esperar re-fetch
-    const _n=s=>String(s).trim().toLowerCase();
-    agendaReservas=agendaReservas.filter(rv=>!(
-      _n(rv.fecha)===_n(fecha)&&_n(rv.horaInicio)===_n(hora)&&
-      _n(rv.area)===_n(area)&&_n(rv.camilla)===_n(camilla)
-    ));
-    _markRsvDeleted(fecha, hora, area, camilla);
+    agendaReservas=agendaReservas.filter(rv=>rv.id!==id);
+    _markRsvDeleted(fecha, hora, area, camilla, id);
     renderCalendario();
     verReservasHoy();
     invalidateCache('leerReservas');
@@ -334,7 +330,7 @@ function renderCalendario(){
                 <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:14px">${rsv.paciente||'\u2014'}</div>
                 <div style="font-size:9px;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rsv.docente||rsv.reservadoPor||''}</div>
                 ${pasado&&puedeElim?`<div style="display:flex;gap:2px;margin-top:3px">${btnAsistio}${btnNoAsistio}</div>`:''}
-                ${puedeElim?`<button onclick="event.stopPropagation();pedirEliminar('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}')" style="position:absolute;top:2px;right:3px;background:none;border:none;color:rgba(255,255,255,.6);font-size:11px;cursor:pointer;line-height:1;padding:2px" title="Cancelar">&#10005;</button>`:''}
+                ${puedeElim?`<button onclick="event.stopPropagation();pedirEliminar('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}',${rsv.id})" style="position:absolute;top:2px;right:3px;background:none;border:none;color:rgba(255,255,255,.6);font-size:11px;cursor:pointer;line-height:1;padding:2px" title="Cancelar">&#10005;</button>`:''}
               </div>`;
             });
             if(!pasado&&!lleno){
@@ -655,20 +651,16 @@ async function marcarAsistencia(fecha,hora,area,camilla,valor,rsvId){
   }
 }
 
-async function pedirEliminar(fecha,hora,area,camilla){
+async function pedirEliminar(fecha,hora,area,camilla,id){
   if(!await confirmDialog('Cancelar esta reserva?'))return;
   showLoader('Cancelando...');
   try{
-    const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
+    const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla,id});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Reserva cancelada','','ok');
     // Actualización optimista: elimina de memoria y re-renderiza sin esperar re-fetch
-    const _n=s=>String(s).trim().toLowerCase();
-    agendaReservas=agendaReservas.filter(rv=>!(
-      _n(rv.fecha)===_n(fecha)&&_n(rv.horaInicio)===_n(hora)&&
-      _n(rv.area)===_n(area)&&_n(rv.camilla)===_n(camilla)
-    ));
-    _markRsvDeleted(fecha, hora, area, camilla);
+    agendaReservas=agendaReservas.filter(rv=>rv.id!==id);
+    _markRsvDeleted(fecha, hora, area, camilla, id);
     renderCalendario();
     invalidateCache('leerReservas');
   }catch(e){hideLoader();toast('Error',e.message,'err')}
@@ -685,19 +677,15 @@ function _parseTsGAS(ts){
   return m?new Date(+m[3],+m[2]-1,+m[1],+m[4],+m[5],+m[6]):null;
 }
 
-async function cancelarReservaEst(fecha,hora,area,camilla){
+async function cancelarReservaEst(fecha,hora,area,camilla,id){
   if(!confirm('¿Cancelar esta reserva?'))return;
   showLoader('Cancelando...');
   try{
-    const r=await apiPost({action:'cancelarReservaEst',fecha,horaInicio:hora,area,camilla});
+    const r=await apiPost({action:'cancelarReservaEst',fecha,horaInicio:hora,area,camilla,id});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Reserva cancelada','','ok');
-    const _n=s=>String(s).trim().toLowerCase();
-    agendaEstReservas=agendaEstReservas.filter(rv=>!(
-      _n(rv.fecha)===_n(fecha)&&_n(rv.horaInicio)===_n(hora)&&
-      _n(rv.area)===_n(area)&&_n(rv.camilla)===_n(camilla)
-    ));
-    _markRsvDeleted(fecha,hora,area,camilla);
+    agendaEstReservas=agendaEstReservas.filter(rv=>rv.id!==id);
+    _markRsvDeleted(fecha,hora,area,camilla,id);
     renderCalendarioEst();
     invalidateCache('leerReservas');
   }catch(e){hideLoader();toast('Error',e.message,'err');}
@@ -862,7 +850,7 @@ function renderCalendarioEst(){
               celda+=`<div style="background:${esMia?'var(--green)':'var(--n600)'};border-radius:6px;padding:3px 6px;margin-bottom:2px;position:relative">
                 <div style="font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis${puedeCancelar?';padding-right:60px':''}">${rsv.paciente||'\u2014'}</div>
                 <div style="font-size:9px;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${rsv.docente||rsv.reservadoPor||''}</div>
-                ${puedeCancelar?`<button onclick="event.stopPropagation();cancelarReservaEst('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}')" style="position:absolute;top:50%;right:3px;transform:translateY(-50%);background:rgba(0,0,0,.3);border:none;color:#fff;font-size:9px;cursor:pointer;padding:2px 5px;border-radius:3px;white-space:nowrap" title="Cancelar reserva (hasta las 20:00 del d\xeda anterior)">\u2715 Cancelar</button>`:''}
+                ${puedeCancelar?`<button onclick="event.stopPropagation();cancelarReservaEst('${esc(fechaStr)}','${esc(hora)}','${esc(area.nombre)}','${esc(esp.nombre)}',${rsv.id})" style="position:absolute;top:50%;right:3px;transform:translateY(-50%);background:rgba(0,0,0,.3);border:none;color:#fff;font-size:9px;cursor:pointer;padding:2px 5px;border-radius:3px;white-space:nowrap" title="Cancelar reserva (hasta las 20:00 del d\xeda anterior)">\u2715 Cancelar</button>`:''}
               </div>`;
             });
             // Botón de reservar si hay capacidad, no está en el pasado y no hay lock ajeno
@@ -1170,14 +1158,14 @@ function abrirReservaEspModal(fecha,hora,area,espacio,capacidad,fechaLabel){
   setTimeout(()=>g('rsvPaciente').focus(),100);
 }
 
-async function pedirEliminarModal(fecha,hora,area,camilla){
+async function pedirEliminarModal(fecha,hora,area,camilla,id){
   if(!await confirmDialog('Cancelar esta reserva?'))return;
   showLoader('Cancelando...');
   try{
-    const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
+    const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla,id});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Reserva cancelada','','ok');
-    _markRsvDeleted(fecha, hora, area, camilla);
+    _markRsvDeleted(fecha, hora, area, camilla, id);
     invalidateCache('leerReservas');
     const finSemEM=new Date(calFechaBase);finSemEM.setDate(finSemEM.getDate()+5);
     await cargarReservasSemana();
@@ -1228,25 +1216,21 @@ async function cargarListaReservas(){
           <div style="font-size:11px;color:var(--n500)">${rv.docente||rv.reservadoPor||'—'}</div>
           <div style="font-size:10px;color:var(--tx4)">${rv.observacion||''}</div>
         </div>
-        <button onclick="eliminarReservaLista('${esc(rv.fecha)}','${esc(rv.horaInicio)}','${esc(rv.area)}','${esc(rv.camilla)}')" style="background:none;border:none;color:var(--tx4);cursor:pointer;font-size:13px;padding:0;transition:color .15s" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--tx4)'" title="Eliminar">&#128465;</button>
+        <button onclick="eliminarReservaLista('${esc(rv.fecha)}','${esc(rv.horaInicio)}','${esc(rv.area)}','${esc(rv.camilla)}',${rv.id})" style="background:none;border:none;color:var(--tx4);cursor:pointer;font-size:13px;padding:0;transition:color .15s" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--tx4)'" title="Eliminar">&#128465;</button>
       </div>`).join('');
   }catch(e){box.innerHTML=`<div class="hint" style="margin:8px">Error: ${e.message}</div>`}
 }
 
-async function eliminarReservaLista(fecha,hora,area,camilla){
+async function eliminarReservaLista(fecha,hora,area,camilla,id){
   if(!await confirmDialog('Cancelar reserva de '+camilla+' el '+fecha+' a las '+hora+'?'))return;
   showLoader('Cancelando...');
   try{
-    const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla});
+    const r=await apiPost({action:'eliminarReserva',fecha,horaInicio:hora,area,camilla,id});
     hideLoader();if(!r.ok)throw new Error(r.error);
     toast('Reserva cancelada','','ok');
     // Actualización optimista
-    const _n=s=>String(s).trim().toLowerCase();
-    agendaReservas=agendaReservas.filter(rv=>!(
-      _n(rv.fecha)===_n(fecha)&&_n(rv.horaInicio)===_n(hora)&&
-      _n(rv.area)===_n(area)&&_n(rv.camilla)===_n(camilla)
-    ));
-    _markRsvDeleted(fecha, hora, area, camilla);
+    agendaReservas=agendaReservas.filter(rv=>rv.id!==id);
+    _markRsvDeleted(fecha, hora, area, camilla, id);
     renderCalendario();
     invalidateCache('leerReservas');
     cargarListaReservas();
