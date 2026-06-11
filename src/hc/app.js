@@ -377,7 +377,7 @@ function exportarDocumento(titulo, bodyHTML){
     +'*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
     +'@page{size:A4;margin:10mm}'
     +'body{font-family:"Plus Jakarta Sans",Arial,sans-serif;font-size:12px;color:#0f172a;background:#fff;padding:24px}'
-    +'@media print{body{padding:0}button{display:none}.sec{page-break-inside:avoid}}'
+    +'@media print{body{padding:0}button{display:none}}'
     /* Cabecera del documento */
     +'.doc-header{display:flex;align-items:center;justify-content:space-between;border-bottom:2.5px solid #1e3a5f;padding-bottom:12px;margin-bottom:18px}'
     +'.doc-logo{font-family:sans-serif;font-weight:800;font-size:18px;color:#1e3a5f;letter-spacing:-0.5px}'
