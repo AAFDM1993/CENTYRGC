@@ -375,12 +375,12 @@ function exportarDocumento(titulo, bodyHTML){
     +'<title>'+titulo+'</title>'
     +'<style>'
     +'*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    +'@page{size:A4;margin:10mm}'
     +'body{font-family:"Plus Jakarta Sans",Arial,sans-serif;font-size:12px;color:#0f172a;background:#fff;padding:24px}'
-    +'@media print{body{padding:10px}button{display:none}.sec{page-break-inside:avoid}}'
+    +'@media print{body{padding:0}button{display:none}.sec{page-break-inside:avoid}}'
     /* Cabecera del documento */
     +'.doc-header{display:flex;align-items:center;justify-content:space-between;border-bottom:2.5px solid #1e3a5f;padding-bottom:12px;margin-bottom:18px}'
     +'.doc-logo{font-family:sans-serif;font-weight:800;font-size:18px;color:#1e3a5f;letter-spacing:-0.5px}'
-    +'.doc-logo span{color:#1d4ed8}.doc-subtitle{font-size:10px;color:#475569;margin-top:2px}'
     /* Secciones */
     +'.sec{margin-bottom:14px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden}'
     +'.sec-hdr{background:#1e3a5f;color:#fff;font-weight:700;font-size:11px;padding:8px 14px;text-transform:uppercase;letter-spacing:.5px}'
@@ -408,7 +408,7 @@ function exportarDocumento(titulo, bodyHTML){
     +'<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">'
     +'</head><body>'
     +'<div class="doc-header">'
-    +'<div><div class="doc-logo">'+(_brandLogo?'<img src="'+_brandLogo+'" style="height:32px;object-fit:contain;vertical-align:middle;margin-right:6px">':'')+'<span style="vertical-align:middle">'+(_brandNombre||'HC').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span></div><div class="doc-subtitle">Historia Cl&iacute;nica Fisioterapia</div></div>'
+    +'<div class="doc-logo">Historia Cl&iacute;nica Fisioterap&eacute;utica</div>'
     +'<div style="text-align:right;font-size:10px;color:#64748b">Generado: '
     +(function(){var n=new Date();var dd=String(n.getDate()).padStart(2,'0');var mm=String(n.getMonth()+1).padStart(2,'0');var yy=n.getFullYear();var h=n.getHours();var mi=String(n.getMinutes()).padStart(2,'0');var ap=h>=12?'PM':'AM';h=h%12||12;return dd+'/'+mm+'/'+yy+' '+h+':'+mi+' '+ap;})()
     +'</div></div>'
