@@ -72,7 +72,8 @@ function buildEvalHTML(ev, pac, firmaHTML){
         exBody+='</tbody></table>';
       });
       exBody+='</div>';
-    } else if(d.pruebas){ exBody+=rowFull('Pruebas funcionales',d.pruebas); }
+    }
+    if(d.pruebas){ exBody+=rowFull('Observaciones adicionales de pruebas',d.pruebas); }
     rows+='<div class="sec"><div class="sec-hdr">III. Examen Objetivo</div><div class="sec-body full">'+exBody;
     var romHTML=buildRomTable(romData); var fuerzaHTML=buildFuerzaTable(fuerzaData);
     if(romHTML) rows+='<div style="grid-column:1/-1;margin-top:8px"><div class="sec-sub">ROM — Rango de movimiento</div>'+romHTML+'</div>';
