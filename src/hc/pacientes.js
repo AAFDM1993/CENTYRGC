@@ -566,7 +566,7 @@ function _buildDetalleExamenPorCategoria(d, ev, catId) {
   };
 
   if (catId === 'traumatologia') {
-    h += fld('EVA', d.eva !== undefined ? d.eva + '/10' : (d.evaValor !== undefined ? d.evaValor + '/10' : ''));
+    h += fld('EVA', (d.eva!==undefined&&d.eva!==null) ? d.eva + '/10' : ((d.evaValor!==undefined&&d.evaValor!==null&&d.evaValor!=='') ? d.evaValor + '/10' : ''));
     h += fld('Trofismo', d.trofismo);
     h += fld('Localización dolor', d.dolLoc);
     h += fld('Tipo dolor', d.dolTipo);
@@ -890,7 +890,7 @@ function sesCard(s, pac, evalAp){
       <!-- Detalle expandible -->
       <div id="${uid}" style="display:none;margin-top:10px;border-top:1px solid var(--bd);padding-top:10px">
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:10px">
-          <div><div style="font-size:10px;color:var(--tx4);font-weight:700">EVA</div><div style="font-size:13px;font-weight:700;color:var(--red)">${s.evaValor??'—'}/10</div></div>
+          <div><div style="font-size:10px;color:var(--tx4);font-weight:700">EVA</div><div style="font-size:13px;font-weight:700;color:var(--red)">${s.evaValor!==null&&s.evaValor!==undefined&&s.evaValor!==''&&!isNaN(s.evaValor)?s.evaValor:'—'}/10</div></div>
           ${s.respuesta?`<div><div style="font-size:10px;color:var(--tx4);font-weight:700">RESPUESTA PACIENTE</div><div style="font-size:12px">${e2(s.respuesta)}</div></div>`:''}
         </div>
         ${s.descripcion?`<div style="margin-bottom:10px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:4px;text-transform:uppercase">Descripción completa</div><div style="font-size:12px;background:var(--surf3);border-radius:8px;padding:10px;line-height:1.6">${e2(s.descripcion)}</div></div>`:''}

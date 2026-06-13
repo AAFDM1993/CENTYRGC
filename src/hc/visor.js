@@ -407,7 +407,7 @@ function _buildExamenObjetivoPorCategoria(d, ev, catId){
   var h = '<div class="sec"><div class="sec-hdr">III. Examen Objetivo</div>';
 
   if(catId === 'traumatologia'){
-    var eva = d.eva !== undefined ? d.eva : (ev.evaValor !== undefined ? ev.evaValor : '—');
+    var eva = (d.eva!==undefined&&d.eva!==null) ? d.eva : ((ev.evaValor!==undefined&&ev.evaValor!==null&&ev.evaValor!=='') ? ev.evaValor : '—');
     h += '<div class="sec-body">'
       + '<div><div class="field-lbl">EVA</div><div class="field-val">' + e2(String(eva)) + '/10</div></div>'
       + _fld2('Localización dolor', d.dolLoc)
