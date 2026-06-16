@@ -336,6 +336,7 @@ async function ofrecerPacienteExtra(alumno, curso, sgr, notasBase, notasExtra, i
       hideLoader();
       if(!r.ok) throw new Error(r.error);
       toast('Atención de continuación agregada automáticamente','Recargando editor...','ok');
+      invalidateCache('leerHoja');
       setTimeout(()=>abrirHoja(hojaActiva), 600);
     }catch(e){
       hideLoader();
@@ -414,6 +415,7 @@ async function confirmarPacienteExtra(){
     hideLoader();
     if(!r.ok) throw new Error(r.error);
     toast('Atención de continuación agregada','Recargando editor...','ok');
+    invalidateCache('leerHoja');
     setTimeout(()=>abrirHoja(hojaActiva), 600);
   }catch(e){
     hideLoader();
@@ -529,6 +531,7 @@ async function eliminarPacX(alumno, curso, sgr, pacLabel){
     hideLoader();
     if(!r.ok) throw new Error(r.error);
     toast('PACX eliminado','','ok');
+    invalidateCache('leerHoja');
     await abrirHoja(hojaActiva);
   }catch(e){
     hideLoader();
