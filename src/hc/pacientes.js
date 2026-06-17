@@ -1146,7 +1146,7 @@ async function guardarSes(pacId, evalId, num, sesId, modo){
       fecha:g('sF')?.value||'',
       estudiante:g('sEst')?.value||session.nombre||session.codigo,
       docente:doc, docenteCodigo:docCodigo,
-      evaValor:g('sesEva')?.value!==''&&g('sesEva')?.value!==null?Number(g('sesEva').value):null,
+      evaValor:g('sesEva')?.value!==''&&g('sesEva')?.value!=null?Number(g('sesEva').value):'',
       descripcion:des,respuesta:g('sRes')?.value||'',estado};
     if(sesId) b.id=sesId;
     const r=await apiPost(b);

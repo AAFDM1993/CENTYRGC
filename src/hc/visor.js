@@ -52,9 +52,9 @@ function buildEvalHTML(ev, pac, firmaHTML){
       +row('Antecedentes',d.antecedentes||pac.antecedentes)
       +row('Tiempo de evolución',d.tiempoEvol));
     // EVA: guardarHC guarda como d.eva (number), guardarEval como d.evaValor / ev.evaValor
-    var _evaRaw = (d.evaValor!==undefined&&d.evaValor!=='')?d.evaValor
-                : (d.eva!==undefined&&d.eva!==''&&d.eva!==0)?d.eva
-                : (ev.evaValor!==undefined&&ev.evaValor!=='')?ev.evaValor:'';
+    var _evaRaw = (d.evaValor!=null&&d.evaValor!=='')?d.evaValor
+                : (d.eva!=null&&d.eva!==''&&d.eva!==0)?d.eva
+                : (ev.evaValor!=null&&ev.evaValor!=='')?ev.evaValor:'';
     var exBody=(_evaRaw!==''?row('EVA — Dolor',String(_evaRaw)+'/10'):'')
       +row('Localización del dolor',d.dolLoc||d.dolLoc)
       +row('Tipo de dolor',d.dolTipo)
