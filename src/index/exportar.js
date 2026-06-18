@@ -445,15 +445,17 @@ async function exportarAtencionesAlumnoXLSX(codigo, nombre){
       return;
     }
     const wb = XLSX.utils.book_new();
-    const nombresUsados = {};
+    const nombresFinales = {}; // nombres ya asignados a este workbook
     r.resultados.forEach(function(res){
-      let nombreHoja = _sanitizeSheetName(res.hoja);
-      if(nombresUsados[nombreHoja]){
-        nombresUsados[nombreHoja]++;
-        nombreHoja = _sanitizeSheetName(nombreHoja + '_' + nombresUsados[nombreHoja]);
-      } else {
-        nombresUsados[nombreHoja] = 1;
+      let base = _sanitizeSheetName(res.hoja);
+      let nombreHoja = base;
+      let n = 1;
+      while(nombresFinales[nombreHoja]){
+        n++;
+        const sufijo = '_' + n;
+        nombreHoja = base.slice(0, 31 - sufijo.length) + sufijo;
       }
+      nombresFinales[nombreHoja] = true;
       const ws = _construirHojaAtenciones(res);
       XLSX.utils.book_append_sheet(wb, ws, nombreHoja);
     });
