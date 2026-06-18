@@ -635,10 +635,15 @@ async function buscarAlumnoGlobal(){
         </div>`;
       }).join('');
 
+      const btnExport = (session && session.rol === 'admin')
+        ? `<button onclick="exportarAtencionesAlumnoXLSX('${esc(al.codigo)}','${esc(al.nombre)}')" style="margin-left:auto;background:var(--green);border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:700;padding:5px 10px;cursor:pointer;white-space:nowrap">&#128190; Exportar XLSX</button>`
+        : '';
+
       return `<div style="border:1px solid var(--bd2);border-radius:12px;overflow:hidden;margin-bottom:10px;box-shadow:var(--sh)">
         <div style="background:var(--n900);padding:10px 14px;display:flex;align-items:center;gap:10px">
           <span style="font-family:'Syne',sans-serif;font-weight:700;color:#fff;font-size:13px">${al.nombre}</span>
           <span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--n300)">${al.codigo||'-'}</span>
+          ${btnExport}
         </div>
         <div style="padding:10px">${hojaBlocks}</div>
       </div>`;
