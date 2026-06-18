@@ -19,20 +19,30 @@ function infoDialog(msg){
 }
 
 // ── Modal confirm (reemplaza window.confirm para evitar supresión del navegador) ──
-function confirmDialog(msg){
+// requireText opcional: si se pasa, exige escribir ese texto exacto antes de habilitar "Confirmar"
+function confirmDialog(msg, requireText){
   return new Promise(function(resolve){
     var ov=document.getElementById('confirmOverlay');
     document.getElementById('confirmMsg').textContent=msg;
+    var wrap=document.getElementById('confirmInputWrap');
+    var inp=document.getElementById('confirmInput');
+    var btnYes=document.getElementById('confirmYes');
+    if(requireText){
+      wrap.style.display='block'; inp.value=''; btnYes.disabled=true;
+      inp.oninput=function(){btnYes.disabled = inp.value.trim()!==requireText;};
+    } else {
+      wrap.style.display='none'; btnYes.disabled=false; inp.oninput=null;
+    }
     ov.style.display='flex';
     function cleanup(val){
       ov.style.display='none';
-      document.getElementById('confirmYes').removeEventListener('click',onYes);
+      btnYes.removeEventListener('click',onYes);
       document.getElementById('confirmNo').removeEventListener('click',onNo);
       resolve(val);
     }
-    function onYes(){cleanup(true);}
-    function onNo(){cleanup(false);}
-    document.getElementById('confirmYes').addEventListener('click',onYes);
+    function onYes(){ if(requireText && inp.value.trim()!==requireText) return; cleanup(true); }
+    function onNo(){ cleanup(false); }
+    btnYes.addEventListener('click',onYes);
     document.getElementById('confirmNo').addEventListener('click',onNo);
   });
 }
