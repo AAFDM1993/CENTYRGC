@@ -472,3 +472,20 @@ async function exportarAtencionesAlumnoXLSX(codigo, nombre){
     toast('Error al exportar', e.message, 'err');
   }
 }
+
+// ── EXPORTAR RESUMEN DE CURSO A XLSX (admin) ────────────
+function exportarResumenCursoXLSX(){
+  if(!expSelCurso||!expResumenCombinado||!expResumenCombinado.alumnos||!expResumenCombinado.alumnos.length){
+    toast('Selecciona un curso primero','','warn');return;
+  }
+  const aoa=[['Codigo','Apellidos y Nombres','Promedio Final']];
+  expResumenCombinado.alumnos.forEach(al=>{
+    aoa.push([al.codigo||'-', al.nombre, al.promFinal!==''&&al.promFinal!==undefined?al.promFinal:'']);
+  });
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,_sanitizeSheetName(expSelCurso));
+  const fecha=new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb,'Resumen_'+String(expSelCurso).replace(/[^a-zA-Z0-9]+/g,'_')+'_'+fecha+'.xlsx');
+  toast('Exportado','Resumen de '+expSelCurso,'ok');
+}
