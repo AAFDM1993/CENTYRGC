@@ -381,6 +381,15 @@ function _aoaFilaPaciente(pac, base, extra){
   return fila;
 }
 
+function _agregarComentariosNotas(comentarios, pac, filaIdx, colBase, base){
+  (pac.notasDoc||[]).forEach(function(doc, ni){
+    if(doc) comentarios.push({r: filaIdx, c: colBase+ni, texto: 'Registrado por: ' + doc});
+  });
+  (pac.xNotasDoc||[]).forEach(function(doc, ni){
+    if(doc) comentarios.push({r: filaIdx, c: colBase+base+ni, texto: 'Registrado por: ' + doc});
+  });
+}
+
 function _construirHojaAtenciones(resultado){
   var aoa = [];
   aoa.push(['Asignatura: ' + (resultado.asignatura || resultado.hoja)]);
@@ -402,12 +411,7 @@ function _construirHojaAtenciones(resultado){
       (sg.pacientes || []).forEach(function(pac){
         var filaIdx = aoa.length;
         aoa.push(_aoaFilaPaciente(pac, base, extra));
-        (pac.notasDoc||[]).forEach(function(doc, ni){
-          if(doc) comentarios.push({r: filaIdx, c: 1+ni, texto: 'Registrado por: ' + doc});
-        });
-        (pac.xNotasDoc||[]).forEach(function(doc, ni){
-          if(doc) comentarios.push({r: filaIdx, c: 1+base+ni, texto: 'Registrado por: ' + doc});
-        });
+        _agregarComentariosNotas(comentarios, pac, filaIdx, 1, base);
       });
 
       var promSgr = (sg.pacientes && sg.pacientes.length && sg.pacientes[0].prom !== '' && sg.pacientes[0].prom !== undefined)
