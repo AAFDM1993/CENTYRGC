@@ -201,7 +201,10 @@ function renderCalendarioRec(){
         const min = sg.notasBase, max = min + sg.notasExtra, np = sg.numPac||1;
         const isLast = si === cu.subgrupos.length - 1;
         html += '<div style="border:1px solid var(--bd2);border-top:none;padding:12px 14px;background:var(--surf2);'+(isLast?'border-radius:0 0 10px 10px':'')+'">';
-        html += '<div style="font-size:12px;font-weight:700;color:var(--tx);margin-bottom:10px">&#128101; '+sg.nombre+'</div>';
+        const btnDelSgr = (session && session.rol === 'admin')
+          ? '<button onclick="eliminarSubgrupoUI('+ci+','+si+')" style="background:var(--red);border:none;border-radius:7px;color:#fff;font-size:10px;font-weight:700;padding:4px 9px;cursor:pointer;float:right">&#128465; Eliminar</button>'
+          : '';
+        html += '<div style="font-size:12px;font-weight:700;color:var(--tx);margin-bottom:10px">&#128101; '+sg.nombre+btnDelSgr+'</div>';
         html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">';
         html += '<div><label style="font-size:10px;font-weight:700;color:var(--tx3);display:block;margin-bottom:4px">Min</label>'
               + '<input type="number" min="1" max="50" value="'+min+'" id="cfg_min_'+ci+'_'+si+'" style="width:100%;border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font-size:14px;font-weight:800;outline:none;text-align:center"></div>';
@@ -261,6 +264,25 @@ async function guardarConfigCurso(ci){
       toast('Completado con advertencias', r.errores.slice(0,3).join(' | '), 'warn');
     else
       toast('Guardado', cu.nombre+' — '+alumnos.length+' alumnos', 'ok');
+  }catch(e){ hideLoader(); toast('Error', e.message, 'err'); }
+}
+
+async function eliminarSubgrupoUI(ci, si){
+  const cu = (window._cfgCursosArr||[])[ci]; if(!cu) return;
+  const sg = cu.subgrupos[si]; if(!sg) return;
+  const esUltimo = cu.subgrupos.length === 1;
+  const msg = esUltimo
+    ? `Este es el unico subgrupo de "${cu.nombre}". Al eliminarlo se eliminara el CURSO completo para todos los alumnos y se perderan sus notas.\n\nEscribe "${sg.nombre}" para confirmar:`
+    : `Se eliminara el subgrupo "${sg.nombre}" de "${cu.nombre}" para TODOS los alumnos y se perderan sus notas.\n\nEscribe "${sg.nombre}" para confirmar:`;
+  if(!await confirmDialog(msg, sg.nombre)) return;
+  showLoader('Eliminando subgrupo...');
+  try{
+    const r = await apiPost({action:'eliminarSubgrupoCurso', hoja: window._cfgHojaNombre, curso: cu.nombre, subgrupo: sg.nombre});
+    hideLoader();
+    if(!r.ok) throw new Error(r.error||'Error en el GAS');
+    invalidateCache('leerHoja'); invalidateCache('resumenHoja');
+    toast('Subgrupo eliminado', r.cursoEliminado ? (cu.nombre+' eliminado (sin subgrupos restantes)') : sg.nombre, 'ok');
+    abrirConfigHoja(window._cfgHojaNombre);
   }catch(e){ hideLoader(); toast('Error', e.message, 'err'); }
 }
 
