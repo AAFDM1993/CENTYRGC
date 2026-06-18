@@ -551,3 +551,40 @@ function selExpSubgrupo(nombre){
   const nombresSgr=Object.keys(expSubgruposDetalle).sort((a,b)=>a.localeCompare(b,'es'));
   renderExpSubgruposList(nombresSgr);
 }
+
+// ── EXPORTAR DETALLE DE SUBGRUPO A XLSX (admin) ────────────
+function exportarDetalleSubgrupoXLSX(){
+  if(!expSelSubgrupo||!expSubgruposDetalle||!expSubgruposDetalle[expSelSubgrupo]){
+    toast('Selecciona un subgrupo primero','','warn');return;
+  }
+  const info=expSubgruposDetalle[expSelSubgrupo];
+  const base=info.base, extra=info.extra;
+  const filasOrdenadas=info.filas.slice().sort((a,b)=>a.alumnoNombre.localeCompare(b.alumnoNombre,'es',{sensitivity:'base'}));
+  const header=['Alumno','Codigo','Paciente'];
+  for(let i=0;i<base;i++) header.push(i===0?'EV':'S'+i);
+  for(let i2=0;i2<extra;i2++) header.push('E'+(i2+1));
+  header.push('PROM');
+  const aoa=[header];
+  const comentarios=[];
+  filasOrdenadas.forEach(fila=>{
+    (fila.pacientes||[]).forEach(pac=>{
+      const filaIdx=aoa.length;
+      const filaPac=_aoaFilaPaciente(pac, base, extra);
+      aoa.push([fila.alumnoNombre, fila.alumnoCodigo||'-'].concat(filaPac));
+      _agregarComentariosNotas(comentarios, pac, filaIdx, 3, base);
+    });
+  });
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  comentarios.forEach(function(cm){
+    const ref=XLSX.utils.encode_cell({r:cm.r,c:cm.c});
+    if(!ws[ref]) ws[ref]={t:'s',v:''};
+    ws[ref].c=[{a:'CENTYR', t:cm.texto}];
+    ws[ref].c.hidden=true;
+  });
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, _sanitizeSheetName(expSelSubgrupo));
+  const fecha=new Date().toISOString().slice(0,10);
+  const nombreArchivo='Detalle_'+String(expSelCurso||'curso').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+String(expSelSubgrupo).replace(/[^a-zA-Z0-9]+/g,'_')+'_'+fecha+'.xlsx';
+  XLSX.writeFile(wb, nombreArchivo);
+  toast('Exportado', nombreArchivo, 'ok');
+}
