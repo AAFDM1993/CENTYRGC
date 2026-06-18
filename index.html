@@ -1022,6 +1022,11 @@ body.rol-recepcion #hdrBtnRecord{display:none}
     <div class="resumen-preview" id="resumenTable"></div>
     <button class="btn-sm green" onclick="exportarPDF()" style="width:100%;margin-top:10px">&#128196; Exportar PDF consolidado (todos los ciclos)</button>
     <button class="btn-sm green" onclick="exportarResumenCursoXLSX()" style="width:100%;margin-top:8px">&#128190; Exportar XLSX (resumen)</button>
+    <button class="btn-ghost" onclick="cargarSubgruposCurso()" style="width:100%;margin-top:8px">&#128269; Cargar subgrupos para exportar detalle</button>
+    <div id="expSubgruposBox" style="display:none;margin-top:10px">
+      <div class="slbl">3. Selecciona el subgrupo</div>
+      <div id="expSubgruposList"></div>
+    </div>
   </div>
   <button class="btn-ghost" onclick="cargarHojasExport()" style="width:100%;margin-top:10px">&#8635; Recargar cursos</button>
 </div>
