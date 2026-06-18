@@ -367,3 +367,102 @@ tbody tr:last-child td{border-bottom:2px solid #0a1628}
     win.document.write(htmlPDF);win.document.close();
   }
 }
+
+// ── EXPORTAR ATENCIONES DE UN ALUMNO A XLSX (admin) ────────────
+function _sanitizeSheetName(nombre){
+  return String(nombre||'Hoja').replace(/[:\\/?*\[\]]/g,'-').slice(0,31) || 'Hoja';
+}
+
+function _aoaFilaPaciente(pac, base, extra){
+  var fila = [pac.nombre || '-'];
+  for(var i=0;i<base;i++) fila.push(pac.notas[i]!==''&&pac.notas[i]!==undefined ? pac.notas[i] : '');
+  for(var i2=0;i2<extra;i2++) fila.push(pac.xNotas[i2]!==''&&pac.xNotas[i2]!==undefined ? pac.xNotas[i2] : '');
+  fila.push(pac.promSS!==''&&pac.promSS!==undefined ? pac.promSS : '');
+  return fila;
+}
+
+function _construirHojaAtenciones(resultado){
+  var aoa = [];
+  aoa.push(['Asignatura: ' + (resultado.asignatura || resultado.hoja)]);
+  aoa.push([]);
+  var comentarios = []; // {r, c, texto} en índices 0-based dentro de aoa
+
+  (resultado.cursos || []).forEach(function(cu){
+    aoa.push(['CURSO: ' + cu.nombre]);
+    var promsCurso = [];
+    (cu.subgrupos || []).forEach(function(sg){
+      var base = sg.notasBase || 0, extra = sg.notasExtra || 0;
+      aoa.push(['Subgrupo: ' + sg.nombre]);
+      var header = ['Paciente'];
+      for(var i=0;i<base;i++) header.push(i===0?'EV':'S'+i);
+      for(var i2=0;i2<extra;i2++) header.push('E'+(i2+1));
+      header.push('PROM');
+      aoa.push(header);
+
+      (sg.pacientes || []).forEach(function(pac){
+        var filaIdx = aoa.length;
+        aoa.push(_aoaFilaPaciente(pac, base, extra));
+        (pac.notasDoc||[]).forEach(function(doc, ni){
+          if(doc) comentarios.push({r: filaIdx, c: 1+ni, texto: 'Registrado por: ' + doc});
+        });
+        (pac.xNotasDoc||[]).forEach(function(doc, ni){
+          if(doc) comentarios.push({r: filaIdx, c: 1+base+ni, texto: 'Registrado por: ' + doc});
+        });
+      });
+
+      var promSgr = (sg.pacientes && sg.pacientes.length && sg.pacientes[0].prom !== '' && sg.pacientes[0].prom !== undefined)
+        ? Number(sg.pacientes[0].prom) : null;
+      if(promSgr !== null) promsCurso.push(promSgr);
+      var filaProm = ['Promedio Subgrupo'];
+      for(var k=1;k<header.length-1;k++) filaProm.push('');
+      filaProm.push(promSgr !== null ? promSgr : '');
+      aoa.push(filaProm);
+      aoa.push([]);
+    });
+    var promCurso = promsCurso.length ? Math.round(promsCurso.reduce(function(a,b){return a+b;},0)/promsCurso.length*100)/100 : '';
+    aoa.push(['Promedio Curso', promCurso]);
+    aoa.push([]);
+  });
+
+  var ws = XLSX.utils.aoa_to_sheet(aoa);
+  comentarios.forEach(function(cm){
+    var ref = XLSX.utils.encode_cell({r: cm.r, c: cm.c});
+    if(!ws[ref]) ws[ref] = {t:'s', v:''};
+    ws[ref].c = [{a:'CENTYR', t: cm.texto}];
+    ws[ref].c.hidden = true;
+  });
+  return ws;
+}
+
+async function exportarAtencionesAlumnoXLSX(codigo, nombre){
+  showLoader('Generando reporte de '+nombre+'...');
+  try{
+    const r = await apiGet('notasAlumnoAdmin', {codigo});
+    hideLoader();
+    if(!r.ok) throw new Error(r.error || 'Error al obtener notas');
+    if(!r.resultados || !r.resultados.length){
+      toast('Sin datos', nombre+' no tiene notas registradas en ninguna hoja', 'warn');
+      return;
+    }
+    const wb = XLSX.utils.book_new();
+    const nombresUsados = {};
+    r.resultados.forEach(function(res){
+      let nombreHoja = _sanitizeSheetName(res.hoja);
+      if(nombresUsados[nombreHoja]){
+        nombresUsados[nombreHoja]++;
+        nombreHoja = _sanitizeSheetName(nombreHoja + '_' + nombresUsados[nombreHoja]);
+      } else {
+        nombresUsados[nombreHoja] = 1;
+      }
+      const ws = _construirHojaAtenciones(res);
+      XLSX.utils.book_append_sheet(wb, ws, nombreHoja);
+    });
+    const fecha = new Date().toISOString().slice(0,10);
+    const nombreArchivo = 'Atenciones_'+String(nombre||'alumno').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+fecha+'.xlsx';
+    XLSX.writeFile(wb, nombreArchivo);
+    toast('Exportado', nombreArchivo, 'ok');
+  }catch(e){
+    hideLoader();
+    toast('Error al exportar', e.message, 'err');
+  }
+}
