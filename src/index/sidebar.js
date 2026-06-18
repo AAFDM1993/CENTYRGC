@@ -68,7 +68,7 @@ function _getSbItems(rol) {
       action: () => { abrirPanelAdmin('al');  setSbActive('sbAl'); } },
     { type:'item', id:'sbUs',  ico:'👥', label:'Usuarios',
       action: () => { abrirPanelAdmin('us');  setSbActive('sbUs'); } },
-    { type:'item', id:'sbPdf', ico:'📄', label:'PDF',
+    { type:'item', id:'sbPdf', ico:'📄', label:'Exportar',
       action: () => { abrirPanelAdmin('pdf'); setSbActive('sbPdf'); } },
     { type:'item', id:'sbLog', ico:'📊', label:'Log',
       action: () => { abrirPanelAdmin('log'); setSbActive('sbLog'); } },
