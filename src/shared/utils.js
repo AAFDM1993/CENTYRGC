@@ -77,6 +77,15 @@ function formatFechaCorta(raw){
   var yyyy=d.getFullYear();
   return dd+'/'+mm+'/'+yyyy;
 }
+function formatHora12(raw){
+  if(!raw) return '';
+  var m=String(raw).match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*$/);
+  if(!m) return '';
+  var h=parseInt(m[1],10);
+  var ap=h>=12?'PM':'AM';
+  var h12=h%12; if(h12===0) h12=12;
+  return String(h12).padStart(2,'0')+':'+m[2]+' '+ap;
+}
 function edad(fn){
   const d=new Date(fn),h=new Date();
   let a=h.getFullYear()-d.getFullYear();

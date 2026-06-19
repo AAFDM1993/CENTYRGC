@@ -879,7 +879,7 @@ function sesCard(s, pac, evalAp){
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-size:13px;transition:transform .2s" id="ico_${uid}">▶</span>
           <div style="font-size:12px;color:var(--tx)">
-            <b>Sesión #${s.numero}</b> · ${formatFechaCorta(s.fecha)}
+            <b>Sesión #${s.numero}</b> · ${formatFechaCorta(s.fecha)}${s.fechaRegistro?' · '+formatHora12(s.fechaRegistro):''}
             ${s.estudiante||s.terapeuta?'<br><span style="font-size:11px;color:var(--tx4)">&#127891; '+(s.estudiante||s.terapeuta||'')+'</span>':''}
             ${s.docente?'<span style="font-size:11px;color:var(--tx4);margin-left:8px">&#128203; '+s.docente+'</span>':'' }
           </div>
