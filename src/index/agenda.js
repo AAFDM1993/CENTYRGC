@@ -135,7 +135,6 @@ function _recargarCalendarios(){
   });
 }
 function semanaAnterior(){
-  if(session&&session.rol==='docente'){const lunes=getLunes(new Date());if(calFechaBase<=lunes)return;}
   calFechaBase.setDate(calFechaBase.getDate()-7); _recargarCalendarios();
 }
 function semanaSiguiente(){ calFechaBase.setDate(calFechaBase.getDate()+7); _recargarCalendarios(); }
@@ -261,7 +260,7 @@ function renderCalendario(){
 // Los slots pasados se muestran en gris (manejado por la variable `pasado` más abajo)
   const esAdmin=session&&session.rol==='admin';
   const esDocente=session&&session.rol==='docente';
-  const dias = esAdmin ? todosLosDias : todosLosDias.filter(d=>fmt(d)>=hoy);
+  const dias = (esAdmin||esDocente) ? todosLosDias : todosLosDias.filter(d=>fmt(d)>=hoy);
   const puedeElim=esAdmin||esDocente;
   const dw=window.innerWidth<=480?110:window.innerWidth<=768?140:200;
 
@@ -644,6 +643,7 @@ async function marcarAsistencia(fecha,hora,area,camilla,valor,rsvId){
   try{
     const r=await apiPost({action:'marcarAsistencia',fecha,horaInicio:hora,area,camilla,asistencia:valor,id:rsvId});
     if(!r.ok)throw new Error(r.error);
+    invalidateCache('leerReservas');
   }catch(e){
     if(rsv)rsv.asistencia=prevValor;
     renderCalendario();
