@@ -617,3 +617,134 @@ function _actualizarBotonesFormatoAlcance(){
   setActivo('btnAlcCiclo', expAlcance==='ciclo');
   setActivo('btnAlcSubgrupos', expAlcance==='subgrupos');
 }
+
+// ── EXPORTAR PANEL UNIFICADO: XLSX de uno o varios subgrupos ────────────
+function exportarXLSXSubgrupos(nombres){
+  if(!expSubgruposDetalle||!nombres||!nombres.length){
+    toast('Selecciona al menos un subgrupo','','warn');return;
+  }
+  const wb=XLSX.utils.book_new();
+  const nombresAsignados={};
+  nombres.forEach(nombreSgr=>{
+    const info=expSubgruposDetalle[nombreSgr];
+    if(!info)return;
+    const ws=_construirHojaDetalleSubgrupo(nombreSgr, info);
+    const nombreHoja=_nombreHojaUnico(nombresAsignados, nombreSgr);
+    XLSX.utils.book_append_sheet(wb, ws, nombreHoja);
+  });
+  const fecha=new Date().toISOString().slice(0,10);
+  const nombreArchivo='Detalle_'+String(expSelCurso||'curso').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+fecha+'.xlsx';
+  XLSX.writeFile(wb, nombreArchivo);
+  toast('Exportado', nombreArchivo, 'ok');
+}
+
+// ── EXPORTAR PANEL UNIFICADO: PDF de uno o varios subgrupos ────────────
+function _tablaSubgrupoHTML(nombreSubgrupo, info, apro){
+  const base=info.base, extra=info.extra;
+  const filasOrdenadas=info.filas.slice().sort((a,b)=>a.alumnoNombre.localeCompare(b.alumnoNombre,'es',{sensitivity:'base'}));
+  let thNotas='';
+  for(let i=0;i<base;i++) thNotas+=`<th style="text-align:center">${i===0?'EV':'S'+i}</th>`;
+  for(let i2=0;i2<extra;i2++) thNotas+=`<th style="text-align:center">E${i2+1}</th>`;
+  let filasHtml='';
+  filasOrdenadas.forEach(fila=>{
+    (fila.pacientes||[]).forEach(pac=>{
+      let tdNotas='';
+      for(let i=0;i<base;i++){const v=pac.notas&&pac.notas[i];tdNotas+=`<td style="text-align:center">${v!==''&&v!==undefined?v:'-'}</td>`;}
+      for(let i2=0;i2<extra;i2++){const v=pac.xNotas&&pac.xNotas[i2];tdNotas+=`<td style="text-align:center">${v!==''&&v!==undefined?v:'-'}</td>`;}
+      const p=pac.promSS;
+      const color=p!==''&&p!==undefined?(p>=apro?'#059669':'#dc2626'):'#64748b';
+      filasHtml+=`<tr>
+        <td style="font-size:11px;padding:6px 8px">${fila.alumnoNombre}</td>
+        <td style="font-family:monospace;font-size:10px;color:#1d4ed8;padding:6px 8px">${fila.alumnoCodigo||'-'}</td>
+        <td style="font-size:11px;padding:6px 8px">${pac.nombre||'-'}</td>
+        ${tdNotas}
+        <td style="text-align:center;font-family:monospace;font-weight:700;color:${color};padding:6px 8px">${p!==''&&p!==undefined?p:'-'}</td>
+      </tr>`;
+    });
+  });
+  return `<div>
+    <h2 style="font-size:13px;font-weight:800;color:#1d4ed8;margin:18px 0 8px">Subgrupo: ${nombreSubgrupo}</h2>
+    <table>
+      <thead><tr>
+        <th style="width:120px">Alumno</th><th style="width:80px">Codigo</th><th>Paciente</th>${thNotas}<th style="width:60px;text-align:center">PROM</th>
+      </tr></thead>
+      <tbody>${filasHtml}</tbody>
+    </table>
+  </div>`;
+}
+
+async function exportarPDFSubgrupos(nombres){
+  if(!expSubgruposDetalle||!nombres||!nombres.length){
+    toast('Selecciona al menos un subgrupo','','warn');return;
+  }
+  const fecha=new Date().toLocaleDateString('es-PE',{year:'numeric',month:'long',day:'numeric'});
+  const logoUrl=await logoParaPDF_();
+  const instUniv=(g('cfgUniv')||{}).value||'';
+  const instFac =(g('cfgFac') ||{}).value||'';
+  const instEsc =(g('cfgEsc') ||{}).value||'';
+  const apro=(expResumenCombinado.alumnos&&expResumenCombinado.alumnos[0]&&expResumenCombinado.alumnos[0].notaApro)||11;
+
+  let secciones='';
+  nombres.forEach((nombreSgr,i)=>{
+    const info=expSubgruposDetalle[nombreSgr];
+    if(!info)return;
+    const pageBreak=i>0?'page-break-before:always;':'';
+    secciones+=`<div style="${pageBreak}">${_tablaSubgrupoHTML(nombreSgr, info, apro)}</div>`;
+  });
+
+  const htmlPDF=`<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8">
+<title>Detalle de Subgrupos - ${expSelCurso}</title>
+<style>
+@page{size:A4;margin:15mm 14mm 18mm 14mm}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;font-size:12px;color:#0f172a}
+.hdr-pdf{display:flex;align-items:center;gap:18px;padding-bottom:14px;border-bottom:2px solid #0a1628;margin-bottom:18px}
+.logo-box{width:80px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.logo-box img{max-width:80px;max-height:70px;object-fit:contain}
+.inst-info{flex:1}
+.inst-univ{font-size:10px;font-weight:700;color:#0a1628;text-transform:uppercase;letter-spacing:.6px;line-height:1.6}
+.inst-fac{font-size:9.5px;color:#334155;text-transform:uppercase;letter-spacing:.5px;line-height:1.6}
+.inst-esc{font-size:9.5px;color:#1d4ed8;font-weight:700;text-transform:uppercase;letter-spacing:.5px;line-height:1.6}
+.titulo h1{font-size:15px;font-weight:800;color:#0a1628;margin-bottom:3px}
+.titulo h2{font-size:12px;font-weight:700;color:#1d4ed8;margin-bottom:8px}
+table{width:100%;border-collapse:collapse;margin-top:6px}
+thead th{background:#0a1628;color:#fff;padding:7px 8px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.3px}
+tbody tr:nth-child(even){background:#f8faff}tbody tr:nth-child(odd){background:#fff}
+tbody td{border-bottom:1px solid #e2e8f0;vertical-align:middle}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+</style></head><body>
+<div class="hdr-pdf">
+  <div class="logo-box"><img src="${logoUrl}" alt="Logo" onerror="this.style.display='none'"></div>
+  <div class="inst-info">
+    ${instUniv?`<div class="inst-univ">${instUniv}</div>`:''}
+    ${instFac?`<div class="inst-fac">${instFac}</div>`:''}
+    ${instEsc?`<div class="inst-esc">${instEsc}</div>`:''}
+  </div>
+</div>
+<div class="titulo">
+  <h1>${expSelCurso}</h1>
+  <h2>Detalle de atenciones por subgrupo &middot; ${fecha}</h2>
+</div>
+${secciones}
+<script>window.onload=function(){window.print()}<\/script>
+</body></html>`;
+
+  _abrirVentanaImpresion(htmlPDF);
+}
+
+// ── EXPORTAR PANEL UNIFICADO: dispatcher único ────────────
+function exportarSeleccion(){
+  if(!expSelCurso||!expResumenCombinado||!expResumenCombinado.alumnos||!expResumenCombinado.alumnos.length){
+    toast('Selecciona un curso primero','','warn');return;
+  }
+  if(expAlcance==='ciclo'){
+    if(expFormato==='pdf') exportarPDF();
+    else exportarResumenCursoXLSX();
+    return;
+  }
+  const nombres=Object.keys(expSubgruposSeleccionados).filter(n=>expSubgruposSeleccionados[n]);
+  if(!nombres.length){toast('Selecciona al menos un subgrupo','','warn');return;}
+  if(expFormato==='pdf') exportarPDFSubgrupos(nombres);
+  else exportarXLSXSubgrupos(nombres);
+}
