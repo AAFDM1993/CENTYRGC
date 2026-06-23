@@ -520,3 +520,100 @@ function exportarDetalleSubgrupoXLSX(){
   XLSX.writeFile(wb, nombreArchivo);
   toast('Exportado', nombreArchivo, 'ok');
 }
+
+// ── EXPORTAR PANEL UNIFICADO: estado y carga en segundo plano de subgrupos ────────────
+let expFormato = 'pdf';      // 'pdf' | 'xlsx'
+let expAlcance = 'ciclo';    // 'ciclo' | 'subgrupos'
+let expSubgruposSeleccionados = {}; // { [nombreSubgrupo]: true }
+let expSubgruposEstado = 'idle';    // 'idle' | 'cargando' | 'listo' | 'error'
+let _expSubgruposCargaId = 0;       // token para descartar cargas obsoletas
+
+async function _cargarSubgruposEnBackground(nombreCurso){
+  if(!expResumenCombinado||!expResumenCombinado.grupos||!expResumenCombinado.grupos.length){
+    expSubgruposEstado='error'; if(expAlcance==='subgrupos') renderExpSubgruposChecklist(); return;
+  }
+  const cargaId = ++_expSubgruposCargaId;
+  const grupos = expResumenCombinado.grupos;
+  const detalle = {};
+  try{
+    for(let i=0;i<grupos.length;i++){
+      if(cargaId!==_expSubgruposCargaId) return; // el curso cambió, abortar esta carga
+      const hn=grupos[i].hoja;
+      try{
+        const r=await apiGetCached('leerHoja',{hoja:hn});
+        if(!r.ok||!r.alumnos)continue;
+        r.alumnos.forEach(al=>{
+          (al.cursos||[]).forEach(cu=>{
+            if(cu.nombre!==nombreCurso)return;
+            (cu.subgrupos||[]).forEach(sg=>{
+              if(!detalle[sg.nombre]) detalle[sg.nombre]={base:sg.notasBase||0, extra:sg.notasExtra||0, filas:[]};
+              detalle[sg.nombre].filas.push({alumnoNombre:al.nombre, alumnoCodigo:al.codigo, pacientes:sg.pacientes||[]});
+            });
+          });
+        });
+      }catch(e){}
+    }
+    if(cargaId!==_expSubgruposCargaId) return;
+    expSubgruposDetalle=detalle;
+    expSubgruposEstado='listo';
+  }catch(e){
+    if(cargaId!==_expSubgruposCargaId) return;
+    expSubgruposEstado='error';
+  }
+  if(expAlcance==='subgrupos') renderExpSubgruposChecklist();
+}
+
+function renderExpSubgruposChecklist(){
+  const box=g('expSubgruposList');if(!box)return;
+  if(expSubgruposEstado==='cargando'){box.innerHTML='<div class="empty">Cargando subgrupos...</div>';return;}
+  if(expSubgruposEstado==='error'){
+    box.innerHTML='<div class="hint">Error al cargar subgrupos. <a href="#" onclick="event.preventDefault();_cargarSubgruposEnBackground(expSelCurso)">Reintentar</a></div>';
+    return;
+  }
+  const nombres=Object.keys(expSubgruposDetalle||{}).sort((a,b)=>a.localeCompare(b,'es'));
+  if(!nombres.length){box.innerHTML='<div class="empty">Sin subgrupos encontrados</div>';return;}
+  box.innerHTML=nombres.map(nombre=>{
+    const info=expSubgruposDetalle[nombre];
+    const checked=!!expSubgruposSeleccionados[nombre];
+    return `<label style="display:flex;align-items:center;gap:8px;padding:6px 4px;cursor:pointer;font-size:12px">
+      <input type="checkbox" ${checked?'checked':''} onchange="toggleExpSubgrupo('${esc(nombre)}',this.checked)">
+      <span style="flex:1">${nombre}</span>
+      <span style="color:var(--tx4);font-size:11px">${info.filas.length} alumno${info.filas.length!==1?'s':''}</span>
+    </label>`;
+  }).join('');
+}
+
+function toggleExpSubgrupo(nombre, marcado){
+  if(marcado) expSubgruposSeleccionados[nombre]=true;
+  else delete expSubgruposSeleccionados[nombre];
+  const todos=Object.keys(expSubgruposDetalle||{});
+  const chkTodos=g('expChkTodos');
+  if(chkTodos) chkTodos.checked = todos.length>0 && todos.every(n=>expSubgruposSeleccionados[n]);
+}
+
+function toggleExpSubgruposTodos(marcar){
+  expSubgruposSeleccionados={};
+  if(marcar) Object.keys(expSubgruposDetalle||{}).forEach(n=>{expSubgruposSeleccionados[n]=true;});
+  renderExpSubgruposChecklist();
+}
+
+function setExpFormato(fmt){
+  expFormato=fmt;
+  _actualizarBotonesFormatoAlcance();
+}
+
+function setExpAlcance(alcance){
+  expAlcance=alcance;
+  const box=g('expSubgruposBox');
+  if(box) box.style.display = alcance==='subgrupos' ? 'block' : 'none';
+  if(alcance==='subgrupos') renderExpSubgruposChecklist();
+  _actualizarBotonesFormatoAlcance();
+}
+
+function _actualizarBotonesFormatoAlcance(){
+  const setActivo=(id,activo)=>{const b=g(id);if(!b)return;b.style.background=activo?'var(--n500)':'';b.style.color=activo?'#fff':'';};
+  setActivo('btnFmtPdf', expFormato==='pdf');
+  setActivo('btnFmtXlsx', expFormato==='xlsx');
+  setActivo('btnAlcCiclo', expAlcance==='ciclo');
+  setActivo('btnAlcSubgrupos', expAlcance==='subgrupos');
+}
