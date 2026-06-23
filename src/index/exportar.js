@@ -5,7 +5,7 @@
 //             config-index.js (logoParaPDF_ usa applyBranding)
 
 // ── EXPORTAR PDF ─────────────────────────────────────────────
-let expSelHoja=null, expResumen=null, expSelCurso=null;
+let expSelCurso=null;
 
 async function cargarHojasExport(){
   const box=g('expCursosList');if(!box)return;
@@ -61,47 +61,6 @@ function renderExpCursosList(nombres, cursosMap){
   }).join('');
 }
 
-function renderExpHojas(){
-  const box=g('expHojasList');if(!box)return;
-  box.innerHTML=expHojas.map((h,i)=>{
-    const sel=expSelHoja===h.nombre;
-    return `<div class="exp-hoja-item ${sel?'sel':''}" onclick="selExpHoja('${esc(h.nombre)}')">
-      <div class="ck">${sel?'v':' '}</div>
-      <span class="exp-hoja-name">${h.nombre}</span>
-      <span class="exp-hoja-meta">${h.alumnos} alumnos</span>
-    </div>`;
-  }).join('');
-}
-
-async function selExpHoja(nombre){
-  expSelHoja=nombre;expSelCurso=null;expResumen=null;
-  renderExpHojas();
-  const cb=g('expCursosBox');if(cb)cb.style.display='none';
-  const pb=g('resumenPreviewBox');if(pb)pb.style.display='none';
-  showLoader('Cargando resumen...');
-  try{
-    const r=await apiGetCached('resumenHoja',{hoja:nombre});
-    hideLoader();if(!r.ok)throw new Error(r.error);
-    expResumen=r;
-    renderExpCursos();
-    if(cb)cb.style.display='block';
-  }catch(e){hideLoader();toast('Error al cargar resumen',e.message,'err')}
-}
-
-function renderExpCursos(){
-  const box=g('expCursosList');if(!box||!expResumen)return;
-  const cursos=expResumen.cursos||[];
-  if(!cursos.length){box.innerHTML='<div class="empty">Sin cursos en esta hoja</div>';return}
-  box.innerHTML=cursos.map((cu,i)=>{
-    const sel=expSelCurso===cu.nombre;
-    return `<div class="exp-hoja-item ${sel?'sel':''}" onclick="selExpCurso('${esc(cu.nombre)}')">
-      <div class="ck">${sel?'v':' '}</div>
-      <span class="exp-hoja-name">${cu.nombre}</span>
-      <span class="exp-hoja-meta">${cu.alumnos.length} alumnos</span>
-    </div>`;
-  }).join('');
-}
-
 function selExpCurso(nombre){
   expSelCurso=nombre;
   const pb=g('resumenPreviewBox');if(pb)pb.style.display='none';
@@ -130,47 +89,7 @@ function selExpCurso(nombre){
   }
 }
 
-// Nuevo: busca el mismo nombre de curso en todas las hojas y los agrupa por ciclo
 let expResumenCombinado = null; // { curso, grupos: [{ciclo, hoja, cfg, alumnos}] }
-
-async function cargarResumenCursoCombinado(nombreCurso){
-  const pb=g('resumenPreviewBox');if(pb)pb.style.display='none';
-  showLoader('Buscando curso en todas las hojas...');
-  try{
-    // Cargar todas las hojas
-    const rHojas=await apiGetCached('listarHojas');
-    if(!rHojas.ok)throw new Error(rHojas.error);
-    const hojasFiltradas=rHojas.hojas.filter(h=>['Casilleros','_usuarios','Log'].indexOf(h.nombre)<0);
-
-    const grupos=[];
-    for(let i=0;i<hojasFiltradas.length;i++){
-      const hn=hojasFiltradas[i].nombre;
-      try{
-        const r=await apiGetCached('resumenHoja',{hoja:hn});
-        if(!r.ok)continue;
-        const curso=r.cursos.find(c=>c.nombre===nombreCurso);
-        if(!curso)continue; // esta hoja no tiene ese curso
-        const cfg=r.config||{};
-        // Determinar ciclo: primero cfg.ciclo, luego intentar extraerlo del nombre de la hoja
-        const ciclo=cfg.ciclo||extraerCicloDeNombre(hn)||hn;
-        grupos.push({ciclo, hoja:hn, cfg, alumnos:curso.alumnos});
-      }catch(e){ /* hoja con error, saltar */ }
-    }
-
-    hideLoader();
-    if(!grupos.length){
-      toast('El curso "'+nombreCurso+'" no existe en ninguna hoja','','warn');
-      return;
-    }
-    // Ordenar grupos por ciclo (numérico si es posible)
-    grupos.sort((a,b)=>a.ciclo.localeCompare(b.ciclo,'es',{numeric:true}));
-    expResumenCombinado={curso:nombreCurso, grupos};
-    renderResumenPreviewCombinado();
-    if(pb)pb.style.display='block';
-  }catch(e){
-    hideLoader();toast('Error al buscar curso',e.message,'err');
-  }
-}
 
 // Extrae el ciclo romano del nombre de la hoja: "V Ciclo 2025-I" → "V Ciclo"
 function extraerCicloDeNombre(nombre){
