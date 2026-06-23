@@ -1020,16 +1020,28 @@ body.rol-recepcion #hdrBtnRecord{display:none}
   <div id="resumenPreviewBox" style="display:none;margin-top:12px">
     <div class="slbl">2. Vista previa</div>
     <div class="resumen-preview" id="resumenTable"></div>
-    <button class="btn-sm green" onclick="exportarPDF()" style="width:100%;margin-top:10px">&#128196; Exportar PDF consolidado (todos los ciclos)</button>
-    <button class="btn-sm green" onclick="exportarResumenCursoXLSX()" style="width:100%;margin-top:8px">&#128190; Exportar XLSX (resumen)</button>
-    <button class="btn-ghost" onclick="cargarSubgruposCurso()" style="width:100%;margin-top:8px">&#128269; Cargar subgrupos para exportar detalle</button>
-    <div id="expSubgruposBox" style="display:none;margin-top:10px">
-      <div class="slbl">3. Selecciona el subgrupo</div>
-      <div id="expSubgruposList"></div>
-      <div id="expBtnDetalleBox" style="display:none;margin-top:8px">
-        <button class="btn-sm green" onclick="exportarDetalleSubgrupoXLSX()" style="width:100%">&#128190; Exportar XLSX (detalle)</button>
-      </div>
+
+    <div class="slbl" style="margin-top:14px">3. Formato</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="btn-sm" id="btnFmtPdf" onclick="setExpFormato('pdf')" style="flex:1">&#128196; PDF</button>
+      <button class="btn-sm" id="btnFmtXlsx" onclick="setExpFormato('xlsx')" style="flex:1">&#128190; XLSX</button>
     </div>
+
+    <div class="slbl">4. Alcance</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <button class="btn-sm" id="btnAlcCiclo" onclick="setExpAlcance('ciclo')" style="flex:1">Total por ciclo</button>
+      <button class="btn-sm" id="btnAlcSubgrupos" onclick="setExpAlcance('subgrupos')" style="flex:1">Subgrupos</button>
+    </div>
+
+    <div id="expSubgruposBox" style="display:none;margin-bottom:10px">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;margin-bottom:6px;cursor:pointer">
+        <input type="checkbox" id="expChkTodos" onchange="toggleExpSubgruposTodos(this.checked)">
+        Seleccionar todos
+      </label>
+      <div id="expSubgruposList"></div>
+    </div>
+
+    <button class="btn-sm green" onclick="exportarSeleccion()" style="width:100%;margin-top:8px">&#11015; Exportar</button>
   </div>
   <button class="btn-ghost" onclick="cargarHojasExport()" style="width:100%;margin-top:10px">&#8635; Recargar cursos</button>
 </div>

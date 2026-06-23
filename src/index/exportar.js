@@ -86,6 +86,11 @@ function selExpCurso(nombre){
     expResumenCombinado={curso:nombre,alumnos:todosAlumnos,grupos};
     renderResumenPreviewCombinado();
     if(pb)pb.style.display='block';
+    expSubgruposDetalle=null; expSubgruposEstado='cargando'; expSubgruposSeleccionados={};
+    const chkTodos=g('expChkTodos'); if(chkTodos) chkTodos.checked=false;
+    _actualizarBotonesFormatoAlcance();
+    if(expAlcance==='subgrupos') renderExpSubgruposChecklist();
+    _cargarSubgruposEnBackground(nombre);
   }
 }
 
@@ -418,67 +423,7 @@ function exportarResumenCursoXLSX(){
   toast('Exportado','Resumen de '+expSelCurso,'ok');
 }
 
-// ── CARGAR SUBGRUPOS DE UN CURSO (detalle, carga diferida) ────────────
 let expSubgruposDetalle = null; // { [nombreSubgrupo]: { base, extra, filas:[{alumnoNombre, alumnoCodigo, pacientes}] } }
-let expSelSubgrupo = null;
-
-async function cargarSubgruposCurso(){
-  if(!expSelCurso||!expResumenCombinado||!expResumenCombinado.grupos||!expResumenCombinado.grupos.length){
-    toast('Selecciona un curso primero','','warn');return;
-  }
-  const box=g('expSubgruposBox');if(box)box.style.display='none';
-  expSubgruposDetalle={};
-  expSelSubgrupo=null;
-  showLoader('Cargando detalle de subgrupos...');
-  try{
-    for(let i=0;i<expResumenCombinado.grupos.length;i++){
-      const hn=expResumenCombinado.grupos[i].hoja;
-      try{
-        const r=await apiGetCached('leerHoja',{hoja:hn});
-        if(!r.ok||!r.alumnos)continue;
-        r.alumnos.forEach(al=>{
-          (al.cursos||[]).forEach(cu=>{
-            if(cu.nombre!==expSelCurso)return;
-            (cu.subgrupos||[]).forEach(sg=>{
-              if(!expSubgruposDetalle[sg.nombre]) expSubgruposDetalle[sg.nombre]={base:sg.notasBase||0, extra:sg.notasExtra||0, filas:[]};
-              expSubgruposDetalle[sg.nombre].filas.push({alumnoNombre:al.nombre, alumnoCodigo:al.codigo, pacientes:sg.pacientes||[]});
-            });
-          });
-        });
-      }catch(e){}
-    }
-    hideLoader();
-    const nombresSgr=Object.keys(expSubgruposDetalle).sort((a,b)=>a.localeCompare(b,'es'));
-    if(!nombresSgr.length){toast('Sin subgrupos encontrados','','warn');return;}
-    renderExpSubgruposList(nombresSgr);
-    if(box)box.style.display='block';
-  }catch(e){
-    hideLoader();toast('Error al cargar subgrupos',e.message,'err');
-  }
-}
-
-function renderExpSubgruposList(nombres){
-  const box=g('expSubgruposList');if(!box)return;
-  box.innerHTML=nombres.map(nombre=>{
-    const info=expSubgruposDetalle[nombre];
-    const sel=expSelSubgrupo===nombre;
-    return `<div class="exp-hoja-item ${sel?'sel':''}" onclick="selExpSubgrupo('${esc(nombre)}')">
-      <div class="ck">${sel?'&#10003;':' '}</div>
-      <div style="flex:1;min-width:0">
-        <div class="exp-hoja-name">${nombre}</div>
-        <div class="exp-hoja-meta">${info.filas.length} alumno${info.filas.length!==1?'s':''}</div>
-      </div>
-    </div>`;
-  }).join('');
-  const btnBox=g('expBtnDetalleBox');
-  if(btnBox) btnBox.style.display = expSelSubgrupo ? 'block' : 'none';
-}
-
-function selExpSubgrupo(nombre){
-  expSelSubgrupo=nombre;
-  const nombresSgr=Object.keys(expSubgruposDetalle).sort((a,b)=>a.localeCompare(b,'es'));
-  renderExpSubgruposList(nombresSgr);
-}
 
 // ── EXPORTAR DETALLE DE SUBGRUPO A XLSX (admin) ────────────
 function _construirHojaDetalleSubgrupo(nombreSubgrupo, info){
@@ -506,19 +451,6 @@ function _construirHojaDetalleSubgrupo(nombreSubgrupo, info){
     ws[ref].c.hidden=true;
   });
   return ws;
-}
-
-function exportarDetalleSubgrupoXLSX(){
-  if(!expSelSubgrupo||!expSubgruposDetalle||!expSubgruposDetalle[expSelSubgrupo]){
-    toast('Selecciona un subgrupo primero','','warn');return;
-  }
-  const ws=_construirHojaDetalleSubgrupo(expSelSubgrupo, expSubgruposDetalle[expSelSubgrupo]);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, _sanitizeSheetName(expSelSubgrupo));
-  const fecha=new Date().toISOString().slice(0,10);
-  const nombreArchivo='Detalle_'+String(expSelCurso||'curso').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+String(expSelSubgrupo).replace(/[^a-zA-Z0-9]+/g,'_')+'_'+fecha+'.xlsx';
-  XLSX.writeFile(wb, nombreArchivo);
-  toast('Exportado', nombreArchivo, 'ok');
 }
 
 // ── EXPORTAR PANEL UNIFICADO: estado y carga en segundo plano de subgrupos ────────────
