@@ -274,6 +274,10 @@ tbody tr:last-child td{border-bottom:2px solid #0a1628}
 <\u0073cript>window.onload=function(){window.print()}<\/script>
 </body></html>`;
  
+  _abrirVentanaImpresion(htmlPDF);
+}
+
+function _abrirVentanaImpresion(htmlPDF){
   try{
     const blob=new Blob([htmlPDF],{type:'text/html;charset=utf-8'});
     const burl=URL.createObjectURL(blob);
@@ -290,6 +294,19 @@ tbody tr:last-child td{border-bottom:2px solid #0a1628}
 // ── EXPORTAR ATENCIONES DE UN ALUMNO A XLSX (admin) ────────────
 function _sanitizeSheetName(nombre){
   return String(nombre||'Hoja').replace(/[:\\/?*\[\]]/g,'-').slice(0,31) || 'Hoja';
+}
+
+function _nombreHojaUnico(nombresAsignados, nombreCrudo){
+  const base = _sanitizeSheetName(nombreCrudo);
+  let candidato = base;
+  let n = 1;
+  while(nombresAsignados[candidato]){
+    n++;
+    const sufijo = '_' + n;
+    candidato = base.slice(0, 31 - sufijo.length) + sufijo;
+  }
+  nombresAsignados[candidato] = true;
+  return candidato;
 }
 
 function _aoaFilaPaciente(pac, base, extra){
@@ -370,15 +387,7 @@ async function exportarAtencionesAlumnoXLSX(codigo, nombre){
     const wb = XLSX.utils.book_new();
     const nombresFinales = {}; // nombres ya asignados a este workbook
     r.resultados.forEach(function(res){
-      let base = _sanitizeSheetName(res.hoja);
-      let nombreHoja = base;
-      let n = 1;
-      while(nombresFinales[nombreHoja]){
-        n++;
-        const sufijo = '_' + n;
-        nombreHoja = base.slice(0, 31 - sufijo.length) + sufijo;
-      }
-      nombresFinales[nombreHoja] = true;
+      const nombreHoja = _nombreHojaUnico(nombresFinales, res.hoja);
       const ws = _construirHojaAtenciones(res);
       XLSX.utils.book_append_sheet(wb, ws, nombreHoja);
     });
@@ -472,11 +481,7 @@ function selExpSubgrupo(nombre){
 }
 
 // ── EXPORTAR DETALLE DE SUBGRUPO A XLSX (admin) ────────────
-function exportarDetalleSubgrupoXLSX(){
-  if(!expSelSubgrupo||!expSubgruposDetalle||!expSubgruposDetalle[expSelSubgrupo]){
-    toast('Selecciona un subgrupo primero','','warn');return;
-  }
-  const info=expSubgruposDetalle[expSelSubgrupo];
+function _construirHojaDetalleSubgrupo(nombreSubgrupo, info){
   const base=info.base, extra=info.extra;
   const filasOrdenadas=info.filas.slice().sort((a,b)=>a.alumnoNombre.localeCompare(b.alumnoNombre,'es',{sensitivity:'base'}));
   const header=['Alumno','Codigo','Paciente'];
@@ -500,6 +505,14 @@ function exportarDetalleSubgrupoXLSX(){
     ws[ref].c=[{a:'CENTYR', t:cm.texto}];
     ws[ref].c.hidden=true;
   });
+  return ws;
+}
+
+function exportarDetalleSubgrupoXLSX(){
+  if(!expSelSubgrupo||!expSubgruposDetalle||!expSubgruposDetalle[expSelSubgrupo]){
+    toast('Selecciona un subgrupo primero','','warn');return;
+  }
+  const ws=_construirHojaDetalleSubgrupo(expSelSubgrupo, expSubgruposDetalle[expSelSubgrupo]);
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, _sanitizeSheetName(expSelSubgrupo));
   const fecha=new Date().toISOString().slice(0,10);
