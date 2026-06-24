@@ -641,15 +641,26 @@ function _tablaSubgrupoHTML(nombreSubgrupo, info, apro){
       </tr>`;
     });
   });
-  return `<div>
-    <h2 style="font-size:13px;font-weight:800;color:#1d4ed8;margin:18px 0 8px">Subgrupo: ${nombreSubgrupo}</h2>
-    <table>
-      <thead><tr>
-        <th style="width:120px">Alumno</th><th style="width:80px">Codigo</th><th>Paciente</th>${thNotas}<th style="width:60px;text-align:center">PROM</th>
-      </tr></thead>
-      <tbody>${filasHtml}</tbody>
-    </table>
-  </div>`;
+  const promSubgrupo=_promedioSubgrupo(filasOrdenadas);
+  const colspanNotas=2+1+base+extra;
+  const filaProm=promSubgrupo!==null
+    ?`<tr style="background:#f8faff;border-top:2px solid #0a1628">
+        <td colspan="${colspanNotas}" style="font-weight:700;font-size:11px;padding:7px 8px">Promedio Subgrupo</td>
+        <td style="text-align:center;font-family:monospace;font-weight:800;font-size:12px;color:#1d4ed8;padding:7px 8px">${promSubgrupo}</td>
+      </tr>`
+    :'';
+  return {
+    html: `<div>
+      <h2 style="font-size:13px;font-weight:800;color:#1d4ed8;margin:18px 0 8px">Subgrupo: ${nombreSubgrupo}</h2>
+      <table>
+        <thead><tr>
+          <th style="width:120px">Alumno</th><th style="width:80px">Codigo</th><th>Paciente</th>${thNotas}<th style="width:60px;text-align:center">PROM</th>
+        </tr></thead>
+        <tbody>${filasHtml}${filaProm}</tbody>
+      </table>
+    </div>`,
+    promSubgrupo
+  };
 }
 
 async function exportarPDFSubgrupos(nombres){
@@ -664,12 +675,25 @@ async function exportarPDFSubgrupos(nombres){
   const apro=(expResumenCombinado.alumnos&&expResumenCombinado.alumnos[0]&&expResumenCombinado.alumnos[0].notaApro)||11;
 
   let secciones='';
+  const promsSubgrupos=[];
   nombres.forEach((nombreSgr,i)=>{
     const info=expSubgruposDetalle[nombreSgr];
     if(!info)return;
+    const filasFiltradas=_filasConFiltroAlumno(info.filas);
+    const {html, promSubgrupo}=_tablaSubgrupoHTML(nombreSgr, {base:info.base, extra:info.extra, filas:filasFiltradas}, apro);
+    if(promSubgrupo!==null) promsSubgrupos.push(promSubgrupo);
     const pageBreak=i>0?'page-break-before:always;':'';
-    secciones+=`<div style="${pageBreak}">${_tablaSubgrupoHTML(nombreSgr, info, apro)}</div>`;
+    secciones+=`<div style="${pageBreak}">${html}</div>`;
   });
+
+  let seccionResumen='';
+  if(promsSubgrupos.length>1){
+    const promCurso=Math.round(promsSubgrupos.reduce((a,b)=>a+b,0)/promsSubgrupos.length*100)/100;
+    seccionResumen=`<div style="margin-top:20px;padding:12px 16px;background:#f8faff;border:1px solid #e2e8f0;border-radius:8px;page-break-inside:avoid">
+      <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">Promedio Curso</span>
+      <span style="font-family:monospace;font-size:18px;font-weight:800;color:#1d4ed8;margin-left:10px">${promCurso}</span>
+    </div>`;
+  }
 
   const htmlPDF=`<!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8">
@@ -706,6 +730,7 @@ tbody td{border-bottom:1px solid #e2e8f0;vertical-align:middle}
   <h2>Detalle de atenciones por subgrupo &middot; ${fecha}</h2>
 </div>
 ${secciones}
+${seccionResumen}
 <script>window.onload=function(){window.print()}<\/script>
 </body></html>`;
 
