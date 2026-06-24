@@ -1021,13 +1021,18 @@ body.rol-recepcion #hdrBtnRecord{display:none}
     <div class="slbl">2. Vista previa</div>
     <div class="resumen-preview" id="resumenTable"></div>
 
-    <div class="slbl" style="margin-top:14px">3. Formato</div>
+    <div class="slbl" style="margin-top:14px">3. Alumno</div>
+    <select class="sel" id="expSelAlumno" onchange="setExpAlumnoFiltro(this.value)" style="margin-bottom:10px">
+      <option value="">Todos los alumnos</option>
+    </select>
+
+    <div class="slbl" style="margin-top:14px">4. Formato</div>
     <div style="display:flex;gap:8px;margin-bottom:10px">
       <button class="btn-ghost" id="btnFmtPdf" onclick="setExpFormato('pdf')" style="flex:1">&#128196; PDF</button>
       <button class="btn-ghost" id="btnFmtXlsx" onclick="setExpFormato('xlsx')" style="flex:1">&#128190; XLSX</button>
     </div>
 
-    <div class="slbl">4. Alcance</div>
+    <div class="slbl">5. Alcance</div>
     <div style="display:flex;gap:8px;margin-bottom:10px">
       <button class="btn-ghost" id="btnAlcCiclo" onclick="setExpAlcance('ciclo')" style="flex:1">Total por ciclo</button>
       <button class="btn-ghost" id="btnAlcSubgrupos" onclick="setExpAlcance('subgrupos')" style="flex:1">Subgrupos</button>

@@ -84,6 +84,12 @@ function selExpCurso(nombre){
     });
     todosAlumnos.sort((a,b)=>a.nombre.localeCompare(b.nombre,'es',{sensitivity:'base'}));
     expResumenCombinado={curso:nombre,alumnos:todosAlumnos,grupos};
+    expAlumnoFiltro=null;
+    const selAlumno=g('expSelAlumno');
+    if(selAlumno){
+      selAlumno.innerHTML='<option value="">Todos los alumnos</option>'+
+        todosAlumnos.map(al=>`<option value="${esc(al.codigo)}">${al.nombre}</option>`).join('');
+    }
     renderResumenPreviewCombinado();
     if(pb)pb.style.display='block';
     expSubgruposDetalle=null; expSubgruposEstado='cargando'; expSubgruposSeleccionados={};
@@ -95,6 +101,24 @@ function selExpCurso(nombre){
 }
 
 let expResumenCombinado = null; // { curso, grupos: [{ciclo, hoja, cfg, alumnos}] }
+
+let expAlumnoFiltro = null; // null = todos, o {nombre, codigo} de un alumno específico
+
+function _alumnosConFiltroAlumno(alumnos){
+  if(!expAlumnoFiltro) return alumnos;
+  return (alumnos||[]).filter(a=>a.codigo===expAlumnoFiltro.codigo);
+}
+
+function _filasConFiltroAlumno(filas){
+  if(!expAlumnoFiltro) return filas;
+  return (filas||[]).filter(f=>f.alumnoCodigo===expAlumnoFiltro.codigo);
+}
+
+function setExpAlumnoFiltro(codigo){
+  if(!codigo){ expAlumnoFiltro=null; return; }
+  const al=(expResumenCombinado.alumnos||[]).find(a=>a.codigo===codigo);
+  expAlumnoFiltro=al?{nombre:al.nombre,codigo:al.codigo}:null;
+}
 
 // Extrae el ciclo romano del nombre de la hoja: "V Ciclo 2025-I" → "V Ciclo"
 function extraerCicloDeNombre(nombre){
@@ -180,6 +204,7 @@ async function exportarPDF(){
   if(!expSelCurso||!expResumenCombinado||!expResumenCombinado.alumnos||!expResumenCombinado.alumnos.length){
     toast('Selecciona un curso primero','','warn');return;
   }
+  const alumnosFiltrados=_alumnosConFiltroAlumno(expResumenCombinado.alumnos);
   const fecha=new Date().toLocaleDateString('es-PE',{year:'numeric',month:'long',day:'numeric'});
   // Obtener logo guardado y convertirlo a negro para el PDF
   const logoUrl=await logoParaPDF_();
@@ -189,11 +214,11 @@ async function exportarPDF(){
   const instEsc =(g('cfgEsc') ||{}).value||'';
   // Semestre del primer grupo que lo tenga
   const semestre=(expResumenCombinado.grupos||[]).map(g=>g.cfg&&g.cfg.semestre).find(s=>s)||'';
-  const apro=expResumenCombinado.alumnos[0]&&expResumenCombinado.alumnos[0].notaApro||11;
+  const apro=alumnosFiltrados[0]&&alumnosFiltrados[0].notaApro||11;
  
   // Filas sin columna de ciclo
   let filas='';
-  expResumenCombinado.alumnos.forEach((al,i)=>{
+  alumnosFiltrados.forEach((al,i)=>{
     const p=al.promFinal;
     const aprobado=p!==''&&p!==undefined&&p>=al.notaApro;
     const desaprobado=p!==''&&p!==undefined&&p<al.notaApro;
@@ -207,10 +232,10 @@ async function exportarPDF(){
   });
  
   // Resumen estadístico al pie
-  const conNota=expResumenCombinado.alumnos.filter(a=>a.promFinal!==''&&a.promFinal!==undefined);
+  const conNota=alumnosFiltrados.filter(a=>a.promFinal!==''&&a.promFinal!==undefined);
   const aprobados=conNota.filter(a=>a.promFinal>=a.notaApro).length;
   const pct=conNota.length?Math.round(aprobados/conNota.length*100):0;
-  const total=expResumenCombinado.alumnos.length;
+  const total=alumnosFiltrados.length;
  
   const htmlPDF=`<!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8">
@@ -412,7 +437,7 @@ function exportarResumenCursoXLSX(){
     toast('Selecciona un curso primero','','warn');return;
   }
   const aoa=[['Codigo','Apellidos y Nombres','Promedio Final']];
-  expResumenCombinado.alumnos.forEach(al=>{
+  _alumnosConFiltroAlumno(expResumenCombinado.alumnos).forEach(al=>{
     aoa.push([al.codigo||'-', al.nombre, al.promFinal!==''&&al.promFinal!==undefined?al.promFinal:'']);
   });
   const ws=XLSX.utils.aoa_to_sheet(aoa);
