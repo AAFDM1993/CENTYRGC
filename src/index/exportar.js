@@ -451,6 +451,15 @@ function exportarResumenCursoXLSX(){
 let expSubgruposDetalle = null; // { [nombreSubgrupo]: { base, extra, filas:[{alumnoNombre, alumnoCodigo, pacientes}] } }
 
 // ── EXPORTAR DETALLE DE SUBGRUPO A XLSX (admin) ────────────
+function _promedioSubgrupo(filas){
+  const proms=(filas||[]).map(fila=>{
+    const pac=(fila.pacientes||[])[0];
+    return pac&&pac.prom!==''&&pac.prom!==undefined?Number(pac.prom):null;
+  }).filter(p=>p!==null);
+  if(!proms.length) return null;
+  return Math.round(proms.reduce((a,b)=>a+b,0)/proms.length*100)/100;
+}
+
 function _construirHojaDetalleSubgrupo(nombreSubgrupo, info){
   const base=info.base, extra=info.extra;
   const filasOrdenadas=info.filas.slice().sort((a,b)=>a.alumnoNombre.localeCompare(b.alumnoNombre,'es',{sensitivity:'base'}));
@@ -468,6 +477,11 @@ function _construirHojaDetalleSubgrupo(nombreSubgrupo, info){
       _agregarComentariosNotas(comentarios, pac, filaIdx, 3, base);
     });
   });
+  const promSubgrupo=_promedioSubgrupo(filasOrdenadas);
+  const filaProm=['Promedio Subgrupo'];
+  for(let k=1;k<header.length-1;k++) filaProm.push('');
+  filaProm.push(promSubgrupo!==null?promSubgrupo:'');
+  aoa.push(filaProm);
   const ws=XLSX.utils.aoa_to_sheet(aoa);
   comentarios.forEach(function(cm){
     const ref=XLSX.utils.encode_cell({r:cm.r,c:cm.c});
@@ -475,7 +489,7 @@ function _construirHojaDetalleSubgrupo(nombreSubgrupo, info){
     ws[ref].c=[{a:'CENTYR', t:cm.texto}];
     ws[ref].c.hidden=true;
   });
-  return ws;
+  return {ws, promSubgrupo};
 }
 
 // ── EXPORTAR PANEL UNIFICADO: estado y carga en segundo plano de subgrupos ────────────
@@ -582,13 +596,21 @@ function exportarXLSXSubgrupos(nombres){
   }
   const wb=XLSX.utils.book_new();
   const nombresAsignados={};
+  const promsSubgrupos=[];
   nombres.forEach(nombreSgr=>{
     const info=expSubgruposDetalle[nombreSgr];
     if(!info)return;
-    const ws=_construirHojaDetalleSubgrupo(nombreSgr, info);
+    const filasFiltradas=_filasConFiltroAlumno(info.filas);
+    const {ws, promSubgrupo}=_construirHojaDetalleSubgrupo(nombreSgr, {base:info.base, extra:info.extra, filas:filasFiltradas});
+    if(promSubgrupo!==null) promsSubgrupos.push(promSubgrupo);
     const nombreHoja=_nombreHojaUnico(nombresAsignados, nombreSgr);
     XLSX.utils.book_append_sheet(wb, ws, nombreHoja);
   });
+  if(promsSubgrupos.length>1){
+    const promCurso=Math.round(promsSubgrupos.reduce((a,b)=>a+b,0)/promsSubgrupos.length*100)/100;
+    const wsResumen=XLSX.utils.aoa_to_sheet([['Promedio Curso', promCurso]]);
+    XLSX.utils.book_append_sheet(wb, wsResumen, _nombreHojaUnico(nombresAsignados, 'Resumen'));
+  }
   const fecha=new Date().toISOString().slice(0,10);
   const nombreArchivo='Detalle_'+String(expSelCurso||'curso').replace(/[^a-zA-Z0-9]+/g,'_')+'_'+fecha+'.xlsx';
   XLSX.writeFile(wb, nombreArchivo);
