@@ -1,6 +1,6 @@
 // Capa de comunicación con Google Apps Script
 
-const HC_URL = 'https://script.google.com/macros/s/AKfycbyKlNUnFwDwht-54ewPgxluMwZkb0b84a-s8v_20NHAEO5ftiuaTYbYLM8TnaEeEL0N/exec';
+const HC_URL = 'https://script.google.com/macros/s/AKfycbyzYlIKs5BprNxxpyoGjXSsPZjmkopfdTwOTHKUdPgrPSXL_Ar-XacvcOU4-3LEg1eW/exec';
 
 const _cache = new Map();
 const _CACHE_TTL = {

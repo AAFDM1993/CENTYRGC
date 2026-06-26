@@ -268,7 +268,8 @@ async function abrirPac(id){
   const esPropio=session.rol==='estudiante'&&(pac.creadoPor===session.codigo||pac.asignadoA===session.codigo);
   const puedeEditar=session.rol!=='estudiante'||esPropio;
   const evalAp=evals.find(e=>e.estado==='aprobada');
-  const puedeNuevaSes=!!evalAp&&puedeEditar;
+  const tieneSesActiva=session.rol==='estudiante'&&ses.some(s=>s.estado==='pendiente'||s.estado==='borrador');
+  const puedeNuevaSes=!!evalAp&&puedeEditar&&!tieneSesActiva;
 
   v.innerHTML=`
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap">
@@ -319,6 +320,7 @@ async function abrirPac(id){
         <div><div class="card-title">Sesiones de tratamiento</div><div style="font-size:12px;color:var(--tx3)">${ses.length} sesión(es)</div></div>
         ${puedeNuevaSes?`<button class="btn btn-primary btn-sm" onclick="abrirFrmSes('${esc(pac.id)}','${evalAp?.id||''}',${ses.length+1})">+ Nueva sesión</button>`:''}
         ${!evalAp?`<span style="font-size:11px;color:var(--tx4)">Requiere evaluación aprobada</span>`:''}
+        ${evalAp&&tieneSesActiva?`<span style="font-size:11px;color:var(--amber)">⏳ Sesión en revisión — espera aprobación del docente</span>`:''}
       </div>
       ${ses.length?`<div class="timeline">${ses.map(s=>sesCard(s,pac,evalAp)).join('')}</div>`:'<div class="empty">Sin sesiones aún.</div>'}
     </div>`;
@@ -1142,6 +1144,16 @@ async function guardarSes(pacId, evalId, num, sesId, modo){
     modo==='borrador' ? '' : (session.rol==='estudiante' ? 'El docente '+doc+' recibirá la sesión' : '')
   );
   try{
+    // Evitar duplicados: si es sesión nueva y el usuario es estudiante, verificar que no haya sesión activa
+    if(!sesId && session.rol==='estudiante'){
+      const rCheck=await apiGet('listarSesiones',{pacienteId:pacId});
+      const sesActiva=(rCheck.sesiones||[]).find(s=>s.estado==='pendiente'||s.estado==='borrador');
+      if(sesActiva){
+        _busy=false;hideSendOverlay();
+        toast('No puedes crear una nueva sesión','Tienes una sesión pendiente de aprobación del docente','warn');
+        return;
+      }
+    }
     const b={action:'guardarSesion',pacienteId:pacId,evaluacionId:evalId,numero:num,
       fecha:g('sF')?.value||'',
       estudiante:g('sEst')?.value||session.nombre||session.codigo,
