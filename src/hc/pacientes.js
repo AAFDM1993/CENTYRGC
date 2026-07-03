@@ -1258,9 +1258,15 @@ async function renderPend(){
   }
   const tot=ev.length+ses.length;
   const pnoms={};
-  await Promise.all([...new Set([...ev.map(e=>e.pacienteId),...ses.map(s=>s.pacienteId)])].map(async id=>{
-    const rp=await apiGet('obtenerPaciente',{id});if(rp.ok)pnoms[id]=rp.paciente?.nombre||id;
-  }));
+  // Una sola llamada batch en vez de una obtenerPaciente por paciente distinto
+  // (evita disparar N ejecuciones simultáneas cada vez que se abre esta vista).
+  const pacIds=[...new Set([...ev.map(e=>e.pacienteId),...ses.map(s=>s.pacienteId)])].filter(Boolean);
+  if(pacIds.length){
+    const rBatch=await apiGet('obtenerPacientesBatch',{ids:pacIds}).catch(()=>({ok:false}));
+    if(rBatch.ok&&rBatch.pacientes){
+      pacIds.forEach(id=>{ pnoms[id]=rBatch.pacientes[id]?.nombre||id; });
+    }
+  }
 
   g('vPend').innerHTML=`
     <div class="card-hdr"><div class="card-title">Pendientes de revisión</div><span class="badge ${tot?'pendiente':'aprobada'}">${tot} pendiente(s)</span></div>

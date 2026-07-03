@@ -238,6 +238,33 @@ async function resolverFirma_(firma){
   }catch(err){console.warn('resolverFirma_ error:',err);}
   return '';
 }
+// Resuelve varias firmas (fileIds de Drive) en UNA sola petición al backend,
+// dejando el resultado en _firmaCache. Úsalo antes de un Promise.all que
+// llame resolverFirma_ por cada usuario, para que esas llamadas salgan del
+// caché en vez de disparar una ejecución por usuario (evita picos de
+// ejecuciones simultáneas al exportar PDFs con muchos docentes/firmas).
+async function resolverFirmasBatch_(firmas){
+  var pendientes = [];
+  var vistos = {};
+  (firmas||[]).forEach(function(firma){
+    if(!firma||firma.length<5||firma.startsWith('data:image')) return;
+    if(_firmaCache[firma]||vistos[firma]) return;
+    vistos[firma] = true;
+    pendientes.push(firma);
+  });
+  if(!pendientes.length) return;
+  try{
+    var r = await apiPost({action:'getFirmasBatch', fileIds:pendientes}).catch(function(){return {ok:false};});
+    if(!r.ok||!r.firmas) return;
+    await Promise.all(Object.keys(r.firmas).map(async function(fileId){
+      var f = r.firmas[fileId];
+      if(f&&f.ok&&f.data){
+        var b64raw = 'data:'+(f.mimeType||'image/png')+';base64,'+f.data;
+        _firmaCache[fileId] = await _quitarFondoFirma_(b64raw);
+      }
+    }));
+  }catch(err){ console.warn('resolverFirmasBatch_ error:',err); }
+}
 async function resolverFirmaDoc_(doc){
   if(doc&&doc.firma) doc.firma=await resolverFirma_(doc.firma);
   return doc;

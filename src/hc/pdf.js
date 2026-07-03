@@ -17,33 +17,40 @@ async function _generarHCPdf(pacId, docFirmante, evalIds){
     const ses   = rS.sesiones||[];
 
     // Cargar datos COMPLETOS de cada evaluación (listarEvaluaciones no incluye datosEspecificos)
-    const evals = await Promise.all(evalsBasic.map(async ev => {
+    // Una sola llamada batch en vez de una obtenerEvaluacion por evaluación.
+    var evalsCompletasMap = {};
+    if(evalsBasic.length){
       try{
-        const rEv = await apiGet('obtenerEvaluacion', {id: ev.id});
-        if(rEv.ok && rEv.evaluacion){
-          const raw = rEv.evaluacion.datosEspecificos;
-          if(typeof raw === 'string' && raw){
-            try{ rEv.evaluacion.datosEspecificos = JSON.parse(raw); }catch(e){ rEv.evaluacion.datosEspecificos = {}; }
-          } else if(!raw){
-            rEv.evaluacion.datosEspecificos = {};
-          }
-          // Parsear también rom y fuerza si vienen como string
-          ['rom','fuerza'].forEach(function(f){
-            if(typeof rEv.evaluacion[f] === 'string'){
-              try{ rEv.evaluacion[f] = JSON.parse(rEv.evaluacion[f]); }catch(e){ rEv.evaluacion[f] = {}; }
-            }
-          });
-          return rEv.evaluacion;
+        const rBatch = await apiPost({action:'obtenerEvaluacionesBatch', ids: evalsBasic.map(ev => ev.id)});
+        if(rBatch.ok) evalsCompletasMap = rBatch.evaluaciones||{};
+      }catch(e){ console.error('[PDF] obtenerEvaluacionesBatch error:', e); }
+    }
+    const evals = evalsBasic.map(function(ev){
+      const full = evalsCompletasMap[ev.id];
+      if(!full) return ev;
+      const raw = full.datosEspecificos;
+      if(typeof raw === 'string' && raw){
+        try{ full.datosEspecificos = JSON.parse(raw); }catch(e){ full.datosEspecificos = {}; }
+      } else if(!raw){
+        full.datosEspecificos = {};
+      }
+      // Parsear también rom y fuerza si vienen como string
+      ['rom','fuerza'].forEach(function(f){
+        if(typeof full[f] === 'string'){
+          try{ full[f] = JSON.parse(full[f]); }catch(e){ full[f] = {}; }
         }
-      }catch(e){ console.error('[PDF] obtenerEvaluacion error:', e); }
-      return ev;
-    }));
+      });
+      return full;
+    });
 
     // 2. Construir mapa de firmas — SIEMPRE fresco, resolver cada firma a base64
     var firmasMap = {};
     try{
       const rU = await apiGet('listarUsuarios');
       if(rU.ok){
+        // Resuelve TODAS las firmas pendientes en una sola llamada batch;
+        // el Promise.all de abajo pasa a servirse del caché (sin red).
+        await resolverFirmasBatch_((rU.usuarios||[]).map(u => u.firma));
         await Promise.all((rU.usuarios||[]).map(async function(u){
           if(u.firma && !u.firma.startsWith('data:image')){
             u.firma = await resolverFirma_(u.firma);
@@ -78,17 +85,20 @@ async function _generarHCPdf(pacId, docFirmante, evalIds){
     var selloFirmante = docFirmante ? mkSelloDocente(docFirmante) : '';
 
     // 5. Pre-cargar consentimientos como base64 inline para el PDF
+    // Una sola llamada batch en vez de una getConsentimiento por evaluación.
     window._consentBase64Map = {};
-    await Promise.all(evals.map(async function(ev){
-      var fileId = ev.consentimientoPath || '';
-      if(!fileId) return;
+    const evalIdsConConsent = evals.filter(ev => ev.consentimientoPath).map(ev => ev.id);
+    if(evalIdsConConsent.length){
       try{
-        var rc = await apiPost({action:'getConsentimiento', evaluacionId:ev.id});
-        if(rc.ok && rc.data){
-          window._consentBase64Map[ev.id] = 'data:'+rc.mimeType+';base64,'+rc.data;
+        const rc = await apiPost({action:'getConsentimientosBatch', evaluacionIds: evalIdsConConsent});
+        if(rc.ok && rc.consentimientos){
+          Object.keys(rc.consentimientos).forEach(function(evalId){
+            var c = rc.consentimientos[evalId];
+            if(c && c.data) window._consentBase64Map[evalId] = 'data:'+c.mimeType+';base64,'+c.data;
+          });
         }
       }catch(e){}
-    }));
+    }
 
     // 6. Generar y abrir el PDF
     hideSendOverlay();
@@ -267,6 +277,9 @@ async function verEvalConFirma(evalId, pacId, docFirmanteOverride){
     var rU = await apiGet('listarUsuarios').catch(function(){return {ok:false};});
     if(rU.ok) window._listaUsuariosCache = rU.usuarios||[];
     var firmasMap = {};
+    // Resuelve todas las firmas pendientes en una sola llamada batch; el
+    // Promise.all de abajo pasa a servirse del caché (sin red por usuario).
+    await resolverFirmasBatch_((window._listaUsuariosCache||[]).map(u => u.firma));
     await Promise.all((window._listaUsuariosCache||[]).map(async function(u){
       await resolverFirmaDoc_(u);
       // Indexar por todas las variantes para matching robusto
@@ -349,6 +362,9 @@ async function verSesConFirma(sesId, pacId, docFirmanteOverride){
     var rU = await apiGet('listarUsuarios').catch(function(){return {ok:false};});
     if(rU.ok) window._listaUsuariosCache = rU.usuarios||[];
     var firmasMap = {};
+    // Resuelve todas las firmas pendientes en una sola llamada batch; el
+    // Promise.all de abajo pasa a servirse del caché (sin red por usuario).
+    await resolverFirmasBatch_((window._listaUsuariosCache||[]).map(u => u.firma));
     await Promise.all((window._listaUsuariosCache||[]).map(async function(u){
       await resolverFirmaDoc_(u);
       var nombreBase = u.nombre||'';
