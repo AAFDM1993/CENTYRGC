@@ -1,7 +1,7 @@
 // ── Utilidades base de index.html ──────────────────────────────────────────
 // GAS_URL: URL de Google Apps Script para index.html (gestión académica)
 // IMPORTANTE: este archivo es específico de index.html; hc.html usa api.js con HC_URL
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxTdrW_jnyAZadjB_3wVHt5o9zJXuTtg26aUjUeLnWtpcep3Y1gs0dqj4lWMz1V0RIlGw/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxSCqkcVjtqWHtPgKMxw6SkEDABYMwBUHt_u6NzxsjGf_JlirPq4Tcc6-2lHKtpe76oJA/exec';
 
 // ── Modal info (aviso simple, solo botón "Entendido") ────────────────────────
 function infoDialog(msg){
