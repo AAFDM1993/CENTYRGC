@@ -105,9 +105,18 @@ function renderAlBlock(al,ai,apro){
         const extraBadge = esExtra
           ? `<span style="background:var(--amber);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-right:4px">continuación</span>`
           : '';
+        const tieneBono = pac.puntoExtra && Number(pac.puntoExtra) !== 0;
+        const esAdminBono = session && session.rol === 'admin';
+        const bonoClick = esAdminBono ? `onclick="abrirPuntoExtraModal('${esc(al.nombre)}','${esc(cu.nombre)}','${esc(sg.nombre)}','${esc(pac.label)}',${base},${extra})"` : '';
+        let bonoBadge = '';
+        if(tieneBono){
+          bonoBadge = `<span ${bonoClick} title="${esc2(pac.justificacion||'')}" style="display:inline-flex;align-items:center;gap:2px;background:var(--green2);color:var(--green);border:1px solid var(--green);border-radius:6px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:4px;${esAdminBono?'cursor:pointer':''}">+ ${pac.puntoExtra} pts</span>`;
+        } else if(esAdminBono){
+          bonoBadge = `<span ${bonoClick} style="display:inline-flex;align-items:center;gap:2px;background:var(--n800);color:var(--n300);border:1px dashed var(--bd2);border-radius:6px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:4px;cursor:pointer">+ Punto extra</span>`;
+        }
         return`<tr style="${rowBg}">
           <td class="td-pac">
-            ${pac.label}
+            ${pac.label}${bonoBadge}
             <div style="margin-top:4px">
               <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:9px;font-weight:600;color:var(--tx4)">
                 <input type="checkbox" 
@@ -293,4 +302,57 @@ async function saveNota(inp){
       }
     }catch(e){toast('Error al guardar nota',e.message,'err')}
   },500);
+}
+
+// ── PUNTO EXTRA POR PACIENTE (solo admin) ──────────────────────────────────
+function abrirPuntoExtraModal(alumno, curso, sgr, pacLabel, notasBase, notasExtra){
+  const m = g('puntoExtraModal');
+  if(!m) return;
+  const sub = g('puntoExtraModalSub');
+  if(sub) sub.textContent = alumno+' · '+curso+' · '+sgr+' · '+pacLabel;
+  let puntosActuales = '', justifActual = '';
+  if(hojaData){
+    const al = hojaData.alumnos.find(a=>a.nombre===alumno);
+    const cu = al && (al.cursos||[]).find(c=>c.nombre===curso);
+    const sg2 = cu && (cu.subgrupos||[]).find(s=>s.nombre===sgr);
+    const pac = sg2 && (sg2.pacientes||[]).find(p=>p.label===pacLabel);
+    if(pac){ puntosActuales = pac.puntoExtra||''; justifActual = pac.justificacion||''; }
+  }
+  g('puntoExtraInput').value = puntosActuales;
+  g('puntoExtraJustifInput').value = justifActual;
+  g('puntoExtraErr').style.display='none';
+  m.style.display='flex';
+  m._ctx = {alumno, curso, sgr, pacLabel, notasBase, notasExtra};
+}
+
+function cerrarPuntoExtraModal(){
+  const m = g('puntoExtraModal');
+  if(m){ m.style.display='none'; m._ctx=null; }
+}
+
+async function confirmarPuntoExtra(){
+  const m = g('puntoExtraModal');
+  if(!m||!m._ctx) return;
+  const {alumno, curso, sgr, pacLabel, notasBase, notasExtra} = m._ctx;
+  const puntos = parseFloat(g('puntoExtraInput').value) || 0;
+  const justificacion = g('puntoExtraJustifInput').value.trim();
+  const err = g('puntoExtraErr');
+  if(puntos > 0 && !justificacion){
+    err.style.display='block'; err.textContent='La justificación es obligatoria';
+    return;
+  }
+  cerrarPuntoExtraModal();
+  showLoader('Guardando punto extra...');
+  try{
+    const r = await apiPost({action:'guardarPuntoExtra', hoja:hojaActiva, alumno, curso, subgrupo:sgr,
+      pacLabel, notasBase, notasExtra, puntos, justificacion});
+    hideLoader();
+    if(!r.ok) throw new Error(r.error);
+    toast('Punto extra guardado','Recargando editor...','ok');
+    invalidateCache('leerHoja');
+    setTimeout(()=>abrirHoja(hojaActiva), 600);
+  }catch(e){
+    hideLoader();
+    toast('Error al guardar punto extra', e.message, 'err');
+  }
 }
