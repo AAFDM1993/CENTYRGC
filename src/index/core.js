@@ -52,6 +52,7 @@ const g=s=>document.getElementById(s);
 const vi=s=>(g(s)||{}).value||'';
 const esc=s=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
 const esc2=s=>String(s).replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const escHtml=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 function showLoader(m){g('lmsg').textContent=m;g('loader').classList.add('show')}
 function hideLoader(){g('loader').classList.remove('show')}
 let _tt;

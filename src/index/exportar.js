@@ -624,6 +624,7 @@ function _tablaSubgrupoHTML(nombreSubgrupo, info, apro){
   let thNotas='';
   for(let i=0;i<base;i++) thNotas+=`<th style="text-align:center">${i===0?'EV':'S'+i}</th>`;
   for(let i2=0;i2<extra;i2++) thNotas+=`<th style="text-align:center">E${i2+1}</th>`;
+  const colspanTotal=3+base+extra+1; // Alumno+Codigo+Paciente+notas+PROM
   let filasHtml='';
   filasOrdenadas.forEach(fila=>{
     (fila.pacientes||[]).forEach(pac=>{
@@ -639,6 +640,13 @@ function _tablaSubgrupoHTML(nombreSubgrupo, info, apro){
         ${tdNotas}
         <td style="text-align:center;font-family:monospace;font-weight:700;color:${color};padding:6px 8px">${p!==''&&p!==undefined?p:'-'}</td>
       </tr>`;
+      if(pac.puntoExtra && Number(pac.puntoExtra)!==0 && pac.justificacion){
+        filasHtml+=`<tr>
+          <td colspan="${colspanTotal}" style="background:#f0fdf4;border-bottom:1px solid #e2e8f0;padding:5px 8px;font-size:10.5px;color:#166534">
+            <strong>+ Punto extra (+${pac.puntoExtra}):</strong> ${escHtml(pac.justificacion)}
+          </td>
+        </tr>`;
+      }
     });
   });
   const promSubgrupo=_promedioSubgrupo(filasOrdenadas);
