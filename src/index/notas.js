@@ -116,10 +116,10 @@ function renderAlBlock(al,ai,apro){
         }
         return`<tr style="${rowBg}">
           <td class="td-pac">
-            ${pac.label}${bonoBadge}
+            ${pac.label}
             <div style="margin-top:4px">
               <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:9px;font-weight:600;color:var(--tx4)">
-                <input type="checkbox" 
+                <input type="checkbox"
                   id="mejoria_${ai}_${ci}_${si}_${pi}"
                   onchange="toggleMejoriaManual(this,'${esc(al.nombre)}','${esc(cu.nombre)}','${esc(sg.nombre)}','${esc(pac.label)}')"
                   style="width:13px;height:13px;cursor:pointer;accent-color:var(--green)">
@@ -129,7 +129,7 @@ function renderAlBlock(al,ai,apro){
           </td>
           <td><input class="nn ${nv?'has-val':''}" value="${esc2(nv)}" placeholder="Nombre paciente" data-al="${esc(al.nombre)}" data-cu="${esc(cu.nombre)}" data-sgr="${esc(sg.nombre)}" data-pac="${esc(pac.label)}" onchange="saveNombrePac(this)" onfocus="this.select()">${esExtra?`<div style="margin-top:3px;display:flex;align-items:center;gap:4px">${extraBadge}${btnDelPacX}</div>`:''}</td>
           ${sc}${ec}
-          <td style="text-align:center"><span class="pc" id="ps_${ai}_${ci}_${si}_${pi}" style="background:var(--n800);color:var(--n300)">${ps!==''&&ps!==undefined?ps:'-'}</span></td>
+          <td style="text-align:center;white-space:nowrap"><span class="pc" id="ps_${ai}_${ci}_${si}_${pi}" style="background:var(--n800);color:var(--n300)">${ps!==''&&ps!==undefined?ps:'-'}</span>${bonoBadge}</td>
           <td style="display:none"></td>
         </tr>`;
       }).join('')||'<tr><td colspan="99" class="empty" style="padding:8px">Sin pacientes</td></tr>';
