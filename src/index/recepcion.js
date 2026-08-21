@@ -186,16 +186,16 @@ function renderCalendarioRec(){
       });
     });
     window._cfgCursosArr = cursosArr;
-    let html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">'
-          + '<div style="font-size:12px;color:var(--tx3);background:var(--n050);border:1px solid var(--n200);border-radius:10px;padding:9px 12px;flex:1;margin-right:10px">'
+    let html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px">'
+          + '<div style="font-size:12px;color:var(--tx3);background:var(--n050);border:1px solid var(--n200);border-radius:10px;padding:9px 12px;flex:1">'
           + '<strong style="color:var(--n600)">&#9432;</strong> Cambios aplican a todos los alumnos. Las notas se conservan.</div>'
+          + '<button onclick="guardarConfigTodo()" style="background:var(--green);border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:700;padding:9px 16px;cursor:pointer;white-space:nowrap;flex-shrink:0">&#128190; Guardar todo</button>'
           + '<button onclick="regenerarHoja()" style="background:var(--red);border:none;border-radius:9px;color:#fff;font-size:12px;font-weight:700;padding:9px 16px;cursor:pointer;white-space:nowrap;flex-shrink:0">&#128260; Regenerar hoja</button>'
           + '</div>';
     cursosArr.forEach(function(cu, ci){
       html += '<div style="margin-bottom:16px">'
             + '<div style="background:var(--n700);color:var(--n200);padding:8px 14px;border-radius:10px 10px 0 0;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:space-between">'
             + '<span>&#128218; '+cu.nombre+'</span>'
-            + '<button onclick="guardarConfigCurso('+ci+')" style="background:var(--green);border:none;border-radius:7px;color:#fff;font-size:11px;font-weight:700;padding:5px 12px;cursor:pointer">&#10003; Guardar</button>'
             + '</div>';
       cu.subgrupos.forEach(function(sg, si){
         const min = sg.notasBase, max = min + sg.notasExtra, np = sg.numPac||1;
@@ -226,45 +226,64 @@ function renderCalendarioRec(){
   }catch(e){ hideLoader(); toast('Error', e.message, 'err'); }
 }
 async function guardarConfigSubgrupo(curso, subgrupo, ci, si){
-  // Mantenida por compatibilidad — ahora se usa guardarConfigCurso
+  // Mantenida por compatibilidad — ahora se usa guardarConfigTodo
 }
 
-async function guardarConfigCurso(ci){
-  const hoja    = window._cfgHojaNombre;
-  const alumnos = (window._cfgHojaAlumnos||[]).map(a=>a.nombre);
-  const cursosArr = window._cfgCursosArr||[];
-  if(!hoja||!alumnos.length){ toast('Error','No hay hoja cargada','err'); return; }
-  const cu = cursosArr[ci];
-  if(!cu){ toast('Error','Curso no encontrado','err'); return; }
+// Arma la lista de subgrupos {subgrupo,notasBase,notasExtra,numPacientes} a
+// partir de los inputs de un curso, validando cada uno. Devuelve null (y
+// muestra un toast) si no hay ningún subgrupo válido para ese curso.
+function _leerSubgruposConfigCurso_(cu, ci){
   const subgruposData = [];
   cu.subgrupos.forEach((sg, si) => {
     const min=parseInt((g('cfg_min_'+ci+'_'+si)||{}).value||0);
     const max=parseInt((g('cfg_max_'+ci+'_'+si)||{}).value||0);
     const np =parseInt((g('cfg_pac_'+ci+'_'+si)||{}).value||1);
-    console.log('INPUT IDs:', 'cfg_min_'+ci+'_'+si, 'cfg_max_'+ci+'_'+si, 'cfg_pac_'+ci+'_'+si);
-    console.log('VALUES:', min, max, np);
-    console.log('ELEMENT:', g('cfg_min_'+ci+'_'+si));
     if(!isNaN(min)&&!isNaN(max)&&min>=1&&max>=min)
       subgruposData.push({subgrupo:sg.nombre, notasBase:min, notasExtra:max-min, numPacientes:np});
-    else toast('Valor inválido en '+sg.nombre,'Mínimo ≥ 1 y máximo ≥ mínimo','warn');
+    else toast('Valor inválido en '+cu.nombre+' / '+sg.nombre,'Mínimo ≥ 1 y máximo ≥ mínimo','warn');
   });
-  if(!subgruposData.length){ toast('Sin cambios válidos','','warn'); return; }
-  showLoader('Guardando '+cu.nombre+'...');
-  try{
-    const r = await apiPost({
-      action: 'actualizarCursoCompleto',
-      hoja,
-      curso:    cu.nombre,
-      alumnos:  alumnos,
-      subgrupos: subgruposData
-    });
-    hideLoader();
-    if(!r.ok) throw new Error(r.error||'Error en el GAS');
-    if(r.errores && r.errores.length)
-      toast('Completado con advertencias', r.errores.slice(0,3).join(' | '), 'warn');
-    else
-      toast('Guardado', cu.nombre+' — '+alumnos.length+' alumnos', 'ok');
-  }catch(e){ hideLoader(); toast('Error', e.message, 'err'); }
+  return subgruposData.length ? subgruposData : null;
+}
+
+async function guardarConfigTodo(){
+  const hoja    = window._cfgHojaNombre;
+  const alumnos = (window._cfgHojaAlumnos||[]).map(a=>a.nombre);
+  const cursosArr = window._cfgCursosArr||[];
+  if(!hoja||!alumnos.length){ toast('Error','No hay hoja cargada','err'); return; }
+  if(!cursosArr.length){ toast('Sin cursos para guardar','','warn'); return; }
+
+  const resumen = []; // { curso, ok, errores }
+  showLoader('Guardando 1 de '+cursosArr.length+'...');
+  // Uno por vez (no en paralelo): varias llamadas simultáneas escribiendo
+  // en la misma hoja podrían pisarse entre sí.
+  for(let ci=0; ci<cursosArr.length; ci++){
+    const cu = cursosArr[ci];
+    showLoader('Guardando '+(ci+1)+' de '+cursosArr.length+': '+cu.nombre+'...');
+    const subgruposData = _leerSubgruposConfigCurso_(cu, ci);
+    if(!subgruposData) continue; // ya mostró su propio toast de valor inválido
+    try{
+      const r = await apiPost({
+        action: 'actualizarCursoCompleto',
+        hoja, curso: cu.nombre, alumnos, subgrupos: subgruposData
+      });
+      if(!r.ok) throw new Error(r.error||'Error en el GAS');
+      resumen.push({ curso: cu.nombre, ok: true, errores: r.errores||[] });
+    }catch(e){
+      resumen.push({ curso: cu.nombre, ok: false, errores: [e.message] });
+    }
+  }
+  hideLoader();
+
+  const fallidos = resumen.filter(r => !r.ok);
+  const conAvisos = resumen.filter(r => r.ok && r.errores.length);
+  if(!fallidos.length && !conAvisos.length){
+    toast('Todo guardado', resumen.length+' curso'+(resumen.length!==1?'s':'')+' — '+alumnos.length+' alumnos', 'ok');
+  } else {
+    const detalle = fallidos.map(r => r.curso+': '+r.errores[0])
+      .concat(conAvisos.map(r => r.curso+': '+r.errores.slice(0,1).join(' | ')))
+      .slice(0,3).join(' | ');
+    toast('Guardado con advertencias', detalle, 'warn');
+  }
 }
 
 async function eliminarSubgrupoUI(ci, si){
