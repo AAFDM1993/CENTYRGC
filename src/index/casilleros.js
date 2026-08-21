@@ -450,28 +450,81 @@ async function abrirModalAgregarAlumno(){
   g('newAlCodigo').value='';
   g('newAlNombre').value='';
   const err = g('newAlErr'); if(err) err.style.display='none';
+  const aviso = g('newAlEditandoAviso'); if(aviso) aviso.style.display='none';
+  const titulo = g('modalAgregarAlumnoTitulo'); if(titulo) titulo.innerHTML='&#128100; Agregar alumno a planilla';
+  const btn = g('btnConfirmarAgregarAlumno'); if(btn) btn.innerHTML='&#10003; Agregar alumno';
 
-  // Obtener lista de cursos únicos de la hoja
+  // Cursos únicos de TODOS los alumnos de la hoja (antes solo miraba al
+  // primer alumno del array, por eso a veces solo se veía 1 curso)
   const cursosUnicos = [];
   if(hojaData.alumnos && hojaData.alumnos.length){
-    hojaData.alumnos[0].cursos.forEach(cu => {
-      cursosUnicos.push(cu.nombre);
+    hojaData.alumnos.forEach(al => {
+      (al.cursos||[]).forEach(cu => {
+        if(cursosUnicos.indexOf(cu.nombre) < 0) cursosUnicos.push(cu.nombre);
+      });
     });
   }
 
-  const box = g('newAlCursosList');
-  if(box){
-    box.innerHTML = cursosUnicos.map((cn,i) => `
-      <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--bd2)">
-        <input type="checkbox" id="newAlCurso_${i}" value="${esc2(cn)}" checked
-          style="width:15px;height:15px;cursor:pointer;accent-color:var(--n500)">
-        <label for="newAlCurso_${i}" style="font-size:13px;font-weight:600;color:var(--tx);cursor:pointer">${cn}</label>
-      </div>`).join('');
-  }
-
-  _agregarAlumnoCtx = { cursos: cursosUnicos };
+  _agregarAlumnoCtx = { cursos: cursosUnicos, editando: null, cursosOriginales: [] };
+  _renderCursosAgregarAlumno(cursosUnicos); // modo alta: todos tildados por defecto
   if(m) m.style.display='flex';
   setTimeout(()=>g('newAlCodigo').focus(), 100);
+}
+
+function _renderCursosAgregarAlumno(marcados){
+  const box = g('newAlCursosList');
+  if(!box || !_agregarAlumnoCtx) return;
+  const marcadosNorm = marcados.map(c => c.toLowerCase().normalize('NFC'));
+  box.innerHTML = _agregarAlumnoCtx.cursos.map((cn,i) => {
+    const checked = marcadosNorm.indexOf(cn.toLowerCase().normalize('NFC')) >= 0;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--bd2)">
+        <input type="checkbox" id="newAlCurso_${i}" value="${esc2(cn)}"${checked?' checked':''}
+          style="width:15px;height:15px;cursor:pointer;accent-color:var(--n500)">
+        <label for="newAlCurso_${i}" style="font-size:13px;font-weight:600;color:var(--tx);cursor:pointer">${cn}</label>
+      </div>`;
+  }).join('');
+}
+
+// Busca en la hoja actualmente cargada si ya existe un alumno con ese nombre
+// o código (comparación insensible a mayúsculas/acentos, igual que el backend).
+function _buscarAlumnoEnHoja_(nombre, codigo){
+  if(!hojaData || !hojaData.alumnos) return null;
+  const nomNorm = (nombre||'').trim().toLowerCase().normalize('NFC');
+  const codNorm = (codigo||'').trim().toLowerCase();
+  return hojaData.alumnos.find(a => {
+    const ac = (a.codigo||'').trim().toLowerCase();
+    if(codNorm && ac && codNorm===ac) return true;
+    const an = (a.nombre||'').trim().toLowerCase().normalize('NFC');
+    return nomNorm && an===nomNorm;
+  }) || null;
+}
+
+// Se dispara al tipear nombre/código en el modal +Alumno: si coincide con un
+// alumno que ya está en la hoja, el modal cambia a modo "editar cursos" en
+// vez de intentar darlo de alta de nuevo (lo cual el backend ahora rechaza).
+function _revisarAlumnoExistente(){
+  if(!_agregarAlumnoCtx) return;
+  const nombre = g('newAlNombre').value;
+  const codigo = g('newAlCodigo').value;
+  const existente = _buscarAlumnoEnHoja_(nombre, codigo);
+  _agregarAlumnoCtx.editando = existente;
+  const titulo = g('modalAgregarAlumnoTitulo');
+  const aviso  = g('newAlEditandoAviso');
+  const btn    = g('btnConfirmarAgregarAlumno');
+  if(existente){
+    const cursosDelAlumno = (existente.cursos||[]).map(c => c.nombre);
+    _agregarAlumnoCtx.cursosOriginales = cursosDelAlumno;
+    if(titulo) titulo.innerHTML = '&#9999;&#65039; Editar cursos de alumno';
+    if(aviso) aviso.style.display = 'block';
+    if(btn) btn.innerHTML = '&#10003; Guardar cambios';
+    _renderCursosAgregarAlumno(cursosDelAlumno);
+  } else {
+    _agregarAlumnoCtx.cursosOriginales = [];
+    if(titulo) titulo.innerHTML = '&#128100; Agregar alumno a planilla';
+    if(aviso) aviso.style.display = 'none';
+    if(btn) btn.innerHTML = '&#10003; Agregar alumno';
+    _renderCursosAgregarAlumno(_agregarAlumnoCtx.cursos);
+  }
 }
 
 function cerrarModalAgregarAlumno(){
@@ -486,16 +539,42 @@ async function confirmarAgregarAlumno(){
   const err    = g('newAlErr');
   if(!nombre){ err.textContent='El nombre es requerido'; err.style.display='block'; return; }
 
-  // Recoger cursos seleccionados
-  const cursosSeleccionados = [];
+  // Recoger cursos tildados
+  const cursosTildados = [];
   if(_agregarAlumnoCtx){
     _agregarAlumnoCtx.cursos.forEach((cn,i) => {
       const cb = document.getElementById('newAlCurso_'+i);
-      if(cb && cb.checked) cursosSeleccionados.push(cn);
+      if(cb && cb.checked) cursosTildados.push(cn);
     });
   }
-  if(!cursosSeleccionados.length){
+  if(!cursosTildados.length){
     err.textContent='Selecciona al menos un curso'; err.style.display='block'; return;
+  }
+
+  const editando = _agregarAlumnoCtx && _agregarAlumnoCtx.editando;
+
+  if(editando){
+    const originales = _agregarAlumnoCtx.cursosOriginales || [];
+    const agregar = cursosTildados.filter(c => originales.indexOf(c) < 0);
+    const quitar  = originales.filter(c => cursosTildados.indexOf(c) < 0);
+    if(!agregar.length && !quitar.length){
+      err.textContent='No modificaste ningún curso'; err.style.display='block'; return;
+    }
+    showLoader('Actualizando cursos...');
+    try{
+      const r = await apiPost({ action:'actualizarCursosAlumno', hoja:hojaActiva, alumno:nombre, agregar, quitar });
+      hideLoader();
+      if(!r.ok) throw new Error(r.error);
+      invalidateCache('leerHoja'); invalidateCache('resumenHoja');
+      if(r.errores && r.errores.length) toast('Completado con advertencias', r.errores.slice(0,3).join(' | '), 'warn');
+      else toast('Cursos actualizados', nombre, 'ok');
+      cerrarModalAgregarAlumno();
+      await abrirHoja(hojaActiva); // recargar editor
+    }catch(e){
+      hideLoader();
+      err.textContent = e.message; err.style.display='block';
+    }
+    return;
   }
 
   showLoader('Agregando alumno...');
@@ -504,10 +583,11 @@ async function confirmarAgregarAlumno(){
       action: 'agregarAlumnoHoja',
       hoja: hojaActiva,
       codigo, nombre,
-      cursos: cursosSeleccionados
+      cursos: cursosTildados
     });
     hideLoader();
     if(!r.ok) throw new Error(r.error);
+    invalidateCache('leerHoja'); invalidateCache('resumenHoja'); invalidateCache('listarHojas');
     toast('Alumno agregado', nombre, 'ok');
     cerrarModalAgregarAlumno();
     await abrirHoja(hojaActiva); // recargar editor

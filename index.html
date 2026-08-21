@@ -1634,18 +1634,19 @@ body.rol-recepcion #hdrBtnRecord{display:none}
 <div id="modalAgregarAlumno" style="position:fixed;inset:0;background:rgba(10,22,40,.65);z-index:600;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
   <div style="background:var(--surf);border-radius:16px;padding:0;width:100%;max-width:460px;box-shadow:0 24px 60px rgba(10,22,40,.4);overflow:hidden">
     <div style="background:var(--n900);padding:14px 18px;display:flex;align-items:center;justify-content:space-between">
-      <div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#fff">&#128100; Agregar alumno a planilla</div>
+      <div><div id="modalAgregarAlumnoTitulo" style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:#fff">&#128100; Agregar alumno a planilla</div>
       <div id="modalAgregarAlumnoHoja" style="font-size:11px;color:var(--n300);margin-top:2px"></div></div>
       <button onclick="cerrarModalAgregarAlumno()" style="background:rgba(255,255,255,.1);border:none;color:#fff;width:28px;height:28px;border-radius:7px;font-size:16px;cursor:pointer">&#10005;</button>
     </div>
     <div style="padding:16px 18px">
-      <div class="field"><label>Código</label><input class="inp" id="newAlCodigo" placeholder="Ej. 20210001"></div>
-      <div class="field"><label>Apellidos y Nombres</label><input class="inp" id="newAlNombre" placeholder="Ej. FLORES GARCIA Juan"></div>
-      <div class="slbl" style="margin-top:4px">Cursos a asignar</div>
+      <div class="field"><label>Código</label><input class="inp" id="newAlCodigo" placeholder="Ej. 20210001" oninput="_revisarAlumnoExistente()"></div>
+      <div class="field"><label>Apellidos y Nombres</label><input class="inp" id="newAlNombre" placeholder="Ej. FLORES GARCIA Juan" oninput="_revisarAlumnoExistente()"></div>
+      <div id="newAlEditandoAviso" style="display:none;font-size:11px;color:var(--amber);background:rgba(217,119,6,.1);border:1px solid rgba(217,119,6,.3);border-radius:8px;padding:7px 10px;margin-bottom:10px">&#9432; Este alumno ya existe en la hoja — tildá/destildá cursos para agregar o quitar.</div>
+      <div class="slbl" style="margin-top:4px">Cursos</div>
       <div id="newAlCursosList" style="max-height:200px;overflow-y:auto;border:1px solid var(--bd2);border-radius:10px;margin-bottom:14px"></div>
       <div id="newAlErr" style="font-size:12px;color:var(--red);margin-bottom:8px;display:none"></div>
       <div style="display:flex;gap:8px">
-        <button onclick="confirmarAgregarAlumno()" class="btn-sm green" style="flex:1">&#10003; Agregar alumno</button>
+        <button onclick="confirmarAgregarAlumno()" id="btnConfirmarAgregarAlumno" class="btn-sm green" style="flex:1">&#10003; Agregar alumno</button>
         <button onclick="cerrarModalAgregarAlumno()" class="btn-ghost">Cancelar</button>
       </div>
     </div>
@@ -1682,20 +1683,20 @@ body.rol-recepcion #hdrBtnRecord{display:none}
   </div>
 </div>
 
-<script src="src/index/core.js?v=13"></script>
-<script src="src/index/sidebar.js?v=13"></script>
-<script src="src/index/session.js?v=13"></script>
-<script src="src/index/api.js?v=13"></script>
-<script src="src/index/alumnos.js?v=13"></script>
-<script src="src/index/notas.js?v=13"></script>
-<script src="src/index/vistas.js?v=13"></script>
-<script src="src/index/exportar.js?v=13"></script>
-<script src="src/index/config-index.js?v=13"></script>
-<script src="src/index/log.js?v=13"></script>
-<script src="src/index/agenda.js?v=13"></script>
-<script src="src/index/casilleros.js?v=13"></script>
-<script src="src/index/recepcion.js?v=13"></script>
-<script src="src/index/record.js?v=13"></script>
+<script src="src/index/core.js?v=14"></script>
+<script src="src/index/sidebar.js?v=14"></script>
+<script src="src/index/session.js?v=14"></script>
+<script src="src/index/api.js?v=14"></script>
+<script src="src/index/alumnos.js?v=14"></script>
+<script src="src/index/notas.js?v=14"></script>
+<script src="src/index/vistas.js?v=14"></script>
+<script src="src/index/exportar.js?v=14"></script>
+<script src="src/index/config-index.js?v=14"></script>
+<script src="src/index/log.js?v=14"></script>
+<script src="src/index/agenda.js?v=14"></script>
+<script src="src/index/casilleros.js?v=14"></script>
+<script src="src/index/recepcion.js?v=14"></script>
+<script src="src/index/record.js?v=14"></script>
 <script>
 </script>
 </body>
