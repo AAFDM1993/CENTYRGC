@@ -18,6 +18,16 @@ function tryLock(){
   _busy = true;
   return true;
 }
+
+// ── Guarda de navegación asíncrona ────────────────────────────
+// Evita que una respuesta de red que llega tarde (paciente/formulario
+// anterior) pise el DOM de la pantalla que el usuario ya abandonó.
+// Cada función que renderiza una vista compartida (abrirPac, abrirFrmPac...)
+// debe capturar un token con _bumpGen() al empezar y comprobar _staleGen()
+// justo antes de escribir en el DOM tras cada `await`.
+var _viewGen = 0;
+function _bumpGen(){ return ++_viewGen; }
+function _staleGen(gen){ return gen !== _viewGen; }
 function showSendOverlay(txt, sub){
   _busy = true;
   var ov=g('hcSendOverlay');

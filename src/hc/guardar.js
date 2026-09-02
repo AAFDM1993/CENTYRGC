@@ -239,6 +239,11 @@ async function guardarHC(catId, pacId, modo){
   const rEval=await apiPost(payloadEval);
   if(!rEval.ok){hideSendOverlay();toast('Error al guardar evaluación',rEval.error,'err');return;}
   hideSendOverlay();
+  // FIX: hideSendOverlay() ya libera _busy, pero el guardado real todavía no
+  // terminó (falta actualizar hidden fields, cargarBadge, delay y navegar).
+  // Re-bloquear para que un doble clic en ese intervalo no dispare un segundo
+  // guardarHC() completo mientras el primero sigue en curso.
+  _busy = true;
 
   // Actualizar hcEvalId con el ID real (nuevo o existente) para que el consentimiento funcione
   const nuevoEvalId = rEval.id || evalIdExistente;
@@ -269,6 +274,7 @@ async function guardarHC(catId, pacId, modo){
         }
       }
     }
+    _busy = false;
     return;
   }
   stopTimerBanner();
@@ -276,7 +282,8 @@ async function guardarHC(catId, pacId, modo){
   toast(msgs[estado]||'Guardado','','ok');
   if(estado==='pendiente') cargarBadge();
   await delay(500);abrirPac(idPac);
-  }catch(ex){ hideSendOverlay(); toast('Error inesperado',ex.message,'err'); }
+  _busy = false;
+  }catch(ex){ hideSendOverlay(); _busy=false; toast('Error inesperado',ex.message,'err'); }
 }
 
 // ─── Modal selección de categoría ────────────────────
