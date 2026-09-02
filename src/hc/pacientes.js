@@ -154,7 +154,8 @@ function filtrarPacs(){
 }
 
 // ─── Formulario Paciente ──────────────────────────────
-async function abrirFrmPac(pac=null, preCatId=null, preCatNombre=null){
+async function abrirFrmPac(pac=null, preCatId=null, preCatNombre=null, _g=null){
+  if(_g==null) _g=_bumpGen(); // top-level: reserva este intento de navegación como el vigente
   const catId = pac?.categoriaId || preCatId || '';
   const catNom = preCatNombre || getCat(catId).nombre || '';
   views.forEach(v=>g(v).style.display='none');
@@ -163,6 +164,7 @@ async function abrirFrmPac(pac=null, preCatId=null, preCatNombre=null){
   // Cargar lista de docentes
   var docentesHC=[];
   try{const ru=await apiGet('listarUsuarios');docentesHC=(ru.usuarios||[]).filter(u=>u.rol==='docente');}catch(e){}
+  if(_staleGen(_g)) return; // el usuario ya abrió otro paciente/evaluación mientras cargaba
   window._docentesHCList=docentesHC;
   // Docente previo: si viene de una eval existente, recuperar
   const docenteHCActual=pac?.docenteEval||'';
@@ -249,6 +251,7 @@ async function abrirFrmPac(pac=null, preCatId=null, preCatNombre=null){
 
 // ─── Detalle Paciente ─────────────────────────────────
 async function abrirPac(id){
+  const _g=_bumpGen();
   views.forEach(v=>g(v).style.display='none');
   const v=g('vDetalle');v.style.display='block';v.innerHTML='<div class="loader">Cargando...</div>';
   const [rP,rE,rS,rU0]=await Promise.all([
@@ -259,6 +262,7 @@ async function abrirPac(id){
       ? Promise.resolve({ok:true,usuarios:window._listaUsuariosCache})
       : apiGet('listarUsuarios').catch(()=>({ok:false}))
   ]);
+  if(_staleGen(_g)) return; // el usuario ya navegó a otra pantalla mientras cargaba
   if(!rP.ok){v.innerHTML=`<div class="err-box">${e2(rP.error)}</div>`;return;}
   const pac=rP.paciente; pacActivo=pac;
   const evals=rE.evaluaciones||[], ses=rS.sesiones||[];
@@ -927,11 +931,13 @@ async function editarEvalAprobada(pacId, evalId, catId){
 }
 
 async function editarEvalRechazada(pacId, evalId, catId){
+  const _g=_bumpGen();
   // Cargar tanto el paciente como la evaluación
   const [rP, rE] = await Promise.all([
     apiGet('obtenerPaciente', {id: pacId}),
     apiGet('obtenerEvaluacion', {id: evalId})
   ]);
+  if(_staleGen(_g)) return; // el usuario ya navegó a otra pantalla mientras cargaba
   if(!rP.ok){ toast('Error al cargar paciente', rP.error, 'err'); return; }
   if(!rE.ok){ toast('Error al cargar evaluación', rE.error, 'err'); return; }
 
@@ -966,7 +972,8 @@ async function editarEvalRechazada(pacId, evalId, catId){
   });
 
   // Abrir el formulario con plantilla específica de la categoría
-  await abrirFrmPac(pacConDatos);
+  await abrirFrmPac(pacConDatos, null, null, _g);
+  if(_staleGen(_g)) return; // superado por otra navegación mientras abrirFrmPac cargaba
 
   // Pre-seleccionar el docente guardado en la eval
   if(ev.docente){
@@ -1070,6 +1077,7 @@ function selDoc(enc, codEnc){
   var dd=g('docenteDD'); if(dd) dd.style.display='none';
 }
 async function abrirFrmSes(pacId, evalId, num, sesId=null){
+  const _g=_bumpGen();
   views.forEach(v=>g(v).style.display='none');
   const v=g('vSesForm'); v.style.display='block';
   let ses=null;
@@ -1080,6 +1088,7 @@ async function abrirFrmSes(pacId, evalId, num, sesId=null){
   // Cargar docentes para el selector
   var docentes=[];
   try{const ru=await apiGet('listarUsuarios');docentes=(ru.usuarios||[]).filter(u=>u.rol==='docente');}catch(e){}
+  if(_staleGen(_g)) return; // el usuario ya navegó a otra pantalla mientras cargaba
   window._docentesList=docentes; // guardar para el input
   const docenteActual=ses?.docente||'';
 
@@ -1164,11 +1173,15 @@ async function guardarSes(pacId, evalId, num, sesId, modo){
     const r=await apiPost(b);
     hideSendOverlay();
     if(!r.ok){toast('Error',r.error,'err');return;}
+    // Re-bloquear: hideSendOverlay() ya liberó _busy pero aún falta navegar;
+    // evita que un doble clic dispare un guardarSes() duplicado en ese intervalo.
+    _busy = true;
     const msgs={pendiente:'📤 Enviada al docente',aprobada:'✅ Sesión guardada',borrador:'💾 Borrador guardado'};
     toast(msgs[estado],'','ok');
     if(estado==='pendiente') cargarBadge();
     await delay(500);abrirPac(pacId);
-  }catch(ex){ hideSendOverlay(); toast('Error inesperado',ex.message,'err'); }
+    _busy = false;
+  }catch(ex){ hideSendOverlay(); _busy=false; toast('Error inesperado',ex.message,'err'); }
 }
 
 async function enviarSes(sesId, pacId){
@@ -1332,22 +1345,27 @@ function renderCats(){
 
 // ─── Ver detalle ──────────────────────────────────────
 async function editarPac(id){
+  const _g=_bumpGen();
   const r=await apiGet('obtenerPaciente',{id});
+  if(_staleGen(_g)) return;
   if(!r.ok){toast('Error',r.error,'err');return;}
   const pac=r.paciente;
   // Buscar la evaluación más reciente para actualizar en lugar de crear una nueva
   const rE=await apiGet('listarEvaluaciones',{pacienteId:id}).catch(function(){return {ok:false};});
+  if(_staleGen(_g)) return;
   const evals=(rE.ok&&rE.evaluaciones)||[];
   const ultimaEval=evals.sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');})[0]||null;
   if(ultimaEval){
     const rEv=await apiGet('obtenerEvaluacion',{id:ultimaEval.id}).catch(function(){return {ok:false};});
+    if(_staleGen(_g)) return;
     if(rEv.ok){
       var datosEsp=rEv.evaluacion.datosEspecificos||{};
       if(typeof datosEsp==='string'){try{datosEsp=JSON.parse(datosEsp);}catch(e){datosEsp={};}}
       await abrirFrmPac(Object.assign({},pac,datosEsp,{
         id:pac.id,nombre:pac.nombre,dni:pac.dni,fechaNac:pac.fechaNac,fechaInicio:pac.fechaInicio,
         _evalId:ultimaEval.id,datosEspecificos:datosEsp
-      }));
+      }), null, null, _g);
+      if(_staleGen(_g)) return; // superado por otra navegación mientras abrirFrmPac cargaba
       // Restaurar estado visual del consentimiento si ya existe (igual que editarEvalRechazada)
       if(rEv.evaluacion.consentimientoPath){
         var evalIdCons=ultimaEval.id;
@@ -1361,7 +1379,7 @@ async function editarPac(id){
       return;
     }
   }
-  abrirFrmPac(pac);
+  abrirFrmPac(pac, null, null, _g);
 }
 
 async function eliminarPac(id, nombre){

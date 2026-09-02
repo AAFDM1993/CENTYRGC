@@ -301,6 +301,7 @@ function setMobileActive(id){
   var el=g(id); if(el) el.classList.add('active');
 }
 function navTo(v){
+  _bumpGen(); // invalida cualquier abrirPac/abrirFrmPac en vuelo de la vista anterior
   views.forEach(x=>g(x).style.display='none');
   sbs.forEach(x=>{const e=g(x);if(e)e.classList.remove('active');});
   if(v==='pac'){g('vPac').style.display='block';g('sbPac').classList.add('active');renderPacs();}
