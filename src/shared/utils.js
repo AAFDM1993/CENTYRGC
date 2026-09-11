@@ -46,6 +46,23 @@ function hideSendOverlay(){
 
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
+// ── Acordeón de secciones del formulario HC (.hc-sec-hdr / .hc-sec-body) ──
+// Compartido entre el montaje inicial del formulario y secciones agregadas
+// dinámicamente después (ej. el selector CIF opcional).
+function activarAcordeonSec(h){
+  h.onclick=()=>{
+    const b=h.nextElementSibling;
+    const chv=h.querySelector('.chv');
+    b.classList.toggle('open');
+    if(chv)chv.classList.toggle('open');
+    if(b.classList.contains('open')){
+      const mnt=b.querySelector('#wpost_mount');
+      if(mnt&&!mnt.hasChildNodes()&&window.wpostMount) window.wpostMount();
+      if(b.querySelector('#plantigrafia_img')&&window._plantigrafiaPendingFileId) _inicializarPlantigrafia();
+    }
+  };
+}
+
 function _limpiarFecha(raw){
   // Elimina sufijos de zona horaria con paréntesis: "GMT-0500 (hora estándar de Perú)"
   return String(raw).replace(/\s*\([^)]*\)\s*$/,'').trim();

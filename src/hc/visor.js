@@ -595,8 +595,11 @@ function _buildExamenObjetivoPorCategoria(d, ev, catId){
       ['gibosidad','Gibosidad',''],['plomada','Plomada',''],['desviacionPlomada','Desviacion plomada','cm'],
       ['desgasteCalzado','Desgaste calzado',''],['apoyoD','Apoyo plantar D',''],['apoyoI','Apoyo plantar I',''],
       ['plantillas','Plantillas',''],['obsMediciones','Obs. mediciones',''],['obsCalzado','Obs. calzado',''],
-      ['relacionSintomas','Relacion sintomas',''],['cifDeterioro','CIF Deterioro',''],['cifContextual','CIF Contextual','']];
+      ['relacionSintomas','Relacion sintomas','']];
     pf.forEach(function(f){if(d[f[0]])h+=_fld2(f[1],d[f[0]]+(f[2]?' '+f[2]:''));});
+    var cifDetTxt = formatCIF(d.cifDeterioro), cifCtxTxt = formatCIF(d.cifContextual);
+    if(cifDetTxt) h+=_fld2('CIF Deterioro', cifDetTxt);
+    if(cifCtxTxt) h+=_fld2('CIF Contextual', cifCtxTxt);
     if(d.obsInspeccionVisual)
       h+='<div style="grid-column:1/-1">'+_fld2('Observaciones inspeccion visual',d.obsInspeccionVisual)+'</div>';
     h += '</div>';

@@ -1201,6 +1201,26 @@ function secFuncionalGeriatria(d){
   `,true);
 }
 
+function secCIF(d, abierta){
+  return secWrap('cif','Diagnóstico funcional (CIF)','',`
+    <div class="form-grid">
+      ${secCIFCampo('cifDeterioro','Deterioro — Funciones corporales (CIF-b)','Buscar: dolor, movilidad articular, fuerza muscular...', d.cifDeterioro)}
+      ${secCIFCampo('cifActividad','Actividad — Limitaciones (CIF-d)','Buscar: caminar, vestirse, transferencias...', d.cifActividad)}
+      ${secCIFCampo('cifParticipacion','Participación — Restricciones (CIF-d)','Buscar: trabajo, vida social, recreación...', d.cifParticipacion)}
+      ${secCIFCampo('cifContextual','Factores contextuales (CIF-e)','Buscar: productos de apoyo, familia, servicios de salud...', d.cifContextual)}
+    </div>
+  `, abierta);
+}
+
+// Botón "agregar" que reemplaza a secCIF() cuando la evaluación todavía no tiene
+// ningún dato CIF guardado — evita que el diagnóstico funcional ocupe espacio
+// fijo en todas las evaluaciones cuando no se va a usar.
+function secCIFPlaceholder(){
+  return `<div style="margin-bottom:10px" id="cifPlaceholderWrap">
+    <button type="button" class="btn btn-ghost btn-sm" onclick="agregarSeccionCIF()">+ Agregar diagnóstico funcional (CIF)</button>
+  </div>`;
+}
+
 function secPlanTratamiento(d){
   return secWrap('plan','IV. Plan de tratamiento','',`
     <div class="form-grid">
