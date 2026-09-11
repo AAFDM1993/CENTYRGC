@@ -307,8 +307,6 @@ function cifModalHTML(d){
         <button type="button" class="cif-modal-cerrar" onclick="cerrarModalCIF()" title="Cerrar">✕</button>
       </div>
       <div class="cif-diagrama">
-        <div class="cif-fila-condicion">Condición de salud<span>(trastorno / enfermedad)</span></div>
-        <div class="cif-flecha-v" aria-hidden="true">↕</div>
         <div class="cif-fila cif-fila-3">
           ${_cifCajaHTML('cifDeterioro','Funciones y Estructuras Corporales','(Deficiencias)','Buscar: dolor, movilidad articular, fuerza muscular...', d.cifDeterioro)}
           <span class="cif-flecha-h" aria-hidden="true">↔</span>
@@ -344,13 +342,34 @@ function secCIFTrigger(d){
   };
   var texto = total>0 ? ('📋 CIF: '+total+' seleccionado'+(total===1?'':'s')+' · Editar') : '+ Agregar diagnóstico funcional (CIF)';
   return `<div style="margin-bottom:10px">
-    <button type="button" class="btn btn-ghost btn-sm" data-cif-datos='${_cifAttrJSON(datosIniciales)}' onclick="abrirModalCIF(this)">${texto}</button>
+    <button type="button" id="cifTriggerBtn" class="btn btn-ghost btn-sm" data-cif-datos='${_cifAttrJSON(datosIniciales)}' onclick="abrirModalCIF(this)">${texto}</button>
   </div>`;
 }
 
-// ── Abrir / cerrar el popup (se monta una sola vez; queda en el DOM aunque se cierre,
-// así no se pierde nada de lo elegido si el usuario reabre para seguir editando) ──
+// ── Lo que realmente se guarda ───────────────────────────────────────────
+// El popup se destruye al cerrarse (ver abrirModalCIF/cerrarModalCIF), así que
+// para cuando el usuario llega al botón "Guardar" del formulario, el DOM del
+// popup ya no existe — leerCIF() sobre #campo_list ahí adentro devolvería
+// vacío. La fuente de verdad persistida es el data-cif-datos del botón
+// disparador (se actualiza en cada cierre vía _actualizarTriggerCIF), así
+// que guardar.js lee de acá, no del popup.
+function leerCIFGuardado(){
+  var vacio = { cifDeterioro:[], cifActividad:[], cifParticipacion:[], cifContextual:[], cifFactoresPersonales:'' };
+  var btn = g('cifTriggerBtn'); if(!btn) return vacio;
+  try{ return Object.assign({}, vacio, JSON.parse(btn.dataset.cifDatos||'{}')); }
+  catch(e){ return vacio; }
+}
+
+// ── Abrir / cerrar el popup ──────────────────────────────────────────────
+// El popup se monta en document.body (fuera del formulario), así que se
+// destruye por completo al cerrarse y se reconstruye limpio cada vez que se
+// abre — si quedara montado entre aperturas, cambiar de paciente/evaluación
+// sin recargar la página podría reabrir un popup con datos de otra persona.
+// Antes de destruirlo, _actualizarTriggerCIF() vuelca lo elegido al botón
+// del formulario (texto + data-cif-datos), que es de donde se reconstruye.
+var _cifTriggerBtn = null;
 function abrirModalCIF(btn){
+  _cifTriggerBtn = btn;
   if(!g('cifModalOverlay')){
     var datos = {};
     try{ datos = JSON.parse(btn.dataset.cifDatos||'{}'); }catch(e){}
@@ -359,7 +378,23 @@ function abrirModalCIF(btn){
   g('cifModalOverlay').classList.add('abierto');
 }
 function cerrarModalCIF(){
-  var ov = g('cifModalOverlay'); if(ov) ov.classList.remove('abierto');
+  var ov = g('cifModalOverlay'); if(!ov) return;
+  _actualizarTriggerCIF();
+  ov.remove();
+}
+function _actualizarTriggerCIF(){
+  if(!_cifTriggerBtn) return;
+  var datos = {
+    cifDeterioro: leerCIF('cifDeterioro'), cifActividad: leerCIF('cifActividad'),
+    cifParticipacion: leerCIF('cifParticipacion'), cifContextual: leerCIF('cifContextual'),
+    cifFactoresPersonales: g('cifFactoresPersonales') ? g('cifFactoresPersonales').value : '',
+  };
+  var total = datos.cifDeterioro.length + datos.cifActividad.length + datos.cifParticipacion.length
+    + datos.cifContextual.length + (datos.cifFactoresPersonales?1:0);
+  _cifTriggerBtn.textContent = total>0 ? ('📋 CIF: '+total+' seleccionado'+(total===1?'':'s')+' · Editar') : '+ Agregar diagnóstico funcional (CIF)';
+  // Nota: asignar .dataset (a diferencia de construir HTML con _cifAttrJSON) NO pasa por
+  // el parser HTML, así que aquí va JSON.stringify plano — escapar entidades lo corrompería.
+  _cifTriggerBtn.dataset.cifDatos = JSON.stringify(datos);
 }
 document.addEventListener('keydown', function(e){
   if(e.key!=='Escape') return;

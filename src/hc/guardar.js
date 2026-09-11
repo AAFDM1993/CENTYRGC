@@ -189,12 +189,9 @@ async function guardarHC(catId, pacId, modo){
     meta:v('planMeta'),objGeneral:v('planObjG'),objEspecificos:v('planObjE'),planGeneral:v('planGeneral'),
     // Escalas estandarizadas
     escalas: leerEscalasForm(),
-    // Diagnóstico funcional CIF (universal, todas las categorías)
-    cifDeterioro: leerCIF('cifDeterioro'),
-    cifActividad: leerCIF('cifActividad'),
-    cifParticipacion: leerCIF('cifParticipacion'),
-    cifContextual: leerCIF('cifContextual'),
-    cifFactoresPersonales: v('cifFactoresPersonales'),
+    // Diagnóstico funcional CIF (universal, todas las categorías; se guarda
+    // desde el botón disparador, no desde el popup — ver leerCIFGuardado en cif.js)
+    ...leerCIFGuardado(),
     ...datosNeuro,
     ...datosPed,
     ...datosCardio,
