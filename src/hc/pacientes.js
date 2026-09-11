@@ -496,7 +496,7 @@ function buildDetalleEval(ev, pac){
   }
 
   // Diagnóstico
-  if(ev.dxFisio||d.dxFisio||d.aptaPatron||cifDeterioro||cifActividad||cifParticipacion||cifContextual){
+  if(ev.dxFisio||d.dxFisio||d.aptaPatron||cifDeterioro||cifActividad||cifParticipacion||cifContextual||d.cifFactoresPersonales){
     html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">IV. Diagnóstico</div>';
     html+='<div style="display:grid;gap:6px;margin-bottom:12px">';
     if(d.aptaPatron||ev.aptaPatron) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">PATRÓN APTA: </span><span style="font-size:12px">'+e2(d.aptaPatron||ev.aptaPatron)+'</span></div>';
@@ -504,7 +504,8 @@ function buildDetalleEval(ev, pac){
     if(cifDeterioro) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF DETERIORO: </span><span style="font-size:12px">'+e2(cifDeterioro)+'</span></div>';
     if(cifActividad) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF ACTIVIDAD: </span><span style="font-size:12px">'+e2(cifActividad)+'</span></div>';
     if(cifParticipacion) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF PARTICIPACIÓN: </span><span style="font-size:12px">'+e2(cifParticipacion)+'</span></div>';
-    if(cifContextual) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF CONTEXTUAL: </span><span style="font-size:12px">'+e2(cifContextual)+'</span></div>';
+    if(cifContextual) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF FACTORES AMBIENTALES: </span><span style="font-size:12px">'+e2(cifContextual)+'</span></div>';
+    if(d.cifFactoresPersonales) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF FACTORES PERSONALES: </span><span style="font-size:12px">'+e2(d.cifFactoresPersonales)+'</span></div>';
     if(d.pronostico) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">PRONÓSTICO: </span><span style="font-size:12px">'+e2(d.pronostico)+'</span></div>';
     html+='</div>';
   }

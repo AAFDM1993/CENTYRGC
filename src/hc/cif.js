@@ -182,44 +182,35 @@ function _cifNorm(s){
   return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
 }
 
-// ── Render del campo completo (buscador + sugerencias + chips) ──
-function secCIFCampo(fieldId, titulo, placeholder, valoresGuardados){
-  var cfg = _CIF_CAMPOS[fieldId];
-  var iniciales = Array.isArray(valoresGuardados) ? valoresGuardados : [];
-  var chips = iniciales.map(function(item){ return _cifChipHTML(fieldId, item, cfg.calificador); }).join('');
-  return `<div class="field form-full cif-picker" style="margin-bottom:12px">
-    <label for="${fieldId}_buscar">${titulo}</label>
-    <div style="position:relative">
-      <input class="inp" id="${fieldId}_buscar" placeholder="${e2(placeholder)}" autocomplete="off"
-        oninput="filtrarCIF('${fieldId}', this.value)" onfocus="filtrarCIF('${fieldId}', this.value)"
-        onblur="setTimeout(function(){var s=g('${fieldId}_sugerencias');if(s){s.style.display='none';}},150)">
-      <div id="${fieldId}_sugerencias" class="cif-sugerencias" style="display:none"></div>
-    </div>
-    <div id="${fieldId}_list" class="cif-chips">${chips}</div>
-  </div>`;
-}
+// ── Capítulos CIF, para agrupar la lista de cada dominio ────────────────────
+// El capítulo de un código es su prefijo letra+primer dígito (b710→'b7', d450→'d4'),
+// así que no hace falta guardarlo en cada entrada del catálogo: se deriva del código.
+const CIF_CAPITULOS = {
+  b1:'Funciones mentales', b2:'Funciones sensoriales y dolor',
+  b4:'Funciones cardiovasculares, hematológicas, inmunológicas y respiratorias',
+  b5:'Funciones del sistema digestivo, metabólico y endocrino',
+  b6:'Funciones genitourinarias y reproductoras',
+  b7:'Funciones neuromusculoesqueléticas y relacionadas con el movimiento',
+  b8:'Funciones de la piel y estructuras relacionadas',
+  d1:'Aprendizaje y aplicación del conocimiento', d2:'Tareas y demandas generales',
+  d3:'Comunicación', d4:'Movilidad', d5:'Autocuidado', d6:'Vida doméstica',
+  d7:'Interacciones y relaciones interpersonales', d8:'Áreas principales de la vida',
+  d9:'Vida comunitaria, social y cívica',
+  e1:'Productos y tecnología', e2:'Entorno natural',
+  e3:'Apoyo y relaciones', e4:'Actitudes', e5:'Servicios, sistemas y políticas',
+};
+function _cifCapituloDe(code){ return code.slice(0,2); }
 
-// ── Agregar la sección completa bajo demanda (botón "+ Agregar diagnóstico CIF") ──
-function agregarSeccionCIF(){
-  var wrap = g('cifPlaceholderWrap'); if(!wrap) return;
-  wrap.outerHTML = secCIF({}, true);
-  var hdr = document.getElementById('sec-cif')?.previousElementSibling;
-  if(hdr) activarAcordeonSec(hdr);
-}
-
-function _cifCalificadorOpts(tipo, valorActual){
-  var opts = tipo==='facilitador' ? CIF_FACILITADOR : CIF_SEVERIDAD;
-  return opts.map(function(o){
-    return `<option value="${o.v}" ${valorActual===o.v?'selected':''}>${o.l}</option>`;
-  }).join('');
-}
-
-function _cifChipHTML(fieldId, item, tipoCalificador){
-  return `<span class="cif-chip" data-cif-code="${e2(item.code)}" data-cif-label="${e2(item.label)}">
-    <strong>${e2(item.code)}</strong> ${e2(item.label)}
-    <select class="cif-chip-calif" onclick="event.stopPropagation()" onchange="event.stopPropagation()">${_cifCalificadorOpts(tipoCalificador, item.qualifier||'')}</select>
-    <button type="button" class="cif-chip-x" onclick="quitarCIF('${fieldId}','${esc(item.code)}')" title="Quitar">✕</button>
-  </span>`;
+// Códigos del catálogo de un dominio, agrupados por capítulo (orden del catálogo)
+function _cifCapitulosDeDominio(dominio){
+  var grupos = {}, orden = [];
+  CIF_CATALOGO.forEach(function(c){
+    if(c.dominio!==dominio) return;
+    var cap = _cifCapituloDe(c.code);
+    if(!grupos[cap]){ grupos[cap]=[]; orden.push(cap); }
+    grupos[cap].push(c);
+  });
+  return orden.map(function(cap){ return {id:cap, titulo:CIF_CAPITULOS[cap]||cap, codigos:grupos[cap]}; });
 }
 
 // ── Relevancia de un código frente a la búsqueda: menor = mejor coincidencia, -1 = no coincide ──
@@ -241,32 +232,180 @@ function _cifScore(c, q, palabras){
   return -1;
 }
 
-// ── Sugerencias filtradas mientras se escribe ──
+function _cifCalificadorOpts(tipo, valorActual){
+  var opts = tipo==='facilitador' ? CIF_FACILITADOR : CIF_SEVERIDAD;
+  return opts.map(function(o){
+    return `<option value="${o.v}" ${valorActual===o.v?'selected':''}>${o.l}</option>`;
+  }).join('');
+}
+
+function _cifChipHTML(fieldId, item, tipoCalificador){
+  return `<span class="cif-chip" data-cif-code="${e2(item.code)}" data-cif-label="${e2(item.label)}">
+    <strong>${e2(item.code)}</strong> ${e2(item.label)}
+    <select class="cif-chip-calif" onclick="event.stopPropagation()" onchange="event.stopPropagation()">${_cifCalificadorOpts(tipoCalificador, item.qualifier||'')}</select>
+    <button type="button" class="cif-chip-x" onclick="quitarCIF('${fieldId}','${esc(item.code)}')" title="Quitar">✕</button>
+  </span>`;
+}
+
+// ── Caja del diagrama para un campo de códigos (Deterioro/Actividad/Participación/Contextual) ──
+function _cifCajaHTML(fieldId, titulo, subtitulo, placeholder, valoresGuardados){
+  var cfg = _CIF_CAMPOS[fieldId];
+  var iniciales = Array.isArray(valoresGuardados) ? valoresGuardados : [];
+  var chips = iniciales.map(function(item){ return _cifChipHTML(fieldId, item, cfg.calificador); }).join('');
+  var yaSeleccionados = {};
+  iniciales.forEach(function(item){ yaSeleccionados[item.code]=true; });
+  var capitulos = _cifCapitulosDeDominio(cfg.dominio);
+  var listaHTML = capitulos.map(function(cap){
+    var filas = cap.codigos.map(function(c){
+      var oculto = yaSeleccionados[c.code] ? ' style="display:none"' : '';
+      return `<div class="cif-cod-item" data-cif-cod="${c.code}"${oculto} onmousedown="event.preventDefault();seleccionarCIF('${fieldId}','${c.code}')"><strong>${c.code}</strong> ${e2(c.label)}</div>`;
+    }).join('');
+    return `<details class="cif-capitulo" data-cif-cap="${cap.id}">
+      <summary>${e2(cap.titulo)}<span class="cif-cap-n">${cap.codigos.length}</span></summary>
+      <div class="cif-cap-body">${filas}</div>
+    </details>`;
+  }).join('');
+  return `<div class="cif-caja" data-cif-caja="${fieldId}">
+    <button type="button" class="cif-caja-hdr" onclick="toggleCajaCIF('${fieldId}')">
+      <span class="cif-caja-titulo">${titulo}<em>${subtitulo}</em></span>
+      <span class="cif-caja-badge" id="${fieldId}_badge">${iniciales.length||''}</span>
+      <span class="cif-caja-chev">▾</span>
+    </button>
+    <div class="cif-caja-body" id="${fieldId}_body" style="display:none">
+      <input class="inp" id="${fieldId}_buscar" placeholder="${e2(placeholder)}" autocomplete="off"
+        oninput="filtrarCIF('${fieldId}', this.value)">
+      <div class="cif-capitulos" id="${fieldId}_capitulos">${listaHTML}</div>
+      <div id="${fieldId}_list" class="cif-chips">${chips}</div>
+    </div>
+  </div>`;
+}
+
+// ── Caja del diagrama para Factores personales (sin catálogo — la OMS no los codifica) ──
+function _cifCajaTextoHTML(fieldId, titulo, subtitulo, placeholder, valorGuardado){
+  return `<div class="cif-caja" data-cif-caja="${fieldId}">
+    <button type="button" class="cif-caja-hdr" onclick="toggleCajaCIF('${fieldId}')">
+      <span class="cif-caja-titulo">${titulo}<em>${subtitulo}</em></span>
+      <span class="cif-caja-badge">${valorGuardado?'✓':''}</span>
+      <span class="cif-caja-chev">▾</span>
+    </button>
+    <div class="cif-caja-body" id="${fieldId}_body" style="display:none">
+      <textarea class="ta" id="${fieldId}" rows="3" placeholder="${e2(placeholder)}">${e2(valorGuardado||'')}</textarea>
+    </div>
+  </div>`;
+}
+
+// ── El diagrama completo dentro del popup, con las 5 cajas del modelo biopsicosocial CIF ──
+function cifModalHTML(d){
+  d = d || {};
+  return `<div class="cif-modal-overlay" id="cifModalOverlay" onmousedown="if(event.target===this) cerrarModalCIF()">
+    <div class="cif-modal" role="dialog" aria-modal="true" aria-label="Diagnóstico funcional CIF">
+      <div class="cif-modal-hdr">
+        <div>
+          <div class="cif-modal-titulo">Diagnóstico funcional (CIF)</div>
+          <div class="cif-modal-sub">Clasificación Internacional del Funcionamiento — OMS</div>
+        </div>
+        <button type="button" class="cif-modal-cerrar" onclick="cerrarModalCIF()" title="Cerrar">✕</button>
+      </div>
+      <div class="cif-diagrama">
+        <div class="cif-fila-condicion">Condición de salud<span>(trastorno / enfermedad)</span></div>
+        <div class="cif-flecha-v" aria-hidden="true">↕</div>
+        <div class="cif-fila cif-fila-3">
+          ${_cifCajaHTML('cifDeterioro','Funciones y Estructuras Corporales','(Deficiencias)','Buscar: dolor, movilidad articular, fuerza muscular...', d.cifDeterioro)}
+          <span class="cif-flecha-h" aria-hidden="true">↔</span>
+          ${_cifCajaHTML('cifActividad','Actividades','(Limitaciones)','Buscar: caminar, vestirse, transferencias...', d.cifActividad)}
+          <span class="cif-flecha-h" aria-hidden="true">↔</span>
+          ${_cifCajaHTML('cifParticipacion','Participación','(Restricciones)','Buscar: trabajo, vida social, recreación...', d.cifParticipacion)}
+        </div>
+        <div class="cif-flecha-v" aria-hidden="true">↕</div>
+        <div class="cif-fila cif-fila-2">
+          ${_cifCajaHTML('cifContextual','Factores ambientales','(Facilitadores / barreras)','Buscar: productos de apoyo, familia, servicios de salud...', d.cifContextual)}
+          <span class="cif-flecha-h" aria-hidden="true">↔</span>
+          ${_cifCajaTextoHTML('cifFactoresPersonales','Factores personales','(edad, hábitos, autoestima...)','Ej: autoestima reducida, motivación, hábitos de actividad física...', d.cifFactoresPersonales)}
+        </div>
+      </div>
+      <div class="cif-modal-footer">
+        <button type="button" class="btn btn-primary btn-sm" onclick="cerrarModalCIF()">Listo</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Disparador dentro del formulario: botón que abre el popup del diagrama CIF ──
+function _cifAttrJSON(obj){
+  return JSON.stringify(obj).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/'/g,'&#39;');
+}
+function secCIFTrigger(d){
+  d = d || {};
+  var total = (d.cifDeterioro||[]).length + (d.cifActividad||[]).length
+    + (d.cifParticipacion||[]).length + (d.cifContextual||[]).length + (d.cifFactoresPersonales?1:0);
+  var datosIniciales = {
+    cifDeterioro:d.cifDeterioro||[], cifActividad:d.cifActividad||[], cifParticipacion:d.cifParticipacion||[],
+    cifContextual:d.cifContextual||[], cifFactoresPersonales:d.cifFactoresPersonales||'',
+  };
+  var texto = total>0 ? ('📋 CIF: '+total+' seleccionado'+(total===1?'':'s')+' · Editar') : '+ Agregar diagnóstico funcional (CIF)';
+  return `<div style="margin-bottom:10px">
+    <button type="button" class="btn btn-ghost btn-sm" data-cif-datos='${_cifAttrJSON(datosIniciales)}' onclick="abrirModalCIF(this)">${texto}</button>
+  </div>`;
+}
+
+// ── Abrir / cerrar el popup (se monta una sola vez; queda en el DOM aunque se cierre,
+// así no se pierde nada de lo elegido si el usuario reabre para seguir editando) ──
+function abrirModalCIF(btn){
+  if(!g('cifModalOverlay')){
+    var datos = {};
+    try{ datos = JSON.parse(btn.dataset.cifDatos||'{}'); }catch(e){}
+    document.body.insertAdjacentHTML('beforeend', cifModalHTML(datos));
+  }
+  g('cifModalOverlay').classList.add('abierto');
+}
+function cerrarModalCIF(){
+  var ov = g('cifModalOverlay'); if(ov) ov.classList.remove('abierto');
+}
+document.addEventListener('keydown', function(e){
+  if(e.key!=='Escape') return;
+  var ov = g('cifModalOverlay');
+  if(ov && ov.classList.contains('abierto')) cerrarModalCIF();
+});
+
+// ── Acordeón de cajas: al abrir una, las demás se comprimen (solo una expandida a la vez) ──
+function toggleCajaCIF(fieldId){
+  var modal = g('cifModalOverlay'); if(!modal) return;
+  modal.querySelectorAll('[data-cif-caja]').forEach(function(caja){
+    var body = caja.querySelector('.cif-caja-body');
+    var chev = caja.querySelector('.cif-caja-chev');
+    var esEsta = caja.dataset.cifCaja===fieldId;
+    var abrir = esEsta ? (body.style.display==='none') : false;
+    body.style.display = abrir ? 'block' : 'none';
+    if(chev) chev.textContent = abrir ? '▴' : '▾';
+    caja.classList.toggle('cif-caja-abierta', abrir);
+  });
+}
+
+// ── Filtrado en vivo dentro de una caja: recorre su lista agrupada por capítulo y
+// muestra/oculta cada código según coincida con la búsqueda (_cifScore) y no esté
+// ya seleccionado; con texto, abre automáticamente los capítulos con resultados ──
 function filtrarCIF(fieldId, texto){
   var cfg = _CIF_CAMPOS[fieldId]; if(!cfg) return;
-  var cont = g(fieldId+'_sugerencias'); if(!cont) return;
+  var cont = g(fieldId+'_capitulos'); if(!cont) return;
   var q = _cifNorm(texto).trim();
-  if(!q){ cont.style.display='none'; cont.innerHTML=''; return; }
   var palabras = q.split(/\s+/).filter(Boolean);
   var yaSeleccionados = _cifCodigosSeleccionados(fieldId);
-  var candidatos = CIF_CATALOGO
-    .filter(function(c){ return c.dominio===cfg.dominio && !yaSeleccionados.has(c.code); })
-    .map(function(c){ return {c:c, score:_cifScore(c, q, palabras)}; })
-    .filter(function(x){ return x.score!==-1; })
-    .sort(function(a,b){ return a.score-b.score || a.c.code.localeCompare(b.c.code); })
-    .slice(0,8)
-    .map(function(x){ return x.c; });
-  if(!candidatos.length){
-    // Ocultar (no dejar un panel "Sin resultados" flotando): al ser position:absolute
-    // quedaría sobre los chips ya seleccionados y bloquearía sus clics (quitar/calificador).
-    cont.style.display='none'; cont.innerHTML='';
-    return;
-  }
-  cont.innerHTML = candidatos.map(function(c){
-    return `<div class="cif-sug-item" onmousedown="event.preventDefault();seleccionarCIF('${fieldId}','${c.code}')">
-      <strong>${c.code}</strong> ${e2(c.label)}</div>`;
-  }).join('');
-  cont.style.display='block';
+  var catalogoPorCodigo = {};
+  CIF_CATALOGO.forEach(function(c){ if(c.dominio===cfg.dominio) catalogoPorCodigo[c.code]=c; });
+  cont.querySelectorAll('details.cif-capitulo').forEach(function(det){
+    var algunaVisible = false;
+    det.querySelectorAll('.cif-cod-item').forEach(function(fila){
+      var code = fila.dataset.cifCod;
+      var c = catalogoPorCodigo[code];
+      var seleccionado = yaSeleccionados.has(code);
+      var coincide = !q || (c && _cifScore(c, q, palabras)!==-1);
+      var visible = coincide && !seleccionado;
+      fila.style.display = visible ? '' : 'none';
+      if(visible) algunaVisible = true;
+    });
+    if(q){ det.open = algunaVisible; det.style.display = algunaVisible ? '' : 'none'; }
+    else { det.open = false; det.style.display = ''; }
+  });
 }
 
 function _cifCodigosSeleccionados(fieldId){
@@ -283,14 +422,21 @@ function seleccionarCIF(fieldId, code){
   if(!item) return;
   var lista = g(fieldId+'_list'); if(!lista) return;
   lista.insertAdjacentHTML('beforeend', _cifChipHTML(fieldId, item, cfg.calificador));
-  var buscar = g(fieldId+'_buscar'); if(buscar) buscar.value='';
-  var sug = g(fieldId+'_sugerencias'); if(sug){ sug.style.display='none'; sug.innerHTML=''; }
+  var buscar = g(fieldId+'_buscar');
+  if(buscar) buscar.value='';
+  filtrarCIF(fieldId, '');
+  var badge = g(fieldId+'_badge');
+  if(badge) badge.textContent = lista.querySelectorAll('[data-cif-code]').length;
 }
 
 function quitarCIF(fieldId, code){
   var lista = g(fieldId+'_list'); if(!lista) return;
   var el = lista.querySelector('[data-cif-code="'+code+'"]');
   if(el) el.remove();
+  var buscar = g(fieldId+'_buscar');
+  filtrarCIF(fieldId, buscar?buscar.value:'');
+  var badge = g(fieldId+'_badge');
+  if(badge){ var n=lista.querySelectorAll('[data-cif-code]').length; badge.textContent = n||''; }
 }
 
 // ── Lectura al guardar (mismo patrón que _leerItemsEscala en escalas.js) ──

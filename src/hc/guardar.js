@@ -194,6 +194,7 @@ async function guardarHC(catId, pacId, modo){
     cifActividad: leerCIF('cifActividad'),
     cifParticipacion: leerCIF('cifParticipacion'),
     cifContextual: leerCIF('cifContextual'),
+    cifFactoresPersonales: v('cifFactoresPersonales'),
     ...datosNeuro,
     ...datosPed,
     ...datosCardio,

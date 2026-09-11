@@ -93,18 +93,61 @@ body{background:#f0f4ff;color:var(--tx);font-family:'Plus Jakarta Sans',sans-ser
 .ta{resize:vertical;min-height:80px;}
 .sel{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%237aa3e0' viewBox='0 0 20 20'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:16px;padding-right:34px;}
 
-/* Selector CIF */
-.cif-sugerencias{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:40;background:#fff;border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);max-height:220px;overflow-y:auto;}
-.cif-sug-item{padding:8px 13px;font-size:12px;cursor:pointer;color:var(--tx2);border-bottom:1px solid var(--bd2);}
-.cif-sug-item:last-child{border-bottom:none;}
-.cif-sug-item:hover{background:var(--n050);}
-.cif-sug-item strong{color:var(--n500);margin-right:6px;}
+/* Selector CIF — popup con el diagrama biopsicosocial de la CIF */
+.cif-modal-overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:1000;align-items:center;justify-content:center;padding:16px;}
+.cif-modal-overlay.abierto{display:flex;}
+.cif-modal{background:#fff;border-radius:16px;max-width:920px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);}
+.cif-modal-hdr{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px 20px 12px;border-bottom:1px solid var(--bd);position:sticky;top:0;background:#fff;z-index:2;}
+.cif-modal-titulo{font-family:'Syne',sans-serif;font-weight:800;font-size:16px;color:var(--tx);}
+.cif-modal-sub{font-size:11px;color:var(--tx4);margin-top:2px;}
+.cif-modal-cerrar{border:none;background:var(--surf2);color:var(--tx3);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px;flex-shrink:0;}
+.cif-modal-cerrar:hover{background:var(--red2);color:var(--red);}
+.cif-modal-footer{padding:14px 20px 20px;display:flex;justify-content:flex-end;}
+
+.cif-diagrama{padding:18px 20px 4px;}
+.cif-fila-condicion{text-align:center;font-weight:700;font-size:13px;color:var(--tx2);background:var(--surf2);border:1px solid var(--bd);border-radius:10px;padding:8px 14px;margin:0 auto 4px;max-width:340px;}
+.cif-fila-condicion span{display:block;font-weight:500;font-size:11px;color:var(--tx4);}
+.cif-flecha-v{text-align:center;font-size:20px;color:var(--n400);line-height:1;margin:2px 0;}
+.cif-fila{display:flex;align-items:flex-start;gap:6px;margin:2px 0;}
+.cif-fila > .cif-caja{flex:1;min-width:0;}
+.cif-flecha-h{align-self:center;font-size:18px;color:var(--n400);flex-shrink:0;padding-top:14px;}
+
+.cif-caja{border:1px solid var(--bd);border-radius:12px;background:var(--surf2);overflow:hidden;}
+.cif-caja-abierta{background:#fff;box-shadow:0 4px 14px rgba(37,99,235,.1);}
+.cif-caja-hdr{width:100%;display:flex;align-items:center;gap:8px;padding:10px 12px;background:none;border:none;cursor:pointer;text-align:left;font-family:'Plus Jakarta Sans',sans-serif;}
+.cif-caja-titulo{flex:1;font-size:12px;font-weight:700;color:var(--tx2);line-height:1.3;}
+.cif-caja-titulo em{display:block;font-style:normal;font-weight:500;font-size:10px;color:var(--tx4);}
+.cif-caja-badge{background:var(--n500);color:#fff;font-size:11px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 5px;}
+.cif-caja-badge:empty{display:none;}
+.cif-caja-chev{font-size:11px;color:var(--tx4);}
+.cif-caja-body{padding:0 12px 12px;}
+.cif-caja-body .inp{margin-bottom:8px;}
+
+.cif-capitulos{max-height:260px;overflow-y:auto;border:1px solid var(--bd2);border-radius:8px;margin-bottom:8px;}
+.cif-capitulo{border-bottom:1px solid var(--bd2);}
+.cif-capitulo:last-child{border-bottom:none;}
+.cif-capitulo summary{padding:7px 10px;font-size:11px;font-weight:700;color:var(--tx3);cursor:pointer;list-style:none;display:flex;align-items:center;gap:6px;}
+.cif-capitulo summary::-webkit-details-marker{display:none;}
+.cif-capitulo summary::before{content:'▸';font-size:9px;color:var(--tx4);}
+.cif-capitulo[open] summary::before{content:'▾';}
+.cif-cap-n{margin-left:auto;font-weight:500;color:var(--tx4);}
+.cif-cap-body{padding:0 10px 6px;}
+.cif-cod-item{padding:6px 8px;font-size:12px;color:var(--tx2);cursor:pointer;border-radius:6px;}
+.cif-cod-item:hover{background:var(--n050);}
+.cif-cod-item strong{color:var(--n500);margin-right:6px;}
+
 .cif-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
 .cif-chip{display:inline-flex;align-items:center;gap:6px;background:var(--surf2);border:1px solid var(--bd);border-radius:20px;padding:4px 6px 4px 12px;font-size:12px;color:var(--tx2);}
 .cif-chip strong{color:var(--n500);}
 .cif-chip-calif{border:1px solid var(--bd);border-radius:8px;background:#fff;color:var(--tx2);font-size:11px;padding:2px 6px;font-family:'Plus Jakarta Sans',sans-serif;}
 .cif-chip-x{border:none;background:none;color:var(--tx4);cursor:pointer;font-size:13px;line-height:1;padding:2px 4px;border-radius:50%;}
 .cif-chip-x:hover{background:var(--red2);color:var(--red);}
+
+@media (max-width: 640px){
+  .cif-fila{flex-direction:column;}
+  .cif-flecha-h{align-self:center;padding-top:0;transform:rotate(90deg);}
+  .cif-modal{max-height:95vh;}
+}
 
 /* Botones */
 .btn{display:inline-flex;align-items:center;gap:7px;border:none;border-radius:10px;font-size:13px;font-weight:700;padding:9px 18px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;transition:all .18s;white-space:nowrap;}
