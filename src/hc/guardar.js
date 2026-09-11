@@ -43,7 +43,6 @@ async function guardarHC(catId, pacId, modo){
     tipoMarcha:v('tipoMarcha'),patronMarcha:v('patronMarcha'),ayudaTecnica:v('ayudaTecnica'),transferenciaCS:v('transferenciaCS'),transferenciaSP:v('transferenciaSP'),obsMarcha:v('obsMarcha'),marchaDescripcion:v('marchaDescripcion'),
     // AVD
     avdBasicasAfect:v('avdBasicasAfect'),avdInstAfect:v('avdInstAfect'),
-    cifDeterioro:v('cifDeterioro'),cifActividad:v('cifActividad'),cifParticipacion:v('cifParticipacion'),cifContextual:v('cifContextual'),
   } : {};
 
   // Leer campos específicos de neuro pediátrica
@@ -67,7 +66,6 @@ async function guardarHC(catId, pacId, modo){
     marchaPedDescripcion:v('marchaPedDescripcion'),
     prensionPed:v('prensionPed'),lateralidadPed:v('lateralidadPed'),alcancePed:v('alcancePed'),obsMMSSPed:v('obsMMSSPed'),
     alimentPed:v('alimentPed'),higienePed:v('higienePed'),juegoSoc:v('juegoSoc'),progDomiciliario:v('progDomiciliario'),
-    cifDeterioro:v('cifDeterioro'),cifActividad:v('cifActividad'),cifParticipacion:v('cifParticipacion'),cifContextual:v('cifContextual'),
   } : {};
 
   const datosPostural = catId === 'postural' ? {
@@ -95,8 +93,6 @@ async function guardarHC(catId, pacId, modo){
     plantillas:v('plantillas'),obsCalzado:v('obsCalzado'),plantigrafiaFileId:v('plantigrafiaFileId'),
     // Diagnóstico
     relacionSintomas: v('relacionSintomas'),
-    cifDeterioro: v('cifDeterioro'),
-    cifContextual: v('cifContextual'),
     obsInspeccionVisual: v('obsInspeccionVisual'),
     widgetPostural: (window.wpostGetData?JSON.stringify(window.wpostGetData()):null)
   } : {};
@@ -193,6 +189,11 @@ async function guardarHC(catId, pacId, modo){
     meta:v('planMeta'),objGeneral:v('planObjG'),objEspecificos:v('planObjE'),planGeneral:v('planGeneral'),
     // Escalas estandarizadas
     escalas: leerEscalasForm(),
+    // Diagnóstico funcional CIF (universal, todas las categorías)
+    cifDeterioro: leerCIF('cifDeterioro'),
+    cifActividad: leerCIF('cifActividad'),
+    cifParticipacion: leerCIF('cifParticipacion'),
+    cifContextual: leerCIF('cifContextual'),
     ...datosNeuro,
     ...datosPed,
     ...datosCardio,

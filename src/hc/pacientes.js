@@ -227,19 +227,7 @@ async function abrirFrmPac(pac=null, preCatId=null, preCatNombre=null, _g=null){
       ${btnsEnviar}
     </div>`;
   // Activar acordeones
-  v.querySelectorAll('.hc-sec-hdr').forEach(h=>{
-    h.onclick=()=>{
-      const b=h.nextElementSibling;
-      const chv=h.querySelector('.chv');
-      b.classList.toggle('open');
-      if(chv)chv.classList.toggle('open');
-      if(b.classList.contains('open')){
-        const mnt=b.querySelector('#wpost_mount');
-        if(mnt&&!mnt.hasChildNodes()&&window.wpostMount) window.wpostMount();
-        if(b.querySelector('#plantigrafia_img')&&window._plantigrafiaPendingFileId) _inicializarPlantigrafia();
-      }
-    };
-  });
+  v.querySelectorAll('.hc-sec-hdr').forEach(activarAcordeonSec);
   // Cerrar dropdown al click fuera
   setTimeout(function(){
     document.addEventListener('click',function _hcDDClose(e){
@@ -399,8 +387,10 @@ function buildDetalleEval(ev, pac){
   var d=Object.assign({},ev,ev.datosEspecificos||{});
   var catId = ev.categoriaId || pac.categoriaId || '';
   var evaVal = d.evaValor !== undefined ? d.evaValor : (d.eva !== undefined ? d.eva : undefined);
-  var cifDeterioro = d.icfDeterioro || d.cifDeterioro || '';
-  var cifActividad = d.icfActividad || d.cifActividad || '';
+  var cifDeterioro = formatCIF(d.icfDeterioro || d.cifDeterioro);
+  var cifActividad = formatCIF(d.icfActividad || d.cifActividad);
+  var cifParticipacion = formatCIF(d.cifParticipacion);
+  var cifContextual = formatCIF(d.cifContextual);
   var objCorto = d.objCorto || d.meta || '';
   var objLargo = d.objLargo || d.objGeneral || '';
   var objEsp = d.objEspecificos || d.planGeneral || '';
@@ -506,13 +496,15 @@ function buildDetalleEval(ev, pac){
   }
 
   // Diagnóstico
-  if(ev.dxFisio||d.dxFisio||d.aptaPatron||cifDeterioro||cifActividad){
+  if(ev.dxFisio||d.dxFisio||d.aptaPatron||cifDeterioro||cifActividad||cifParticipacion||cifContextual){
     html+='<div style="font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">IV. Diagnóstico</div>';
     html+='<div style="display:grid;gap:6px;margin-bottom:12px">';
     if(d.aptaPatron||ev.aptaPatron) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">PATRÓN APTA: </span><span style="font-size:12px">'+e2(d.aptaPatron||ev.aptaPatron)+'</span></div>';
     if(ev.dxFisio||d.dxFisio) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">DX FISIO: </span><span style="font-size:12px">'+e2(ev.dxFisio||d.dxFisio)+'</span></div>';
     if(cifDeterioro) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF DETERIORO: </span><span style="font-size:12px">'+e2(cifDeterioro)+'</span></div>';
     if(cifActividad) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF ACTIVIDAD: </span><span style="font-size:12px">'+e2(cifActividad)+'</span></div>';
+    if(cifParticipacion) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF PARTICIPACIÓN: </span><span style="font-size:12px">'+e2(cifParticipacion)+'</span></div>';
+    if(cifContextual) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">CIF CONTEXTUAL: </span><span style="font-size:12px">'+e2(cifContextual)+'</span></div>';
     if(d.pronostico) html+='<div><span style="font-size:10px;color:var(--tx4);font-weight:700">PRONÓSTICO: </span><span style="font-size:12px">'+e2(d.pronostico)+'</span></div>';
     html+='</div>';
   }
@@ -687,7 +679,7 @@ function _buildDetalleExamenPorCategoria(d, ev, catId) {
     h += fld('Apoyo plantar D', d.apoyoD);
     h += fld('Apoyo plantar I', d.apoyoI);
     h += fld('Test dedos-suelo', d.testDedusSuelo !== '' && d.testDedusSuelo !== undefined ? d.testDedusSuelo + ' cm' : '');
-    if (d.cifDeterioro) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">ALTERACIONES POSTURALES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">' + e2(d.cifDeterioro) + '</div></div>';
+    if (d.cifDeterioro && formatCIF(d.cifDeterioro)) h += '<div style="margin-bottom:6px"><div style="font-size:10px;color:var(--tx4);font-weight:700;margin-bottom:2px">ALTERACIONES POSTURALES</div><div style="font-size:12px;background:var(--surf2);border-radius:8px;padding:8px">' + e2(formatCIF(d.cifDeterioro)) + '</div></div>';
 
   } else if (catId === 'paralisis_facial') {
     h += fld('Diagnóstico', d.dxFacial);

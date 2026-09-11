@@ -20,6 +20,9 @@ function plantillaHTML(catId, pac){
     secciones += secGeriatria(d);
   }
 
+  var hayCIF = (d.cifDeterioro&&d.cifDeterioro.length) || (d.cifActividad&&d.cifActividad.length)
+    || (d.cifParticipacion&&d.cifParticipacion.length) || (d.cifContextual&&d.cifContextual.length);
+  secciones += hayCIF ? secCIF(d,false) : secCIFPlaceholder();
   secciones += secPlanTratamiento(d);
   secciones += secEscalas(catId, d.escalas||null);
   return secciones;
