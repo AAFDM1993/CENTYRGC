@@ -907,6 +907,7 @@ function sesCard(s, pac, evalAp){
         ${puedeSend&&(s.estado==='borrador'||s.estado==='rechazada')?`<button class="btn btn-primary btn-sm" onclick="enviarSes('${esc(s.id)}','${esc(pac.id)}')">📤 Enviar</button>`:''}
         ${puedeRev&&s.estado==='pendiente'?`<button class="btn btn-success btn-sm" onclick="abrirRev('ses','${esc(s.id)}','${esc(pac.id)}')">📝 Revisar</button>`:''}
         ${s.estado==='pendiente'&&session.rol==='docente'&&!puedeRev?`<span style="font-size:11px;color:var(--tx4);padding:4px 8px">⏳ Asignado a otro docente</span>`:''}
+        ${(session.rol==='admin'||session.rol==='docente')?`<button class="btn btn-danger btn-sm" style="margin-left:auto" title="Eliminar sesión" onclick="eliminarSes('${esc(s.id)}','${esc(pac.id)}',${s.numero||1})">🗑️</button>`:''}
       </div>
     </div>
   </div>`;
@@ -1388,6 +1389,14 @@ async function eliminarEval(evalId, pacId, numEval){
   const r=await apiPost({action:'eliminarEvaluacion',evalId});
   if(!r.ok){toast('Error',r.error,'err');return;}
   toast('Evaluación eliminada','','ok');
+  await delay(400);abrirPac(pacId);
+}
+
+async function eliminarSes(sesId, pacId, numSes){
+  if(!confirm('¿Eliminar Sesión #'+numSes+'?\n\nSolo se eliminará ESTA sesión.\nLas demás sesiones y evaluaciones del paciente NO se verán afectadas.\n\nEsta acción no se puede deshacer.'))return;
+  const r=await apiPost({action:'eliminarSesion',id:sesId});
+  if(!r.ok){toast('Error',r.error,'err');return;}
+  toast('Sesión eliminada','','ok');
   await delay(400);abrirPac(pacId);
 }
 
