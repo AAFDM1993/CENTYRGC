@@ -1,5 +1,5 @@
 // ── exportar.js: exportación a PDF y Excel ─────────────────────────────────
-// Depende de: core.js (g, vi, esc, toast, showLoader, hideLoader)
+// Depende de: core.js (g, vi, esc, toast, showLoader, hideLoader, contarPacientesReales, promedioPonderado)
 //             session.js (session)
 //             api.js (apiGet, apiGetCached)
 //             config-index.js (logoParaPDF_ usa applyBranding)
@@ -382,14 +382,15 @@ function _construirHojaAtenciones(resultado){
 
       var promSgr = (sg.pacientes && sg.pacientes.length && sg.pacientes[0].prom !== '' && sg.pacientes[0].prom !== undefined)
         ? Number(sg.pacientes[0].prom) : null;
-      if(promSgr !== null) promsCurso.push(promSgr);
+      if(promSgr !== null) promsCurso.push({prom: promSgr, n: contarPacientesReales(sg.pacientes)});
       var filaProm = ['Promedio Subgrupo'];
       for(var k=1;k<header.length-1;k++) filaProm.push('');
       filaProm.push(promSgr !== null ? promSgr : '');
       aoa.push(filaProm);
       aoa.push([]);
     });
-    var promCurso = promsCurso.length ? Math.round(promsCurso.reduce(function(a,b){return a+b;},0)/promsCurso.length*100)/100 : '';
+    var _promCursoPond = promedioPonderado(promsCurso);
+    var promCurso = _promCursoPond !== null ? Math.round(_promCursoPond*100)/100 : '';
     aoa.push(['Promedio Curso', promCurso]);
     aoa.push([]);
   });
@@ -602,12 +603,12 @@ function exportarXLSXSubgrupos(nombres){
     if(!info)return;
     const filasFiltradas=_filasConFiltroAlumno(info.filas);
     const {ws, promSubgrupo}=_construirHojaDetalleSubgrupo(nombreSgr, {base:info.base, extra:info.extra, filas:filasFiltradas});
-    if(promSubgrupo!==null) promsSubgrupos.push(promSubgrupo);
+    if(promSubgrupo!==null) promsSubgrupos.push({prom:promSubgrupo, n:contarPacientesReales(info.filas[0]&&info.filas[0].pacientes)});
     const nombreHoja=_nombreHojaUnico(nombresAsignados, nombreSgr);
     XLSX.utils.book_append_sheet(wb, ws, nombreHoja);
   });
   if(promsSubgrupos.length>1){
-    const promCurso=Math.round(promsSubgrupos.reduce((a,b)=>a+b,0)/promsSubgrupos.length*100)/100;
+    const promCurso=Math.round(promedioPonderado(promsSubgrupos)*100)/100;
     const wsResumen=XLSX.utils.aoa_to_sheet([['Promedio Curso', promCurso]]);
     XLSX.utils.book_append_sheet(wb, wsResumen, _nombreHojaUnico(nombresAsignados, 'Resumen'));
   }
@@ -689,14 +690,14 @@ async function exportarPDFSubgrupos(nombres){
     if(!info)return;
     const filasFiltradas=_filasConFiltroAlumno(info.filas);
     const {html, promSubgrupo}=_tablaSubgrupoHTML(nombreSgr, {base:info.base, extra:info.extra, filas:filasFiltradas}, apro);
-    if(promSubgrupo!==null) promsSubgrupos.push(promSubgrupo);
+    if(promSubgrupo!==null) promsSubgrupos.push({prom:promSubgrupo, n:contarPacientesReales(info.filas[0]&&info.filas[0].pacientes)});
     const pageBreak=i>0?'page-break-before:always;':'';
     secciones+=`<div style="${pageBreak}">${html}</div>`;
   });
 
   let seccionResumen='';
   if(promsSubgrupos.length>1){
-    const promCurso=Math.round(promsSubgrupos.reduce((a,b)=>a+b,0)/promsSubgrupos.length*100)/100;
+    const promCurso=Math.round(promedioPonderado(promsSubgrupos)*100)/100;
     seccionResumen=`<div style="margin-top:20px;padding:12px 16px;background:#f8faff;border:1px solid #e2e8f0;border-radius:8px;page-break-inside:avoid">
       <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.5px">Promedio Curso</span>
       <span style="font-family:monospace;font-size:18px;font-weight:800;color:#1d4ed8;margin-left:10px">${promCurso}</span>

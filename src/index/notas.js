@@ -1,5 +1,5 @@
 // ── notas.js: editor de hojas y notas ──────────────────────────────────────
-// Depende de: core.js (g, vi, esc, esc2, toast, showLoader, hideLoader, APRO)
+// Depende de: core.js (g, vi, esc, esc2, toast, showLoader, hideLoader, APRO, contarPacientesReales, promedioPonderado)
 //             session.js (session, hojaActiva, hojaData, saveTimers)
 //             api.js (apiGet, apiPost, apiGetCached, invalidateCache)
 //             alumnos.js (renderPreview)
@@ -137,18 +137,20 @@ function renderAlBlock(al,ai,apro){
       ${(()=>{ const _nf=sg.pacientes.length&&sg.pacientes[0].prom!==''&&sg.pacientes[0].prom!==undefined?Number(sg.pacientes[0].prom):null; const _col=_nf!==null?(_nf>=apro?'var(--green)':'var(--red)'):'var(--n300)'; const _bg=_nf!==null?(_nf>=apro?'rgba(5,150,105,.15)':'rgba(220,38,38,.12)'):'var(--n800)'; return `<tfoot><tr><td colspan="2" style="padding:6px 12px;font-size:11px;font-weight:700;color:var(--tx3);background:var(--n050);border-top:2px solid var(--bd2)">Promedio Subgrupo</td><td colspan="${base+extra}" style="border-top:2px solid var(--bd2);background:var(--n050)"></td><td style="text-align:center;border-top:2px solid var(--bd2);background:${_bg}"><span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:800;color:${_col}">${_nf!==null?_nf:'-'}</span></td></tr></tfoot>`; })()}
       </table></div>`;
     }).join('');
-    // Calcular nota final del curso: promedio de los promedios de subgrupos
-    let _sumaProms = 0, _cntProms = 0;
+    // Calcular nota final del curso: promedio de los promedios de subgrupos,
+    // ponderado por cantidad de pacientes reales de cada subgrupo
+    let _itemsProms = [];
     cu.subgrupos.forEach(sg2 => {
       // El prom del subgrupo es el mismo para todos los pacientes, usar el primero
       if(sg2.pacientes && sg2.pacientes.length > 0){
         const _p = sg2.pacientes[0].prom;
         if(_p !== '' && _p !== undefined && _p !== null){
-          _sumaProms += Number(_p); _cntProms++;
+          _itemsProms.push({prom: Number(_p), n: contarPacientesReales(sg2.pacientes)});
         }
       }
     });
-    const _notaFinalCurso = _cntProms > 0 ? (_sumaProms / _cntProms).toFixed(2) : null;
+    const _promPond = promedioPonderado(_itemsProms);
+    const _notaFinalCurso = _promPond !== null ? _promPond.toFixed(2) : null;
     const _nfColor = _notaFinalCurso === null ? 'var(--n300)'
       : Number(_notaFinalCurso) >= apro ? 'var(--green)' : 'var(--red)';
     const _nfBg = _notaFinalCurso === null ? 'rgba(255,255,255,.08)'

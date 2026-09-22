@@ -3,6 +3,22 @@
 // IMPORTANTE: este archivo es específico de index.html; hc.html usa api.js con HC_URL
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbx4RyXcVwGkKRATkw1Oxa7Q-d_x0sSH_TdGS1XyTftPQTD2kW_eW2YCBKfygWHoE_5adQ/exec';
 
+// ── Promedio de subgrupos ponderado por cantidad de pacientes ────────────────
+// PACX = continuación del mismo paciente (no es un paciente nuevo), se excluye del conteo
+function contarPacientesReales(pacientes){
+  return (pacientes||[]).filter(function(p){return String(p.label||'').indexOf('PACX')!==0;}).length;
+}
+// items: [{prom:Number, n:Number}] → promedio ponderado por n, o null si no hay datos
+function promedioPonderado(items){
+  var sumaPond=0, sumaPesos=0;
+  (items||[]).forEach(function(it){
+    if(it.prom===null||it.prom===undefined||isNaN(it.prom))return;
+    var n=it.n>0?it.n:1;
+    sumaPond+=it.prom*n; sumaPesos+=n;
+  });
+  return sumaPesos>0 ? sumaPond/sumaPesos : null;
+}
+
 // ── Modal info (aviso simple, solo botón "Entendido") ────────────────────────
 function infoDialog(msg){
   return new Promise(function(resolve){
