@@ -315,7 +315,7 @@ function navTo(v){
 // ─── Helpers ──────────────────────────────────────────
 function getCat(id){return cats.find(c=>c.id===id)||{nombre:id||'—',color:'#64748b',id};}
 function catPill(id){const c=getCat(id);return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;background:${c.color}22;color:${c.color};border:1px solid ${c.color}44">${e2(c.nombre)}</span>`;}
-function bdg(estado){const m={borrador:'📝 Borrador',pendiente:'⏳ Pendiente',aprobada:'✓ Aprobada',rechazada:'✗ Rechazada',activo:'● Activo',vencida:'⏰ Vencida'};return `<span class="badge ${estado}">${m[estado]||estado}</span>`;}
+function bdg(estado){const m={borrador:'📝 Borrador',pendiente:'⏳ Pendiente',aprobada:'✓ Aprobada',rechazada:'✗ Rechazada',activo:'● Activo',vencida:'⏰ Vencida',archivado:'🗄️ Archivado'};return `<span class="badge ${estado}">${m[estado]||estado}</span>`;}
 // ─── Vista: Pacientes ─────────────────────────────────
 function renderBusqHC(){
   var v=g('vBusqHC');
@@ -337,7 +337,7 @@ async function buscarHC(){
   var box=g('hcResultados');
   if(!q||q.length<2){box.innerHTML='<div class="empty">Escribe al menos 2 caracteres...</div>';return;}
   box.innerHTML='<div class="loader">&#9203; Buscando...</div>';
-  var r=await apiGet('listarPacientes');
+  var r=await apiGet('listarPacientes',{incluirArchivados:1});
   if(!r.ok){box.innerHTML='<div class="err-box">'+e2(r.error)+'</div>';return;}
   var pacs=(r.pacientes||[]).filter(function(p){
     return (p.nombre||'').toLowerCase().includes(q)
