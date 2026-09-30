@@ -317,7 +317,9 @@ function getCat(id){return cats.find(c=>c.id===id)||{nombre:id||'—',color:'#64
 function catPill(id){const c=getCat(id);return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;background:${c.color}22;color:${c.color};border:1px solid ${c.color}44">${e2(c.nombre)}</span>`;}
 function bdg(estado){const m={borrador:'📝 Borrador',pendiente:'⏳ Pendiente',aprobada:'✓ Aprobada',rechazada:'✗ Rechazada',activo:'● Activo',vencida:'⏰ Vencida',archivado:'🗄️ Archivado'};return `<span class="badge ${estado}">${m[estado]||estado}</span>`;}
 // ─── Vista: Pacientes ─────────────────────────────────
-function renderBusqHC(){
+var _hcPacs=[], _hcCatSel='';
+async function renderBusqHC(){
+  _hcCatSel='';
   var v=g('vBusqHC');
   v.innerHTML=`
     <div class="card-hdr">
@@ -328,24 +330,55 @@ function renderBusqHC(){
         <div class="field form-full">
           <input class="inp" id="hcBusca" placeholder="Buscar por nombre, DNI o diagn&oacute;stico..." oninput="buscarHC()" style="font-size:14px">
         </div>
+        <div class="field form-full">
+          <div style="font-size:11px;color:var(--tx4);margin-bottom:6px;font-weight:700">O ver por categor&iacute;a de ficha:</div>
+          <div id="hcCatChips" style="display:flex;flex-wrap:wrap;gap:8px"><span style="font-size:12px;color:var(--tx4)">&#9203; Cargando categor&iacute;as...</span></div>
+        </div>
       </div>
     </div>
-    <div id="hcResultados"><div class="empty">Escribe para buscar historias cl&iacute;nicas...</div></div>`;
+    <div id="hcResultados"><div class="empty">Escribe para buscar o elige una categor&iacute;a...</div></div>`;
+  var r=await apiGet('listarPacientes',{incluirArchivados:1});
+  var chips=g('hcCatChips');
+  if(!chips) return;
+  if(!r.ok){chips.innerHTML='<div class="err-box">'+e2(r.error)+'</div>';return;}
+  _hcPacs=r.pacientes||[];
+  pintarChipsCat();
 }
-async function buscarHC(){
+function pintarChipsCat(){
+  var chips=g('hcCatChips'); if(!chips) return;
+  var conteo={};
+  _hcPacs.forEach(function(p){conteo[p.categoriaId]=(conteo[p.categoriaId]||0)+1;});
+  var html='';
+  cats.forEach(function(c){
+    var n=conteo[c.id]||0, sel=_hcCatSel===c.id;
+    html+='<button type="button" data-cat="'+e2(c.id)+'" style="cursor:pointer;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:700;'
+      +'background:'+(sel?c.color:c.color+'22')+';color:'+(sel?'#fff':c.color)+';border:1.5px solid '+c.color+(sel?'':'66')+'">'
+      +e2(c.nombre)+' ('+n+')</button>';
+  });
+  chips.innerHTML=html||'<span style="font-size:12px;color:var(--tx4)">Sin categor&iacute;as</span>';
+  chips.querySelectorAll('[data-cat]').forEach(function(el){
+    el.addEventListener('click',function(){
+      var id=el.getAttribute('data-cat');
+      _hcCatSel=(_hcCatSel===id)?'':id;
+      pintarChipsCat();
+      buscarHC();
+    });
+  });
+}
+function buscarHC(){
   var q=(g('hcBusca')?.value||'').toLowerCase().trim();
   var box=g('hcResultados');
-  if(!q||q.length<2){box.innerHTML='<div class="empty">Escribe al menos 2 caracteres...</div>';return;}
-  box.innerHTML='<div class="loader">&#9203; Buscando...</div>';
-  var r=await apiGet('listarPacientes',{incluirArchivados:1});
-  if(!r.ok){box.innerHTML='<div class="err-box">'+e2(r.error)+'</div>';return;}
-  var pacs=(r.pacientes||[]).filter(function(p){
+  if(!_hcCatSel&&q.length<2){box.innerHTML='<div class="empty">'+(q?'Escribe al menos 2 caracteres...':'Escribe para buscar o elige una categor&iacute;a...')+'</div>';return;}
+  var pacs=_hcPacs.filter(function(p){
+    if(_hcCatSel&&p.categoriaId!==_hcCatSel) return false;
+    if(!q) return true;
     return (p.nombre||'').toLowerCase().includes(q)
       ||(p.dni||'').includes(q)
       ||(p.dxFisio||'').toLowerCase().includes(q)
       ||(p.dxMedico||'').toLowerCase().includes(q);
   });
-  if(!pacs.length){box.innerHTML='<div class="empty">Sin resultados para &ldquo;'+e2(q)+'&rdquo;</div>';return;}
+  var etiqueta=q?'para &ldquo;'+e2(q)+'&rdquo;':(_hcCatSel?'en '+e2(getCat(_hcCatSel).nombre):'');
+  if(!pacs.length){box.innerHTML='<div class="empty">Sin resultados '+etiqueta+'</div>';return;}
   var html='<div style="font-size:12px;color:var(--tx4);margin-bottom:10px">'+pacs.length+' resultado'+(pacs.length!==1?'s':'')+' encontrado'+(pacs.length!==1?'s':'')+'</div><div class="pac-grid">';
   pacs.forEach(function(p){
     var cat=getCat(p.categoriaId);
