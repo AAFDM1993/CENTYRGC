@@ -100,7 +100,9 @@ function filtrarPacs(){
 
   if(vista==='lista'){
     box.innerHTML='<div style="display:flex;flex-direction:column;gap:6px">'
-      +lista.map(p=>{
+      +agruparPorDni(lista).map(grp=>{
+        if(grp.length>1) return cardGrupoDni(grp);
+        const p=grp[0];
         const c=getCat(p.categoriaId);
         const ini=(p.nombre||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
         return `<div style="background:var(--surf);border:1px solid var(--bd2);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s" onclick="abrirPac('${esc(p.id)}')" onmouseover="this.style.borderColor='var(--n300)'" onmouseout="this.style.borderColor='var(--bd2)'">
@@ -126,7 +128,9 @@ function filtrarPacs(){
         </div>`;
       }).join('')+'</div>';
   } else {
-    box.innerHTML=`<div class="pac-grid">${lista.map(p=>{
+    box.innerHTML=`<div class="pac-grid">${agruparPorDni(lista).map(grp=>{
+      if(grp.length>1) return cardGrupoDni(grp);
+      const p=grp[0];
       const c=getCat(p.categoriaId);
       const ini=(p.nombre||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
       return `<div class="pac-card" onclick="abrirPac('${esc(p.id)}')">
@@ -151,6 +155,46 @@ function filtrarPacs(){
       </div>`;
     }).join('')}</div>`;
   }
+}
+
+// Agrupa fichas con el mismo DNI (una por atención/categoría) para mostrarlas unificadas.
+// No modifica datos; las fichas sin DNI quedan como grupos de un solo elemento.
+function agruparPorDni(lista){
+  const porDni={}, out=[];
+  lista.forEach(p=>{
+    const k=(p.dni||'').trim();
+    if(!k){out.push([p]);return;}
+    if(!porDni[k]){porDni[k]=[];out.push(porDni[k]);}
+    porDni[k].push(p);
+  });
+  return out;
+}
+
+// Tarjeta única para un paciente con varias atenciones (mismo DNI)
+function cardGrupoDni(grp){
+  const p=grp[0];
+  const ini=(p.nombre||'?').split(' ').slice(0,2).map(w=>w[0]||'').join('').toUpperCase();
+  const filas=grp.map(a=>{
+    const c=getCat(a.categoriaId);
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--surf2);border-radius:8px;cursor:pointer;flex-wrap:wrap" onclick="event.stopPropagation();abrirPac('${esc(a.id)}')">
+      ${catPill(a.categoriaId)}${bdg(a.estado||'activo')}
+      ${a.dxFisio?`<span style="font-size:11px;color:var(--tx3);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Dx: ${e2(a.dxFisio)}</span>`:'<span style="flex:1"></span>'}
+      <span style="font-size:11px;color:var(--tx4)">${a.evalTotal||0} eval</span>
+      <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();abrirPac('${esc(a.id)}')">👁️ Ver</button>
+      ${session.rol==='admin'?`<button class="btn btn-danger btn-sm" title="Eliminar esta atención" onclick="event.stopPropagation();eliminarPac('${esc(a.id)}','${esc(a.nombre)}')">🗑️</button>`:''}
+    </div>`;
+  }).join('');
+  return `<div class="pac-card" style="cursor:default">
+    <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px">
+      <div class="pac-avatar" style="background:var(--n100);color:var(--n900)">${ini}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:14px;color:var(--n900);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e2(p.nombre)}</div>
+        <div style="font-size:11px;color:var(--tx3);font-family:'DM Mono',monospace;margin-top:1px">${e2(p.dni)} ${p.fechaNac?'· '+edad(p.fechaNac)+' a':''}</div>
+        <div style="font-size:11px;color:var(--tx4);margin-top:2px">${grp.length} atenciones</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:6px">${filas}</div>
+  </div>`;
 }
 
 // ─── Formulario Paciente ──────────────────────────────
@@ -709,7 +753,7 @@ function _buildDetalleExamenPorCategoria(d, ev, catId) {
   } else if (catId === 'geriatria') {
     h += fld('Diagnóstico', d.dxGeriatria);
     h += fld('Edad', d.edadGer ? d.edadGer+' años' : '');
-    h += fld('Motivo', d.motivoGer);
+    h += fld('Motivo de evaluación', d.motivoGer && d.motivoGer!==d.motivo ? d.motivoGer : '');
     h += fld('Evolución', d.tiempoEvolGer);
     h += fld('Vivienda', d.tipoViviendaGer);
     h += fld('Soporte social', d.soporteSocial);

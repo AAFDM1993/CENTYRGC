@@ -300,8 +300,10 @@ function buildEvalHTML(ev, pac, firmaHTML){
 
   } else if(catId === 'geriatria'){
     rows+=sec('II','Anamnesis',
-      row('Diagnóstico',d.dxGeriatria)+row('Edad',d.edadGer?d.edadGer+' años':'')
-      +row('Motivo de evaluación',d.motivoGer||d.motivo||pac.motivo)
+      row('Diagnóstico',d.dxGeriatria)+row('Diagnóstico fisioterapéutico',d.dxFisio||ev.dxFisio)
+      +row('Edad',d.edadGer?d.edadGer+' años':'')
+      +row('Motivo de consulta',d.motivo||pac.motivo)
+      +(d.motivoGer&&d.motivoGer!==d.motivo?row('Motivo de evaluación',d.motivoGer):'')
       +row('Tiempo de evolución',d.tiempoEvolGer)
       +rowFull('Antecedentes',d.antecedentesGer||pac.antecedentes)
       +row('Vivienda',d.tipoViviendaGer)+row('Soporte social',d.soporteSocial)
@@ -328,7 +330,8 @@ function buildEvalHTML(ev, pac, firmaHTML){
 
   } else if(catId === 'paralisis_facial'){
     rows+=secGrid('II','Anamnesis',
-      row('Diagnóstico',d.dxFacial)+row('Tipo de parálisis',d.tipoParalisis)
+      row('Diagnóstico',d.dxFacial)+row('Diagnóstico fisioterapéutico',d.dxFisio||ev.dxFisio)
+      +row('Tipo de parálisis',d.tipoParalisis)
       +row('Lado afectado',d.ladoFacial)+row('Tiempo de evolución',d.tiempoEvolFacial)
       +row('Motivo de consulta',d.motivo||pac.motivo)+row('Antecedentes',d.antecedentes||pac.antecedentes));
     rows+=secGrid('III','Examen Objetivo',

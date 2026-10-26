@@ -380,7 +380,9 @@ function buscarHC(){
   var etiqueta=q?'para &ldquo;'+e2(q)+'&rdquo;':(_hcCatSel?'en '+e2(getCat(_hcCatSel).nombre):'');
   if(!pacs.length){box.innerHTML='<div class="empty">Sin resultados '+etiqueta+'</div>';return;}
   var html='<div style="font-size:12px;color:var(--tx4);margin-bottom:10px">'+pacs.length+' resultado'+(pacs.length!==1?'s':'')+' encontrado'+(pacs.length!==1?'s':'')+'</div><div class="pac-grid">';
-  pacs.forEach(function(p){
+  agruparPorDni(pacs).forEach(function(grp){
+    if(grp.length>1){html+=cardGrupoDni(grp);return;}
+    var p=grp[0];
     var cat=getCat(p.categoriaId);
     var ini=(p.nombre||'?').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase();
     html+='<div class="pac-card" data-pid="'+e2(p.id)+'" style="cursor:pointer">'
@@ -392,7 +394,10 @@ function buscarHC(){
       +'<div style="margin-top:4px">'+catPill(p.categoriaId)+'</div>'
       +(p.dxFisio?'<div style="font-size:11px;color:var(--tx3);margin-top:3px">Dx: '+e2(p.dxFisio)+'</div>':'')
       +'</div>'+bdg(p.estado||'activo')+'</div>'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px">'
       +'<div style="font-size:11px;color:var(--tx4)">&#128203; '+(p.evalTotal||0)+' evaluaci'+(p.evalTotal===1?'ón':'ones')+'</div>'
+      +(session.rol==='admin'?'<button class="btn btn-danger btn-sm" title="Eliminar esta atención" onclick="event.stopPropagation();eliminarPac(\''+esc(p.id)+'\',\''+esc(p.nombre)+'\')">🗑️</button>':'')
+      +'</div>'
       +'</div>';
   });
   html+='</div>';
