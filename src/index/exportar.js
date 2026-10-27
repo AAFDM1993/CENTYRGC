@@ -642,9 +642,10 @@ function _tablaSubgrupoHTML(nombreSubgrupo, info, apro){
         <td style="text-align:center;font-family:monospace;font-weight:700;color:${color};padding:6px 8px">${p!==''&&p!==undefined?p:'-'}</td>
       </tr>`;
       if(pac.puntoExtra && Number(pac.puntoExtra)!==0 && pac.justificacion){
+        const negPE=Number(pac.puntoExtra)<0;
         filasHtml+=`<tr>
-          <td colspan="${colspanTotal}" style="background:#f0fdf4;border-bottom:1px solid #e2e8f0;padding:5px 8px;font-size:10.5px;color:#166534">
-            <strong>+ Punto extra (+${pac.puntoExtra}):</strong> ${escHtml(pac.justificacion)}
+          <td colspan="${colspanTotal}" style="background:${negPE?'#fef2f2':'#f0fdf4'};border-bottom:1px solid #e2e8f0;padding:5px 8px;font-size:10.5px;color:${negPE?'#991b1b':'#166534'}">
+            <strong>${negPE?'− Punto en contra (−'+Math.abs(Number(pac.puntoExtra))+')':'+ Punto extra (+'+pac.puntoExtra+')'}:</strong> ${escHtml(pac.justificacion)}
           </td>
         </tr>`;
       }

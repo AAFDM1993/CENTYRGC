@@ -1,7 +1,7 @@
 // ── Utilidades base de index.html ──────────────────────────────────────────
 // GAS_URL: URL de Google Apps Script para index.html (gestión académica)
 // IMPORTANTE: este archivo es específico de index.html; hc.html usa api.js con HC_URL
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwTavdOyEH4mNQF6q_7HrR1K8v2CTWkLfxjz9um6XqoRkLRWlOqDELv4zfxpsZa233KHQ/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzJ0CxAOSMr4lQLv3VwM8H0QqaJoF60PQ-aQnbYCWCI0Sbhc9HsgaI24lSWTtczqOrgiA/exec';
 
 // ── Promedio de subgrupos ponderado por cantidad de pacientes ────────────────
 // PACX = continuación del mismo paciente (no es un paciente nuevo), se excluye del conteo

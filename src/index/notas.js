@@ -110,9 +110,12 @@ function renderAlBlock(al,ai,apro){
         const bonoClick = esAdminBono ? `onclick="abrirPuntoExtraModal('${esc(al.nombre)}','${esc(cu.nombre)}','${esc(sg.nombre)}','${esc(pac.label)}',${base},${extra})"` : '';
         let bonoBadge = '';
         if(tieneBono){
-          bonoBadge = `<span ${bonoClick} title="${esc2(pac.justificacion||'')}" style="display:inline-flex;align-items:center;gap:2px;background:var(--green2);color:var(--green);border:1px solid var(--green);border-radius:6px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:4px;${esAdminBono?'cursor:pointer':''}">+ ${pac.puntoExtra} pts</span>`;
+          const neg = Number(pac.puntoExtra) < 0;
+          const bCol = neg ? 'red' : 'green';
+          const bTxt = neg ? `− ${Math.abs(Number(pac.puntoExtra))} pts` : `+ ${pac.puntoExtra} pts`;
+          bonoBadge = `<span ${bonoClick} title="${esc2(pac.justificacion||'')}" style="display:inline-flex;align-items:center;gap:2px;background:var(--${bCol}2);color:var(--${bCol});border:1px solid var(--${bCol});border-radius:6px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:4px;${esAdminBono?'cursor:pointer':''}">${bTxt}</span>`;
         } else if(esAdminBono){
-          bonoBadge = `<span ${bonoClick} style="display:inline-flex;align-items:center;gap:2px;background:var(--n800);color:var(--n300);border:1px dashed var(--bd2);border-radius:6px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:4px;cursor:pointer">+ Punto extra</span>`;
+          bonoBadge = `<span ${bonoClick} style="display:inline-flex;align-items:center;gap:2px;background:var(--n800);color:var(--n300);border:1px dashed var(--bd2);border-radius:6px;font-size:9px;font-weight:700;padding:1px 6px;margin-left:4px;cursor:pointer">+/− Punto extra</span>`;
         }
         return`<tr style="${rowBg}">
           <td class="td-pac">
@@ -339,7 +342,7 @@ async function confirmarPuntoExtra(){
   const puntos = parseFloat(g('puntoExtraInput').value) || 0;
   const justificacion = g('puntoExtraJustifInput').value.trim();
   const err = g('puntoExtraErr');
-  if(puntos > 0 && !justificacion){
+  if(puntos !== 0 && !justificacion){
     err.style.display='block'; err.textContent='La justificación es obligatoria';
     return;
   }
